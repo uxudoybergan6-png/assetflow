@@ -1,13 +1,13 @@
-# SESSION-REPORT — SC_38 guest/login audit (2026-07-18)
+# SESSION-REPORT — SC_27 composer parity + per-model payloadlar (2026-07-18)
 
-Nima qilindi: guest/login oqimlari ikkala ilovada lokal stack (:4000) bilan jonli tekshirildi.
-- Web: login/logout/xato/expired PASS; ff-auth-expired endi joriy ekranni eslab, qayta kirgach o'sha yerga qaytaradi (index.html).
-- Plagin: guest ekran, sheet login, logout, session-expired modal, device-code oqimi END-TO-END PASS.
-- FIX: device.html lokalda prod meta'ga urardi → localhost'da nisbiy /api (dev proxy) ishlatiladi.
-- FIX: plagin boot double-fetch (catalog+featured ×2) — applyNavSwitch noReload; endi ×1.
-- FIX: device fallback "Copy link" qora-ustida-qora → var(--accent)/var(--on-accent) tokenlar.
-- FIX: guest foot eskirgan "3 IMPORTS/MO" → "15 DOWNLOADS/MO" (Account sheet bilan bir xil).
-- CMS guest maydonlari (title/sub/features) jonli qo'llanishi tasdiqlandi; guest top-bar = faqat "Sign in" pill.
+Nima qilindi: plagin kompozeri web bilan funksional paritetga keltirildi; payloadlar model-aniq.
+- Plagin video: media-refs DOM JONLANTIRILDI (vgMediaSect/vgRefGrid/+Image/+Video/+Audio) — Omni 3010 va Seedance 3102 endi plaginda to'liq (limit=0 tur tugmasi yashirin, hisoblagich model-aware).
+- Plagin video: paste + OS fayl drop (rasm→kadr/media-ref, video/ovoz→media yo'l); "FAST" nishoni faqat start-majburiy modelda.
+- Payload aniqligi: image quality faqat hasQuality; null/bo'sh referens maydonlari yuborilmaydi; audio faqat qo'llaydigan+qulflanmagan modelda; aspect 'Auto'→'auto' (web'da ham — bitta per-model fix).
+- Audio pane: Enhance ✦1 + Clear + kredit-gate qo'shildi (web paritet); Chirp maxChars gate allaqachon bor edi.
+- Model-switch: yaroqsiz saqlangan sozlamalar default'ga tushganda tranzient xabar (ikkala pane).
+- Verifikatsiya: scripts/verify-gen-payloads.mjs — 13 model × 2 variant + 3 negativ = ALL PASS (:4000).
+- Jonli: plagin brauzer-QA (:8976→:4001 proxy) — 10 model REAL payload capture, hammasi backend enumlariga aniq mos; REAL gen: image (Lite ✦2) + voice (Chirp ✦4) + video (Veo Lite ✦24) plagin orqali.
+- Money-zone TEGILMAGAN (gen-quote/cost/consume/refund o'zgarishsiz; narxlar verifikatsiyada aynan).
 
-Qoldiq: guest boot'da models×4 + /api/logs 401 (jim, bir martalik) — kosmetik shovqin, auth emas.
-QA: node --check 7/7 OK; install-cep.sh OK (AE qayta ochish kerak); 3 tema OK; konsol toza.
+QA: node --check 7/7 OK; install-cep.sh OK; 320/420/900 + 3 tema OK; web+plagin konsol toza.

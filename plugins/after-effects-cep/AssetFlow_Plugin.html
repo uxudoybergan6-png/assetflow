@@ -3024,6 +3024,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .mchip .mx:hover{color:var(--txt);border-color:var(--accent)}
 /* P14 — CEP OS fayl drop zonasi belgisi */
 .axig .pbox.af-dropon{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+/* SC_27: video kompozer drop holati (P14 naqshi bilan bir xil ko'rinish) */
+.axvg .axws-dock.af-dropon{box-shadow:inset 0 0 0 1px var(--accent);border-radius:12px}
 .axig .prow{display:flex;align-items:center;margin-top:8px}
 .axig .enhance{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--blue);cursor:pointer;padding:6px 8px;border-radius:8px}
 .axig .enhance:hover{background:rgba(90,169,255,.12)}.axig .enhance.busy{opacity:.6;pointer-events:none}
@@ -3356,6 +3358,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axvg .mrt .rx{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#000;border:1px solid var(--line2);color:var(--mut);font-size:11px;line-height:1;display:grid;place-items:center;cursor:pointer;z-index:2}
 .axvg .mrt .rx:hover{color:var(--red);border-color:var(--red)}
 .axvg .mrt .msp{position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center;color:#fff;font-size:9px;border-radius:9px}
+/* SC_27: media-referens bo'limi (vgMediaSect) — grid + qo'shish chiplari + limit hint */
+.axvg .vg-refgrid{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 8px}
+.axvg .vg-refgrid:empty{display:none}
+.axvg .vg-refadds{display:flex;flex-wrap:wrap;gap:6px}
+.axvg .vg-refadd{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;border:1px dashed var(--line2);background:transparent;color:var(--mut);font-size:11px;font-weight:600;cursor:pointer}
+.axvg .vg-refadd:hover{color:var(--txt);border-color:var(--mut)}
+.axvg .vg-refadd.dim{opacity:.4;pointer-events:none}
+.axvg .vg-refmeta{margin-left:auto;font-size:10px;color:var(--mut2)}
+.axvg .vg-reflimits{font-size:10px;color:var(--mut2);margin-top:5px}
 .axvg .savedrefs{margin-top:0;padding-top:0;border-top:0}
 .axvg .savedrefs .sublbl{font-size:11px}
 .axvg .savedgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
@@ -4593,6 +4604,17 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                   <div class="frame" title="Optional — pick an end frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">End (optional)</div></div>
                                 </div>
                               </div>
+                              <!-- SC_27: media-referens bo'limi (Omni/Seedance media-refs) — mavjud mref mashinasi endi jonli DOM bilan -->
+                              <div class="sect" id="vgMediaSect" style="display:none">
+                                <div class="vg-lblrow"><span class="vg-lbl">References</span><span class="vg-refmeta" id="vgRefMeta"></span></div>
+                                <div class="vg-refgrid" id="vgRefGrid"></div>
+                                <div class="vg-refadds">
+                                  <button type="button" class="vg-refadd" id="vgAddImg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Image</button>
+                                  <button type="button" class="vg-refadd" id="vgAddVid"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Video</button>
+                                  <button type="button" class="vg-refadd" id="vgAddAud"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Audio</button>
+                                </div>
+                                <div class="vg-reflimits" id="vgRefLimits"></div>
+                              </div>
                               <!-- SC_18: "Fast: ..." explainer o'chirildi — hint kadr slotlari title/placeholder'ida -->
                               <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
                               <div class="mention" id="vgMention"></div>
@@ -4800,6 +4822,9 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                       <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
                                     </div>
                                   </div>
+                                  <!-- SC_27 (web paritet): audio kompozerda ham Enhance + Clear -->
+                                  <button type="button" class="ai-set enhance" id="agEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span>Enhance · ✦1</span></button>
+                                  <button type="button" class="axws-clear" id="agClearBtn" title="Clear text"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</button>
                                 </div>
                                 <div class="axws-genwrap">
                                   <button class="gensend" id="agGen" disabled title="Generate" aria-label="Generate audio">Generate<span class="costtag" id="agCost">✦—</span></button>
@@ -12238,6 +12263,13 @@ window.afGallery=(function(){
     // P12 — shu model uchun avval saqlangan preferensiya bo'lsa (hali ham YAROQLI bo'lsa) tiklaymiz,
     //   aks holda model default'i.
     var savedImg=gpImg[m.id];
+    // SC_27: saqlangan qiymat yangi modelda yaroqsiz bo'lsa default'ga tushadi — sonini sanab xabar beramiz
+    var drp=0;
+    if(savedImg){
+      if(savedImg.ar!=null&&meta.ars.indexOf(savedImg.ar)<0)drp++;
+      if(savedImg.q!=null&&meta.hasQuality&&meta.quals.indexOf(savedImg.q)<0)drp++;
+      if(savedImg.n!=null&&meta.counts.indexOf(savedImg.n)<0)drp++;
+    }
     st.ar=(savedImg&&meta.ars.indexOf(savedImg.ar)>=0)?savedImg.ar:meta.aspDef;
     st.q=(savedImg&&meta.quals.indexOf(savedImg.q)>=0)?savedImg.q:meta.qDefault;
     st.n=(savedImg&&meta.counts.indexOf(savedImg.n)>=0)?savedImg.n:(meta.counts[0]||1);
@@ -12245,7 +12277,12 @@ window.afGallery=(function(){
     // P13 — hovuz tegilmaydi; proyeksiyani yangilash uchun refs QAYTA chiziladi (xira holatlar).
     var inact=igInactiveRefCount();
     applyMeta(); renderRefs(); updRefMeta();
-    if(inact>0)toast(inact+' reference'+(inact>1?'s':'')+' not used by '+(m.label||'this model')+' — kept for other models','info');
+    if(inact>0||drp>0){
+      var bits=[];
+      if(inact>0)bits.push(inact+' reference'+(inact>1?'s':'')+' not used by '+(m.label||'this model')+' — kept for other models');
+      if(drp>0)bits.push(drp+' setting'+(drp>1?'s':'')+' reset to model default');
+      toast(bits.join(' · '),'info');
+    }
     return true;
   }
   // P13 — joriy modelda NOFAOL bo'ladigan (limitdan tashqari yoki qo'llanmaydigan) referenslar soni
@@ -12781,7 +12818,11 @@ window.afGallery=(function(){
     var _gb=$('igGen'); if(_gb)_gb.classList.add('busy'); // yuborilmoqda — tugmada spinner
     // @img tartibida URL'lar (@img1=referenceUrls[0]) — P13: FAQAT faollarini (model limitigacha) yuboramiz
     var refUrls=st.refs.slice(0,igActiveRefLimit()).map(function(r){ return r.url; }).filter(Boolean);
-    var params={aspectRatio:st.ar,quality:st.q,count:st.n,referenceUrl:refUrls[0]||null,referenceUrls:refUrls};
+    // SC_27: payload aniqligi — quality FAQAT modelda sifat selektori bo'lsa (Lite kabi flat modellarga
+    // eski model qiymati ketmasin); referens maydonlari faqat referens BOR bo'lganda.
+    var params={aspectRatio:st.ar,count:st.n};
+    if(meta.hasQuality)params.quality=st.q;
+    if(refUrls.length){ params.referenceUrl=refUrls[0]; params.referenceUrls=refUrls; }
     j.params=params; j.modelId=meta.modelId; // Qayta gen: yangi tugagan kartada ham params/model bo'lsin
     var quote=null;
     ensureMeta().then(function(){
@@ -13251,6 +13292,8 @@ window.afGallery=(function(){
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
   function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
   function durSec(){ var d=vm.dur; return (!d||d==='Auto'||d==='auto')?vm.autoSec:(parseInt(d)||vm.autoSec); }
+  // SC_27: nisbat param aniqligi — UI chip 'Auto' (katta harf), backend enum esa 'auto' (gen-models aspects).
+  function vgAspectParam(){ return /^auto$/i.test(String(vm.ar||''))?'auto':vm.ar; }
   function hasVideoRefs(){ return mref.some(function(r){ return r.type==='video' && r.url; }); }
   function ratePerSec(){
     var base=(vm.perSec[vm.res]||12);
@@ -13804,10 +13847,13 @@ window.afGallery=(function(){
     // P12 — shu model uchun avval saqlangan preferensiya bo'lsa (hali ham YAROQLI bo'lsa) tiklaymiz,
     //   aks holda model default'i (yuqoridagi vs blokidan).
     var savedVid=gpVid[m.id];
+    // SC_27: yangi modelda YAROQSIZ bo'lib qolgan qiymatlar sonini hisoblaymiz — switch toast'ida
+    // kichik tranzient xabar ("N setting(s) reset...") ko'rsatiladi (jimgina tashlab yuborilmaydi).
+    vm._prefsDropped=0;
     if(savedVid){
-      if(savedVid.res!=null&&vm.resOpts.indexOf(savedVid.res)>=0)vm.res=savedVid.res;
-      if(savedVid.dur!=null&&vm.durOpts.indexOf(savedVid.dur)>=0)vm.dur=savedVid.dur;
-      if(savedVid.ar!=null&&vm.arOpts.indexOf(savedVid.ar)>=0)vm.ar=savedVid.ar;
+      if(savedVid.res!=null){ if(vm.resOpts.indexOf(savedVid.res)>=0)vm.res=savedVid.res; else vm._prefsDropped++; }
+      if(savedVid.dur!=null){ if(vm.durOpts.indexOf(savedVid.dur)>=0)vm.dur=savedVid.dur; else vm._prefsDropped++; }
+      if(savedVid.ar!=null){ if(vm.arOpts.indexOf(savedVid.ar)>=0)vm.ar=savedVid.ar; else vm._prefsDropped++; }
       if(savedVid.bitrate!=null&&vm.bitOpts.indexOf(savedVid.bitrate)>=0)vm.bitrate=savedVid.bitrate;
       if(typeof savedVid.audio==='boolean'&&vm.audioSupported&&!vm.audioLocked)vm.audio=savedVid.audio;
     }
@@ -13904,7 +13950,9 @@ window.afGallery=(function(){
     // P18 — renderMediaRefs() ichida renderVgEditPresets() ham chaqiriladi (model-aware qayta chizish).
     hideVgMention(); renderMediaRefs(); renderFrameBoxes(); updRefMeta();
     closeVgSheets();
-    toast(String(m.label||'Model')+' selected'+(inact>0?(' · '+inact+' reference'+(inact>1?'s':'')+' kept (unused)'):''),'info');
+    // SC_27: yaroqsiz bo'lib qolgan sozlamalar model default'iga qaytdi — kichik tranzient xabar
+    var drp=vm._prefsDropped||0;
+    toast(String(m.label||'Model')+' selected'+(inact>0?(' · '+inact+' reference'+(inact>1?'s':'')+' kept (unused)'):'')+(drp>0?(' · '+drp+' setting'+(drp>1?'s':'')+' reset to model default'):''),'info');
   }
   // P13 — joriy/berilgan model proyeksiyasi: qaysi mref FAOL (yuboriladi). vgPruneMrefFor bilan bir xil
   //   mantiq, lekin O'CHIRMAYDI — faqat belgilaydi. Boolean bayroqlar massivi qaytadi (mref bilan hamqadam).
@@ -13958,9 +14006,10 @@ window.afGallery=(function(){
     var eb=$('vgEndBox'); if(eb&&eb.parentNode)eb.parentNode.style.display=((vm.framesOk&&vm.endFrameOk)||!!st.end)?'':'none';
     // Lightbox/So'nggi "Referens kadr" menyusida Yakuniy varianti ham endFrame'ga bog'liq
     var reOpt=$('vgRefEnd'); if(reOpt)reOpt.style.display=vm.endFrameOk?'':'none';
-    var kt=$('vgKadrTag'); if(kt)kt.style.display=vm.framesOk?'inline-flex':'none';
-    // PROBLEM 3: Fast|R2V toggle va media-referens (+Image/+Video/+Audio) UI olib tashlandi —
-    // plagin video Fast-only (media-refs modellar ensureVgMeta filtridan o'tmaydi).
+    // SC_27: "FAST" nishoni faqat kadr MAJBURIY modelda (Seedance Fast merosxo'ri) — Veo'da chalg'itardi
+    var kt=$('vgKadrTag'); if(kt)kt.style.display=(vm.framesOk&&vm.startRequired)?'inline-flex':'none';
+    // SC_27: media-referens UI (vgMediaSect: +Image/+Video/+Audio) QAYTA JONLANTIRILDI —
+    // media-refs modellar (Omni/Seedance) plaginda to'liq; eski "Fast-only" cheklov bekor.
     applyVgGuide(); applyVgPromptUi(); hideVgMention();
     if(isMedia){ renderMediaRefs(); updRefMeta(); loadVgSavedRefs(); }
     else renderVgSavedRefs();
@@ -14143,17 +14192,24 @@ window.afGallery=(function(){
   function updRefMeta(){
     var lim=vm.mediaRefs||{image:9,video:3,audio:3,total:12};
     // b5: hisob mockup formatida — "Rasm 2/3 · Video 1/1 · Ovoz 0/1"
-    var m=$('vgRefMeta'); if(m)m.textContent='Image '+cntRef('image')+'/'+(lim.image||0)+' · Video '+cntRef('video')+'/'+(lim.video||0)+' · Voice '+cntRef('audio')+'/'+(lim.audio||0);
+    // SC_27: hisoblagich faqat model QO'LLAYDIGAN turlarni ko'rsatadi (Omni'da "Voice 0/0" chiqmasin)
+    var m=$('vgRefMeta'); if(m){ var mm=[]; if(lim.image)mm.push('Image '+cntRef('image')+'/'+lim.image); if(lim.video)mm.push('Video '+cntRef('video')+'/'+lim.video); if(lim.audio)mm.push('Audio '+cntRef('audio')+'/'+lim.audio); m.textContent=mm.join(' · '); }
     // limit to'lgan turdagi + chip xira (mockup: +Video dim)
-    var ai=$('vgAddImg'); if(ai)ai.classList.toggle('dim',cntRef('image')>=(lim.image||0));
-    var av=$('vgAddVid'); if(av)av.classList.toggle('dim',cntRef('video')>=(lim.video||0));
-    var aa2=$('vgAddAud'); if(aa2)aa2.classList.toggle('dim',cntRef('audio')>=(lim.audio||0));
+    // SC_27: limit=0 tur (masalan Omni audio) — tugma umuman YASHIRIN (o'chirilgan-shovqin emas)
+    var ai=$('vgAddImg'); if(ai){ ai.style.display=(lim.image||0)>0?'':'none'; ai.classList.toggle('dim',cntRef('image')>=(lim.image||0)); }
+    var av=$('vgAddVid'); if(av){ av.style.display=(lim.video||0)>0?'':'none'; av.classList.toggle('dim',cntRef('video')>=(lim.video||0)); }
+    var aa2=$('vgAddAud'); if(aa2){ aa2.style.display=(lim.audio||0)>0?'':'none'; aa2.classList.toggle('dim',cntRef('audio')>=(lim.audio||0)); }
     // Limitlarni OLDINDAN ko'rsatamiz (fayl tanlagandan keyin xato chiqishidan oldin).
     var h=$('vgRefLimits');
     if(h){
       var imgMb=(vm.mediaRefMaxBytes&&vm.mediaRefMaxBytes.image)?Math.round(vm.mediaRefMaxBytes.image/1048576):0;
       var vidMb=(vm.mediaRefMaxTotalBytes&&vm.mediaRefMaxTotalBytes.video)?Math.round(vm.mediaRefMaxTotalBytes.video/1048576):0;
-      h.textContent='Max '+lim.image+' image(s)'+(imgMb?(' (≤'+imgMb+'MB)'):'')+' · '+lim.video+' video(s)'+(vidMb?(' (total ≤'+vidMb+'MB)'):'')+' · '+lim.audio+' voice';
+      // SC_27: faqat model qo'llaydigan turlar (limit 0 tur reklama qilinmaydi)
+      var hh=[];
+      if(lim.image)hh.push(lim.image+' image(s)'+(imgMb?(' ≤'+imgMb+'MB'):''));
+      if(lim.video)hh.push(lim.video+' video(s)'+(vidMb?(' total ≤'+vidMb+'MB'):''));
+      if(lim.audio)hh.push(lim.audio+' audio');
+      h.textContent=hh.length?('Max '+hh.join(' · ')+(lim.total?(' · total '+lim.total):'')):'';
     }
     applyVgArLock(); // video referens qo'shildi/olindi → nisbat chipi qulfi yangilansin (Omni)
   }
@@ -14413,8 +14469,13 @@ window.afGallery=(function(){
     var pr=$('vgSrcProj'); if(pr){var s2=pr.querySelector('small'); if(s2)s2.textContent='AE project — '+typeLabel(type).toLowerCase();}
     openVgSheet('vgSrcSheet',_vgSrcTarget.anchor);
   }
-  // PROBLEM 3: +Image/+Video/+Audio tugma listener'lari va media-refs clipboard-paste
-  // handler'i olib tashlandi (R2V UI plaginda yo'q; ichki mref funksiyalari guarded/dormant).
+  // SC_27: +Image/+Video/+Audio tugmalari QAYTA ULANDI — media-refs DOM (vgMediaSect) endi mavjud;
+  // mref mashinasi (uploadMediaRef/renderMediaRefs/limitlar) o'zgarishsiz qayta ishlatiladi.
+  (function(){
+    [['vgAddImg','image'],['vgAddVid','video'],['vgAddAud','audio']].forEach(function(p){
+      var b=$(p[0]); if(b)b.addEventListener('click',function(){ openMediaSrc(p[1],b); });
+    });
+  })();
   (function(){
     var full=$('vgClipFull'), part=$('vgClipPart'), cancel=$('vgClipCancel'), apply=$('vgClipApply'), audioTgl=$('vgClipAudioToggle');
     if(full)full.addEventListener('click',function(){
@@ -14641,6 +14702,65 @@ window.afGallery=(function(){
   });
   $('vgStartBox').addEventListener('click',function(){ if(!st.start)openFrameSrc('start'); });
   $('vgEndBox').addEventListener('click',function(){ if(!st.end)openFrameSrc('end'); });
+  // SC_27 (web paritet): rasm ma'lumotini model turiga qarab joylash — media model → rasm referens;
+  // frames model → bo'sh kadr slotiga (start, keyin end). Paste va drop ikkovi shu yo'ldan yuradi.
+  function vgAcceptImageData(dataUrl,fromPath){
+    var src=fromPath?{path:fromPath,dataUrl:dataUrl}:{dataUrl:dataUrl};
+    if(vm.refKind==='media-refs'){ if(!mediaAllowed('image'))return; uploadMediaRef(src,'image'); toast('Image reference added','success'); return; }
+    if(vm.framesOk){
+      var which=(!st.start)?'start':((vm.endFrameOk&&!st.end)?'end':null);
+      if(!which){ toast('Frames are already set — remove one first','info'); return; }
+      uploadFrame(src,which); toast((which==='start'?'Start':'End')+' frame added','success'); return;
+    }
+    toast(((vm.model&&vm.model.label)||'This model')+" doesn't accept image references",'info');
+  }
+  // Copy-paste: clipboarddagi RASM → video referens/kadr (video tool ko'rinib turganda; matn odatdagidek yopishadi)
+  document.addEventListener('paste',function(e){
+    try{
+      var vp=$('vgPrompt'); if(!vp||vp.offsetParent===null)return; // video tool ko'rinmasa — aralashmaymiz
+      if(vm.refKind!=='media-refs'&&!vm.framesOk)return; // referenssiz model — qabul qilmaydi
+      var items=(e.clipboardData&&e.clipboardData.items)||[];
+      var img=null; for(var i=0;i<items.length;i++){ if(items[i].type&&items[i].type.indexOf('image/')===0){ img=items[i]; break; } }
+      if(!img)return;
+      e.preventDefault();
+      var blob=img.getAsFile(); if(!blob)return;
+      var rd=new FileReader();
+      rd.onload=function(){ vgAcceptImageData(String(rd.result||'')); };
+      rd.readAsDataURL(blob);
+    }catch(_){}
+  });
+  // SC_27 (web paritet, P14 naqshi): OS fayl drop → video kompozer. Rasm → kadr/media-ref;
+  // video/ovoz fayl (media model) → mavjud addOneMediaPath yo'li (klipper/limit tekshiruvlari bilan).
+  (function(){
+    var box=document.querySelector('#v-vidgen .axws-dock'); if(!box)return;
+    box.addEventListener('dragover',function(e){ if(e.dataTransfer&&Array.prototype.indexOf.call(e.dataTransfer.types||[],'Files')>=0){ e.preventDefault(); box.classList.add('af-dropon'); } });
+    box.addEventListener('dragleave',function(e){ if(!box.contains(e.relatedTarget))box.classList.remove('af-dropon'); });
+    box.addEventListener('drop',function(e){
+      if(!e.dataTransfer||!e.dataTransfer.files||!e.dataTransfer.files.length)return;
+      e.preventDefault(); box.classList.remove('af-dropon');
+      var files=Array.prototype.slice.call(e.dataTransfer.files);
+      files.forEach(function(f){
+        var name=f.name||f.path||'';
+        var isI=/^image\//.test(f.type||'')||/\.(png|jpe?g|webp|gif|bmp)$/i.test(name);
+        var isV=/^video\//.test(f.type||'')||/\.(mp4|mov|webm|m4v)$/i.test(name);
+        var isA=/^audio\//.test(f.type||'')||/\.(mp3|wav|m4a|aac|ogg)$/i.test(name);
+        if(isI){
+          if(f.path&&typeof readDataUrl==='function'){ var d=readDataUrl(f.path); if(d)vgAcceptImageData(d,f.path); else toast('Could not read '+name,'error'); }
+          else { var rd=new FileReader(); rd.onload=function(){ vgAcceptImageData(String(rd.result||'')); }; rd.readAsDataURL(f); }
+        } else if((isV||isA)&&vm.refKind==='media-refs'){
+          var t=isV?'video':'audio';
+          if(!f.path){ toast('Drop '+t+' files from Finder/Explorer to add them','info'); return; }
+          if(!mediaAllowed(t))return;
+          if(!extAllowed(t,f.path)){ toast(typeLabel(t)+' format is not compatible with this model','warning'); return; }
+          addOneMediaPath(f.path,t);
+        } else if(isV||isA){
+          toast(((vm.model&&vm.model.label)||'This model')+" doesn't accept "+(isV?'video':'audio')+' references','info');
+        } else {
+          toast('Unsupported file type','warning');
+        }
+      });
+    });
+  })();
   // (prompt ichidagi ＋Referens tugmasi olib tashlandi — tepadagi kadr box / +Rasm/+Video kanonik)
   // FIX D: doimiy manba chiplari (vgChipFile/Proj/Tl) olib tashlandi — manba tanlash faqat
   // kadr box yoki ＋Referens popover menyusi (vgSrcSheet) orqali, rasm tool bilan bir xil.
@@ -15036,7 +15156,12 @@ window.afGallery=(function(){
       var savedIds=mref.filter(function(r,i){ return !!(r&&r.savedRefId)&&vgFlags.active[i]; }).map(function(r){ return r.savedRefId; });
       var auds=pick('audio'), imgs=pick('image'), vids=pick('video');
       if(auds.length&&imgs.length+vids.length===0&&!(vm.framesOk&&st.start&&st.start.url)){ toast('Audio needs at least 1 image or video reference','warning'); return; }
-      params={imageUrls:imgs,videoUrls:vids,audioUrls:auds,savedReferenceIds:savedIds,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+      // SC_27: payload aniqligi — bo'sh massivlar YUBORILMAYDI (model faqat o'zi qabul qiladigan maydonlarni oladi)
+      params={resolution:vm.res,duration:vm.dur,aspectRatio:vgAspectParam()};
+      if(imgs.length)params.imageUrls=imgs;
+      if(vids.length)params.videoUrls=vids;
+      if(auds.length)params.audioUrls=auds;
+      if(savedIds.length)params.savedReferenceIds=savedIds;
       // BATCH5 #5: kadr qo'llaydigan media model (Seedance 2.0) — start/end kadr referenslar BILAN birga
       if(vm.framesOk){
         if((st.start&&st.start.loading)||(st.end&&st.end.loading)){ toast('Frame is uploading — please wait','info'); return; }
@@ -15045,7 +15170,7 @@ window.afGallery=(function(){
       }
     } else if(vm.refKind==='none'){
       if(prompt.length<2){ toast('Write a prompt','warning'); return; }
-      params={resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+      params={resolution:vm.res,duration:vm.dur,aspectRatio:vgAspectParam()};
     } else {
       // frames: image-to-video (Seedance) → boshlang'ich kadr majburiy; matndan-video (Veo/Omni) → IXTIYORIY
       if(prompt.length<2){ toast('Write a prompt','warning'); return; }
@@ -15055,8 +15180,13 @@ window.afGallery=(function(){
       // Yakuniy kadr FAQAT boshlang'ich kadr bilan (Veo lastFrame i2v-only) — aks holda backend uni tashlab yuborardi
       if(vm.endFrameOk&&st.end&&st.end.url&&!(st.start&&st.start.url)){ toast("End frame only works together with a start frame — add a start frame too",'warning'); return; }
       // FIX3: end kadr FAQAT model endFrame qo'llasa yuboriladi (stale ref himoyasi)
-      params={referenceUrl:(st.start&&st.start.url)||null,referenceEndUrl:(vm.endFrameOk&&st.end&&st.end.url)||null,resolution:vm.res,duration:vm.dur,aspectRatio:vm.ar,audio:vm.audio};
+      // SC_27: null qiymatlar yuborilmaydi (payload aniqligi)
+      params={resolution:vm.res,duration:vm.dur,aspectRatio:vgAspectParam()};
+      if(st.start&&st.start.url){ params.referenceUrl=st.start.url; if(vm.endFrameOk&&st.end&&st.end.url)params.referenceEndUrl=st.end.url; }
     }
+    // SC_27: audio FAQAT model toggle'ni qo'llasa yuboriladi (web buildParams bilan bir xil):
+    // audio:false modellar (Veo Lite/Fast) va qulflangan modellar (Omni) uchun server default'i ustun.
+    if(vm.audioSupported&&!vm.audioLocked)params.audio=!!vm.audio;
     if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
     var c=credits(); if(c!=null&&c<cost()){ toast('Not enough credits — ⚙ Settings › "Top up credits"','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:durSec(),sourceResolution:vm.res,modelLabel:(vm.model&&vm.model.label)||'Video model',
@@ -15195,6 +15325,14 @@ window.afGallery=(function(){
   function agSyncCredits(){ try{ studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){}); }catch(e){} }
   function curAgModel(){ return ag.mode==='voice'?ag.models.voice:ag.models.sfx; }
   function agCost(){ var m=curAgModel(); return m?(m.cost||0):0; }
+  // SC_27 (web paritet): kredit yetmasa Generate O'CHADI (bosishdan oldin) — image/video gate naqshi
+  function agCredits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
+  function agCreditGate(){
+    var cr=agCredits(), need=agCost();
+    var low=(cr!=null)&&need>0&&(need>cr);
+    var lb=$('agLowBanner'); if(lb){ lb.classList.toggle('on',low); var ln=$('agLowNeed'); if(ln)ln.textContent='need ✦ '+need+' · you have ✦ '+((cr!=null)?cr:'—'); }
+    return low;
+  }
 
   function pill(txt,on,fn){ var b=document.createElement('button'); b.type='button'; b.className='cchip'+(on?' on':''); b.style.cssText='padding:7px 12px;border-radius:999px;border:1px solid '+(on?'var(--acc)':'rgba(255,255,255,.12)')+';background:'+(on?'rgba(163,230,53,.14)':'rgba(255,255,255,.04)')+';color:'+(on?'var(--acc)':'var(--mut)')+';font-size:11.5px;font-weight:600;cursor:pointer'; b.textContent=txt; b.addEventListener('click',fn); return b; }
   function applyAg(){
@@ -15223,9 +15361,27 @@ window.afGallery=(function(){
   function refreshAgBtn(){
     var b=$('agGen'); if(!b)return;
     var ta=$('agPrompt');
-    b.disabled=!(ag.loaded&&curAgModel()&&ta&&ta.value.trim().length>=2);
+    b.disabled=!(ag.loaded&&curAgModel()&&ta&&ta.value.trim().length>=2&&!agCreditGate()); // SC_27: kredit gate
   }
   var _ta=$('agPrompt'); if(_ta)_ta.addEventListener('input',refreshAgBtn);
+  // SC_27 (web paritet): Clear — matn tozalanadi (natijalar tegilmaydi)
+  var _acl=$('agClearBtn'); if(_acl)_acl.addEventListener('click',function(){ var t=$('agPrompt'); if(t)t.value=''; refreshAgBtn(); toast('Cleared','info'); });
+  // SC_27 (web paritet): Enhance — /gen/prompt/enhance (mode-aware: voice matni / sfx tavsifi)
+  var _agEnhancing=false;
+  var _aen=$('agEnhance'); if(_aen)_aen.addEventListener('click',function(){
+    if(_agEnhancing)return;
+    var t=$('agPrompt'); var b=(t&&t.value||'').trim();
+    if(!b){ toast('Write the text first','warning'); return; }
+    _agEnhancing=true; _aen.classList.add('busy');
+    studioPost('/api/studio/gen/prompt/enhance',{prompt:b,mode:ag.mode,format:'text',idempotencyKey:afUuid()}).then(function(e){
+      if(e&&e.prompt){
+        if(t)t.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim();
+        refreshAgBtn();
+        if(typeof e.creditsLeft==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(e.creditsLeft);
+        toast('Prompt enhanced ✨'+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success');
+      } else toast('Could not enhance','error');
+    }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Enhance error','error'); }).then(function(){ _agEnhancing=false; _aen.classList.remove('busy'); });
+  });
   var _mv=$('agModeVoice'); if(_mv)_mv.addEventListener('click',function(){ if(ag.mode!=='voice'){ ag.mode='voice'; applyAg(); } });
   var _ms2=$('agModeSfx'); if(_ms2)_ms2.addEventListener('click',function(){ if(ag.mode!=='sfx'){ ag.mode='sfx'; applyAg(); } });
 

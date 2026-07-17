@@ -20146,7 +20146,12 @@ class Component extends DCLogic {
       const dSel = dRaw !== '' && dOpts.some(o => String(o) === dRaw) ? dRaw : ((vs.duration && vs.duration.def) != null ? vs.duration.def : dOpts[0]);
       p.duration = /^\d+$/.test(String(dSel)) ? parseInt(dSel, 10) : dSel; // raqam yoki 'Auto'
       if (model.resolutions && model.resolutions.length) p.resolution = (model.resolutions.indexOf(st.aiRes) >= 0 ? st.aiRes : ((vs.resolution && vs.resolution.def) || model.resolutions[0]));
-      if (model.aspects && model.aspects.length) p.aspectRatio = (model.aspects.indexOf(st.aiSize) >= 0 ? st.aiSize : ((vs.aspect && vs.aspect.def) || model.aspects[0]));
+      // SC_27: nisbat enum aniqligi — videoSettings def 'Auto' (katta harf), backend aspects esa 'auto';
+      // fallback yo'lida katta harfli 'Auto' ketib qolmasin (server prefer-fallback'iga tayanmaymiz).
+      if (model.aspects && model.aspects.length) {
+        const aRaw = (model.aspects.indexOf(st.aiSize) >= 0 ? st.aiSize : ((vs.aspect && vs.aspect.def) || model.aspects[0]));
+        p.aspectRatio = /^auto$/i.test(String(aRaw)) ? 'auto' : aRaw;
+      }
       // P8 — audio toggle: faqat model audio qo'llasa yuboriladi (audioLocked → default qoladi)
       const audioCap = (vs.audio != null ? vs.audio : model.audio) === true;
       if (audioCap && !vs.audioLocked && !model.audioLocked) {
