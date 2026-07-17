@@ -15686,7 +15686,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-sessrow .cv.lib{background:var(--limedim);color:var(--lime)}
   .ff .va-sessrow .nm{min-width:0;flex:1;font-weight:600;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ff .va-sessrow .nm .sub{display:block;font:500 10px var(--mono);color:var(--muted2);margin-top:2px;font-weight:400}
-  .ff .va-sessrow .ren{width:24px;height:24px;flex:none;border-radius:7px;display:grid;place-items:center;color:var(--muted2);font-size:12px}
+  .ff .va-sessrow .ren{width:24px;height:24px;flex:none;border-radius:7px;display:grid;place-items:center;color:var(--muted2);font-size:12px;opacity:0;transition:opacity .12s ease}
+  /* SC_40 — ✎ faqat hover/focus'da (constitution) + qatordagi inline rename input */
+  .ff .va-sessrow:hover .ren,.ff .va-sessrow:focus-within .ren{opacity:1}
+  .ff .va-sessrow .renin{flex:1;min-width:0;background:var(--f1);border:1px solid color-mix(in srgb,var(--lime) 45%,transparent);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;font-family:inherit;padding:5px 8px;outline:none}
   /* P6 — sessiya multi-select */
   .ff .va-sessselbtn{margin-left:auto;font:600 10px var(--mono);color:var(--muted);cursor:pointer;padding:2px 7px;border:1px solid var(--hair2);border-radius:999px}
   .ff .va-sessselbtn:hover{color:var(--text);border-color:var(--muted)}
@@ -16938,8 +16941,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     <div data-id="{{ s.id }}" onclick="{{ axOpenSession }}" class="{{ s.cls }}">
                       <sc-if value="{{ sessSelectOn }}" hint-placeholder-val="{{ false }}"><span class="{{ s.ckCls }}">✓</span></sc-if>
                       <span class="cv" style="background:{{ s.cv }}"><sc-if value="{{ s.noCv }}" hint-placeholder-val="{{ false }}"><i class="ph ph-{{ s.icon }}"></i></sc-if></span>
-                      <span class="nm">{{ s.name }}<span class="sub">{{ s.meta }}</span></span>
-                      <sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}"><span data-id="{{ s.id }}" class="ren" onclick="{{ axRenameSession }}" title="Rename session"><i class="ph ph-pencil-simple"></i></span></sc-if>
+                      <sc-if value="{{ s.notEditing }}" hint-placeholder-val="{{ true }}"><span class="nm">{{ s.name }}<span class="sub">{{ s.meta }}</span></span></sc-if>
+                      <!-- SC_40 — inline rename: Enter/blur saqlaydi, Esc bekor, bo'sh = avto-nom -->
+                      <sc-if value="{{ s.editing }}" hint-placeholder-val="{{ false }}"><input class="renin" maxlength="28" value="{{ sessRenVal }}" oninput="{{ onSessRenVal }}" onkeydown="{{ onSessRenKey }}" onblur="{{ onSessRenBlur }}" onclick="{{ onSessRenClick }}"></sc-if>
+                      <sc-if value="{{ s.showRen }}" hint-placeholder-val="{{ false }}"><span data-id="{{ s.id }}" class="ren" onclick="{{ axRenameSession }}" title="Rename session"><i class="ph ph-pencil-simple"></i></span></sc-if>
                     </div>
                   </sc-for>
                   <sc-if value="{{ sessBulkOn }}" hint-placeholder-val="{{ false }}">
@@ -18138,6 +18143,8 @@ class Component extends DCLogic {
     viewSess: 'new',       // null = My Library; 'new' = bo'sh yangi sessiya ("Start with your idea"); aks holda sessiya id
     sessGens: [],          // viewSess sessiyasining gen'lari (server: /gen/sessions/:id/generations)
     sessGensLoading: false,
+    sessRenId: null,       // SC_40 — inline rename holati: tahrirdagi sessiya id
+    sessRenVal: '',        // SC_40 — inline rename input qiymati
     // QA-FIX #13 — Projects (real ma'lumot)
     projects: [],          // GET /api/studio/projects — {id,name,count,covers,updatedAt}
     projectsLoaded: false,
@@ -19686,9 +19693,31 @@ class Component extends DCLogic {
       this.setState(s => s.viewSess === id ? { sessGens: gens, sessGensLoading: false, activeGenId: gens[0] ? gens[0].id : null } : { sessGensLoading: false });
     } catch (e) { this.setState({ sessGensLoading: false }); this.toast(this.errMsg(e)); }
   }
-  renameSessionById(id) {
+  // SC_40 — qatorda inline rename (modal emas): input joriy displey nomi bilan ochiladi
+  startSessRename(id) {
     const s = this.state.sessions.find(x => x.id === id); if (!s) return;
-    this.setState({ nameModal: { kind: 'session', ctx: id, icon: 'pencil-simple', title: 'Rename session', cta: 'Save', ph: 'Session name', value: s.title || '' } });
+    this._sessRenInit = this.sessDisplayName(s);
+    this.setState({ sessRenId: id, sessRenVal: this._sessRenInit });
+    // Fokus: render asinxron — ikki urinish (30/150ms), topilgach select
+    const foc = () => { try { const el = document.querySelector('.va-sesslist .renin'); if (el && document.activeElement !== el) { el.focus(); el.select(); } } catch (e) {} };
+    setTimeout(foc, 30); setTimeout(foc, 150);
+  }
+  // Enter/blur — saqlash: bo'sh qiymat = qo'lda nom o'chadi (null → avto-nom qaytadi).
+  // Optimistik yangilash + xatoda rollback. Esc sessRenId'ni null qiladi — bu yerga kelmaydi.
+  async commitSessRename() {
+    const id = this.state.sessRenId; if (!id) return;
+    const v = (this.state.sessRenVal || '').trim();
+    this.setState({ sessRenId: null });
+    const s = this.state.sessions.find(x => x.id === id); if (!s) return;
+    if (v === this._sessRenInit) return; // o'zgarmagan — so'rov yubormaymiz
+    const newTitle = v || null, old = s.title || null;
+    if (newTitle === old) return;
+    this.setState(st => ({ sessions: st.sessions.map(x => x.id === id ? { ...x, title: newTitle } : x) }));
+    try { await FFAPI.sessionRename(id, newTitle); }
+    catch (e) {
+      this.setState(st => ({ sessions: st.sessions.map(x => x.id === id ? { ...x, title: old } : x) }));
+      this.toast('Rename failed — try again');
+    }
   }
   // ── QA-FIX #13 — loyihalar ──
   async loadProjects() {
@@ -19714,11 +19743,8 @@ class Component extends DCLogic {
     const v = (m.value || '').trim();
     if (!v) { this.toast('Enter a name'); return; }
     try {
-      if (m.kind === 'session') {
-        await FFAPI.sessionRename(m.ctx, v);
-        this.setState(s => ({ nameModal: null, sessions: s.sessions.map(x => x.id === m.ctx ? { ...x, title: v } : x) }));
-        this.toast('Session renamed');
-      } else if (m.kind === 'newProject') {
+      // SC_40: 'session' turi olib tashlandi — sessiya rename endi qatorda inline (startSessRename)
+      if (m.kind === 'newProject') {
         const p = await FFAPI.projectCreate(v);
         this.setState(s => ({ nameModal: null, projects: [{ id: p.id, name: p.name, count: 0, covers: [], updatedAt: p.updatedAt }].concat(s.projects) }));
         this.toast('Project created');
@@ -21242,8 +21268,11 @@ class Component extends DCLogic {
       // SC_22: xom prompt nomlari o'rniga toza displey nomi (qisqa/qo'lda nom aynan qoladi)
       const name = this.sessDisplayName(s);
       const isAudCv = s.coverMode === 'voice' || s.coverMode === 'sfx' || s.coverMode === 'music';
+      const editing = this.state.sessRenId === s.id; // SC_40 — inline rename
       return {
-        id: s.id, on, name,
+        id: s.id, on, name, editing,
+        notEditing: !editing,
+        showRen: !editing && !this.state.sessSelect, // SC_40: ✎ hover/focus'da (CSS), select/tahrirda yo'q
         shortName: name.length > 14 ? name.slice(0, 14) + '…' : name,
         ckCls: 'va-sesscheck' + (this.state.sessSel[s.id] ? ' on' : ''), // P6
         cls: 'va-sessrow' + (on ? ' on' : ''),
@@ -22307,14 +22336,24 @@ class Component extends DCLogic {
           if (n >= 40) { this.toast('Downloaded the first 40 files — open a session for the rest'); break; }
         }
         this.toast(n + ' file' + (n === 1 ? '' : 's') + ' downloading'); },
-      axRenameSession: (e) => { e.stopPropagation(); this.renameSessionById(e.currentTarget.dataset.id); },
+      // SC_40 — inline rename handlerlari (Enter/blur saqlaydi, Esc bekor)
+      sessRenVal: this.state.sessRenVal,
+      axRenameSession: (e) => { e.stopPropagation(); this.startSessRename(e.currentTarget.dataset.id); },
+      onSessRenVal: (e) => this.setState({ sessRenVal: e.target.value }),
+      onSessRenKey: (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); this.commitSessRename(); }
+        else if (e.key === 'Escape') { e.stopPropagation(); this.setState({ sessRenId: null }); }
+      },
+      onSessRenBlur: () => this.commitSessRename(),
+      onSessRenClick: (e) => e.stopPropagation(),
       visCount: visGensRaw.length, audCount: audGensRaw.length,
       axSegVisCls: axIsVisuals ? 'on' : '', axSegAudCls: axIsVisuals ? '' : 'on',
       axSessMeta: inLibrary
         ? ('MY LIBRARY · ' + this.state.gens.length + ' GENERATIONS')
         : (this.state.viewSess === 'new'
           ? 'NEW SESSION'
-          : (((viewSessObj && viewSessObj.title ? viewSessObj.title.slice(0, 26) : 'SESSION').toUpperCase()) + ' · ' + wsGens.length + ' GENERATIONS')),
+          // SC_40: header ham displey nomi bilan — qo'lda nom avto-nomlashdan ustun
+          : (((viewSessObj ? this.sessDisplayName(viewSessObj).slice(0, 26) : 'SESSION').toUpperCase()) + ' · ' + wsGens.length + ' GENERATIONS')),
       axShowHero, axShowVisuals, axShowAudio, axPendVis, axPendAud, axPendVisList, axPendAudList, axVisEmpty, axAudEmpty,
       axVisGens, axAudGens, genPct, genStatus, axSuggest,
       // #6 — Full/Compact ko'rinish (tanlov localStorage'da; default = full)

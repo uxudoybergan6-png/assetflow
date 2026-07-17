@@ -650,8 +650,9 @@ studioGenRouter.get("/gen/sessions", async (req: Request, res: Response) => {
   res.json({ items });
 });
 
-/** PATCH /gen/sessions/:id — sessiyani nomlash/qayta nomlash (QA-FIX #12). */
-const sessionPatchSchema = z.object({ title: z.string().trim().min(1).max(200) });
+/** PATCH /gen/sessions/:id — sessiyani nomlash/qayta nomlash (QA-FIX #12).
+ *  SC_40: title=null yoki bo'sh string — qo'lda nom o'chiriladi (UI avto-nomga qaytadi). */
+const sessionPatchSchema = z.object({ title: z.string().trim().max(200).nullable() });
 studioGenRouter.patch("/gen/sessions/:id", async (req: Request, res: Response) => {
   const p = sessionPatchSchema.safeParse(req.body);
   if (!p.success) {
@@ -664,7 +665,7 @@ studioGenRouter.patch("/gen/sessions/:id", async (req: Request, res: Response) =
     res.status(404).json({ error: "Session not found" });
     return;
   }
-  const updated = await prisma.genSession.update({ where: { id }, data: { title: p.data.title } });
+  const updated = await prisma.genSession.update({ where: { id }, data: { title: p.data.title || null } });
   res.json(updated);
 });
 

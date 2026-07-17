@@ -3241,6 +3241,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axsp .sp-act{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--mut2);cursor:pointer;flex:none}
 .axsp .sp-act:hover{background:rgba(255,255,255,.08);color:var(--txt)}
 .axsp .sp-act.del:hover{color:#ff7a7a}
+/* SC_40: ✎ faqat hover/focus'da (constitution) + qatordagi inline rename input */
+.axsp .sp-row .sp-act.ren{opacity:0;transition:opacity .12s ease}
+.axsp .sp-row:hover .sp-act.ren,.axsp .sp-row:focus-within .sp-act.ren{opacity:1}
+.axsp .sp-tx input.sp-renin{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid var(--acc);border-radius:7px;color:var(--txt);font-size:12px;font-family:inherit;padding:3px 7px;outline:none}
 /* P11: multi-select + bulk delete (Sessions/Projects) */
 .axsp .sp-selbtn{display:inline-flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--mut);border-radius:999px;padding:6px 12px;font-weight:700;font-size:11px;cursor:pointer}
 .axsp .sp-selbtn:hover{color:var(--txt)}
@@ -15434,6 +15438,41 @@ window.afGallery=(function(){
   // §C (P30) — web pariteti: sessiya yuklash xatosida Retry
   window.afSpRetrySessions=function(){ loadSessions(true); };
   function fmtAgo(iso){ try{ var d=new Date(iso); var s=(Date.now()-d.getTime())/1000; if(s<3600)return Math.max(1,Math.round(s/60))+'m ago'; if(s<86400)return Math.round(s/3600)+'h ago'; return Math.round(s/86400)+'d ago'; }catch(e){ return ''; } }
+  // SC_40 — qatorda inline rename: Enter/blur saqlaydi, Esc bekor, bo'sh = avto-nomga qaytadi (null).
+  // Optimistik yangilash + xatoda rollback. maxLength 28 — displey qoidasiga mos (≤28 qo'lda nom AYNAN chiqadi).
+  function startRowRename(tx,s,rerender){
+    var b=tx.querySelector('b'); if(!b||tx.querySelector('input'))return;
+    var disp=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'');
+    var inp=document.createElement('input'); inp.className='sp-renin'; inp.maxLength=28; inp.value=disp;
+    var init=disp, done=false;
+    function finish(save){
+      if(done)return; done=true;
+      var v=inp.value.trim();
+      try{ inp.remove(); }catch(e){}
+      b.style.display='';
+      if(!save||v===init){ if(rerender)rerender(); return; } // Esc yoki o'zgarish yo'q — so'rov yubormaymiz
+      var newTitle=v||null, old=s.title||null; // bo'sh — nom o'chadi (server null saqlaydi, avto-nom qaytadi)
+      if(newTitle===old){ if(rerender)rerender(); return; }
+      s.title=newTitle; if(rerender)rerender(); // optimistik
+      api.sessionRename(s.id,newTitle).catch(function(){
+        s.title=old; if(rerender)rerender(); toast('Rename failed','error');
+      });
+    }
+    inp.addEventListener('click',function(e){ e.stopPropagation(); }); // qator klik (open) ishlamasin
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){ e.preventDefault(); finish(true); }
+      else if(e.key==='Escape'){ e.stopPropagation(); finish(false); }
+    });
+    inp.addEventListener('blur',function(){ finish(true); });
+    b.style.display='none'; tx.insertBefore(inp,b);
+    setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} },30);
+  }
+  function rowRenameBtn(row,tx,s,rerender){
+    var rn=document.createElement('span'); rn.className='sp-act ren'; rn.title='Rename session';
+    rn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+    rn.addEventListener('click',function(e){ e.stopPropagation(); startRowRename(tx,s,rerender); });
+    row.appendChild(rn);
+  }
   function renderSessions(){
     var l=$('spSessList'); if(!l)return; l.innerHTML='';
     var meta=$('spSessMeta'); if(meta)meta.textContent=sp.sessions.length?(sp.sessions.length+' sessions'):'';
@@ -15455,13 +15494,7 @@ window.afGallery=(function(){
       if(s.title)row.title=s.title;
       tx.querySelector('small').textContent=(s.count||0)+' generations · '+(s.mode||'')+(s.lastAt?(' · '+fmtAgo(s.lastAt)):'');
       row.appendChild(tx);
-      if(!sel){
-        var rn=document.createElement('span'); rn.className='sp-act'; rn.title='Rename';
-        rn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
-        rn.addEventListener('click',function(e){ e.stopPropagation();
-          window.afNameModal('Rename session',s.title||'',function(v){ api.sessionRename(s.id,v).then(function(){ s.title=v; renderSessions(); toast('Renamed','success'); }).catch(function(){ toast('Rename failed','error'); }); }); });
-        row.appendChild(rn);
-      }
+      if(!sel)rowRenameBtn(row,tx,s,renderSessions); // SC_40: inline rename (modal emas)
       row.addEventListener('click',function(){
         if(sp.sSelect){ if(sp.sSel[s.id])delete sp.sSel[s.id]; else sp.sSel[s.id]=1; renderSessions(); updSessBulk(); }
         else openSession(s);
@@ -15735,6 +15768,7 @@ window.afGallery=(function(){
       if(s.title)row.title=s.title; // SC_22: to'liq prompt tooltip'da
       tx.querySelector('small').textContent=(s.count||0)+' generations'+(s.lastAt?(' · '+fmtAgo(s.lastAt)):'');
       row.appendChild(tx);
+      rowRenameBtn(row,tx,s,function(){ renderSpick(mode); }); // SC_40: picker qatorida ham inline rename
       row.addEventListener('click',function(){ spickEnter(mode,s); });
       l.appendChild(row);
     });
