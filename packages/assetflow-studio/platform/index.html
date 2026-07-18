@@ -15109,6 +15109,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   /* media yuklanguncha skeleton shimmer (media bor kartada gradient o'rniga) */
   .ff .va-skel{background:linear-gradient(110deg,rgba(255,255,255,.05) 30%,rgba(255,255,255,.11) 45%,rgba(255,255,255,.05) 60%) 0 0/220% 100%,#12161E;animation:vaSkel 1.5s linear infinite}
   @keyframes vaSkel{to{background-position:-220% 0}}
+  /* SC_46: sessiya feed LOADING skeleton karta (bo'sh flash o'rniga) */
+  .ff .va-axskel{aspect-ratio:1/1;border-radius:14px;border:1px solid var(--hair2);background:linear-gradient(110deg,rgba(255,255,255,.05) 30%,rgba(255,255,255,.11) 45%,rgba(255,255,255,.05) 60%) 0 0/220% 100%,#12161E;animation:vaSkel 1.5s linear infinite}
   /* P9 — media yuklanmasa (derivativ yo'q / xato): jimgina gradient emas, aniq qoplama */
   .ff .va-mediaerr{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.02em;color:rgba(255,255,255,.55);background:#12161E;border-radius:inherit;padding:6px;text-align:center}
   /* audio natija plitkasi (strip/grid) — waveform belgisi, real pleer lightbox/row'da */
@@ -17002,6 +17004,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <!-- SC_41 PART B: new-session empty-state hero ("Start with your idea" + suggestion chips)
                        O'CHIRILDI (owner: "bular umuman kerak emas"). Bo'sh sessiya feed maydonida hech narsa
                        ko'rsatilmaydi — axShowHero hali visuals/audio gridlarni yopadi, shu bois bo'sh qoladi. -->
+
+                  <!-- SC_46: sessiya ochilganда LOADING skeleton — bo'sh holat FLASH qilinmaydi -->
+                  <sc-if value="{{ axShowLoading }}" hint-placeholder-val="{{ false }}">
+                    <div class="{{ axGridCls }}">
+                      <sc-for list="{{ axSkelList }}" as="s" hint-placeholder-count="6">
+                        <div class="va-axcell"><div class="va-axskel"></div></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
 
                   <!-- visuals view (frames A–B) -->
                   <sc-if value="{{ axShowVisuals }}" hint-placeholder-val="{{ false }}">
@@ -21380,8 +21391,11 @@ class Component extends DCLogic {
       bars: Array.from({ length: 28 }, (_, i) => ({ h: (16 + Math.round(Math.abs(Math.sin(this.hueOf(g.id) + i * 0.83)) * 76)) + '%' })),
     }; });
     const axShowHero = wsGens.length === 0 && !pendInView && !this.state.sessGensLoading;
-    const axShowVisuals = !axShowHero && axIsVisuals;
-    const axShowAudio = !axShowHero && !axIsVisuals;
+    // SC_46: sessiya ochilganda LOADING holati — skeleton (bo'sh/hero FLASH emas). Faqat fetch tugagach ready.
+    const axShowLoading = !!this.state.sessGensLoading && wsGens.length === 0 && !pendInView;
+    const axSkelList = axShowLoading ? Array.from({ length: 6 }, (_, i) => ({ i })) : [];
+    const axShowVisuals = !axShowHero && !axShowLoading && axIsVisuals;
+    const axShowAudio = !axShowHero && !axShowLoading && !axIsVisuals;
     // P20 — pending kartalar ro'yxati (bool o'rniga list): visuals gridida axPendCards, audio ro'yxatida axPendAudCards
     const axPendVisList = axShowVisuals ? axPendCards : [];
     const axPendAudList = axShowAudio ? axPendAudCards : [];
@@ -22436,7 +22450,7 @@ class Component extends DCLogic {
           ? 'NEW SESSION'
           // SC_40: header ham displey nomi bilan — qo'lda nom avto-nomlashdan ustun
           : (((viewSessObj ? this.sessDisplayName(viewSessObj).slice(0, 26) : 'SESSION').toUpperCase()) + ' · ' + wsGens.length + ' GENERATIONS')),
-      axShowHero, axShowVisuals, axShowAudio, axPendVis, axPendAud, axPendVisList, axPendAudList, axVisEmpty, axAudEmpty,
+      axShowHero, axShowLoading, axSkelList, axShowVisuals, axShowAudio, axPendVis, axPendAud, axPendVisList, axPendAudList, axVisEmpty, axAudEmpty,
       axVisGens, axAudGens, genPct, genStatus,
       // #6 — Full/Compact ko'rinish (tanlov localStorage'da; default = full)
       axGridCls: 'va-axgrid' + (this.state.axGridView === 'compact' ? ' compact' : ''),

@@ -2619,6 +2619,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .galgrid{display:grid;gap:9px}
 /* SC_23: My Library skeleton kartalar — yuklanishда qora void o'rniga shimmer */
 .axroot .galgrid .gskel{aspect-ratio:16/9;border-radius:12px;border:1px solid var(--line2);background-image:linear-gradient(100deg,var(--card3) 38%,var(--card) 50%,var(--card3) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
+/* SC_46: sessiya feed skeleton kartalar — sessiya ochilganда LOADING holati (bo'sh flash EMAS) */
+.axroot .recentgrid .rcskel{aspect-ratio:1/1;border-radius:12px;border:1px solid var(--line2);background-image:linear-gradient(100deg,var(--card3) 38%,var(--card) 50%,var(--card3) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
 .axroot .galgrid[data-cols="1"]{grid-template-columns:1fr}
 .axroot .galgrid[data-cols="2"]{grid-template-columns:1fr 1fr}
 .axroot .galgrid[data-cols="3"]{grid-template-columns:1fr 1fr 1fr}
@@ -5756,6 +5758,12 @@ window.AF_CAP_ICONS={
   image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>',
   video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2.5"/><path d="M16 10l6-3.5v11L16 14"/></svg>',
   audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'
+};
+// SC_46: sessiya feed LOADING skeleton — bo'sh flash o'rniga shimmer kartalar (grid o'lchamiga mos)
+window.afRecentSkel=function(n){
+  var k=n||6, h='';
+  for(var i=0;i<k;i++)h+='<div class="rcskel"></div>';
+  return h;
 };
 window.afRenderCapInd=function(hostId,kinds){
   var host=document.getElementById(hostId); if(!host)return;
@@ -13003,9 +13011,12 @@ window.afGallery=(function(){
     st.recent=pend.concat(uniq);
     // SC_41 PART B: bo'sh (0-generatsiya) sessiya feed maydonida HECH NARSA — "No generations yet" hero o'chirildi.
     var _rs=$('igRecentSect');
+    (window.__axwsLoading=window.__axwsLoading||{}).imggen=((recentLoading||!recentLoaded)&&!uniq.length&&!recentError); // SC_46: header "loading…" (0 flash emas)
     if(!pend.length){
-      if(recentLoading&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML='<div class="empt"><b>Loading…</b>Fetching your recent generations.</div>'; updRecentBatch(); return; }
+      // SC_46: uch holatli mashina — LOADING (yoki hali yuklanmagan) → skeleton; ERROR → Retry;
+      //   READY-EMPTY (fetch tugadi, 0 element) → hech narsa. Bo'sh branch HECH QACHON boshlang'ich holat emas.
       if(recentError&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML='<div class="empt"><b>Failed to load recent</b>'+String(recentError)+'<br><button type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Retry</button></div>'; updRecentBatch(); return; }
+      if((recentLoading||!recentLoaded)&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML=afRecentSkel(); updRecentBatch(); return; }
       if(!uniq.length){ if(_rs)_rs.style.display='none'; r.innerHTML=''; updRecentBatch(); return; }
     }
     if(_rs)_rs.style.display='';
@@ -15007,9 +15018,11 @@ window.afGallery=(function(){
     vgRcState.items=pend.concat(uniq);
     // SC_41 PART B: bo'sh sessiya feed maydonida HECH NARSA — "No generations yet" hero o'chirildi.
     var _vrs=$('vgRecentSect');
+    (window.__axwsLoading=window.__axwsLoading||{}).vidgen=((vgRcState.loading||!vgRcState.loaded)&&!uniq.length&&!vgRcState.error); // SC_46: header "loading…" (0 flash emas)
     if(!pend.length){
-      if(vgRcState.loading&&!uniq.length){ if(_vrs)_vrs.style.display=''; r.innerHTML='<div class="empt"><b>Loading…</b>Fetching your recent generations.</div>'; updVgRcBatch(); return; }
+      // SC_46: uch holatli mashina — ERROR → Retry; LOADING/hali-yuklanmagan → skeleton; READY-EMPTY → hech narsa.
       if(vgRcState.error&&!uniq.length){ if(_vrs)_vrs.style.display=''; r.innerHTML='<div class="empt"><b>Failed to load recent</b>'+String(vgRcState.error||'Check your internet or session.')+'<br><button type="button" onclick="retryVgRecent()">↻ Retry</button></div>'; updVgRcBatch(); return; }
+      if((vgRcState.loading||!vgRcState.loaded)&&!uniq.length){ if(_vrs)_vrs.style.display=''; r.innerHTML=afRecentSkel(); updVgRcBatch(); return; }
       if(!uniq.length){ if(_vrs)_vrs.style.display='none'; r.innerHTML=''; updVgRcBatch(); return; }
     }
     if(_vrs)_vrs.style.display='';
@@ -16170,7 +16183,13 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var sname=sess?((typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(sess):(sess.title||'Session')):'New session';
     if(mt)mt.textContent=sname;
     var n2=isAud?aud:vis;
-    if(ms)ms.textContent=cfg.mode+' · '+n2+' generation'+(n2===1?'':'s');
+    // SC_46: sessiya yuklanayotganda "0 generations" FLASH qilmaydi — "loading…" (yoki picker'dan ma'lum son).
+    var _ld=window.__axwsLoading&&window.__axwsLoading[cfg.v];
+    if(ms){
+      if(n2>0)ms.textContent=cfg.mode+' · '+n2+' generation'+(n2===1?'':'s');
+      else if(_ld)ms.textContent=cfg.mode+' · loading…';
+      else ms.textContent=cfg.mode+' · '+n2+' generation'+(n2===1?'':'s'); // READY-EMPTY → "0 generations" (to'g'ri)
+    }
   }
   function syncEmpty(cfg){
     // SC_41 PART B: axws-empty hero o'chirildi — endi faqat header meta yangilanadi.
