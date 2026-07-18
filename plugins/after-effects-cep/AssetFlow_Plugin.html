@@ -1625,7 +1625,13 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pd3-hero-dur{position:absolute;right:10px;bottom:10px;z-index:3;font-family:var(--font-mono);font-size:8.5px;color:#E7ECF3;background:rgba(8,10,14,.72);padding:2px 6px;border-radius:4px}
 
 /* ---- a3 scrollable body ---- */
-.pd3-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;position:relative;padding:14px}
+/* SC_31: pd3-scroll — yagona skroll konteyneri (butun detalni to'liq panel balandligiga
+   composelaydi). pd3-main = hero+info; pd3-sim = "Similar" balandlik yutuvchisi (flex:1). */
+.pd3-scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;position:relative;display:flex;flex-direction:column}
+.pd3-main{display:block}
+.pd3-sim{padding:0 14px 24px}
+/* SC_31: pd3-body endi skroller emas — faqat info bloki (skroll pd3-scroll'da) */
+.pd3-body{position:relative;padding:14px}
 .pd3-title{font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:-.01em;color:var(--text);line-height:1.2}
 .pd3-metarow{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:7px}
 .pd3-cat{font-size:11px;color:var(--muted)}
@@ -1715,18 +1721,33 @@ html.cep-mode .pack-dropbar{display:flex}
 .pd3-simplan.free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
 .pd3-simname{font-weight:600;font-size:10.5px;color:#E7ECF3;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ---- SC_14: detail KATTA layout — 420px tor markaziy ustun bekor qilindi.
-   ≤~500px: bitta ustun, media to'liq kenglik (chetki padding pd3-body'da).
-   ≥760px: CSS-grid ikki ustun (media chapda katta, info o'ngda) — DOM tartibi
-   O'ZGARMAGAN (hero va body sibling), handler/data aynan. ---- */
+/* ---- SC_14 + SC_31: detail KATTA layout, to'liq-balandlik kompozitsiya.
+   ≤~500px: bitta ustun, media to'liq kenglik, "Similar" gorizontal strip.
+   ≥760px: pd3-main ikki ustun grid (media chapda katta, info o'ngda);
+   pd3-sim TO'LIQ kenglikda past qatorda, flex:1 bilan bo'sh joyni yutadi.
+   ≥760px & baland panel: strip → ko'p qatorli grid (katalog kartasi retsepti).
+   DOM tartibi O'ZGARMAGAN, handler/data/id aynan. ---- */
 .pd3-top{width:100%}
 .pd3-body>*{max-width:none}
 @media (min-width:760px){
-  .pack-detail.open{display:grid;grid-template-rows:48px minmax(0,1fr);grid-template-columns:minmax(0,7fr) minmax(320px,5fr)}
-  .pd3-top{grid-column:1/-1}
-  .pd3-hero{grid-row:2;grid-column:1;align-self:start;width:auto;margin:16px 0 16px 16px;border-radius:14px;border:1px solid var(--border)}
-  .pd3-body{grid-row:2;grid-column:2;overflow-y:auto;padding:16px 20px}
+  .pd3-main{display:grid;grid-template-columns:minmax(0,7fr) minmax(320px,5fr);align-items:start}
+  .pd3-hero{grid-column:1;width:auto;margin:16px 0 16px 16px;border-radius:14px;border:1px solid var(--border)}
+  .pd3-body{grid-column:2;padding:16px 20px}
+  .pd3-sim{flex:1;min-height:0;padding:2px 16px 28px}
+  /* katta hero'da overlay/badge sog'lom kattalashadi */
+  .pd3-hero-play{width:60px;height:60px}
+  .pd3-hero-dur{font-size:10px}
   .pd3-fade{display:none}
+}
+/* Baland + keng panel: "Similar" strip'i katalog grid'iga (minmax 225px = katalog
+   retsepti) aylanadi va bo'sh joyni QATORLARNI CHO'ZIB to'ldiradi (grid-auto-rows:1fr +
+   thumb flex:1) — kartalar kattalashadi, bo'sh void qolmaydi. */
+@media (min-width:760px) and (min-height:820px){
+  .pd3-sim{display:flex;flex-direction:column}
+  .pd3-simrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));grid-auto-rows:minmax(150px,1fr);gap:16px 14px;overflow:visible;flex:1;min-height:0}
+  .pd3-simcard{width:auto;display:flex;flex-direction:column;min-height:0}
+  .pd3-simthumb{flex:1;min-height:0;aspect-ratio:auto}
+  .pd3-simname{flex:none}
 }
 
 /* ---- a3 bottom fade ---- */
@@ -5060,24 +5081,31 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
               <div class="pd3-top-sp"></div>
               <button type="button" class="pd3-topstar" id="pd3StarTop" onclick="pd3ToggleFav()" aria-label="Favorite"></button>
             </div>
-            <div class="pd3-hero" id="packHero"></div>
-            <div class="pd3-body" id="pd3Body">
-              <div id="pd3Meta"></div>
-              <div class="pd3-cta">
-                <button class="pd3-import" id="importSceneBtn" disabled onclick="pd3ImportAll()">
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
-                  <span>Import</span>
-                </button>
-                <button type="button" class="pd3-favbtn" id="pd3StarBtn" onclick="pd3ToggleFav()" aria-label="Favorite"></button>
-                <button type="button" class="pd3-favbtn" id="pd3ProjBtn" onclick="pd3AddToProject()" aria-label="Add to project" title="Add to project"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg></button>
+            <!-- SC_31: pd3-scroll = yagona skroller; pd3-main (hero+info) + pd3-sim (Similar sink) -->
+            <div class="pd3-scroll">
+              <div class="pd3-main">
+                <div class="pd3-hero" id="packHero"></div>
+                <div class="pd3-body" id="pd3Body">
+                  <div id="pd3Meta"></div>
+                  <div class="pd3-cta">
+                    <button class="pd3-import" id="importSceneBtn" disabled onclick="pd3ImportAll()">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+                      <span>Import</span>
+                    </button>
+                    <button type="button" class="pd3-favbtn" id="pd3StarBtn" onclick="pd3ToggleFav()" aria-label="Favorite"></button>
+                    <button type="button" class="pd3-favbtn" id="pd3ProjBtn" onclick="pd3AddToProject()" aria-label="Add to project" title="Add to project"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg></button>
+                  </div>
+                  <div class="pd3-plan" id="pd3PlanLine">Free plan — this month: 0 / 15 downloads</div>
+                  <div class="pd3-scenehint" id="pd3ImportHint"></div>
+                </div>
               </div>
-              <div class="pd3-plan" id="pd3PlanLine">Free plan — this month: 0 / 15 downloads</div>
-              <div class="pd3-scenehint" id="pd3ImportHint"></div>
-              <div class="pd3-simhead" id="pd3SimHead" style="display:none">
-                <span>Similar templates</span>
-                <button type="button" class="pd3-simall" onclick="pd3ShowAllSimilar()">All →</button>
+              <div class="pd3-sim">
+                <div class="pd3-simhead" id="pd3SimHead" style="display:none">
+                  <span>Similar templates</span>
+                  <button type="button" class="pd3-simall" onclick="pd3ShowAllSimilar()">All →</button>
+                </div>
+                <div class="pd3-simrow" id="pd3Similar"></div>
               </div>
-              <div class="pd3-simrow" id="pd3Similar"></div>
             </div>
             <div class="pd3-fade"></div>
           </div>
@@ -6564,7 +6592,10 @@ function renderPackMeta(name,pack,asset){
     ${noPackHtml}`;
 }
 
-/* O'xshash shablonlar — bir kategoriya yoki bir turdagilar (joriysiz), maks 6 */
+/* O'xshash shablonlar — bir kategoriya yoki bir turdagilar (joriysiz), maks 12.
+   SC_31: baland panelda strip → ko'p qatorli grid; qatorlarni to'ldirish uchun
+   ro'yxat kengaytirildi (nav bo'yicha zaxira + qolgan katalog) — strip'da faqat
+   dastlabki bir nechtasi ko'rinadi, grid'da hammasi qatorlarga yotadi. */
 function pd3SimilarList(name,asset){
   if(!asset||typeof assets==='undefined')return [];
   const others=assets.filter(x=>x&&x.n!==name);
@@ -6572,7 +6603,10 @@ function pd3SimilarList(name,asset){
   const sameCat=cat?others.filter(x=>x.cat===cat):[];
   const seen=new Set(sameCat.map(x=>x.n));
   const sameType=others.filter(x=>!seen.has(x.n)&&((nav&&x.nav===nav)||(t&&x.t===t)));
-  return sameCat.concat(sameType).slice(0,6);
+  sameType.forEach(x=>seen.add(x.n));
+  // zaxira: grid qatorlarini to'ldirish uchun qolgan katalog (bir xil app'ni afzal ko'r)
+  const rest=others.filter(x=>!seen.has(x.n));
+  return sameCat.concat(sameType,rest).slice(0,12);
 }
 function renderPackSimilar(name,asset){
   const row=document.getElementById('pd3Similar');const head=document.getElementById('pd3SimHead');
@@ -6745,7 +6779,8 @@ async function openPack(name){
   const planEl=document.getElementById('pd3PlanLine');if(planEl)planEl.textContent=pd3PlanText();
   renderPackSimilar(name,asset);
   pd3SyncFav();
-  const body=document.getElementById('pd3Body');if(body)body.scrollTop=0;
+  // SC_31: skroller endi .pd3-scroll (pd3Body emas) — ochilishda tepaga qaytar
+  const sc=document.querySelector('#packDetail .pd3-scroll');if(sc)sc.scrollTop=0;
   updatePackFooter();
 }
 
