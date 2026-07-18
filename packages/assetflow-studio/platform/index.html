@@ -15745,16 +15745,23 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-lb-aud>i{font-size:64px;color:var(--acc)}
   /* P20 — umumiy audio pleer (to'lqin + accent progress + playhead + custom play/pause + vaqt).
      Native <audio controls> OLIB TASHLANDI (□ tofu ikonlari yo'q, brand-mos ko'rinish). */
-  .ff .va-aplayer{display:flex;align-items:center;gap:14px;width:100%;padding:14px 16px;border-radius:14px;background:var(--panel2,rgba(255,255,255,.04));border:1px solid var(--bd2,rgba(255,255,255,.08))}
-  .ff .va-ap-play{flex:none;width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;background:var(--th-accent,#c8ff5a);color:#0a0a0a;display:grid;place-items:center;transition:transform .12s}
+  /* SC_33: pleer TO'LIQ tema-token — hardcode lime/purple YO'Q. Waveform=neytral (--th-muted),
+     progress+play=accent token. Plagin `gth-aud`/`rc-aud` audio-kartasi bilan bir xil retsept. */
+  .ff .va-aplayer{display:flex;align-items:center;gap:16px;width:100%;padding:16px 18px;border-radius:14px;background:var(--panel2);border:1px solid var(--border);overflow:hidden}
+  .ff .va-ap-play{flex:none;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:var(--th-accent);color:var(--th-on-accent);display:grid;place-items:center;transition:transform .12s}
   .ff .va-ap-play:hover{transform:scale(1.06)}
-  .ff .va-ap-play svg{width:20px;height:20px;fill:currentColor}
-  .ff .va-ap-mid{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:7px}
-  .ff .va-ap-wave{position:relative;height:40px;border-radius:8px;overflow:hidden;cursor:pointer;background:#12161E center/cover no-repeat;filter:grayscale(.15)}
-  .ff .va-ap-bars{position:absolute;inset:0;display:flex;align-items:center;gap:2px;padding:0 4px}
-  .ff .va-ap-bars i{flex:1;background:rgba(255,255,255,.22);border-radius:1px;display:block}
-  .ff .va-ap-prog{position:absolute;top:0;left:0;bottom:0;width:0;background:linear-gradient(90deg,rgba(200,255,90,.30),rgba(200,255,90,.42));border-right:2px solid var(--th-accent,#c8ff5a);pointer-events:none}
-  .ff .va-ap-time{font-variant-numeric:tabular-nums;font-size:12px;font-weight:600;color:var(--muted,rgba(255,255,255,.6));letter-spacing:.02em}
+  .ff .va-ap-play svg{width:22px;height:22px;fill:currentColor}
+  .ff .va-ap-mid{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:9px}
+  .ff .va-ap-wave{position:relative;height:46px;border-radius:8px;overflow:hidden;cursor:pointer;background:var(--th-surface-3)}
+  .ff .va-ap-bars{position:absolute;inset:0;display:flex;align-items:center;gap:2px;padding:0 5px}
+  .ff .va-ap-bars i{flex:1;background:var(--th-muted);opacity:.5;border-radius:2px;display:block}
+  .ff .va-ap-prog{position:absolute;top:0;left:0;bottom:0;width:0;background:color-mix(in srgb,var(--th-accent) 20%,transparent);border-right:2px solid var(--th-accent);pointer-events:none}
+  .ff .va-ap-time{font-variant-numeric:tabular-nums;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+  /* SC_33: audio detali — 16:9 bo'sh quti O'RNIGA kontentga mos panel (tur chipi + katta pleer) */
+  .ff .va-dprev-aud{background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:16px}
+  .ff .va-apkind{align-self:flex-start;font:700 10px var(--mono);letter-spacing:.1em;padding:4px 9px;border-radius:6px;background:var(--th-accent-soft);color:var(--th-accent);border:1px solid color-mix(in srgb,var(--th-accent) 30%,transparent)}
+  .ff .va-apsoon{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px;padding:16px 4px}
+  .ff .va-apsoon svg{width:14px;height:14px;fill:currentColor}
   .ff .va-lb-arw{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid var(--hair2);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:19px;transition:background .15s}
   .ff .va-lb-arw:hover{background:rgba(0,0,0,.75)}
   .ff .va-lb-arw.prev{left:14px}
@@ -16507,10 +16514,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="va-dwrap">
             <div style="min-width:0">
               <!-- BATCH6 · preview-player: ramka (border/radius/#000) + media + player-bar (poster holatida) -->
+              <!-- SC_33 — NON-AUDIO: 16:9 media quti (rasm/video). Audio bu qutini OLMAYDI (bo'sh void yo'q). -->
+              <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}">
               <div class="va-dprev">
                 <div class="va-thumb va-dpmedia" style="background:{{ detail.g }}">
-                  <!-- P20 — AUDIO (Sound Effects/Music): umumiy to'lqin pleer (native audio-bar EMAS) -->
-                  <sc-if value="{{ detail.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-aplayer" data-src="{{ detail.previewUrl }}" data-wave="{{ detail.posterUrl }}" data-durtarget="#va-det-dur" style="position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);margin:0 16px;width:auto;z-index:1"></div></sc-if>
                   <!-- QA-FIX #1: controls=""/muted="" falsy prop edi → video boshqarib bo'lmasdi, audio ham yo'q edi.
                        Endi chin controls + muted YO'Q (ovoz o'ynaydi); poster real thumb. -->
                   <sc-if value="{{ detail.hasVideoPrev }}" hint-placeholder-val="{{ false }}"><video src="{{ detail.previewUrl }}" poster="{{ detail.posterUrl }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1"></video></sc-if>
@@ -16521,6 +16528,16 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                      o'ngdagi qiymat REAL sifat (soxta davomiylik emas) -->
                 <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ true }}"><div class="va-pbar"><svg class="va-ic" style="width:12px;height:12px"><use href="#i-play"></use></svg><span class="trk"><b></b></span><span>{{ detail.resVal }}</span></div></sc-if>
               </div>
+              </sc-if>
+              <!-- SC_33 — AUDIO (SFX/VOICE/MUSIC): kontentga mos panel (tur chipi + katta to'lqin pleer).
+                   Absolute-pleer + 16:9 void OLIB TASHLANDI; pleer normal oqim bloki (overflow guard panelda). -->
+              <sc-if value="{{ detail.isAudio }}" hint-placeholder-val="{{ false }}">
+              <div class="va-dprev va-dprev-aud">
+                <span class="va-apkind">{{ detail.kindChip }}</span>
+                <sc-if value="{{ detail.hasPreview }}" hint-placeholder-val="{{ true }}"><div class="va-aplayer" data-src="{{ detail.previewUrl }}" data-durtarget="#va-det-dur"></div></sc-if>
+                <sc-if value="{{ detail.noPreview }}" hint-placeholder-val="{{ false }}"><div class="va-apsoon"><svg class="va-ic"><use href="#i-play"></use></svg> Preview coming soon</div></sc-if>
+              </div>
+              </sc-if>
               <!-- FAZA D · related = boy karta (bare thumb emas); bo'sh bo'lsa butun seksiya yashirin -->
               <sc-if value="{{ detail.hasRelated }}" hint-placeholder-val="{{ true }}">
                 <div class="va-sec" style="padding:26px 0 12px"><h3>Related templates</h3><span class="cnt">SAME CATEGORY</span></div>
@@ -17685,7 +17702,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <!-- QA-FIX #3: controls/playsinline chin boolean; poster=thumb (blur-up), asl src to'liq sifat. -->
           <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></video></sc-if>
           <sc-if value="{{ lb.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ lb.imgSrc }}" alt="{{ lb.label }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></sc-if>
-          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-lb-aud"><div class="va-aplayer" data-src="{{ lb.url }}" data-wave="{{ lb.poster }}"></div></div></sc-if>
+          <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-lb-aud"><div class="va-aplayer" data-src="{{ lb.url }}"></div></div></sc-if>
           <sc-if value="{{ lb.hasNext }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw next" onclick="{{ lbNext }}" title="Next (→)"><i class="ph ph-caret-right"></i></button></sc-if>
         </div>
         <aside class="va-lb-panel">
@@ -19065,7 +19082,7 @@ class Component extends DCLogic {
       });
     } catch (e) {}
   }
-  // P20 — UMUMIY audio pleer: .va-aplayer[data-src][data-wave?] konteynerlarini interaktiv
+  // P20 — UMUMIY audio pleer: .va-aplayer[data-src] konteynerlarini interaktiv
   //   to'lqin pleerga aylantiradi (custom play/pause, accent progress, playhead, click/drag seek,
   //   "0:04 / 0:10" mono vaqt). Native <audio controls> YO'Q (tofu ikon yo'q). Katalog audio detali
   //   VA AI Studio audio lightbox'ida bir xil. Idempotent (host.__ffap === src).
@@ -19088,14 +19105,14 @@ class Component extends DCLogic {
         const src = host.getAttribute('data-src') || '';
         if (!src || host.__ffap === src) return; // AYNI src bilan allaqachon wired
         host.__ffap = src;
-        const wave = host.getAttribute('data-wave') || '';
         const durTarget = host.getAttribute('data-durtarget') || '';
         host.innerHTML = '';
         const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'va-ap-play'; btn.innerHTML = PLAY;
         const mid = document.createElement('div'); mid.className = 'va-ap-mid';
         const waveEl = document.createElement('div'); waveEl.className = 'va-ap-wave';
-        if (wave) { waveEl.style.backgroundImage = 'url("' + wave.replace(/"/g, '&quot;') + '")'; }
-        else { const bars = document.createElement('div'); bars.className = 'va-ap-bars'; for (let i = 0; i < 48; i++) { const b = document.createElement('i'); b.style.height = (18 + Math.abs(Math.sin(i * 0.7)) * 62) + '%'; bars.appendChild(b); } waveEl.appendChild(bars); }
+        // SC_33 — waveform HAR DOIM neytral bar'lar (--th-muted). Poster'ni to'lqin foni sifatida
+        // ISHLATMAYMIZ (u binafsha "soxta to'lqin" + overflow fragment manbai edi).
+        const bars = document.createElement('div'); bars.className = 'va-ap-bars'; for (let i = 0; i < 48; i++) { const b = document.createElement('i'); b.style.height = (18 + Math.abs(Math.sin(i * 0.7)) * 62) + '%'; bars.appendChild(b); } waveEl.appendChild(bars);
         const prog = document.createElement('div'); prog.className = 'va-ap-prog'; waveEl.appendChild(prog);
         const time = document.createElement('div'); time.className = 'va-ap-time'; time.textContent = '0:00 / 0:00';
         mid.appendChild(waveEl); mid.appendChild(time);
@@ -21769,6 +21786,8 @@ class Component extends DCLogic {
     const detail = dRaw ? {
       ...dRaw, g: media(dRaw.thumbUrl, dRaw.h),
       isAudio: detIsAudio, notAudio: !detIsAudio,
+      // SC_33 — audio tur chipi (SFX/VOICE/MUSIC): type/stockType asosida
+      kindChip: (dRaw.type === 'music' || dRaw.stockType === 'music') ? 'MUSIC' : ((dRaw.type === 'voice' || dRaw.stockType === 'voice') ? 'VOICE' : 'SFX'),
       // hasVideoPrev = preview bor VA audio EMAS (audio o'z pleerini oladi)
       hasVideoPrev: !!dRaw.previewUrl && !detIsAudio,
       descText: dRaw.desc || (dRaw.real ? 'A professional-grade template. Fully customizable elements.' : 'A showcase template — the real catalog will fill in soon.'),
