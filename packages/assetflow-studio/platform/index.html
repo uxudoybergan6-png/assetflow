@@ -14311,6 +14311,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     --th-grad:linear-gradient(135deg,#7c8cff 0%,#4fd8eb 100%);--th-shadow:0 28px 90px rgba(0,0,0,.5);
   }
   :root{
+    /* SC_51: MOTION tizimi — transform/opacity only; hover 100ms · enter 180ms · exit 120ms · view ≤200ms */
+    --mo-fast:100ms;--mo-enter:180ms;--mo-exit:120ms;--mo-view:180ms;
+    --mo-ease-out:cubic-bezier(.2,.8,.2,1);--mo-ease-in:ease-in;
     /* radius / spacing / motion shkalasi — kelajak bo'lim redizaynlari uchun poydevor */
     --th-r-xs:6px;--th-r-sm:8px;--th-r-md:10px;--th-r-lg:14px;--th-r-xl:18px;--th-r-pill:999px;
     --th-sp-1:6px;--th-sp-2:10px;--th-sp-3:14px;--th-sp-4:20px;--th-sp-5:28px;--th-sp-6:40px;
@@ -15188,8 +15191,22 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-badge.new{background:rgba(10,13,18,.78);color:var(--lime);font-weight:700;border:1px solid color-mix(in srgb,var(--lime) 45%,transparent)}
   .ff .va-badge.q4k{background:rgba(10,13,18,.78);color:#C9D2DE;font-weight:600;border:1px solid rgba(255,255,255,.14)}
   .ff .va-rc{cursor:pointer;position:relative;min-width:0}
-  .ff .va-rc .med{aspect-ratio:16/9;border-radius:14px;position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease}
-  .ff .va-rc:hover .med{transform:scale(1.025) translateY(-2px);box-shadow:0 18px 40px -16px rgba(0,0,0,.75)}
+  /* SC_51: transform-only, disciplined (was scale 1.025 + box-shadow @250ms — laws 1/2/4 violations, removed) */
+  .ff .va-rc .med{aspect-ratio:16/9;border-radius:14px;position:relative;overflow:hidden;transition:transform var(--mo-fast) var(--mo-ease-out)}
+  .ff .va-rc:hover .med{transform:scale(1.01)}
+  .ff .va-rc:active .med{transform:scale(.99)}
+  /* SC_51: buttons press · popover origin-anchored scale-fade · toast rise — transform/opacity only */
+  .ff .va-btn{transition:transform var(--mo-fast) var(--mo-ease-out)}
+  .ff .va-btn:active,.ff .va-set:active,.ff .va-axuse:active{transform:scale(.98)}
+  .ff .ffa-pop,.ff .va-fpop,.ff .va-setpop{animation:mo-pop-in var(--mo-enter) var(--mo-ease-out)}
+  @keyframes mo-pop-in{from{opacity:0;transform:scale(.97) translateY(4px)}to{opacity:1;transform:none}}
+  .ff .va-toast,.ff .va-toastwrap>*{animation:mo-rise-in var(--mo-enter) var(--mo-ease-out)}
+  @keyframes mo-rise-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){
+    .ff .va-rc .med,.ff .va-btn{transition:none!important}
+    .ff .va-rc:hover .med,.ff .va-rc:active .med,.ff .va-btn:active,.ff .va-set:active,.ff .va-axuse:active{transform:none!important}
+    .ff .ffa-pop,.ff .va-fpop,.ff .va-setpop,.ff .va-toast,.ff .va-toastwrap>*{animation:none!important}
+  }
   .ff .va-rc .med .badges{position:absolute;top:10px;left:10px;display:flex;gap:5px;z-index:2}
   .ff .va-rc .med .dur{position:absolute;right:10px;bottom:10px;font:600 10px var(--mono);padding:2.5px 7px;border-radius:4px;background:rgba(6,8,11,.72);color:#DFE5EC;z-index:2}
   .ff .va-rc .med .va-playov{opacity:0;transition:opacity .22s ease;z-index:2}

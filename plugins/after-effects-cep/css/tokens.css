@@ -33,6 +33,14 @@
 
 /* ── STRUKTURA (temaga bog'liq emas: shrift, masofa, shakl, harakat) ── */
 :root{
+  /* SC_51: MOTION tizimi — faqat transform/opacity; tugmadan/kartadan chiqadigan intizom.
+     hover/press 100ms · enter 180ms · exit 120ms · view ≤200ms; decelerate in / ease-in out. */
+  --mo-fast:100ms;
+  --mo-enter:180ms;
+  --mo-exit:120ms;
+  --mo-view:180ms;
+  --mo-ease-out:cubic-bezier(.2,.8,.2,1);
+  --mo-ease-in:ease-in;
   /* Shrift — display=Space Grotesk, body=Inter, mono/label=JetBrains Mono (offline→eski→system) */
   --font-sans:'Inter','Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
   --font-display:'Space Grotesk','Inter',-apple-system,system-ui,sans-serif;

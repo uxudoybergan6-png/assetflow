@@ -398,3 +398,34 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
   .fhome-cta{margin-top:10px}
   .fhome-btn-ai,.fhome-btn-stock{min-height:32px;padding:7px 11px;font-size:9px}
 }
+
+/* ═══ SC_51: MOTION SYSTEM — Director's motion laws (transform/opacity only, GPU-cheap) ═══
+   Applied to the interaction points only; prices/errors never animate; clicks work mid-animation. */
+/* a. Cards — hover lift (scale 1.01) + press (.99); no shadow/layout animation */
+.axroot .gcard,.axroot .fhome-tcard,.axroot .fhome-sesscard,.axroot .fhome-cattile,.axroot .fhome-railcard{
+  transition:transform var(--mo-fast) var(--mo-ease-out);
+}
+.axroot .gcard:hover,.axroot .fhome-tcard:hover,.axroot .fhome-sesscard:hover,.axroot .fhome-cattile:hover,.axroot .fhome-railcard:hover{transform:scale(1.01)}
+.axroot .gcard:active,.axroot .fhome-tcard:active,.axroot .fhome-sesscard:active,.axroot .fhome-cattile:active,.axroot .fhome-railcard:active{transform:scale(.99)}
+/* g. Buttons — press scale .98 (Generate included; its cost tag must not move → tag reset) */
+.axroot .gensend:active,.axroot .fhome-btn-ai:active,.axroot .fhome-btn-stock:active,.axroot .ai-set:active,.axroot .guse:active{transform:scale(.98)}
+.axroot .gensend{transition:transform var(--mo-fast) var(--mo-ease-out)}
+.axroot .gensend .costtag{transition:none}
+/* c. Menus / popovers / sheets — scale .97→1 + fade from the trigger origin; exit faster */
+.axroot .axws-pop.open,.axroot .lib-menu.on,.axroot .axws-addmenu.open{animation:mo-pop-in var(--mo-enter) var(--mo-ease-out)}
+@keyframes mo-pop-in{from{opacity:0;transform:scale(.97) translateY(4px)}to{opacity:1;transform:none}}
+/* f. Toasts / notice pills — rise 8px + fade in */
+.axroot .axws-limitnote.on{animation:mo-rise-in var(--mo-enter) var(--mo-ease-out)}
+@keyframes mo-rise-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* e. New feed item arriving — fade + 6px rise (single item; never re-animate the whole list) */
+.axroot .recentgrid .rc.mo-new,.axroot .galgrid .gcard.mo-new{animation:mo-item-in var(--mo-enter) var(--mo-ease-out)}
+@keyframes mo-item-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* 7. prefers-reduced-motion → collapse to instant opacity swaps (ship from day one) */
+@media (prefers-reduced-motion: reduce){
+  .axroot .gcard,.axroot .fhome-tcard,.axroot .fhome-sesscard,.axroot .fhome-cattile,.axroot .fhome-railcard,.axroot .gensend{transition:none!important}
+  .axroot .gcard:hover,.axroot .fhome-tcard:hover,.axroot .fhome-sesscard:hover,.axroot .fhome-cattile:hover,.axroot .fhome-railcard:hover,
+  .axroot .gcard:active,.axroot .fhome-tcard:active,.axroot .fhome-sesscard:active,.axroot .fhome-cattile:active,.axroot .fhome-railcard:active,
+  .axroot .gensend:active,.axroot .fhome-btn-ai:active,.axroot .fhome-btn-stock:active,.axroot .ai-set:active,.axroot .guse:active{transform:none!important}
+  .axroot .axws-pop.open,.axroot .lib-menu.on,.axroot .axws-addmenu.open,.axroot .axws-limitnote.on,
+  .axroot .recentgrid .rc.mo-new,.axroot .galgrid .gcard.mo-new{animation:none!important}
+}
