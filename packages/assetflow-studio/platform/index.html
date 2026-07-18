@@ -17134,7 +17134,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   </div>
                 </div>
                 <div class="va-axrefmeta">
-                  <sc-if value="{{ hasRefCounts }}" hint-placeholder-val="{{ false }}"><span class="va-axrefcounts"><sc-for list="{{ refCountsView }}" as="rc" hint-placeholder-count="1"><span class="{{ rc.cls }}"><svg class="va-ic"><use href="{{ rc.ic }}"></use></svg>{{ rc.label }}</span></sc-for></span></sc-if>
+                  <sc-if value="{{ hasRefCounts }}" hint-placeholder-val="{{ false }}"><span class="va-axrefcounts" title="{{ refCapTip }}"><sc-for list="{{ refCountsView }}" as="rc" hint-placeholder-count="1"><span class="{{ rc.cls }}"><svg class="va-ic"><use href="{{ rc.ic }}"></use></svg>{{ rc.label }}</span></sc-for></span></sc-if>
                   <span class="{{ refHintCls }}" title="{{ refHint }}">{{ refHint }}</span>
                 </div>
               </sc-if>
@@ -21604,13 +21604,20 @@ class Component extends DCLogic {
       if (refProj.vidLim > 0) refCountsView.push({ ic: '#i-vid', label: Math.min(this.state.refVideos.length, refProj.vidLim) + '/' + refProj.vidLim, cls: 'rc-i' + (this.state.refVideos.length ? '' : ' zero') });
       if (refProj.audLim > 0) refCountsView.push({ ic: '#i-wave', label: Math.min(this.state.refAudios.length, refProj.audLim) + '/' + refProj.audLim, cls: 'rc-i' + (this.state.refAudios.length ? '' : ' zero') });
     }
+    // SC_43: referens sig'imining WORDY matni FAQAT ikonka indikatori tooltip'ida (refCapTip);
+    // ko'rinadigan refHint endi sig'imni QAYTA yozmaydi — faqat holat/kadr/kept eslatmalari.
+    const refCapTip = (rCaps.kind === 'media')
+      ? ('Up to ' + (rCaps.lim.image || 0) + ' image' + ((rCaps.lim.image || 0) === 1 ? '' : 's')
+         + (rCaps.lim.video ? ' · ' + rCaps.lim.video + ' video' : '')
+         + (rCaps.lim.audio ? ' · ' + rCaps.lim.audio + ' audio' : ''))
+      : '';
     const refHint = this.state.refBusy ? 'Uploading…'
       : (axIsUpscaleTool ? ('Required — pick the ' + (axIsVUp ? 'video' : 'image or video') + ' to upscale (upload, My Library, or “Use ▾ → Upscale” on a result).')
         : (rCaps.kind === 'none' ? (refInactiveN ? (refInactiveN + ' reference' + (refInactiveN > 1 ? 's' : '') + ' kept — this model uses none; they return on a model that does.') : 'This model uses no references.')
           : (rCaps.kind === 'frames' ? (rCaps.startRequired ? 'This model animates an image — a start frame is required.' : ('Optional — start frame' + (rCaps.end ? ' and end frame' : '') + ' guide the video.'))
-            : (rCaps.kind === 'media' ? ('References: up to ' + (rCaps.lim.image || 0) + ' images' + (rCaps.lim.video ? ', ' + rCaps.lim.video + ' videos' : '') + (rCaps.lim.audio ? ', ' + rCaps.lim.audio + ' audio' : '') + '.' + (rCaps.frames ? (' Optional start' + (rCaps.end ? '/end' : '') + ' frame pins the exact first' + (rCaps.end ? ' and last' : '') + ' image.') : ''))
+            : (rCaps.kind === 'media' ? ((rCaps.frames ? ('Optional start' + (rCaps.end ? '/end' : '') + ' frame pins the exact first' + (rCaps.end ? ' and last' : '') + ' image.') : ''))
               : 'Optional — add images to edit or combine them (upload or “Use ▾” on a result).'))
-            + (refInactiveN ? ' · ' + refInactiveN + ' not used by this model (kept).' : '')));
+            + (refInactiveN ? ((rCaps.kind === 'media' && !rCaps.frames ? '' : ' · ') + refInactiveN + ' not used by this model (kept).') : '')));
     const hasRefSet = refChipsView.length > 0;
     // Video-edit preset chiplari — SD2 promptlari (@video1+@img1) faqat Seedance 2.0 oilasiga mos
     // (feature: reference-to-video); boshqa media-refs modellarda (Omni Flash, video-upscale) ma'nosiz bo'lardi.
@@ -22452,7 +22459,7 @@ class Component extends DCLogic {
       // P8 — model-driven referens paneli (chips + add tugmalari) va audio/bitrate chip'lari
       refChipsView, refAddsView, hasRefSet, refHintCls: hasRefSet ? 'va-axrefhint lit' : 'va-axrefhint',
       // P16 #4 — referens used/allowed ikonka qatori
-      refCountsView, hasRefCounts: refCountsView.length > 0,
+      refCountsView, hasRefCounts: refCountsView.length > 0, refCapTip,
       showEditPresets, editPresetsView,
       insertEditPreset: (e) => { const i = +e.currentTarget.dataset.i; const p = SD2_EDIT_PRESETS[i]; if (p) this.insertEditPreset(p.tpl); },
       // #5 — "+" typed menyu holati

@@ -3636,6 +3636,13 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 /* SC_19: [+] tugmadagi ixcham referens hisoblagichi (faqat ≥1 ref) */
 .axws-refadd{position:relative}
 .axws-refadd .refct{position:absolute;top:-6px;right:-6px;padding:2px 5px;border-radius:999px;background:var(--accent);color:var(--on-accent);font:700 8px/1 var(--font-mono);letter-spacing:.02em;pointer-events:none}
+/* SC_43: referens sig'imi — ikonka indikatori (jumla o'rniga digits-only badge; wordy matn tooltip'da) */
+.axws-capind{display:inline-flex;align-items:center;gap:8px;flex:none}
+.axws-capind:empty{display:none}
+.axws-capind .ci{display:inline-flex;align-items:center;gap:3px;color:var(--muted);font:600 9px/1 var(--font-mono)}
+.axws-capind .ci svg{width:16px;height:16px;opacity:.9}
+.axws-capind .ci.zero{opacity:.45}
+.axws-capind .ci.full{color:var(--amber,#FFB27C)}
 /* SC_42: birlashgan attachment strip (frames + refs) + [+] add-input menyu */
 .vg-strip{display:flex;align-items:center;gap:8px;min-width:0}
 .vg-strip-frame{flex:0 0 auto;width:60px}
@@ -4271,6 +4278,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                               <div class="lowcred" id="igLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="igLowNeed"></div></div></div>
                               <div class="axws-refs">
                                 <div class="addbtn axws-refadd" id="igRefAdd" title="Add references — images to edit or combine · type @ to mention"><span class="pl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span><span class="refct" id="igRefCt" style="display:none"></span></div>
+                                <!-- SC_43: referens sig'imi ikonka indikatori (image kind) -->
+                                <div class="axws-capind" id="igCapInd" aria-hidden="true"></div>
                                 <div class="axws-refwrap"><div class="refgrid" id="igRefgrid"></div></div>
                               </div>
                               <!-- SC_19: doimiy "0/10 reference Optional…" helper qatori o'chirildi — hisoblagich [+] badge'ida, tushuntirish title tooltip'da -->
@@ -4422,6 +4431,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                     <button type="button" class="axws-mrow" id="vgAddAudM"><span class="ic">AUD</span>Audio</button>
                                   </div>
                                 </div>
+                                <!-- SC_43: referens sig'imi — ikonka indikatori (jumla EMAS); to'liq matn faqat tooltip'da -->
+                                <div class="axws-capind" id="vgCapInd" aria-hidden="true"></div>
                                 <div class="axws-refwrap"><div class="vg-strip" id="vgAttachStrip">
                                   <div class="frame vg-strip-frame" id="vgStartWrap" style="display:none"><div class="fbox" id="vgStartBox"></div></div>
                                   <div class="frame vg-strip-frame" id="vgEndWrap" style="display:none"><div class="fbox" id="vgEndBox"></div></div>
@@ -5739,6 +5750,26 @@ function escHtml(s){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
   });
 }
+// SC_43: referens sig'imi ikonka indikatori — GLOBAL yordamchi (image/video toollar birga ishlatadi).
+// kinds = [{k:'image'|'video'|'audio', used:N, lim:M, tip:'Up to M images ≤30MB'}] — faqat lim>0 turlar.
+window.AF_CAP_ICONS={
+  image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>',
+  video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2.5"/><path d="M16 10l6-3.5v11L16 14"/></svg>',
+  audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'
+};
+window.afRenderCapInd=function(hostId,kinds){
+  var host=document.getElementById(hostId); if(!host)return;
+  host.innerHTML='';
+  (kinds||[]).forEach(function(c){
+    if(!c||!(c.lim>0))return; // model qabul qilmaydigan tur — UMUMAN chizilmaydi
+    var full=(c.used||0)>=c.lim;
+    var el=document.createElement('span');
+    el.className='ci'+((c.used>0)?'':' zero')+(full?' full':'');
+    el.title=c.tip||('Up to '+c.lim+' '+c.k);
+    el.innerHTML=(window.AF_CAP_ICONS[c.k]||'')+'<b>'+(c.used||0)+'/'+c.lim+'</b>';
+    host.appendChild(el);
+  });
+};
 
 function renderThumbMedia(a){
   if(!a.thumb && !a.preview) return `<span class="ico">${escHtml(a.i)}</span>${getAnim(0)}`;
@@ -12343,11 +12374,11 @@ window.afGallery=(function(){
     // SC_19: doimiy matn o'rniga [+] tugmadagi ixcham "N/max" badge (faqat ≥1 ref bo'lsa);
     // to'liq tushuntirish tooltip'da. Nofaol hovuz soni ham tooltip'ga kiradi.
     var max=meta.maxRefs||0, inact=igInactiveRefCount();
-    var ct=$('igRefCt');
-    if(ct){
-      if(st.refs.length>0){ ct.textContent=st.refs.length+(max?('/'+max):''); ct.style.display=''; }
-      else ct.style.display='none';
-    }
+    // SC_43: total badge O'RNIGA yagona ikonka sig'im indikatori (image kind)
+    var ct=$('igRefCt'); if(ct)ct.style.display='none';
+    if(typeof window.afRenderCapInd==='function')window.afRenderCapInd('igCapInd', max>0 ? [
+      {k:'image',used:st.refs.length,lim:max,tip:'Up to '+max+' image'+(max===1?'':'s')+' to edit or combine'+(inact>0?(' · '+inact+' kept (unused)'):'')}
+    ] : []);
     var add=$('igRefAdd');
     if(add)add.title='Add references — images to edit or combine · type @ to mention'
       +(max?(' · '+st.refs.length+'/'+max):'')
@@ -14397,8 +14428,15 @@ window.afGallery=(function(){
     setItem('vgAddImgM',(lim.image||0)>0,cntRef('image')>=(lim.image||0),'Up to '+(lim.image||0)+' images');
     setItem('vgAddVidM',(lim.video||0)>0,cntRef('video')>=(lim.video||0),'Up to '+(lim.video||0)+' videos');
     setItem('vgAddAudM',(lim.audio||0)>0,cntRef('audio')>=(lim.audio||0),'Up to '+(lim.audio||0)+' audio');
-    var total=(st.start?1:0)+(st.end?1:0)+mref.length;
-    var badge=$('vgRefCt'); if(badge){ if(total>0){ badge.style.display=''; badge.textContent=total; } else badge.style.display='none'; }
+    // SC_43: referens sig'imi ikonka indikatori (yagona) — [+] total badge O'RNIGA.
+    var imgMb=(vm.mediaRefMaxBytes&&vm.mediaRefMaxBytes.image)?Math.round(vm.mediaRefMaxBytes.image/1048576):0;
+    var vidMb=(vm.mediaRefMaxTotalBytes&&vm.mediaRefMaxTotalBytes.video)?Math.round(vm.mediaRefMaxTotalBytes.video/1048576):0;
+    if(typeof window.afRenderCapInd==='function')window.afRenderCapInd('vgCapInd',[
+      {k:'image',used:cntRef('image'),lim:(lim.image||0),tip:'Up to '+(lim.image||0)+' image'+((lim.image||0)===1?'':'s')+(imgMb?(' ≤'+imgMb+'MB each'):'')},
+      {k:'video',used:cntRef('video'),lim:(lim.video||0),tip:'Up to '+(lim.video||0)+' video'+((lim.video||0)===1?'':'s')+(vidMb?(' · total ≤'+vidMb+'MB'):'')},
+      {k:'audio',used:cntRef('audio'),lim:(lim.audio||0),tip:'Up to '+(lim.audio||0)+' audio'}
+    ]);
+    var badge=$('vgRefCt'); if(badge)badge.style.display='none'; // SC_43: total badge o'rniga ikonka indikatori
     var add=$('vgRefAdd'); if(add){ var t=[]; if(framesOk)t.push('Start'+(endOk?'/End':'')+' frame'); if(lim.image)t.push('Up to '+lim.image+' images'); if(lim.video)t.push(lim.video+' video'); if(lim.audio)t.push(lim.audio+' audio'); add.title=t.length?('Add input — '+t.join(' · ')):'Add input'; }
     var any=framesOk||(lim.image||0)>0||(lim.video||0)>0||(lim.audio||0)>0;
     var sect=$('vgRefSect'); if(sect)sect.style.display=any?'':'none';
