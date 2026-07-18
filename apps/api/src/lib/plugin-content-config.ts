@@ -84,7 +84,7 @@ export const DEFAULT_PLUGIN_CONTENT_CONFIG: PluginContentConfigData = {
     features: [
       { title: "Drag-and-drop templates", sub: "Broadcast, titles, promos — import straight into your comp." },
       { title: "Generate image, video, voice & SFX", sub: "Credit-based AI studio. Free plan starts with ✦ 50." },
-      { title: "One library, everywhere", sub: "Imports, favorites and gens sync with getframeflow.app." },
+      { title: "One library, everywhere", sub: "Imports, projects and gens sync with getframeflow.app." },
     ],
   },
   aiLauncher: {
