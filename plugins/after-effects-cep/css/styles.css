@@ -295,6 +295,18 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .fhome-heroprompt input::placeholder{color:rgba(255,255,255,.55)}
 .fhome-heroprompt-go{flex:none;width:32px;height:32px;border:0;border-radius:8px;background:var(--grad);color:var(--on-accent);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px var(--glow)}
 .fhome-heroprompt-go:hover{filter:brightness(1.08)}
+/* SC_52: admin-kuratsiya rellslari — sanksiyalangan uzluksiz marquee (faqat transform) */
+.fhome-rail{overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent)}
+.fhome-rail-track{display:flex;gap:16px;width:max-content;will-change:transform}
+.fhome-rail-track.anim{animation:fhome-marquee-l 32s linear infinite}
+.fhome-rail-track.anim[data-dir="right"]{animation-name:fhome-marquee-r}
+.fhome-rail:hover .fhome-rail-track.anim,
+.fhome-rail-track.anim.paused-off,
+.fhome-rail-track.anim.paused-hidden{animation-play-state:paused}
+.fhome-railcard{flex:0 0 auto;width:200px}
+@keyframes fhome-marquee-l{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+@keyframes fhome-marquee-r{from{transform:translate3d(-50%,0,0)}to{transform:translate3d(0,0,0)}}
+@media (prefers-reduced-motion: reduce){.fhome-rail-track.anim{animation:none}.fhome-rail{overflow-x:auto;scrollbar-width:none}.fhome-rail::-webkit-scrollbar{display:none}}
 /* SC_50: Continue a session — so'nggi sessiya kartalari */
 .fhome-sessrow{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
 .fhome-sessrow::-webkit-scrollbar{width:0;height:0}

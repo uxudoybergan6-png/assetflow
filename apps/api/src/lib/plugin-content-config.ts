@@ -44,6 +44,12 @@ export interface PluginContentConfigData {
       shelf: string;
       browseAll: string;
     };
+    // SC_52: admin-kuratsiya qilingan "New releases" va "Top templates" rellslari.
+    // Faqat template ID'lari saqlanadi (denormalizatsiya YO'Q) — klient katalogdan hal qiladi.
+    rails: {
+      newReleases: { title: string; templateIds: string[] };
+      topTemplates: { title: string; templateIds: string[] };
+    };
   };
   guest: {
     // \n — qator uzilish pozitsiyasi (plagin <br> ga aylantiradi, textContent+split)
@@ -76,6 +82,10 @@ export const DEFAULT_PLUGIN_CONTENT_CONFIG: PluginContentConfigData = {
       recent: "Jump back in",
       shelf: "Fresh for your next cut",
       browseAll: "Browse all →",
+    },
+    rails: {
+      newReleases: { title: "New releases", templateIds: [] },
+      topTemplates: { title: "Top templates", templateIds: [] },
     },
   },
   guest: {
@@ -141,6 +151,17 @@ export const pluginContentConfigSchema = z
             browseAll: shortText.optional(),
           })
           .optional(),
+        // SC_52: rails — har ro'yxatда ≤12 ta template ID + tahrirlanadigan sarlavha.
+        rails: z
+          .object({
+            newReleases: z
+              .object({ title: shortText.optional(), templateIds: z.array(z.string().max(60)).max(12).optional() })
+              .optional(),
+            topTemplates: z
+              .object({ title: shortText.optional(), templateIds: z.array(z.string().max(60)).max(12).optional() })
+              .optional(),
+          })
+          .optional(),
       })
       .optional(),
     guest: z
@@ -172,10 +193,22 @@ function mergeConfig(stored: unknown): PluginContentConfigData {
       : { ...base };
   const objArr = <T extends Record<string, any>>(base: T[], over: any): T[] =>
     base.map((el, i) => obj(el, Array.isArray(over) ? over[i] : null));
+  // SC_52: rails merge — sarlavha (obj) + templateIds massivi (bevosita, agar massiv bo'lsa).
+  const railList = (base: { title: string; templateIds: string[] }, over: any) => ({
+    title: over && typeof over.title === "string" && over.title != null ? over.title : base.title,
+    templateIds:
+      over && Array.isArray(over.templateIds)
+        ? over.templateIds.filter((x: unknown) => typeof x === "string" && x).slice(0, 12)
+        : base.templateIds.slice(),
+  });
   return {
     home: {
       hero: obj(d.home.hero, s.home?.hero),
       sections: obj(d.home.sections, s.home?.sections),
+      rails: {
+        newReleases: railList(d.home.rails.newReleases, s.home?.rails?.newReleases),
+        topTemplates: railList(d.home.rails.topTemplates, s.home?.rails?.topTemplates),
+      },
     },
     guest: {
       ...obj({ title: d.guest.title, sub: d.guest.sub }, s.guest),

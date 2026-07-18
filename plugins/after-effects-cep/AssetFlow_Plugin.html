@@ -4127,6 +4127,13 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                             </div>
                           </div>
                         </article>
+                        <!-- SC_52: Director tartibi — hero → New rail → Jump back → Continue → Top rail → Browse by category.
+                             "Fresh for your next cut" javoni O'CHIRILDI (New rellsi uning kuratsiyalangan vorisi). -->
+                        <!-- NEW RELEASES rail (admin-kuratsiya, chapga auto-scroll) -->
+                        <div id="fhomeNewRail" class="fhome-railsec" style="display:none">
+                          <div class="fhome-sechd"><h2 id="fhomeNewHd">New releases</h2></div>
+                          <div class="fhome-rail" data-dir="left"><div class="fhome-rail-track" id="homeNewTrack"></div></div>
+                        </div>
                         <div id="fhomeRecentSec" style="display:none">
                           <div class="fhome-sechd"><h2>Jump back in</h2></div>
                           <div class="fhome-recent" id="homeRecent"></div>
@@ -4136,15 +4143,17 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                           <div class="fhome-sechd"><h2 id="fhomeSessHd">Continue a session</h2></div>
                           <div class="fhome-sessrow" id="homeSessRow"></div>
                         </div>
+                        <!-- TOP TEMPLATES rail (admin-kuratsiya, o'ngga auto-scroll — qarama-qarshi yo'nalish) -->
+                        <div id="fhomeTopRail" class="fhome-railsec" style="display:none">
+                          <div class="fhome-sechd"><h2 id="fhomeTopHd">Top templates</h2></div>
+                          <div class="fhome-rail" data-dir="right"><div class="fhome-rail-track" id="homeTopTrack"></div></div>
+                        </div>
                         <!-- SC_50: BROWSE BY CATEGORY — 6 katalog turi (real navigatsiya) -->
                         <div id="fhomeCatSec">
                           <div class="fhome-sechd"><h2 id="fhomeCatHd">Browse by category</h2></div>
                           <div class="fhome-cattiles" id="homeCatTiles"></div>
                         </div>
-                        <div id="fhomeShelfSec">
-                          <div class="fhome-sechd"><h2>Fresh for your next cut</h2><button class="fhome-browse" type="button" onclick="homeGo('video')">Browse all →</button></div>
-                          <div class="fhome-shelf" id="homeGrid"></div>
-                        </div>
+                        <!-- SC_52: eski "Fresh" javoni (homeGrid) O'CHIRILDI — New rellsi bilan almashtirildi -->
                       </div>
                     </div>
 
@@ -7250,6 +7259,8 @@ async function retryCatalog(){
     catalogLoadState='error';
   }
   render();
+  // SC_52/SC_50: katalog yuklangach Home rellslari + kategoriya kafellari qayta chizilsin (assets endi to'la)
+  try{ if(document.documentElement.classList.contains('home-mode')){ if(typeof renderHomeRails==='function')renderHomeRails(); if(typeof renderHomeCategories==='function')renderHomeCategories(); } }catch(e){}
 }
 window.retryCatalog=retryCatalog;
 
@@ -7732,7 +7743,7 @@ function renderHome(){
   renderHomeRecent(); // SC_07 — "Jump back in" strip
   renderHomeSessions(); // SC_50 — "Continue a session"
   renderHomeCategories(); // SC_50 — "Browse by category"
-  renderHomeGrid();
+  renderHomeRails(); // SC_52 — admin-kuratsiya New/Top rellslari (eski shelf o'rniga)
   // SC_04: login'dan keyin ham CMS matnlari qayta qo'llanadi (idempotent, arzon)
   if(typeof afCmsApply==='function')afCmsApply();
   if(typeof window.afCmsTick==='function')window.afCmsTick();
@@ -7835,6 +7846,63 @@ function renderHomeCategories(){
     host.appendChild(el);
   });
 }
+/* SC_52: admin-kuratsiya New/Top rellslari — content-config home.rails'dan ID'lar, katalogdan hal qilinadi.
+   Bo'sh/hal bo'lmaydigan ro'yxat → rells yashirin. Bitta sanksiyalangan uzluksiz animatsiya (marquee):
+   faqat transform, hover/hidden-panel/off-screen'da PAUZA, reduced-motion → statik. */
+function fhomeResolveIds(ids){
+  if(!ids||!ids.length)return [];
+  var out=[]; var byId={};
+  try{ if(typeof assets!=='undefined'&&assets)assets.forEach(function(a){ var sid=(a.serverTemplateId!=null)?String(a.serverTemplateId):(String(a.n||'').indexOf('__srv_')===0?String(a.n).slice(6):''); if(sid)byId[sid]=a; }); }catch(e){}
+  ids.forEach(function(id){ var a=byId[String(id)]; if(a)out.push(a); }); // mavjud/published bo'lmaganlar jimgina o'tkazib yuboriladi
+  return out;
+}
+function fhomeRailCardHTML(a){
+  var pro=!!a.isPro;
+  var bg=a.thumb?("url('"+a.thumb+"')"):HM_GRAD[HM_GKEYS[hmHash(a.n)%HM_GKEYS.length]];
+  var res=a.res?String(a.res).toUpperCase():'';
+  return '<button class="fhome-tcard fhome-railcard" type="button" data-key="'+hmEsc(a.n)+'" data-nav="'+hmEsc(a.nav||'video')+'">'
+    +'<span class="fhome-tmedia" style="background-image:'+bg+'">'
+    +'<span class="fhome-tbadge'+(pro?' pro':'')+'">'+(pro?'PRO':'FREE')+'</span>'
+    +(res?'<span class="fhome-tres">'+hmEsc(res)+'</span>':'')
+    +'</span><h3>'+hmEsc(a.displayName||a.n)+'</h3></button>';
+}
+var __fhomeRailObs=null;
+function renderHomeRails(){
+  var c=(__afCms&&__afCms.cfg)||null;
+  var rails=(c&&c.home&&c.home.rails)||{newReleases:{title:'New releases',templateIds:[]},topTemplates:{title:'Top templates',templateIds:[]}};
+  buildOneRail('fhomeNewRail','homeNewTrack','fhomeNewHd',rails.newReleases,'left');
+  buildOneRail('fhomeTopRail','homeTopTrack','fhomeTopHd',rails.topTemplates,'right');
+}
+function buildOneRail(secId,trackId,hdId,rail,dir){
+  var sec=document.getElementById(secId), track=document.getElementById(trackId), hd=document.getElementById(hdId);
+  if(!sec||!track)return;
+  var items=fhomeResolveIds(rail&&rail.templateIds);
+  if(!items.length){ sec.style.display='none'; track.innerHTML=''; return; } // ro'yxat bo'sh/hал bo'lmaydi → rells yashirin
+  sec.style.display='';
+  if(hd&&rail&&rail.title)hd.textContent=rail.title;
+  var reduce=false; try{ reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+  var many=items.length>=4; // kenglikni to'ldirmasa — statik qator (loop yo'q)
+  var html=items.map(fhomeRailCardHTML).join('');
+  // seamless loop uchun to'plamni takrorlaymiz (faqat animatsiya bo'lsa)
+  track.innerHTML=(many&&!reduce)?(html+html):html;
+  track.classList.toggle('anim',many&&!reduce);
+  track.setAttribute('data-dir',dir);
+  // karta bosilishi → detail (mavjud yo'l)
+  Array.prototype.forEach.call(track.querySelectorAll('.fhome-railcard'),function(el){
+    el.addEventListener('click',function(){ var key=el.getAttribute('data-key'); homeGo(el.getAttribute('data-nav')||'video'); try{ if(key&&typeof packs!=='undefined'&&packs&&packs[key]&&typeof openPack==='function')openPack(key); }catch(e){} });
+  });
+  // MOTION intizomi: off-screen → pauza (IntersectionObserver)
+  try{
+    if(!__fhomeRailObs&&typeof IntersectionObserver!=='undefined'){
+      __fhomeRailObs=new IntersectionObserver(function(ents){ ents.forEach(function(en){ en.target.classList.toggle('paused-off',!en.isIntersecting); }); },{threshold:0.01});
+    }
+    if(__fhomeRailObs){ __fhomeRailObs.observe(track); }
+  }catch(e){}
+}
+// SC_52: panel/hujjat yashiringanda BARCHA rellslar pauza (visibilitychange) — GPU/AE tejaydi
+document.addEventListener('visibilitychange',function(){
+  var hidden=document.hidden; document.querySelectorAll('.fhome-rail-track').forEach(function(t){ t.classList.toggle('paused-hidden',hidden); });
+});
 /* #H1 — jonli rasm-model katalogi (mavjud /api/studio/gen/models?mode=image endpointi, yangi API emas).
    Featured = isDefault (bo'lmasa 1-chi); narx qoidasi image tool'dagi igModelPrice bilan bir xil
    (quality default darajasi → bo'lmasa flat cost). 5 daqiqa throttle — model katalogi kam o'zgaradi. */

@@ -53,6 +53,19 @@ function pcCollect() {
   document.querySelectorAll("[data-pc]").forEach((el) => {
     pcSetPath(c, el.dataset.pc, el.value);
   });
+  // SC_52: Home rails template ID'lari — qator/vergul bilan ajratilgan matn → massiv (≤12, tozalangan).
+  document.querySelectorAll("[data-pc-rail]").forEach((el) => {
+    const key = el.dataset.pcRail;
+    const ids = String(el.value || "")
+      .split(/[\n,]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    if (!c.home) c.home = {};
+    if (!c.home.rails) c.home.rails = {};
+    if (!c.home.rails[key]) c.home.rails[key] = {};
+    c.home.rails[key].templateIds = ids;
+  });
   return c;
 }
 
@@ -158,6 +171,17 @@ VIEWS.plugincms = function () {
             <div>${axFlab("RECENT WORKS")}${pcInput("home.sections.recent", c.home.sections.recent)}</div>
             <div>${axFlab("TEMPLATE SHELF")}${pcInput("home.sections.shelf", c.home.sections.shelf)}</div>
             <div>${axFlab("BROWSE-ALL LINK")}${pcInput("home.sections.browseAll", c.home.sections.browseAll)}</div>
+          </div>`)}
+        ${pcCard("Home rails", "Two admin-curated, auto-scrolling template rails on Home (plugin + web). Paste template IDs — one per line (or comma-separated), max 12 each, in the order they should appear. IDs that no longer exist or are unpublished are skipped; an empty rail is hidden.", `
+          <div style="margin-bottom:14px">
+            <div style="margin-bottom:8px">${axFlab("NEW RELEASES — RAIL TITLE")}${pcInput("home.rails.newReleases.title", (c.home.rails && c.home.rails.newReleases && c.home.rails.newReleases.title) || "New releases")}</div>
+            ${axFlab("NEW RELEASES — TEMPLATE IDS (ONE PER LINE, MAX 12)")}
+            <textarea class="adx-input mono" data-pc-rail="newReleases" rows="4" placeholder="cmxxxxxxx0001\ncmxxxxxxx0002">${pcEsc(((c.home.rails && c.home.rails.newReleases && c.home.rails.newReleases.templateIds) || []).join("\\n"))}</textarea>
+          </div>
+          <div>
+            <div style="margin-bottom:8px">${axFlab("TOP TEMPLATES — RAIL TITLE")}${pcInput("home.rails.topTemplates.title", (c.home.rails && c.home.rails.topTemplates && c.home.rails.topTemplates.title) || "Top templates")}</div>
+            ${axFlab("TOP TEMPLATES — TEMPLATE IDS (ONE PER LINE, MAX 12)")}
+            <textarea class="adx-input mono" data-pc-rail="topTemplates" rows="4" placeholder="cmxxxxxxx0003\ncmxxxxxxx0004">${pcEsc(((c.home.rails && c.home.rails.topTemplates && c.home.rails.topTemplates.templateIds) || []).join("\\n"))}</textarea>
           </div>`)}
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
@@ -282,7 +306,7 @@ window.afterRender.plugincms = function () {
     view.__pcBound = 1;
     // input (matn) + change (select) — dirty holatni belgilash
     const markDirty = (e) => {
-      if (e.target && e.target.matches("[data-pc]") && CURRENT === "plugincms" && !PC_DIRTY) {
+      if (e.target && (e.target.matches("[data-pc]") || e.target.matches("[data-pc-rail]")) && CURRENT === "plugincms" && !PC_DIRTY) {
         PC_DIRTY = true;
         pcRenderActions();
       }
