@@ -15743,8 +15743,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-lb-x{position:fixed;top:18px;right:20px;z-index:2;width:40px;height:40px;border-radius:12px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid var(--hair2);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px}
   .ff .va-lb-x:hover{background:rgba(0,0,0,.72)}
   .ff .va-lb-shell{display:flex;width:100%;max-width:min(96vw,1880px);max-height:94vh;background:var(--surface);border:1px solid var(--hair2);border-radius:20px;overflow:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.85)}
-  .ff .va-lb-stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;display:grid;place-items:center;padding:12px;background:var(--media)}
-  .ff .va-lb-el{display:block;max-width:100%;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:12px;background:#000}
+  /* SC_44: sahna fonida karta thumbnail'i (instant, keshda) — qora void o'rniga; to'liq media ustidan chiqadi */
+  .ff .va-lb-stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;display:grid;place-items:center;padding:12px;background:var(--media) center/contain no-repeat}
+  .ff .va-lb-el{display:block;max-width:100%;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:12px;background:transparent}
   .ff .va-lb-aud{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(520px,82%)}
   .ff .va-lb-aud>i{font-size:64px;color:var(--acc)}
   /* P20 — umumiy audio pleer (to'lqin + accent progress + playhead + custom play/pause + vaqt).
@@ -17689,7 +17690,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <div onclick="{{ closeLightbox }}" class="va-lb-scrim">
       <button onclick="{{ closeLightbox }}" class="va-lb-x" title="Close (Esc)"><i class="ph ph-x"></i></button>
       <div onclick="{{ stop }}" class="va-lb-shell">
-        <div class="va-lb-stage">
+        <div class="va-lb-stage" style="background-image:{{ lb.stageBgCss }}">
           <sc-if value="{{ lb.hasPrev }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw prev" onclick="{{ lbPrev }}" title="Previous (←)"><i class="ph ph-caret-left"></i></button></sc-if>
           <!-- QA-FIX #3: controls/playsinline chin boolean; poster=thumb (blur-up), asl src to'liq sifat. -->
           <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></video></sc-if>
@@ -21837,6 +21838,8 @@ class Component extends DCLogic {
       // rasm src = 1280 display (bo'lsa) yoki asl; thumb faqat poster/blur-up
       imgSrc: lbRaw.type === 'image' ? (lbRaw.display || lbRaw.url || lbRaw.thumb) : null,
       poster: lbRaw.thumb || null,
+      // SC_44: sahna backdrop = karta thumbnail'i (keshda) — ochilganда qora flash o'rniga darhol ko'rinadi
+      stageBgCss: lbRaw.thumb ? ('url("' + lbRaw.thumb + '")') : 'none',
       // haqiqiy nisbat: params.ar → haqiqiy piksellar → tur bo'yicha zaxira (hard-code EMAS)
       asp: arCss(lbRaw.ar) || ((lbW && lbH) ? (lbW + ' / ' + lbH) : (lbRaw.type === 'video' ? '16 / 9' : ((lbRaw.type === 'audio' || lbRaw.type === 'sfx') ? '16 / 7' : '1 / 1'))),
       // hech qachon natural'dan katta cho'zilmasin (P11 #3): max-width = min(konteyner, haqiqiy kenglik)

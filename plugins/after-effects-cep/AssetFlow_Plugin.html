@@ -2897,9 +2897,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 #afLightbox .lbesc{font-family:var(--font-mono);font-size:8.5px;color:var(--muted-2);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:2px 6px}
 #afLightbox .lx{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer}
 #afLightbox .lx:hover{border-color:rgba(255,255,255,.2)}
-#afLightbox .lbmedia{position:relative;border-radius:12px;overflow:hidden;background:#000;flex:1 1 auto;min-height:120px;display:flex;align-items:center;justify-content:center}
+/* SC_44: qora void o'rniga surface token + karta thumbnail'i backdrop (instant); to'liq media decode'da kirib keladi */
+#afLightbox .lbmedia{position:relative;border-radius:12px;overflow:hidden;background:var(--card,#12161E) center/contain no-repeat;flex:1 1 auto;min-height:120px;display:flex;align-items:center;justify-content:center}
 #afLightbox .lbmedia.aud{background:transparent}/* SC_33: audio — qora void yo'q (pleer markazda) */
-#afLightbox video,#afLightbox img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:#000;margin:0 auto}
+#afLightbox video,#afLightbox img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:transparent;margin:0 auto;transition:opacity .15s ease}
+#afLightbox img.lb-fadein,#afLightbox video.lb-fadein{opacity:0}
 #afLightbox .lbplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(19,22,28,.72);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;z-index:3}
 #afLightbox .lbnav{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;padding:0 8px;pointer-events:none;z-index:3}
 #afLightbox .lbnavb{width:28px;height:28px;border-radius:50%;background:rgba(8,10,14,.62);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;pointer-events:auto}
@@ -11000,7 +11002,10 @@ async function bootPlugin(){
       v.style.display='none'; img.style.display='none'; au.style.display='none'; play.style.display='none';
       scrub.classList.remove('on'); aud.classList.remove('on'); media.classList.remove('aud');
       try{v.pause();}catch(e){} try{au.pause();}catch(e){}
-      if(cat==='video'){ v.style.display=''; v.controls=false; v.src=it.url; v.muted=false; try{v.currentTime=0;}catch(e){} v.load&&v.load(); scrub.classList.add('on'); var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){ play.style.display='flex'; }); }
+      // SC_44: karta thumbnail'ini INSTANT backdrop qilamiz (keshda — tarmoqsiz); to'liq media decode'da fade bilan almashadi. Qora flash yo'q.
+      var _thumb=it.thumb||it.display||it.preview||((cat==='image')?it.url:'');
+      media.style.backgroundImage=_thumb?('url("'+_thumb+'")'):'';
+      if(cat==='video'){ v.style.display=''; v.controls=false; if(_thumb)v.setAttribute('poster',_thumb); else v.removeAttribute('poster'); v.preload='metadata'; v.classList.add('lb-fadein'); v.src=it.url; v.muted=false; try{v.currentTime=0;}catch(e){} v.load&&v.load(); var _vdone=function(){ v.classList.remove('lb-fadein'); }; v.addEventListener('loadeddata',_vdone,{once:true}); scrub.classList.add('on'); var p=v.play&&v.play(); if(p&&p.catch)p.catch(function(){ play.style.display='flex'; }); }
       else if(cat==='audio'||cat==='sfx'){
         // SC_33 — web `.va-aplayer` bilan bir xil pleer (native <audio> engine, neytral waveform, accent progress)
         aud.classList.add('on'); media.classList.add('aud');
@@ -11012,7 +11017,15 @@ async function bootPlugin(){
         document.getElementById('afLbAudPlay').innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
         au.src=it.url;
       }
-      else { img.style.display=''; img.src=it.url; }
+      else {
+        // SC_44: img — thumbnail backdrop ko'rinib turadi; to'liq rasm decode'da fade bilan kiradi. Xato'да thumbnail qoladi.
+        img.style.display=''; img.classList.add('lb-fadein');
+        var _fadeIn=function(){ img.classList.remove('lb-fadein'); };
+        img.onload=_fadeIn;
+        img.onerror=function(){ img.style.display='none'; }; // to'liq rasm kelmasa — backdrop thumbnail qoladi (qora emas)
+        img.src=it.url;
+        if(img.decode){ img.decode().then(_fadeIn).catch(function(){}); }
+      }
       // counter + prev/next (ctx.list bo'lsa)
       var list=(ctx&&typeof ctx.list==='function')?(ctx.list()||[]):[];
       var idx=-1;
