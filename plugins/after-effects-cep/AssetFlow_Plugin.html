@@ -3704,6 +3704,20 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-mrow{width:100%;min-height:32px;padding:7px;border:0;border-radius:8px;background:transparent;color:var(--text-2);display:flex;align-items:center;gap:8px;text-align:left;font-family:inherit;font-size:10px;font-weight:700;cursor:pointer}
 .axws-mrow:hover,.axws-mrow.active{background:var(--accent-soft);color:var(--accent)}
 .axws-mrow .ic{flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:7px;font-weight:700}
+/* SC_47: on-demand voice/duration picker (chip → popover) */
+.axws-voicepop{width:230px}
+.axws-voicesearch{width:100%;box-sizing:border-box;margin:2px 0 6px;padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font-family:inherit;font-size:11px}
+.axws-voicesearch:focus{outline:none;border-color:var(--accent)}
+.axws-voicelist{max-height:230px;overflow-y:auto}
+.axws-vrow{width:100%;min-height:32px;padding:7px 8px;border:0;border-radius:8px;background:transparent;color:var(--text-2);display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;font-family:inherit;font-size:10.5px;font-weight:650;cursor:pointer}
+.axws-vrow:hover{background:var(--surface-2);color:var(--text)}
+.axws-vrow.active{background:var(--accent-soft);color:var(--accent)}
+.axws-vrow .vck{opacity:0;flex:none}
+.axws-vrow.active .vck{opacity:1}
+.axws-metaline{margin-top:7px;font-family:var(--font-mono);font-size:9px;color:var(--muted);letter-spacing:.02em}
+.ag-charcount{position:absolute;right:10px;bottom:8px;font-family:var(--font-mono);font-size:9px;color:var(--muted);pointer-events:none}
+.ag-charcount.warn{color:var(--amber)}
+.pbox{position:relative}
 /* SC_36: viewbar ⋯ menyu — ikkilamchi boshqaruvlar (refresh · My Library · card size · settings).
    .axws-pop class'ini qayta ishlatadi (closePops/Escape darhol ishlaydi) — pastga ochiladi. */
 .axws-morewrap{flex:0 0 auto;position:relative}
@@ -4578,19 +4592,14 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                 <button type="button" class="ai-seg-i is-on" id="agModeVoice">Voice over</button>
                                 <button type="button" class="ai-seg-i" id="agModeSfx">Sound FX</button>
                               </div>
-                              <div class="axws-refmeta"><span class="rc-hint" id="agGuide"><b>Voice:</b> type the text — it will be read aloud in a natural voice.</span></div>
-                              <div class="pbox"><textarea id="agPrompt" placeholder="Type the narration text…"></textarea></div>
-                              <div class="ag-set" style="margin-top:10px">
-                                <div class="lbl" style="margin-bottom:6px">Settings <span class="meta" id="agModelName"></span></div>
-                                <div id="agVoiceRow">
-                                  <div class="lbl" style="margin:6px 0">Voice</div>
-                                  <div class="pillrow" id="agVoicePills"></div>
-                                </div>
-                                <div id="agDurRow" style="display:none">
-                                  <div class="lbl" style="margin:6px 0">Duration</div>
-                                  <div class="pillrow" id="agDurPills"></div>
-                                </div>
+                              <!-- SC_47: doimiy ochiq voice/duration pill-grid + "Settings/Voice" label + explainer
+                                   OLIB TASHLANDI. Voice/Duration endi control-qatoridagi chip → popover (on-demand).
+                                   Belgi limiti textarea hisoblagichida (≥80%) + notice pill'da; agModelName pul-chipida. -->
+                              <div class="pbox">
+                                <textarea id="agPrompt" placeholder="Type the narration text… @ for references"></textarea>
+                                <span class="ag-charcount" id="agCharCount" style="display:none"></span>
                               </div>
+                              <div class="axws-limitnote" id="agLimitNote"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span id="agLimitNoteTx">Character limit reached</span></div>
                               <div class="axws-dockrow">
                                 <div class="axws-setgroup">
                                   <div class="axws-modewrap">
@@ -4603,6 +4612,23 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                       <button type="button" class="axws-mrow" data-mode="sfx"><span class="ic">SFX</span>SFX</button>
                                     </div>
                                   </div>
+                                  <!-- SC_47: on-demand voice picker chip (faqat voice rejimida) -->
+                                  <div class="axws-modewrap" id="agVoiceWrap" style="display:none">
+                                    <button type="button" class="ai-set" id="agVoicePill" data-modepop title="Voice"><i class="ai-set-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg></i><b id="agVoicePillLbl">Voice</b><i class="ai-set-chev">⌄</i></button>
+                                    <div class="axws-pop axws-voicepop" id="agVoicePop">
+                                      <div class="lb">VOICE</div>
+                                      <input type="text" class="axws-voicesearch" id="agVoiceSearch" placeholder="Search voices…" aria-label="Search voices">
+                                      <div class="axws-voicelist" id="agVoiceList"></div>
+                                    </div>
+                                  </div>
+                                  <!-- SC_47: on-demand duration picker chip (faqat sfx rejimida) -->
+                                  <div class="axws-modewrap" id="agDurWrap" style="display:none">
+                                    <button type="button" class="ai-set" id="agDurPill" data-modepop title="Duration"><i class="ai-set-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i><b id="agDurPillLbl">Duration</b><i class="ai-set-chev">⌄</i></button>
+                                    <div class="axws-pop" id="agDurPop">
+                                      <div class="lb">DURATION</div>
+                                      <div class="axws-voicelist" id="agDurList"></div>
+                                    </div>
+                                  </div>
                                 </div>
                                 <!-- SC_25/SC_27: Enhance + Clear + Generate bitta AMAL-guruhida (axws-genwrap) — tor panel 3-qatorli intizom -->
                                 <div class="axws-genwrap">
@@ -4611,6 +4637,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                   <button class="gensend" id="agGen" disabled title="Generate" aria-label="Generate audio">Generate<span class="costtag" id="agCost">✦—</span></button>
                                 </div>
                               </div>
+                              <!-- SC_47 money guard: model/narx displeyi ("Chirp 3 HD · ✦4") doimiy ko'rinadi (Row 3 quiet meta) -->
+                              <div class="axws-metaline" id="agMetaLine"><span id="agModelName"></span></div>
                               <!-- SC_18: BALANCE qatori o'chirildi — doimiy top-bar kredit chipi bor; Generate narx yorlig'i qoladi -->
                             </div>
                           </div>
@@ -15187,27 +15215,59 @@ window.afGallery=(function(){
     return low;
   }
 
-  function pill(txt,on,fn){ var b=document.createElement('button'); b.type='button'; b.className='cchip'+(on?' on':''); b.style.cssText='padding:7px 12px;border-radius:999px;border:1px solid '+(on?'var(--acc)':'rgba(255,255,255,.12)')+';background:'+(on?'rgba(163,230,53,.14)':'rgba(255,255,255,.04)')+';color:'+(on?'var(--acc)':'var(--mut)')+';font-size:11.5px;font-weight:600;cursor:pointer'; b.textContent=txt; b.addEventListener('click',fn); return b; }
+  // SC_47: axws-pop popover'larni yopish (voice/duration tanlangach)
+  function agClosePops(){ var ps=document.querySelectorAll('.axws-pop.open'); for(var i=0;i<ps.length;i++)ps[i].classList.remove('open'); }
+  // SC_47: on-demand voice ro'yxati (searchable) — chip → popover ichida render
+  function renderAgVoiceList(voices,curId,q){
+    var list=$('agVoiceList'); if(!list)return; list.innerHTML='';
+    var qq=(q||'').trim().toLowerCase();
+    voices.forEach(function(v){
+      if(qq&&String(v.label).toLowerCase().indexOf(qq)<0)return;
+      var b=document.createElement('button'); b.type='button'; b.className='axws-vrow'+(v.id===curId?' active':'');
+      b.innerHTML='<span>'+escHtml(v.label)+'</span><span class="vck">✓</span>';
+      b.addEventListener('click',function(){ ag.voice=v.id; agClosePops(); applyAg(); });
+      list.appendChild(b);
+    });
+  }
+  // SC_47: voice belgi hisoblagichi (≥80% da ko'rinadi) + limit notice pill
+  function updateAgCharCount(vCap){
+    var cc=$('agCharCount'), ta=$('agPrompt'), note=$('agLimitNote');
+    var len=(ta&&ta.value)?ta.value.length:0;
+    if(cc){
+      if(vCap&&len>=Math.floor(vCap*0.8)){ cc.style.display=''; cc.textContent=len+' / '+vCap; cc.classList.toggle('warn',len>vCap); }
+      else cc.style.display='none';
+    }
+    if(note)note.classList.toggle('on',!!(vCap&&len>vCap));
+  }
   function applyAg(){
     var m=curAgModel();
     var mv=$('agModeVoice'), ms=$('agModeSfx');
     if(mv)mv.classList.toggle('is-on',ag.mode==='voice');
     if(ms)ms.classList.toggle('is-on',ag.mode==='sfx');
-    // BATCH4 #4 — Chirp maxChars cap ko'rsatiladi (server 400 VOICE_TEXT_TOO_LONG dan oldin UX)
+    // BATCH4 #4 — Chirp maxChars cap (server 400 VOICE_TEXT_TOO_LONG dan oldin UX). SC_47: endi hisoblagichda.
     var vCap=(ag.mode==='voice'&&m&&typeof m.maxChars==='number'&&m.maxChars>0)?m.maxChars:0;
-    var g=$('agGuide'); if(g)g.innerHTML=ag.mode==='voice'?('<b>Voice:</b> type the text — it will be read aloud in a natural voice.'+(vCap?' Up to '+vCap+' characters per generation.':'')):'<b>SFX:</b> describe a sound — e.g. “deep cinematic whoosh with metallic tail”.';
-    var ta=$('agPrompt'); if(ta)ta.placeholder=ag.mode==='voice'?'Type the narration text…':'Describe the sound effect…';
+    var ta=$('agPrompt'); if(ta)ta.placeholder=ag.mode==='voice'?'Type the narration text… @ for references':'Describe the sound effect…';
+    // SC_47 money guard: model/narx displeyi doimiy ko'rinadi
     var mn=$('agModelName'); if(mn)mn.textContent=m?(m.label+' · ✦'+(m.cost||0)):'';
-    // Voice pills (katalog voices) — faqat voice rejimida
-    var vr=$('agVoiceRow'), vp=$('agVoicePills');
+    // SC_47: voice — on-demand chip + popover (faqat voice rejimida)
+    var vwrap=$('agVoiceWrap'), vlbl=$('agVoicePillLbl');
     var showV=ag.mode==='voice'&&m&&Array.isArray(m.voices)&&m.voices.length>0;
-    if(vr)vr.style.display=showV?'':'none';
-    if(vp&&showV){ vp.innerHTML=''; m.voices.forEach(function(v){ vp.appendChild(pill(v.label,v.id===ag.voice,function(){ ag.voice=v.id; applyAg(); })); }); }
-    // Duration pills (katalog durations) — faqat sfx rejimida
-    var dr=$('agDurRow'), dp=$('agDurPills');
+    if(vwrap)vwrap.style.display=showV?'':'none';
+    if(showV){
+      var curV=m.voices.filter(function(v){return v.id===ag.voice;})[0]||m.voices[0];
+      if(vlbl)vlbl.textContent=curV?curV.label:'Voice';
+      var vs=$('agVoiceSearch'); renderAgVoiceList(m.voices,curV&&curV.id,vs?vs.value:'');
+    }
+    // SC_47: duration — on-demand chip + popover (faqat sfx rejimida)
+    var dwrap=$('agDurWrap'), dlbl=$('agDurPillLbl'), dlist=$('agDurList');
     var showD=ag.mode==='sfx'&&m&&Array.isArray(m.durations)&&m.durations.length>0;
-    if(dr)dr.style.display=showD?'':'none';
-    if(dp&&showD){ dp.innerHTML=''; m.durations.forEach(function(d){ dp.appendChild(pill(d+'s',d===ag.dur,function(){ ag.dur=d; applyAg(); })); }); }
+    if(dwrap)dwrap.style.display=showD?'':'none';
+    if(showD){
+      var curD=(m.durations.indexOf(ag.dur)>=0?ag.dur:m.durations[0]);
+      if(dlbl)dlbl.textContent=curD+'s';
+      if(dlist){ dlist.innerHTML=''; m.durations.forEach(function(d){ var b=document.createElement('button'); b.type='button'; b.className='axws-vrow'+(d===curD?' active':''); b.innerHTML='<span>'+d+'s</span><span class="vck">✓</span>'; b.addEventListener('click',function(){ ag.dur=d; agClosePops(); applyAg(); }); dlist.appendChild(b); }); }
+    }
+    updateAgCharCount(vCap);
     var c=$('agCost'); if(c)c.textContent='✦'+agCost();
     refreshAgBtn();
   }
@@ -15216,7 +15276,9 @@ window.afGallery=(function(){
     var ta=$('agPrompt');
     b.disabled=!(ag.loaded&&curAgModel()&&ta&&ta.value.trim().length>=2&&!agCreditGate()); // SC_27: kredit gate
   }
-  var _ta=$('agPrompt'); if(_ta)_ta.addEventListener('input',refreshAgBtn);
+  var _ta=$('agPrompt'); if(_ta)_ta.addEventListener('input',function(){ refreshAgBtn(); var m=curAgModel(); var vCap=(ag.mode==='voice'&&m&&typeof m.maxChars==='number'&&m.maxChars>0)?m.maxChars:0; updateAgCharCount(vCap); });
+  // SC_47: voice picker qidiruvi — ro'yxatni jonli filtrlaydi
+  var _vs=$('agVoiceSearch'); if(_vs)_vs.addEventListener('input',function(){ var m=curAgModel(); if(ag.mode==='voice'&&m&&Array.isArray(m.voices)){ var curV=m.voices.filter(function(v){return v.id===ag.voice;})[0]||m.voices[0]; renderAgVoiceList(m.voices,curV&&curV.id,_vs.value); } });
   // SC_27 (web paritet): Clear — matn tozalanadi (natijalar tegilmaydi)
   var _acl=$('agClearBtn'); if(_acl)_acl.addEventListener('click',function(){ var t=$('agPrompt'); if(t)t.value=''; refreshAgBtn(); toast('Cleared','info'); });
   // SC_27 (web paritet): Enhance — /gen/prompt/enhance (mode-aware: voice matni / sfx tavsifi)
