@@ -2934,9 +2934,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot #axToast.err{background:#2a1414;border-color:#4a2424;color:#ffc9c9}
 /* axroot panel adaptatsiya: phone-frame -> fluid CEP panel */
 .axroot{display:block;background:transparent;color:var(--txt);padding:0;min-height:0;align-items:stretch;width:100%}
-.axroot .app{width:100%;max-width:640px;margin:0 auto;height:auto;min-height:0;border:0;border-radius:0;box-shadow:none;background:transparent;position:relative} /* F-20: keng viewportda AI tool cho'zilib ketmasin */
+.axroot .app{width:100%;max-width:none;margin:0;height:auto;min-height:0;border:0;border-radius:0;box-shadow:none;background:transparent;position:relative} /* SC_26: panel to'liq kengligiga cho'ziladi (eski 640px klamp = tor markaziy orolcha). Kontent ustunlar bilan kengayadi; faqat kompozer cheklangan */
 .axroot .scroll{height:auto;overflow:visible;padding:12px 12px 76px} /* F-21: pastki fixed toast/banner oxirgi blokni qoplamasin */
 .axroot .pbar{position:sticky;top:0;z-index:20}
+/* SC_26: sobit-kontentli menu/forma yuzalar (AI launcher, Settings) keng panelда markaziy
+   o'qilishli ustunда qoladi — bu yuzalar grid EMAS, shuning uchun to'liq cho'zish o'rniga markazlash.
+   Feed/grid yuzalar (workspace, My Library, session grid) esa to'liq kenglikda ustun qo'shadi. */
+@media(min-width:800px){
+  #v-launcher,#v-settings{max-width:760px;margin-left:auto;margin-right:auto}
+}
 
 /* ===== Rasm yaratish tool — tool-image.html 1:1, .axig scope ===== */
 .axroot #v-imggen.on{display:flex;flex-direction:column;min-height:74vh;height:100%}
@@ -3270,6 +3276,13 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axsp .sp-card .ct{padding:0 10px 9px;font-size:10px;color:var(--mut2);display:flex;align-items:center;gap:6px}
 .axsp .sp-empty{font-size:11px;color:var(--mut2);padding:14px 4px;text-align:center}
 .axsp .recentgrid{margin-top:4px}
+/* SC_26: Sessions/Projects keng panelда to'ldiradi — qatorlar/kartalar ustunlarga bo'linadi.
+   Tor (<560px) bitta-ustun ro'yxat / 2-ustun grid saqlanadi. */
+@media(min-width:560px){
+  #spickList{columns:320px;column-gap:9px}
+  #spickList .sp-row{break-inside:avoid}
+  .axsp .sp-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+}
 /* P1 — loyiha tanlash / nom modallari (markaziy, bottom-sheet EMAS — redesign qoidasi) */
 .afspov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1200;display:none;align-items:center;justify-content:center}
 .afspov.on{display:flex}
@@ -3847,7 +3860,9 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-sugg button{min-height:26px;margin:3px;padding:5px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--text-2);font-family:inherit;font-size:9.5px;font-weight:650;cursor:pointer;transition:border-color .14s,color .14s,transform .14s}
 .axws-sugg button:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
 /* ── Docked composer ── */
-.axws-dock{flex:0 0 auto;margin:0 9px 9px;padding:12px 13px;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.42);position:relative;z-index:40}
+/* SC_26: kompozer keng panelda o'sadi lekin ~1160px'da to'xtaydi va feed'ga nisbatan MARKAZLASHADI
+   (yagona max-width'li element — 2500px kenglikdagi textarea yozishni buzardi). Tor panelда 9px chekka gap. */
+.axws-dock{flex:0 0 auto;margin:0 auto 9px;width:calc(100% - 18px);max-width:1160px;padding:12px 13px;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.42);position:relative;z-index:40}
 .axroot[data-theme="noir"] .axws-dock{background:#131316}
 .axroot[data-theme="neon"] .axws-dock{background:#0d0d0e}
 .axroot[data-theme="cold"] .axws-dock{background:#10141d}
@@ -3947,6 +3962,12 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 /* 1× zichlik (density) */
 .axws-stage .recentgrid.dense1{columns:1}
 .axws-stage .recentgrid.dense1 .rc{aspect-ratio:16/10}
+/* SC_26: keng panelда feed ustun QO'SHADI (masonry column-width) — cho'zilmaydi, zichlashadi.
+   Tor (<560px) 2 ustun (dense1=1) saqlanadi; ≥560px'да kenglikka qarab ustun soni o'sadi. */
+@media(min-width:560px){
+  .recentgrid{columns:260px}
+  .axws-stage .recentgrid.dense1{columns:440px}
+}
 /* ── tor kenglik moslashuvi (320/420) — Generate hech qachon kesilmasin ── */
 @media(max-width:452px){
   .axws-dockrow{flex-wrap:wrap}
