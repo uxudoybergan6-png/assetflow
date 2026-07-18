@@ -2616,15 +2616,20 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .galselbtn.on{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
 .axroot .galmore{font-size:11px;color:var(--blue);cursor:pointer;white-space:nowrap;padding:0 2px;flex:0 0 auto}
 .axroot .galmore:hover{text-decoration:underline}
-.axroot .galgrid{display:grid;gap:9px}
+/* SC_45: masonry — CSS multi-column packing (nativ nisbat saqlanadi; teng-balandlik qatorlar
+   yo'q → aralash nisbatlarda bo'sh joy qolmaydi). Zoom (data-cols) = ustun KENGLIGI; ustun soni
+   panel kengligiga qarab o'sadi. Reading order: eng yangi chapdan-yuqoridan (kolonna-major). */
+.axroot .galgrid{column-gap:9px}
 /* SC_23: My Library skeleton kartalar — yuklanishда qora void o'rniga shimmer */
 .axroot .galgrid .gskel{aspect-ratio:16/9;border-radius:12px;border:1px solid var(--line2);background-image:linear-gradient(100deg,var(--card3) 38%,var(--card) 50%,var(--card3) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
 /* SC_46: sessiya feed skeleton kartalar — sessiya ochilganда LOADING holati (bo'sh flash EMAS) */
 .axroot .recentgrid .rcskel{aspect-ratio:1/1;border-radius:12px;border:1px solid var(--line2);background-image:linear-gradient(100deg,var(--card3) 38%,var(--card) 50%,var(--card3) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
-.axroot .galgrid[data-cols="1"]{grid-template-columns:1fr}
-.axroot .galgrid[data-cols="2"]{grid-template-columns:1fr 1fr}
-.axroot .galgrid[data-cols="3"]{grid-template-columns:1fr 1fr 1fr}
-.axroot .gcard{border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card);position:relative}
+.axroot .galgrid[data-cols="1"]{columns:270px}
+.axroot .galgrid[data-cols="2"]{columns:186px}
+.axroot .galgrid[data-cols="3"]{columns:138px}
+.axroot .galgrid .galempty,.axroot .galgrid .axighint{column-span:all}
+.axroot .galgrid .gskel{break-inside:avoid;margin-bottom:9px}
+.axroot .gcard{break-inside:avoid;margin-bottom:9px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--card);position:relative}
 /* SC_16: default 16/9 (1:1 majburlash yo'q) — haqiqiy nisbat inline style'da yengadi */
 .axroot .gcard .gth{width:100%;aspect-ratio:16/9;background-size:cover;background-position:center;background-color:var(--card3);position:relative}
 /* SC_16: audio gth — ixcham sobit balandlik + waveform + tur chipi + play */
@@ -2641,14 +2646,15 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .gcard .gmeta{padding:7px 8px}
 .axroot .gcard .gmeta b{font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .axroot .gcard .gmeta small{font-size:9.5px;color:var(--mut)}
-/* SC_16: 6-ikon .gacts qatori o'rniga bitta "Use ▾" tugma (langar menyu) */
-.axroot .gcard .gacts{display:flex;justify-content:flex-end;padding:6px 8px;border-top:1px solid var(--line)}
-.axroot .gcard .gacts .guse{padding:5px 12px;border-radius:999px;background:var(--acc);color:var(--acc-ink);font:700 9.5px/1 var(--font-sans);cursor:pointer;white-space:nowrap}
-.axroot .gcard .gacts .guse:hover{filter:brightness(1.07)}
-.axroot .gcard .gacts div{cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px}
-.axroot .gcard .gacts div:hover{color:var(--txt);background:rgba(255,255,255,.03)}.axroot .gcard .gacts div+div{border-left:1px solid var(--line)}
+/* SC_45: "Use ▾" endi karta ICHIDA — media ustida o'ng-past burchakda, hover/focus'da ochiladi
+   (pastdagi alohida .gacts strip O'CHIRILDI → bo'sh joy qaytdi). Touch/no-hover'da doim ko'rinadi. */
+.axroot .gcard .gth .guse,.axroot .gcard .gth-aud .guse{position:absolute;right:6px;bottom:6px;z-index:3;padding:5px 11px;border-radius:999px;background:var(--acc);color:var(--acc-ink);font:700 9.5px/1 var(--font-sans);cursor:pointer;white-space:nowrap;opacity:0;transform:translateY(3px);transition:opacity .14s ease,transform .14s ease;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.axroot .gcard:hover .gth .guse,.axroot .gcard:focus-within .gth .guse,.axroot .gcard:hover .gth-aud .guse,.axroot .gcard:focus-within .gth-aud .guse{opacity:1;transform:none}
+.axroot .gcard .gth .guse:hover,.axroot .gcard .gth-aud .guse:hover{filter:brightness(1.07)}
+@media (hover:none){.axroot .gcard .gth .guse,.axroot .gcard .gth-aud .guse{opacity:1;transform:none}}
+.axroot .gcard .gth-aud .guse{position:static;margin-left:auto;opacity:1;transform:none;flex:none}
 .axroot .galgrid.selmode .gcard{cursor:pointer}
-.axroot .galgrid.selmode .gcard .gacts{display:none}
+.axroot .galgrid.selmode .gcard .guse{display:none}
 .axroot .galgrid:not(.selmode) .gcard .gcb{display:none}
 .axroot .galbatch{display:none;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line2);border-radius:11px;padding:8px 10px;position:sticky;bottom:0;z-index:4}
 .axroot .galbatch.on{display:flex}
@@ -12098,10 +12104,9 @@ window.afGallery=(function(){
             au.onended=function(){ gap.innerHTML=playSvg; };
           });
         }
-        // SC_16: doimiy .gacts ikon qatori o'rniga web-uslub BITTA "Use ▾" tugma — langar menyu.
-        // Strip → menyu xaritasi 1:1: Import · Add to project · Add to Explore · Regenerate ·
+        // SC_45: "Use ▾" endi karta ICHIDA (media ustida) — alohida pastki strip o'rniga.
+        // Menyu xaritasi 1:1: Import · Add to project · Add to Explore · Regenerate ·
         // Copy prompt · (Download — faqat brauzer) · Delete. Upscale yo'q (SC_17 o'chirgan).
-        var acts=document.createElement('div'); acts.className='gacts';
         var useBtn=document.createElement('div'); useBtn.className='guse'; useBtn.textContent='Use ▾'; useBtn.title='Actions';
         useBtn.addEventListener('click',function(e){
           e.stopPropagation();
@@ -12117,8 +12122,9 @@ window.afGallery=(function(){
           items.push({ic:IC.trash,label:'Delete',danger:true,fn:function(){ galDeleteOne(it); }});
           if(window.afUseMenuOpen)window.afUseMenuOpen(useBtn,items);
         });
-        acts.appendChild(useBtn);
-        card.appendChild(acts);
+        // SC_45: Use'ni karta ICHIGA joylaymiz — visual kartada .gth ustiga, audio kartada gth-aud qatoriga.
+        var _host=card.querySelector('.gth')||card.querySelector('.gth-aud')||card;
+        _host.appendChild(useBtn);
         if(st.select){
           card.addEventListener('click',function(){ if(st.sel[it.id])delete st.sel[it.id]; else st.sel[it.id]=1; card.classList.toggle('sel',!!st.sel[it.id]); updBatch(); });
         }else{
