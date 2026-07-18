@@ -406,6 +406,16 @@ body{
 @media (max-width:380px){
   .af-tb-cred .hd-plan{display:none}
 }
+/* SC_35: JS-boshqariladigan bosqichli ixchamlash (afFitTopbar) — media-query kengligiga
+   TAYANMAY, HAQIQIY toshib chiqishga qarab qo'llanadi (AE shrift metrikasi kengroq bo'lsa,
+   ~800-900px MID kenglikda ham to'qnashuv bo'lmasin). Faqat QO'SHADI (media querylar bilan
+   ziddiyatsiz): c1 brand+qisqa seg yorliqlari → c2 FREE/PRO pilli → c3 Refresh ikonasi. */
+html.tb-c1 .af-topbar .af-tb-brand{display:none}
+html.tb-c1 .af-tb-seg .ff-seg__item .lf{display:none}
+html.tb-c1 .af-tb-seg .ff-seg__item .ls{display:inline}
+html.tb-c1 .af-tb-seg .ff-seg__item{padding:5px 10px}
+html.tb-c2 .af-tb-cred .hd-plan{display:none}
+html.tb-c3 .af-topbar .af-tb-r>.af-tb-icon{display:none}
 @media (max-width:459px){
   .af-topbar{gap:6px;padding:0 8px}
   /* Sync ikonasi tor panelda yashirinadi (AI launcher'da ham Sync bor) */
@@ -440,15 +450,25 @@ body{
   .af-tb-seg .ff-seg__item{padding:5px 12px}
 }
 /* Kategoriya chiplari (a1: Filtrlar ichida; bu yerda yashirin, wiring saqlanadi) */
-.af-chips{display:flex;gap:6px;padding:8px 12px 4px;overflow-x:auto;scrollbar-width:none}
+.af-chips{display:flex;gap:6px;padding:8px 12px 4px;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
 .af-chips[hidden]{display:none}
+/* SC_35: chetlarda "yana bor" fade (afRefreshStrip) — af-tabs bilan bir xil naqsh */
+.af-chips.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 22px,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 22px,#000 calc(100% - 22px),transparent 100%)}
+.af-chips.fade-l:not(.fade-r){-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 22px);mask-image:linear-gradient(90deg,transparent 0,#000 22px)}
+.af-chips.fade-r:not(.fade-l){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent 100%)}
 .af-chips::-webkit-scrollbar{display:none}
 .af-chip{flex:none;display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:var(--fs-sm);font-weight:500;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
 .af-chip:hover{border-color:var(--muted-2);color:var(--text)}
 .af-chip.active{background:var(--green-dim);border-color:var(--border-accent);color:var(--text)}
 /* a1 chip qatori — bo'lim navigatsiyasi (avtomatik kenglik pill'lar, gorizontal scroll) */
-/* Ataylab markazlashgan: pastdagi .af-cathead qatoriga mos (chap tekislash emas) */
-.af-tabs{display:flex;justify-content:center;gap:6px;padding:10px 14px 0;background:transparent;border-bottom:0;flex:none;overflow-x:auto;scrollbar-width:none}
+/* SC_35: sig'sa markazda; toshsa CHAPDAN scroll strip (justify-content:center + overflow
+   birinchi pillni QIRQIB, unga scroll qilib bo'lmaydigan flexbox nuqsonini yopadi — "emplates").
+   .overflowing/.fade-l/.fade-r sinflarini afRefreshStrip JS resize/scroll'da qo'yadi. */
+.af-tabs{display:flex;justify-content:center;gap:6px;padding:10px 14px 0;background:transparent;border-bottom:0;flex:none;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+.af-tabs.overflowing{justify-content:flex-start}
+.af-tabs.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 22px,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 22px,#000 calc(100% - 22px),transparent 100%)}
+.af-tabs.fade-l:not(.fade-r){-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 22px);mask-image:linear-gradient(90deg,transparent 0,#000 22px)}
+.af-tabs.fade-r:not(.fade-l){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent 100%)}
 .af-tabs::-webkit-scrollbar{display:none}
 .af-tab{flex:none;display:inline-flex;align-items:center;white-space:nowrap;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:var(--muted);font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
 .af-tab:hover{color:var(--text)}
@@ -483,13 +503,13 @@ body{
 .page-tabs .ptab{border-radius:0;position:relative}
 .page-tabs .ptab.active{background:transparent;color:var(--text)}
 .page-tabs .ptab.active::after{content:'';position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--accent-cta);border-radius:2px 2px 0 0}
-/* E4: pastki status qatori (mockup .ftr) — ulanish nuqtasi + build versiyasi */
-.af-ftr{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 14px;background:var(--sidebar);border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--muted-2);flex:none}
-.af-ftr-conn{display:inline-flex;align-items:center;gap:6px}
-.af-ftr-dot{width:5px;height:5px;border-radius:50%;background:var(--muted-2);transition:background .2s}
-.af-ftr.ok .af-ftr-dot{background:var(--green-ok,#4ade80)}
-.af-ftr.err .af-ftr-dot{background:var(--red)}
-.af-ftr-ver{color:var(--muted);font-variant-numeric:tabular-nums}
+/* SC_35: pastki texnik status qatori OLIB TASHLANDI (server holati + build hash oxirgi
+   foydalanuvchiga ko'rinmaydi). Diagnostika Account sheet oxiridagi jim footer'ga ko'chdi. */
+.acs-diag{display:flex;align-items:center;gap:7px;margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:var(--fs-xs);color:var(--muted-2)}
+.acs-diag-dot{width:5px;height:5px;border-radius:50%;background:var(--muted-2);flex:none;transition:background .2s}
+.acs-diag.ok .acs-diag-dot{background:var(--green-ok,#4ade80)}
+.acs-diag.err .acs-diag-dot{background:var(--red)}
+.acs-diag-ver{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;font-family:var(--font-mono)}
 
 .env-top{padding:10px 14px 0;flex-shrink:0}
 .env-search{display:flex;gap:8px;align-items:stretch;margin-bottom:10px}
@@ -5116,11 +5136,9 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                    detail Import orqali; hisob header avatar orqali. updateFootUser/
                    setFootConnecting/updatePackFooter'dagi foot* yozuvlari null-guard bilan
                    xavfsiz no-op bo'ladi. -->
-              <!-- E4: status qatori — ulanish holati (catalogLoadState) + build versiyasi -->
-              <div class="af-ftr" id="afFtr">
-                <span class="af-ftr-conn"><span class="af-ftr-dot"></span><span id="afConnText">Waiting…</span></span>
-                <span class="af-ftr-ver" id="afConnVer"></span>
-              </div>
+              <!-- SC_35: pastki texnik status qatori OLIB TASHLANDI (foydalanuvchiga
+                   ko'rinmaydi). Bo'shagan joy scroll-area'ga qaytadi. Diagnostika endi
+                   Account sheet oxiridagi #acsDiag jim footer'da (updateConnStatus yozadi). -->
             </div>
           </div>
 
@@ -5356,6 +5374,13 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
     <!-- CHIQISH -->
     <div id="accountActionsBlock" style="display:none">
       <button type="button" class="acs-logout" onclick="accountLogout()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</button>
+    </div>
+
+    <!-- SC_35: diagnostika — server holati + build hash (pastki texnik status qatoridan ko'chdi). -->
+    <div class="acs-diag" id="acsDiag">
+      <span class="acs-diag-dot"></span>
+      <span id="acsDiagText">Waiting…</span>
+      <span class="acs-diag-ver" id="acsDiagVer"></span>
     </div>
 
     </div>
@@ -6373,6 +6398,8 @@ function syncTopNav(){
     t.classList.toggle('active',on);
     t.setAttribute('aria-selected',on?'true':'false');
   });
+  // SC_35: aktiv tab strip ichida ko'rinsin + chet fade'lar yangilansin
+  try{ const strip=document.getElementById('afTabs'); if(strip){ afRefreshStrip(strip); afScrollActiveStripIntoView(strip); } }catch(e){}
 }
 // Karta zichligi (view density) — html.dens-* class grid ustunlarini/karta ichini boshqaradi.
 // Displey-only, localStorage'да saqlanadi. Karta markup'i o'zgarmaydi (faqat o'lcham CSS).
@@ -6391,18 +6418,109 @@ function afCycleDensity(){
   applyDensityClass();
 }
 try{applyDensityClass();}catch(e){}
-// E4: status qatori — ulanish holati (catalogLoadState) + build versiyasi (displey-only)
+// SC_35: diagnostika — ulanish holati (catalogLoadState) + build versiyasi (displey-only).
+// Endi Account sheet oxiridagi jim #acsDiag footer'ga yoziladi (pastki texnik qator olib tashlandi).
 function updateConnStatus(){
-  const wrap=document.getElementById('afFtr');
+  const wrap=document.getElementById('acsDiag');
   if(!wrap)return;
   const st=(typeof catalogLoadState!=='undefined')?catalogLoadState:'idle';
   wrap.classList.toggle('ok',st==='ready');
   wrap.classList.toggle('err',st==='error');
-  const t=document.getElementById('afConnText');
+  const t=document.getElementById('acsDiagText');
   if(t)t.textContent=st==='ready'?'Server connected':st==='error'?'Server not connected':st==='loading'?'Loading…':'Waiting';
-  const v=document.getElementById('afConnVer');
+  const v=document.getElementById('acsDiagVer');
   if(v){const b=document.getElementById('afBuild');v.textContent=b?String(b.textContent).replace(/^build:\s*/,'').trim():'';}
 }
+
+/* ═══ SC_35: JONLI panel-resize adaptatsiyasi ═══════════════════════════════════════
+   AE panel chetini sudraganda HAR sirt o'zini qayta moslaydi. CSS media-query + auto-fill
+   grid'lar allaqachon jonli; bu yerda FAQAT-yuklashda/navigatsiyada hisoblanadigan JS-layout
+   (virtual grid ustun/qatorlari, top-bar yorliq rejimi, pill-strip fade/aktiv-ko'rinish)
+   yagona debounce'langan (~100ms) resize handler'ga ulanadi. Sikl/thrash yo'q. */
+
+// Top-bar: haqiqiy toshib chiqishga qarab bosqichli ixchamlash (media-query'dan mustaqil).
+// CSS grid ota-elementining scrollWidth'i toshishni ishonchli ko'rsatmaydi — shu sabab uch
+// klaster (chap · seg · o'ng) KONTENT kengligini (scrollWidth, bolalar flex:none) yig'ib,
+// panel kengligiga solishtiramiz. 8px tolerans soxta ishga tushishning oldini oladi.
+function afFitTopbar(){
+  const bar=document.querySelector('.af-topbar');
+  const root=document.documentElement;
+  root.classList.remove('tb-c1','tb-c2','tb-c3');
+  if(!bar||getComputedStyle(bar).display==='none')return;
+  const l=bar.querySelector('.af-tb-l'), s=bar.querySelector('.af-tb-seg'), r=bar.querySelector('.af-tb-r');
+  const overflowing=function(){
+    const need=(l?l.scrollWidth:0)+(s?s.scrollWidth:0)+(r?r.scrollWidth:0)+44; // 2×gap(10)+padding(24)
+    return need>bar.clientWidth+8;
+  };
+  const steps=['tb-c1','tb-c2','tb-c3'];
+  let i=0;
+  while(i<steps.length && overflowing()){ root.classList.add(steps[i]); i++; }
+}
+
+// Pill scroll-strip: sig'sa markaz, toshsa chapdan scroll + chet fade'lar (qirqilish yo'q).
+function afRefreshStrip(el){
+  if(!el)return;
+  const overflow=el.scrollWidth>el.clientWidth+2;
+  el.classList.toggle('overflowing',overflow);
+  if(!overflow){ el.classList.remove('fade-l','fade-r'); return; }
+  const sl=el.scrollLeft, max=el.scrollWidth-el.clientWidth;
+  el.classList.toggle('fade-l',sl>2);
+  el.classList.toggle('fade-r',sl<max-2);
+}
+// Aktiv pill'ni strip ichida ko'rinadigan qilib markazlashtiradi (sahifa scroll'iga TEGMAYDI).
+function afScrollActiveStripIntoView(el){
+  if(!el)return;
+  const a=el.querySelector('.active,.is-on');
+  if(!a)return;
+  if(el.scrollWidth<=el.clientWidth+2)return;
+  const ar=a.getBoundingClientRect(), er=el.getBoundingClientRect();
+  if(ar.left<er.left || ar.right>er.right){
+    const target=a.offsetLeft-(el.clientWidth-a.offsetWidth)/2;
+    el.scrollLeft=Math.max(0,target);
+  }
+}
+// Strip'ni bir marta simlaydi: wheel→gorizontal, sudrab scroll, scroll'da fade yangilash.
+function afInitScrollStrip(el){
+  if(!el||el.__afStrip)return; el.__afStrip=true;
+  el.addEventListener('wheel',function(e){
+    if(el.scrollWidth<=el.clientWidth+2)return;
+    if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){ el.scrollLeft+=e.deltaY; e.preventDefault(); }
+  },{passive:false});
+  let down=false,sx=0,sl=0,moved=false;
+  el.addEventListener('pointerdown',function(e){ down=true;moved=false;sx=e.clientX;sl=el.scrollLeft; });
+  window.addEventListener('pointermove',function(e){ if(!down)return; const dx=e.clientX-sx; if(Math.abs(dx)>3)moved=true; el.scrollLeft=sl-dx; });
+  window.addEventListener('pointerup',function(){ down=false; });
+  // Sudralgandan keyingi "fantom" click pill tanlamasin.
+  el.addEventListener('click',function(e){ if(moved){ e.preventDefault(); e.stopPropagation(); } },true);
+  el.addEventListener('scroll',function(){ afRefreshStrip(el); },{passive:true});
+  afRefreshStrip(el);
+}
+function afInitAllStrips(){
+  const t=document.getElementById('afTabs'); if(t) afInitScrollStrip(t);
+  const c=document.getElementById('afCatChips'); if(c) afInitScrollStrip(c);
+}
+
+let __afResizeTimer=null;
+function afOnResize(){
+  try{ afFitTopbar(); }catch(e){}
+  // Virtual grid ustun/qator metrikasi kenglikka bog'liq — resize'da bekor qilib qayta chizamiz.
+  try{
+    if(typeof __gridList!=='undefined' && __gridList.length){
+      __gridCardH=0; __gridCols=0; __gridWinKey='';
+      if(typeof renderGrid==='function') renderGrid();
+    }
+  }catch(e){}
+  try{
+    const t=document.getElementById('afTabs'); if(t){ afRefreshStrip(t); afScrollActiveStripIntoView(t); }
+    const c=document.getElementById('afCatChips'); if(c && !c.hasAttribute('hidden')){ afRefreshStrip(c); afScrollActiveStripIntoView(c); }
+  }catch(e){}
+}
+try{
+  window.addEventListener('resize',function(){
+    if(__afResizeTimer)clearTimeout(__afResizeTimer);
+    __afResizeTimer=setTimeout(afOnResize,100);
+  },{passive:true});
+}catch(e){}
 
 function selectResFilter(el,value,label){
   currentRes=value||'all';
@@ -7513,6 +7631,10 @@ function render(){
   updateGridLabel();
   updateFilterIndicator();
   if(typeof syncFilterSheet==='function')syncFilterSheet();
+  // SC_35: navigatsiyadan keyin top-bar fit + pill strip'lar (chip qatori qayta qurilgan bo'lishi mumkin)
+  try{ afFitTopbar(); afInitAllStrips();
+    const c=document.getElementById('afCatChips'); if(c && !c.hasAttribute('hidden')){ afRefreshStrip(c); afScrollActiveStripIntoView(c); }
+  }catch(e){}
 }
 function renderFav(){
   const list=assets.filter(a=>window.favorites.has(a.n));
@@ -9580,6 +9702,7 @@ function closeLoginRequired(){
 function openAccountSheet(){
   document.getElementById('accountSheet')?.classList.add('open');
   refreshAccountUi();
+  try{updateConnStatus();}catch(e){} // SC_35: diagnostika footerini joriy holatga yangilash
 }
 function closeAccountSheet(){
   document.getElementById('accountSheet')?.classList.remove('open');
@@ -10590,6 +10713,7 @@ async function bootPlugin(){
   }catch(e){}
   initEnvFilterUi();
   initAccountUi();
+  try{ afInitAllStrips(); afFitTopbar(); }catch(e){} // SC_35: pill strip'lar + top-bar fit boshlang'ich
   if(typeof AssetFlowLog!=='undefined') AssetFlowLog.init({ source:'ae_plugin' });
   if(IS_CEP){
     const c=document.getElementById('container');
