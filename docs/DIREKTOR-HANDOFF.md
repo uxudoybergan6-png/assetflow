@@ -374,6 +374,11 @@ Qidiruv **indekssiz ILIKE** — 5000'da 5 ms, lekin chiziqli. ~15-20k'dan keyin 
   ✅ **YANGI #H1 BAJARILDI (9448382, PUSH BO'LDI — origin/main=9448382):** Home tab clean-room
   `.fhome` (Direktor spec 1:1) — jonli model narxlari (`/gen/models`), real-katalog javoni
   (fallback yo'q), QA: 3 tema × 320/420/600 × 820/620/500 PASS, install-cep.sh bajarilgan.
+  🚧 **SC-3 DAVRA TAYYOR (2026-07-17): SC_41–SC_53 (13 prompt)** —
+  `docs/FIX-PROMPTS-SC3-2026-07-17.md`. Raqamlar GLOBAL ketma-ketlikda (to'qnashuv yo'q).
+  Tartib fayl oxirida: A struktura (41-B→49→48→47) → B composer (42→43) → C holat
+  (46→44) → D Home/katalog (50→52→45→53) → E motion (51). Muhim: 42 → 41/A ni bekor
+  qiladi · 52 → 50 zona tartibini yangilaydi · 51 eng oxirida.
   ✅ **SC-2 DAVRA TUGADI (2026-07-17): 16/16 (SC_25–SC_40), har biriga commit, PUSH
   qisman** — `docs/FIX-PROMPTS-SC2-2026-07-17.md` + jamlama `docs/SESSION-REPORT.md`
   (SC_30 amal-matritsasi + SC_27 13-model PASS jadvali shu yerda). Asosiylari: sessiya

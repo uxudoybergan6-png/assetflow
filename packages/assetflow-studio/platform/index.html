@@ -15940,14 +15940,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-axbrand-elevenlabs{background:#000;color:#fff}
   .ff .va-axbrand-topaz{background:#7c3aed;color:#fff}
   /* empty / first-run hero */
-  .ff .va-axhero{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:100%;padding-bottom:30px}
-  .ff .va-axhero h2{font-size:32px;font-weight:500;letter-spacing:-.02em;margin:22px 0 0}
-  .ff .va-axhero h2 em{font-style:normal;color:var(--lime)}
-  .ff .va-axhero p{font-size:14px;color:var(--muted);margin:10px 0 0;max-width:440px;line-height:1.6}
-  .ff .va-axsugg{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap;justify-content:center;max-width:640px}
-  .ff .va-axsg{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-weight:500;font-size:12px;color:#C9D2DE;cursor:pointer;white-space:nowrap;font-family:inherit}
-  .ff .va-axsg:hover{background:var(--f2)}
-  .ff .va-axsg i{font-style:normal;font-size:12px}
+  /* SC_41 PART B: .va-axhero / .va-axsugg / .va-axsg (new-session hero) CSS o'chirildi */
   /* SD2 video-edit preset chips — only shown when a video reference is attached */
   .ff .va-editpresets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
   .ff .va-editpreset{display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);font-weight:500;font-size:11px;color:#C9D2DE;cursor:pointer;white-space:nowrap;font-family:inherit;transition:border-color .15s,color .15s}
@@ -15979,7 +15972,6 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     .ff .va-setgear b{max-width:110px}
     .ff .va-axainfo{width:auto;flex:1}
     .ff .va-axwave{display:none}
-    .ff .va-axhero h2{font-size:24px}
     .ff .va-axscrim{padding:12px}
     .ff .va-axmodal{border-radius:18px}
     .ff .va-axmrow .ds{display:none}
@@ -17007,26 +16999,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 </div>
 
                 <div class="va-axstage">
-                  <!-- empty / first-run (frame E) -->
-                  <sc-if value="{{ axShowHero }}" hint-placeholder-val="{{ true }}">
-                    <div class="va-axhero">
-                      <span class="va-axmascot"><svg width="72" height="72" viewBox="0 0 64 64">
-                        <g class="body"><path d="M32 4C36.5 21 43 27.5 60 32 43 36.5 36.5 43 32 60 27.5 43 21 36.5 4 32 21 27.5 27.5 21 32 4Z"></path>
-                        <circle cx="26.5" cy="30" r="2.6" fill="#0E1400"></circle><circle cx="37.5" cy="30" r="2.6" fill="#0E1400"></circle>
-                        <path d="M26 37q6 5 12 0" stroke="#0E1400" stroke-width="2.4" fill="none" stroke-linecap="round"></path></g>
-                        <circle class="tw1" cx="6" cy="12" r="2.4"</circle>
-                        <circle class="tw2" cx="59" cy="16" r="1.8"</circle>
-                        <circle class="tw3" cx="55" cy="55" r="2.1"</circle>
-                      </svg></span>
-                      <h2>Start with your <em>idea</em></h2>
-                      <p>Images, video, voiceover and sound effects — describe it below and Sparky will get to work.</p>
-                      <div class="va-axsugg">
-                        <sc-for list="{{ axSuggest }}" as="c" hint-placeholder-count="4">
-                          <button class="va-axsg" data-tool="{{ c.tool }}" data-p="{{ c.t }}" onclick="{{ onSuggest }}"><i>{{ c.i }}</i>{{ c.t }}</button>
-                        </sc-for>
-                      </div>
-                    </div>
-                  </sc-if>
+                  <!-- SC_41 PART B: new-session empty-state hero ("Start with your idea" + suggestion chips)
+                       O'CHIRILDI (owner: "bular umuman kerak emas"). Bo'sh sessiya feed maydonida hech narsa
+                       ko'rsatilmaydi — axShowHero hali visuals/audio gridlarni yopadi, shu bois bo'sh qoladi. -->
 
                   <!-- visuals view (frames A–B) -->
                   <sc-if value="{{ axShowVisuals }}" hint-placeholder-val="{{ false }}">
@@ -21428,12 +21403,7 @@ class Component extends DCLogic {
     const genPct = Math.round(this._genProg || 0) + '%';
     const axPhl = this.axGenPhases()[tool.mode] || this.axGenPhases().image;
     const genStatus = axPhl[Math.min(this._genPhaseIdx || 0, axPhl.length - 1)];
-    const axSuggest = [
-      { i: '🖼', t: 'A neon product shot on wet asphalt', tool: 'Rasm yaratish' },
-      { i: '🎬', t: 'Slow-motion coffee pour, macro', tool: 'Video yaratish' },
-      { i: '🎙', t: 'A warm 10-second podcast intro', tool: 'Voiceover' },
-      { i: '🔊', t: 'Whoosh + impact for a title card', tool: 'SFX' },
-    ];
+    // SC_41 PART B: axSuggest (new-session hero suggestion chips) O'CHIRILDI — hero deleted.
     // Model picker (2 bosqich) — bir xil pickModel handler, hech qanday fork yo'q
     const unitOfMode = { image: 'per image', video: 'per second', voice: 'per 30 s', sfx: 'per effect' };
     const modelCostBits = (m, mode) => {
@@ -22469,7 +22439,7 @@ class Component extends DCLogic {
           // SC_40: header ham displey nomi bilan — qo'lda nom avto-nomlashdan ustun
           : (((viewSessObj ? this.sessDisplayName(viewSessObj).slice(0, 26) : 'SESSION').toUpperCase()) + ' · ' + wsGens.length + ' GENERATIONS')),
       axShowHero, axShowVisuals, axShowAudio, axPendVis, axPendAud, axPendVisList, axPendAudList, axVisEmpty, axAudEmpty,
-      axVisGens, axAudGens, genPct, genStatus, axSuggest,
+      axVisGens, axAudGens, genPct, genStatus,
       // #6 — Full/Compact ko'rinish (tanlov localStorage'da; default = full)
       axGridCls: 'va-axgrid' + (this.state.axGridView === 'compact' ? ' compact' : ''),
       // P19 — bir vaqtda faqat bitta g.menuOpen true bo'ladi; shu sabab bitta umumiy style yetarli.
@@ -22608,7 +22578,7 @@ class Component extends DCLogic {
           .catch(() => { try { const ta = document.createElement('textarea'); ta.value = p; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); this.toast('Prompt copied'); } catch (x) { this.toast('Copy failed'); } }); },
       axTileDownload: (e) => { e.stopPropagation(); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axTileRegen: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); const id = el && el.dataset.id; const g = id ? wsGens.find(x => x.id === id) : activeGenRaw; if (g) this.restoreGenToComposer(g.id); }, // P18: prefill, don't generate
-      onSuggest: (e) => { const el = e.currentTarget; this.setState(Object.assign({ aiTool: el.dataset.tool, aiPrompt: el.dataset.p, aiMediaView: null, chipPop: null }, refClearIfModeChanged(el.dataset.tool))); setTimeout(() => this.afSizePromptTa(), 60); },
+      // SC_41 PART B: onSuggest handler O'CHIRILDI — hero suggestion chips deleted.
       openModelModal: (e) => { if (e) e.stopPropagation(); this.setState({ modelModalOpen: true, chipPop: null, modelQ: '', modelFilter: 'All' }); },
       closeModelModal: () => this.setState({ modelModalOpen: false }),
       onModelQ: (e) => this.setState({ modelQ: e.target.value }),
