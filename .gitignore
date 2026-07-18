@@ -34,3 +34,4 @@ cloudrun-env.yaml
 
 # Local scratch/wrapper scripts with hardcoded credentials — never commit
 vwrap.mjs
+.fuse_hidden*
