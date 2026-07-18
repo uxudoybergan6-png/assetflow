@@ -15507,35 +15507,46 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   /* P16 — pastki qator DOIM bir qatorda: chap chiplar guruhi + o'ngga MAHKAMLANGAN COST+Generate (hech qachon wrap bo'lmaydi).
      MUHIM: guruhda overflow YO'Q — `overflow-x:auto` `overflow-y`ni ham `auto` qiladi va TEPAGA ochiladigan popover'ni QIRQADI
      (chip popover'lari bo'sh ko'rinardi). O'rniga chiplar torlashsa qisqaradi (ellipsis), popover'lar to'liq ko'rinadi. */
-  /* SC_54: boshqaruv qatori HAR kenglikda BITTA qator (o'ralmaydi/overflow yo'q). SETTINGS guruhi
-     qisqaradi (overflow yashiradi); AMAL guruhi (COST + Generate) qat'iy → Generate hech qachon
-     kesilmaydi/o'ralmaydi. Kompaktlash zinapoyasi = .va-dock container query'lari (pastda). */
-  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:nowrap;min-width:0;overflow:hidden}
-  .ff .va-setgroup{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;overflow:hidden}
+  /* SC_54: boshqaruv qatori HAR kenglikda BITTA qator (o'ralmaydi). SETTINGS guruhi qisqaradi
+     (chiplar flex-shrink + label ellipsis); AMAL guruhi (COST + Generate) qat'iy → Generate hech qachon
+     kesilmaydi/o'ralmaydi. Kompaktlash zinapoyasi = .va-dock container query'lari (pastda).
+     SC_55: `overflow:hidden` OLIB TASHLANDI (SC_54 regressiyasi) — u yuqoriga ochiladigan chip
+     popover'ini (.ffa-pop `bottom:100%+8px`) QIRQARDI → chip bosilsa menyu ko'rinmasdi ("o'lik-bosish"),
+     va chip yorlig'i chegaradan tashqariga kesilardi. Chiplar allaqachon flex-shrink + label-ellipsis
+     bilan sig'adi (yuqoridagi eski izohning O'ZI shuni ta'kidlagan), overflow shart emas. */
+  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:nowrap;min-width:0}
+  .ff .va-setgroup{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto}
   .ff .va-setgroup > *{flex-shrink:1}
   .ff .va-genwrap{display:flex;align-items:center;gap:9px;flex:0 0 auto;margin-left:auto}
   .ff .va-genwrap *{flex-shrink:0}
   .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap;flex:0 1 auto;min-width:0}
   /* mode/model/settings chip yorlig'i tor joyda qisqaradi (popover buzilmasin) */
-  /* SC_20: qiymat kontentgacha keng (~180px kap), model nomi boshi doim ko'rinadi */
-  .ff .va-setgroup .va-set>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:8ch;max-width:180px}
+  /* SC_20: qiymat kontentgacha keng (~180px kap). SC_55: `min-width:8ch` → `min-width:0` —
+     8ch poli tor joyda (setgroup'да 4 chip: mode·model·gear·Enhance[flex:none]) yorliqni CHIP
+     border'idan tashqariga chiqarardi (`overflow:hidden` olib tashlangach ko'rinardi). Endi yorliq
+     CHIP ICHIDA ellipsis qilinadi (defekt #2). Keng joyда nom baribir to'liq (max-width boshqaradi). */
+  .ff .va-setgroup .va-set>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:180px}
   .ff .va-set.mode,.ff .va-set.enh{flex:none}
   .ff .va-set:hover{background:var(--f2)}
   .ff .va-set b{color:var(--text);font-weight:600}
   .ff .va-set.mode{background:var(--pill-active);border-color:transparent;color:var(--text)}
   .ff .va-set.enh{color:var(--lime);border-color:color-mix(in srgb,var(--lime) 24%,transparent);background:color-mix(in srgb,var(--lime) 7%,transparent);padding:0 11px}
-  .ff .va-setgear b{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+  .ff .va-setgear b{max-width:220px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
   /* P12 — Clear chipi (kontent bo'lsa ko'rinadi) */
   .ff .va-clearchip{color:var(--muted2);font-weight:600}
   .ff .va-clearchip:hover{color:var(--text);border-color:var(--hair2)}
   /* ── SC_54 — WEB kompaktlash zinapoyasi (.va-dock container query) — plagin bilan bir xil tartib.
      Ikonka/chevron hech qachon kesilmaydi; faqat LABEL qisqaradi; Generate hech qachon degradatsiya
      bo'lmaydi (genwrap qat'iy). Enhance ✦1 to'liq qoladi (money guard). */
-  @container vacmp (max-width:640px){
+  /* SC_55: `overflow:hidden` olib tashlangach chiplar `min-width:auto` (ikonka+chevron polida
+     to'xtaydi — spill yo'q). Shu sabab guruh KENGROQ dock'да (≈686px'gача) AMAL guruhini qoplashi
+     mumkin edi; kompaktlash zinasini yuqoriroq boshlaymiz (640→720, 540→690) — chevron/label bo'sh
+     joyга qarab tushadi (qulaylik), overflow/overlap (o'lik-bosish) hech qachon yuz bermaydi. */
+  @container vacmp (max-width:720px){
     .ff .va-setgroup .va-set>b{max-width:130px}
     .ff .va-setgear b{max-width:150px}
   }
-  @container vacmp (max-width:540px){
+  @container vacmp (max-width:690px){
     /* trailing chevron tushadi (faqat popover-chip'larda) + Clear ikonka-faqat */
     .ff .va-set[data-pop] > svg.va-ic:last-child{display:none}
     .ff .va-clr-lbl{display:none}
@@ -15551,6 +15562,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     .ff .va-set.mode>b{display:none}
     .ff .va-setgroup .va-set>b{max-width:70px}
   }
+  /* SC_55 — o'ta tor (telefon eni, dock ≲460px): AMAL guruhi (Enhance · ✦1 · Generate) qat'iy va
+     ikonka-only settings ham sig'masa — ikkilamchi chiplarni bosqichma-bosqich YASHIR (plagindagi
+     kabi halol degradatsiya). Overflow/overlap (o'lik-bosish) o'rniga: 460=gear, 420=model.
+     Himoyalangan (mode·Enhance·Generate) hech qachon yashirilmaydi; keng ekranда hammasi qaytadi. */
+  @container vacmp (max-width:460px){ .ff .va-setgear{display:none} }
+  @container vacmp (max-width:420px){ .ff .va-setgroup .va-set[data-pop="model"]{display:none} }
   /* P14 — drop zonasi belgisi + gen kartasi drag affordansi */
   .ff .va-dock.va-dropon{outline:2px dashed var(--lime);outline-offset:3px;background:rgba(163,230,53,.06)}
   .ff .va-axres[draggable="true"]{cursor:grab}

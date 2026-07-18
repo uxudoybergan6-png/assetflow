@@ -3676,10 +3676,19 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-promptwrap .chipexp:hover{color:var(--text)}
 .axws-promptwrap .chipexp svg{transition:transform .15s ease}
 .axws-promptwrap .chipexp.on svg{transform:rotate(180deg)}
-.axws-dockrow{min-width:0;margin-top:10px;display:flex;align-items:center;gap:7px;flex-wrap:nowrap;overflow:hidden}
-/* SC_54: boshqaruv qatori HAR kenglikda BITTA qator. SETTINGS guruhi qisqaradi (overflow yashiradi),
+/* SC_55: `overflow:hidden` OLIB TASHLANDI (SC_54 regressiyasi) — u yuqoriga ochiladigan
+   `.axws-pop` popover'larni (mode/voice/duration/mode) QIRQARDI (bottom:100%+8px qator qutisidan
+   tashqarida) → chip bosilsa menyu ochilardi lekin ko'rinmasdi ("bosishlar o'lik"). Bir qatorlik
+   kafolat endi flex-nowrap + kc-zinapoya + kc6 shrink-backstop bilan ta'minlanadi (overflow shart emas). */
+.axws-dockrow{min-width:0;margin-top:10px;display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
+/* SC_54: boshqaruv qatori HAR kenglikda BITTA qator. SETTINGS guruhi qisqaradi (kc-zinapoya + backstop),
    AMAL guruhi (Enhance·Clear·Generate) qisqarmaydi → Generate hech qachon kesilmaydi/o'ralmaydi. */
-.axws-setgroup{min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:7px;overflow:hidden}
+/* SC_55: `flex-shrink:0` (flex:1 0 auto) — setgroup o'z kontentidan kichrayMAYDI. Ilgari (1 1 auto)
+   u 36px'gача qisqarib, qisqarmaydigan (flex:0 0 auto) chiplari CHETga toshib AMAL guruhini
+   qoplardi (model/output bosishi Enhance'ga tushardi) — bu overflow row.scrollWidth'да ko'rinmasdi.
+   Endi toshish QATORga chiqadi → o'lchov aniqlaydi → kc-zinapoya qo'llanadi; kc6'да chiplar
+   flex-shrink bo'lib CHIP ICHIDA ellipsis bilan sig'adi. */
+.axws-setgroup{min-width:0;flex:1 0 auto;display:flex;align-items:center;gap:7px}
 .axws-setgroup > *{flex:0 0 auto}
 /* ikonka/badge/chevron hech qachon kesilmaydi; faqat LABEL span qisqaradi */
 .axws .ai-set-icon,.axws .ai-set-chev,.axws-dock .pillseg .picon,.axws-dock .pillseg::after,
@@ -3813,6 +3822,25 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-dockrow.kc6 .pill-out::after{display:none}
 .axws-dockrow.kc6 .pill-out .pval{max-width:64px}
 .axws-dockrow.kc6 .pill-model .pval{max-width:64px}
+/* SC_55 — terminal SHRINK-BACKSTOP: zinapoya tugagach (kc6) SETTINGS guruhi va chiplari
+   flex-shrink bo'ladi va YORLIQ (pval/b) CHIP ICHIDA ellipsis bilan 0'gача qisqaradi → kontent
+   HECH QACHON qatordan oshmaydi, AMAL guruhini (Enhance/Generate) qoplamaydi (o'lik-bosish yo'q),
+   matn chip chegarasidan tashqariga chiqmaydi (chip border doim kontentni o'raydi; to'liq qiymat
+   title tooltip'да). MUHIM: chip'ning O'ZI `min-width:auto` — ikonka+padding'дан PASTga tushmaydi
+   (aks holda ikonka toshib qo'shni chipni qoplardi). Faqat pval/b (min-width:0) qisqaradi.
+   AMAL guruhi (genwrap) shrink QILMAYDI — Generate + narx, Enhance ✦1 to'liq qoladi. */
+.axws-dockrow.kc6 .axws-setgroup{flex-shrink:1;gap:5px}
+.axws-dockrow.kc6 .axws-setgroup > *{flex:0 1 auto;min-width:auto}
+.axws-dockrow.kc6 .axws-setgroup .pval,.axws-dockrow.kc6 .axws-setgroup .ai-set b{min-width:0}
+/* kc6'да SETTINGS chip padding'ini toraytir (ikonka-min kichrayadi) → chip TASHLASH (7..9) faqat
+   HAQIQIY tor kenglikда (≈340px'дан past) boshlanadi; keng panellarда chiplar ellipsis bilan qoladi. */
+.axws-dockrow.kc6 .axws-setgroup .pillseg,.axws-dockrow.kc6 .axws-setgroup .ai-set.mode{padding:0 7px;gap:4px}
+/* SC_55 — zina 7..9: ikonka-min ham sig'masa (o'ta tor, ~320px panel) ikkilamchi boshqaruvlarni
+   bosqichma-bosqich tashla. Himoyalangan (mode·Enhance ✦1·Generate) HECH QACHON tashlanmaydi.
+   Overflow/overlap (o'lik-bosish) o'rniga toza degradatsiya — barcha ko'rinadigan chip bosiladi. */
+.axws-dockrow.kc7 .axws-clear{display:none}          /* 7 — Clear (qulaylik; ⌘Z/qo'lда o'chirish qoladi) */
+.axws-dockrow.kc8 .pill-out{display:none}            /* 8 — output chip (default "Auto") */
+.axws-dockrow.kc9 .pill-model{display:none}          /* 9 — model chip (oxirgi chora: mode+Enhance+Generate qoladi) */
 /* SC_36: ≤360px — slim viewbar 320px'ga sig'adi. Faqat 2 boshqaruv (Visuals/Audio filter + ⋯). */
 @media(max-width:360px){
   .axws-viewbar{gap:5px;padding:7px 8px}
@@ -6304,16 +6332,36 @@ try{
   },{passive:true});
 }catch(e){}
 
-/* SC_54 — kompozer boshqaruv qatorini BITTA qatorda ushlash: .axws-setgroup content overflow'ini
-   o'lchab, minimal zarur kompaktlash zinasini (kc1…kc6 + data-compact) qo'yamiz. Har zina faqat
-   oldingisi yetmasa. Generate (amal guruhi) qisqarmaydi. Faqat transform/opacity-siz — layout
-   sakramaydi (kompaktlash bir marta, o'lchov paytida). */
+/* SC_54 — kompozer boshqaruv qatorini BITTA qatorda ushlash: qator sig'masligini o'lchab, minimal
+   zarur kompaktlash zinasini (kc1…kc9 + data-compact) qo'yamiz. Har zina faqat oldingisi yetmasa.
+   Generate (amal guruhi) qisqarmaydi. Faqat transform/opacity-siz — layout sakramaydi.
+   SC_55 — sig'maslikni ANIQ o'lchov: `overflow:hidden` olib tashlangach `row.scrollWidth` YETARLI
+   EMAS, chunki kc6'да setgroup shrink bo'lib o'z bolalarining toshishini yashiradi (scrollWidth
+   o'smaydi). Shuning uchun SETTINGS chiplarining eng o'ng qirrasi AMAL guruhi (genwrap) chap
+   qirrasidan OSHSA overflow deb hisoblaymiz (aynan o'lik-bosishга sabab bo'lgan qoplama); zaxira
+   sifatida row.scrollWidth ham tekshiriladi (Generate o'ngдан chiqib ketmasin). */
+function axwsRowOverflow(row){
+  var gw=row.querySelector('.axws-genwrap');
+  if(gw){
+    var gwLeft=gw.getBoundingClientRect().left, sg=row.querySelector('.axws-setgroup');
+    if(sg){ var k=sg.children, maxR=0;
+      for(var i=0;i<k.length;i++){ if(getComputedStyle(k[i]).display==='none')continue; var r=k[i].getBoundingClientRect(); if(r.width>0&&r.right>maxR)maxR=r.right; }
+      if(maxR > gwLeft + 1) return true; // settings AMAL guruhini qoplaydi
+    }
+  }
+  return row.scrollWidth > row.clientWidth + 1; // Generate o'ngdan chiqib ketishi (zaxira tekshiruv)
+}
 function axwsFitRow(row){
   var sg=row.querySelector('.axws-setgroup'); if(!sg)return;
-  row.classList.remove('kc1','kc2','kc3','kc4','kc5','kc6');
+  row.classList.remove('kc1','kc2','kc3','kc4','kc5','kc6','kc7','kc8','kc9');
   row.setAttribute('data-compact','0');
-  for(var lvl=1; lvl<=6; lvl++){
-    if(sg.scrollWidth <= sg.clientWidth + 1) break; // sig'di
+  /* SC_55: zinapoya 1..9. 1..5 = yorliqlarni tashla, 6 = chiplar ikonka-min + shrink-backstop.
+     Agar SHUNDA HAM sig'masa (masalan 320px panel — AMAL guruhi ~207px + 3 chip qatorga sig'maydi)
+     ikkilamchi boshqaruvlarni bosqichma-bosqich OLIB TASHLAYMIZ: 7=Clear, 8=output chip, 9=model chip.
+     HECH QACHON olib tashlanmaydi: mode, Enhance ✦1, Generate + narx (himoyalangan). Bu overflow/overlap
+     (o'lik-bosish) o'rniga deterministik, halol degradatsiya. */
+  for(var lvl=1; lvl<=9; lvl++){
+    if(!axwsRowOverflow(row)) break; // sig'di
     row.classList.add('kc'+lvl);
     row.setAttribute('data-compact',String(lvl));
   }
