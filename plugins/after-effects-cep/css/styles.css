@@ -289,6 +289,32 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .fhome-kick{margin:0 0 8px;color:var(--accent);font:750 8px/1 var(--font-mono);letter-spacing:.13em;text-transform:uppercase}
 .fhome-hero-copy h1{margin:0;font:650 30px/.95 var(--font-display);letter-spacing:-.055em}
 .fhome-sub{margin:9px 0 0;color:rgba(255,255,255,.72);font:400 10px/1.5 var(--font-sans)}
+/* SC_50: hero prompt-first input */
+.fhome-heroprompt{position:relative;z-index:3;margin-top:14px;display:flex;align-items:center;gap:7px;background:rgba(5,6,10,.5);border:1px solid rgba(255,255,255,.22);border-radius:11px;padding:4px 4px 4px 12px;max-width:340px}
+.fhome-heroprompt input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#fff;font:500 12px/1 var(--font-sans);padding:8px 0}
+.fhome-heroprompt input::placeholder{color:rgba(255,255,255,.55)}
+.fhome-heroprompt-go{flex:none;width:32px;height:32px;border:0;border-radius:8px;background:var(--grad);color:var(--on-accent);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px var(--glow)}
+.fhome-heroprompt-go:hover{filter:brightness(1.08)}
+/* SC_50: Continue a session — so'nggi sessiya kartalari */
+.fhome-sessrow{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.fhome-sessrow::-webkit-scrollbar{width:0;height:0}
+.fhome-sesscard{flex:0 0 auto;width:172px;border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:var(--surface-2);cursor:pointer;transition:border-color .15s,transform .12s}
+.fhome-sesscard:hover{border-color:var(--border);transform:translateY(-2px)}
+.fhome-sesscard .sc-thumb{aspect-ratio:16/10;background:var(--surface-3) center/cover no-repeat;position:relative}
+.fhome-sesscard .sc-glyph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px}
+.fhome-sesscard .sc-meta{padding:9px 11px}
+.fhome-sesscard .sc-nm{font:650 11.5px/1.2 var(--font-sans);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhome-sesscard .sc-sub{margin-top:3px;font:500 9.5px/1.2 var(--font-mono);color:var(--muted)}
+/* SC_50: Browse by category — 6 kafel */
+.fhome-cattiles{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+@media (min-width:560px){.fhome-cattiles{grid-template-columns:repeat(3,1fr)}}
+.fhome-cattile{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--hair);border-radius:13px;background:var(--surface-2);cursor:pointer;transition:border-color .15s,transform .12s;text-align:left}
+.fhome-cattile:hover{border-color:var(--border);transform:translateY(-2px)}
+.fhome-cattile .ct-ic{flex:none;width:34px;height:34px;border-radius:9px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.fhome-cattile .ct-ic svg{width:18px;height:18px}
+.fhome-cattile .ct-tx{min-width:0}
+.fhome-cattile .ct-nm{font:650 11.5px/1.15 var(--font-sans);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhome-cattile .ct-ct{margin-top:2px;font:500 9px/1 var(--font-mono);color:var(--muted)}
 .fhome-cta{margin-top:14px;display:flex;align-items:center}
 .fhome-btn-ai{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:9px 13px;border:0;border-radius:10px;background:var(--grad);color:var(--on-accent);font:700 10px/1 var(--font-sans);white-space:nowrap;box-shadow:0 8px 28px var(--glow);cursor:pointer}
 .fhome-btn-stock{display:inline-flex;align-items:center;justify-content:center;min-height:36px;margin-left:7px;padding:9px 13px;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:rgba(5,6,10,.58);color:#fff;font:700 10px/1 var(--font-sans);white-space:nowrap;cursor:pointer}

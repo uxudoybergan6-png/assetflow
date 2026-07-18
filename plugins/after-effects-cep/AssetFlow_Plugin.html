@@ -4116,6 +4116,11 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                             <p class="fhome-kick">Your next frame</p>
                             <h1>Make something worth replaying.</h1>
                             <p class="fhome-sub">Generate a key visual or start from a production-ready After Effects template.</p>
+                            <!-- SC_50: hero prompt-first — Enter/✦ → AI Tools yangi sessiya, kompozer to'ldirilgan (kredit YECHILMAYDI) -->
+                            <div class="fhome-heroprompt">
+                              <input type="text" id="homeHeroPrompt" placeholder="Describe your next shot…" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();afHomeHeroSubmit();}">
+                              <button type="button" class="fhome-heroprompt-go" title="Open in AI Tools" aria-label="Open in AI Tools" onclick="afHomeHeroSubmit()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></button>
+                            </div>
                             <div class="fhome-cta">
                               <button class="fhome-btn-ai" type="button" onclick="homeGo('ai')">✦ Open AI Studio</button>
                               <button class="fhome-btn-stock" type="button" onclick="homeGo('video')">Open Stock Catalog</button>
@@ -4125,6 +4130,16 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                         <div id="fhomeRecentSec" style="display:none">
                           <div class="fhome-sechd"><h2>Jump back in</h2></div>
                           <div class="fhome-recent" id="homeRecent"></div>
+                        </div>
+                        <!-- SC_50: CONTINUE A SESSION — so'nggi sessiyalar (real axwsGetSessions); bo'sh bo'lsa yashirin -->
+                        <div id="fhomeSessSec" style="display:none">
+                          <div class="fhome-sechd"><h2 id="fhomeSessHd">Continue a session</h2></div>
+                          <div class="fhome-sessrow" id="homeSessRow"></div>
+                        </div>
+                        <!-- SC_50: BROWSE BY CATEGORY — 6 katalog turi (real navigatsiya) -->
+                        <div id="fhomeCatSec">
+                          <div class="fhome-sechd"><h2 id="fhomeCatHd">Browse by category</h2></div>
+                          <div class="fhome-cattiles" id="homeCatTiles"></div>
                         </div>
                         <div id="fhomeShelfSec">
                           <div class="fhome-sechd"><h2>Fresh for your next cut</h2><button class="fhome-browse" type="button" onclick="homeGo('video')">Browse all →</button></div>
@@ -7715,6 +7730,8 @@ function renderHome(){
   fhomeFetchModels();
   renderHomeHero();
   renderHomeRecent(); // SC_07 — "Jump back in" strip
+  renderHomeSessions(); // SC_50 — "Continue a session"
+  renderHomeCategories(); // SC_50 — "Browse by category"
   renderHomeGrid();
   // SC_04: login'dan keyin ham CMS matnlari qayta qo'llanadi (idempotent, arzon)
   if(typeof afCmsApply==='function')afCmsApply();
@@ -7751,6 +7768,72 @@ function renderHomeHero(){
   // faqat hero chipida (homeBModel, yuqorida) ko'rinadi; yozuv olib tashlandi.
   // SC_04: CMS hero media ustuvorligi gen-thumb holati o'zgarganda qayta baholanadi
   if(typeof window.afCmsHeroMedia==='function')window.afCmsHeroMedia();
+}
+/* SC_50: hero prompt-first — matnni AI Tools yangi rasm-sessiyasiga uzatadi (kredit YECHILMAYDI;
+   foydalanuvchi Generate'ni o'zi bosadi). Mavjud yangi-sessiya (axIGSetSession(null)) + kompozer
+   to'ldirish yo'llarini qayta ishlatadi. */
+function afHomeHeroSubmit(){
+  var inp=document.getElementById('homeHeroPrompt'); var txt=(inp&&inp.value||'').trim(); if(!txt)return;
+  try{ document.documentElement.classList.remove('home-mode'); document.documentElement.classList.add('ai-mode'); }catch(e){}
+  try{ if(typeof window.axIGSetSession==='function')window.axIGSetSession(null); }catch(e){} // yangi sessiya (kreditsiz)
+  if(typeof window.axGo==='function')window.axGo('imggen');
+  setTimeout(function(){
+    var p=document.getElementById('igPrompt');
+    if(p){ p.textContent=txt; try{ p.dispatchEvent(new Event('input',{bubbles:true})); }catch(e){} try{ p.focus(); }catch(e){} }
+    if(inp)inp.value='';
+  },70);
+}
+window.afHomeHeroSubmit=afHomeHeroSubmit;
+/* SC_50: Continue a session — so'nggi sessiyalar (real axwsGetSessions). Bo'sh → bo'lim yashirin. */
+function renderHomeSessions(){
+  var sec=document.getElementById('fhomeSessSec'), row=document.getElementById('homeSessRow'); if(!row)return;
+  var list=[]; try{ if(typeof window.axwsGetSessions==='function')list=window.axwsGetSessions()||[]; }catch(e){}
+  list=list.slice(0,6);
+  if(!list.length){ if(sec)sec.style.display='none'; row.innerHTML=''; return; }
+  if(sec)sec.style.display='';
+  var glyph={image:'▧',video:'▷',voice:'♪',sfx:'♪',audio:'♪'};
+  row.innerHTML='';
+  list.forEach(function(s){
+    var nm=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'Session');
+    var n=(typeof s.count==='number')?s.count:0;
+    var ago=(s.lastAt&&typeof fmtAgo==='function')?(' · '+fmtAgo(s.lastAt)):'';
+    var thumb=s.thumb||s.lastThumb||'';
+    var mode=s.mode||'image';
+    var c=document.createElement('div'); c.className='fhome-sesscard';
+    c.innerHTML='<div class="sc-thumb"'+(thumb?(' style="background-image:url(\''+hmEsc(thumb)+'\')"'):'')+'>'+(thumb?'':'<span class="sc-glyph">'+(glyph[mode]||'▧')+'</span>')+'</div>'
+      +'<div class="sc-meta"><div class="sc-nm">'+hmEsc(nm)+'</div><div class="sc-sub">'+n+' generation'+(n===1?'':'s')+hmEsc(ago)+'</div></div>';
+    c.addEventListener('click',function(){
+      try{ document.documentElement.classList.remove('home-mode'); document.documentElement.classList.add('ai-mode'); }catch(e){}
+      // Sessiya picker'ining ochish yo'lini qayta ishlatamiz (mode+session)
+      var setters={image:'axIGSetSession',video:'axVGSetSession',voice:'axAGSetSession',sfx:'axAGSetSession',audio:'axAGSetSession'};
+      var dest={image:'imggen',video:'vidgen',voice:'audgen',sfx:'audgen',audio:'audgen'};
+      try{ window.__axwsSess=window.__axwsSess||{}; window.__axwsSess[dest[mode]||'imggen']=s; }catch(e){}
+      try{ var fn=window[setters[mode]||'axIGSetSession']; if(typeof fn==='function'){ if((mode==='voice'||mode==='sfx'||mode==='audio'))fn(s.mode||'voice',s.id); else fn(s.id); } }catch(e){}
+      if(typeof window.axGo==='function')window.axGo(dest[mode]||'imggen');
+    });
+    row.appendChild(c);
+  });
+}
+/* SC_50: Browse by category — 6 katalog turi kafeli (real navigatsiya; son ko'rsatilmaydi agar ochiq bo'lmasa). */
+var FHOME_CATS=[
+  {nav:'video',label:'Video Templates',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg>'},
+  {nav:'motion',label:'Motion Graphics',ic:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/></svg>'},
+  {nav:'graphics',label:'Graphics',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/></svg>'},
+  {nav:'luts',label:'LUTs',ic:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg>'},
+  {nav:'music',label:'Music',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'},
+  {nav:'sfx',label:'SFX',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>'}
+];
+function renderHomeCategories(){
+  var host=document.getElementById('homeCatTiles'); if(!host)return;
+  var counts=null; try{ if(typeof AssetFlowCatalog!=='undefined'&&typeof AssetFlowCatalog.categoryCounts==='function')counts=AssetFlowCatalog.categoryCounts(); }catch(e){}
+  host.innerHTML='';
+  FHOME_CATS.forEach(function(c){
+    var n=(counts&&typeof counts[c.nav]==='number')?counts[c.nav]:null;
+    var el=document.createElement('button'); el.type='button'; el.className='fhome-cattile';
+    el.innerHTML='<span class="ct-ic">'+c.ic+'</span><span class="ct-tx"><span class="ct-nm">'+hmEsc(c.label)+'</span>'+((n!=null)?('<span class="ct-ct">'+n+' item'+(n===1?'':'s')+'</span>'):'')+'</span>';
+    el.addEventListener('click',function(){ try{ homeGo(c.nav); }catch(e){} });
+    host.appendChild(el);
+  });
 }
 /* #H1 — jonli rasm-model katalogi (mavjud /api/studio/gen/models?mode=image endpointi, yangi API emas).
    Featured = isDefault (bo'lmasa 1-chi); narx qoidasi image tool'dagi igModelPrice bilan bir xil
