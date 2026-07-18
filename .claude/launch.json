@@ -8,6 +8,12 @@
       "port": 8978
     },
     {
+      "name": "batch8-plugin",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["http-server", "docs/mockups/batch8-plugin", "-p", "8979", "-c-1"],
+      "port": 8979
+    },
+    {
       "name": "platform-preview",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["http-server", "packages/assetflow-studio/platform", "-p", "8975", "-c-1"],

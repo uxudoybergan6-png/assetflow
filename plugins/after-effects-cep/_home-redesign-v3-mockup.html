@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FrameFlow — Home V3 "Projection Room" (mockup)</title>
+<!-- MOCKUP ONLY — plugin kodiga tegilmagan. Brauzerda ko'rib baholash uchun.
+     Yoqsa: shu til (tokens/anim) jonli #homePage ga ko'chiriladi. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Albert+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════ BOARD (baholash sahifasi) ═══════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:#0B0910}
+body{font-family:'Albert Sans',-apple-system,system-ui,sans-serif;color:#F2EFF7;-webkit-font-smoothing:antialiased;
+  background:radial-gradient(900px 420px at 50% -8%,rgba(238,194,108,.06),transparent 60%),#0B0910}
+.board{max-width:1180px;margin:0 auto;padding:52px 32px 120px}
+.b-kick{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.22em;color:#EEC26C}
+.b-title{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;letter-spacing:-.01em;margin-top:10px}
+.b-sub{font-size:14px;color:#9C95B2;margin-top:8px;max-width:660px;line-height:1.6}
+.b-meta{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.b-chip{font-family:'Space Mono',monospace;font-size:10px;padding:5px 11px;border-radius:999px;
+  border:1px solid #2A2438;background:#131019;color:#9C95B2}
+.b-chip b{color:#EEC26C;font-weight:700}
+.row{display:flex;gap:44px;flex-wrap:wrap;align-items:flex-start;margin-top:48px}
+.notes{width:360px;flex:none;position:sticky;top:32px}
+.notes h4{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:14px}
+.note{display:flex;gap:10px;font-size:12.5px;color:#9C95B2;line-height:1.6;margin-bottom:13px}
+.note .dot{width:19px;height:19px;flex:none;border-radius:50%;background:rgba(238,194,108,.12);
+  border:1px solid rgba(238,194,108,.4);color:#EEC26C;font-family:'Space Mono',monospace;font-size:9px;
+  font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.note b{color:#E6E1F0;font-weight:600}
+
+/* ═══════════ PANEL TOKENS — V3 "Projection Room" ═══════════ */
+.frame{
+  --bg:#0F0D17; --panel:#131019; --card:#181420; --card2:#1D1828; --pop:#211B2E;
+  --hair:rgba(240,232,255,.07); --hair2:rgba(240,232,255,.12);
+  --txt:#F5F2FB; --mut:#9C95B2; --mut2:#6B6480;
+  --gold:#EEC26C; --gold-hi:#F7D68F; --gold-ink:#241A06;
+  --vio:#8F7BFF; --vio-hi:#AC9DFF; --vio-dim:rgba(143,123,255,.14);
+  --gold-dim:rgba(238,194,108,.12);
+  --red:#FF6E6E; --teal:#5FD4C4;
+  --mono:'Space Mono',ui-monospace,monospace;
+  --disp:'Syne',sans-serif;
+  --scrim:rgba(10,8,16,.72);
+}
+.frame{width:380px;flex:none;border-radius:18px;border:1px solid #2A2438;overflow:hidden;position:relative;
+  background:var(--bg);color:var(--txt);font-size:13px;line-height:1.45;
+  box-shadow:0 60px 110px -50px rgba(0,0,0,.95),0 0 0 6px rgba(255,255,255,.02)}
+.frame *{font-family:'Albert Sans',-apple-system,system-ui,sans-serif}
+.frame .mono{font-family:var(--mono)}
+.fold{position:absolute;left:0;right:0;top:720px;border-top:1px dashed rgba(238,194,108,.4);z-index:60;pointer-events:none}
+.fold::after{content:"720px — panel fold";position:absolute;right:8px;top:3px;font-family:var(--mono);
+  font-size:8.5px;letter-spacing:.1em;color:rgba(238,194,108,.8);background:rgba(11,9,16,.85);padding:2px 6px;border-radius:4px}
+
+/* kirish animatsiyasi — pog'onali reveal */
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.rv{opacity:0;animation:rise .7s cubic-bezier(.22,1,.36,1) forwards}
+.rv.d1{animation-delay:.08s}.rv.d2{animation-delay:.18s}.rv.d3{animation-delay:.30s}
+.rv.d4{animation-delay:.42s}.rv.d5{animation-delay:.56s}.rv.d6{animation-delay:.70s}.rv.d7{animation-delay:.84s}
+
+/* ═══ HEADER — 52px, funksiya o'sha, til yangi ═══ */
+.hd{height:52px;display:flex;align-items:center;gap:9px;padding:0 12px;background:var(--panel);
+  border-bottom:1px solid var(--hair);position:relative;z-index:5}
+.hd-mark{width:30px;height:30px;border-radius:10px;flex:none;cursor:pointer;border:1px solid rgba(238,194,108,.45);
+  background:radial-gradient(120% 120% at 30% 20%,rgba(247,214,143,.25),transparent 55%),#1C1626;
+  display:flex;align-items:center;justify-content:center;color:var(--gold);transition:box-shadow .25s,border-color .25s}
+.hd-mark:hover{box-shadow:0 0 0 3px rgba(238,194,108,.18);border-color:var(--gold)}
+.hd-mark svg{width:15px;height:15px}
+.hd-brand{font-family:var(--disp);font-weight:700;font-size:13.5px;letter-spacing:.01em}
+.hd-sp{flex:1}
+.hd-cred{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;font-weight:700;
+  padding:5px 10px;border-radius:999px;background:var(--card);border:1px solid var(--hair2);color:var(--txt);cursor:pointer;flex:none}
+.hd-cred .s{color:var(--gold)}
+.hd-cred .plan{font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:4px;
+  background:var(--gold);color:var(--gold-ink)}
+.hd-ava{width:27px;height:27px;border-radius:50%;border:1px solid var(--hair2);flex:none;cursor:pointer;
+  background:linear-gradient(135deg,#B0653F,#5E3B8F);position:relative;padding:0}
+.hd-ava::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid var(--gold);opacity:.8}
+.hd-ava .init{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+
+/* ═══ HERO — "seans boshlanmoqda": ruler + playhead + timecode + nur ═══ */
+.hero{position:relative;padding:0 0 18px;overflow:hidden;background:
+  radial-gradient(150% 90% at 85% -10%,rgba(143,123,255,.16),transparent 55%),
+  radial-gradient(130% 100% at -10% 30%,rgba(238,194,108,.12),transparent 50%),
+  var(--bg)}
+/* sekin siljiydigan proyektor nuri */
+.hero .beam{position:absolute;inset:-40% -30%;pointer-events:none;opacity:.55;
+  background:conic-gradient(from 210deg at 78% 8%,transparent 0 40deg,rgba(247,214,143,.10) 52deg,rgba(172,157,255,.12) 64deg,transparent 76deg);
+  animation:beam 16s ease-in-out infinite alternate}
+@keyframes beam{from{transform:rotate(-4deg) translateX(-12px)}to{transform:rotate(5deg) translateX(16px)}}
+/* timeline ruler */
+.ruler{position:relative;height:30px;border-bottom:1px solid var(--hair);
+  background:repeating-linear-gradient(90deg,var(--hair2) 0 1px,transparent 1px 19px);
+  background-position:0 100%;background-size:100% 8px;background-repeat:no-repeat}
+.ruler .ph{position:absolute;top:0;bottom:-6px;left:0;width:1.5px;background:var(--gold);
+  box-shadow:0 0 10px rgba(238,194,108,.8);animation:ph 20s linear infinite}
+.ruler .ph::before{content:"";position:absolute;top:0;left:-4.5px;border:5px solid transparent;border-top:6px solid var(--gold)}
+@keyframes ph{from{left:4%}to{left:96%}}
+.ruler .tc{position:absolute;right:12px;top:7px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--mut)}
+.ruler .tc b{color:var(--gold);font-weight:700}
+.ruler .rec{position:absolute;left:12px;top:9px;display:flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;color:var(--mut)}
+.ruler .rec i{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1.4s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+/* katta sarlavha */
+.hero-copy{position:relative;padding:22px 16px 0;z-index:2}
+.hero-hi{font-size:12px;color:var(--mut);font-weight:500}
+.hero-h1{font-family:var(--disp);font-weight:800;font-size:27px;line-height:1.08;letter-spacing:-.01em;margin-top:7px}
+.hero-h1 .g{color:var(--gold);position:relative;white-space:nowrap}
+.hero-h1 .g::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:2px;background:var(--gold);
+  transform:scaleX(0);transform-origin:left;animation:under .9s .9s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes under{to{transform:scaleX(1)}}
+
+/* ═══ DOORWAYS — AE "layer bar" tili ═══ */
+.layers{position:relative;z-index:2;display:flex;flex-direction:column;gap:9px;padding:18px 14px 0}
+.layer{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--hair);
+  border-radius:13px;padding:12px 13px;cursor:pointer;position:relative;overflow:hidden;
+  transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .25s}
+.layer::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.layer .bar{position:absolute;left:0;right:0;bottom:0;height:2px;opacity:.9}
+.layer .bar i{display:block;height:100%;border-radius:0 2px 2px 0;transform-origin:left;animation:grow 1.2s .6s cubic-bezier(.22,1,.36,1) both}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.layer:hover{transform:translateX(4px)}
+.layer .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.layer .ic svg{width:17px;height:17px}
+.layer .tx{flex:1;min-width:0}
+.layer .tx b{font-family:var(--disp);font-weight:700;font-size:14px;display:block;letter-spacing:.01em}
+.layer .tx small{font-size:10.5px;color:var(--mut);display:block;margin-top:2px}
+.layer .tx .cnt{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--mut2);display:block;margin-top:4px}
+.layer .go{width:26px;height:26px;border-radius:50%;border:1px solid var(--hair2);display:flex;align-items:center;
+  justify-content:center;flex:none;color:var(--txt);transition:transform .25s,background .25s}
+.layer:hover .go{transform:translateX(3px)}
+.layer .go svg{width:12px;height:12px}
+.layer.ai::before{background:var(--vio)}
+.layer.ai:hover{border-color:rgba(143,123,255,.5)}
+.layer.ai .ic{background:var(--vio-dim);color:var(--vio-hi)}
+.layer.ai .bar i{background:linear-gradient(90deg,var(--vio),transparent);width:72%}
+.layer.tpl::before{background:var(--gold)}
+.layer.tpl:hover{border-color:rgba(238,194,108,.5)}
+.layer.tpl .ic{background:var(--gold-dim);color:var(--gold-hi)}
+.layer.tpl .bar i{background:linear-gradient(90deg,var(--gold),transparent);width:54%}
+
+/* ═══ SECTION KICK ═══ */
+.sec{display:flex;align-items:baseline;justify-content:space-between;padding:22px 16px 10px}
+.kick{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);font-weight:700}
+.kick::before{content:"◆ ";color:var(--gold);font-size:8px}
+.sec-all{font-size:11px;color:var(--mut);cursor:pointer;transition:color .2s}
+.sec-all:hover{color:var(--gold)}
+
+/* ═══ RESUME — gorizontal "takes" ═══ */
+.takes{display:flex;gap:10px;padding:0 14px;overflow-x:auto;scrollbar-width:none}
+.takes::-webkit-scrollbar{display:none}
+.take{flex:0 0 178px;background:var(--card);border:1px solid var(--hair);border-radius:13px;overflow:hidden;
+  cursor:pointer;transition:transform .25s,border-color .25s}
+.take:hover{transform:translateY(-3px);border-color:var(--hair2)}
+.take .thumb{height:82px;position:relative;background-size:cover;overflow:hidden}
+.take .thumb::after{content:"";position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:14px 14px}
+.t-night{background:radial-gradient(120% 90% at 80% 10%,rgba(143,123,255,.5),transparent 55%),
+  radial-gradient(90% 90% at 8% 95%,rgba(50,30,110,.6),transparent 60%),linear-gradient(150deg,#191033,#07050F)}
+.t-ember{background:radial-gradient(120% 100% at 78% 0%,rgba(247,180,90,.45),transparent 55%),
+  radial-gradient(90% 90% at 10% 100%,rgba(140,60,20,.45),transparent 60%),linear-gradient(150deg,#2A1608,#0C0503)}
+.t-lagoon{background:radial-gradient(120% 100% at 76% 8%,rgba(95,212,196,.35),transparent 55%),
+  radial-gradient(90% 90% at 10% 96%,rgba(15,80,95,.55),transparent 60%),linear-gradient(150deg,#07222A,#03090C)}
+.take .st{position:absolute;top:7px;left:7px;font-family:var(--mono);font-size:7.5px;font-weight:700;
+  letter-spacing:.08em;padding:2.5px 7px;border-radius:4px;background:var(--scrim);color:#EFE9DB;display:flex;align-items:center;gap:4px}
+.take .st i{width:5px;height:5px;border-radius:50%;background:var(--teal);display:block}
+.take .st.gold i{background:var(--gold)}
+.take .dur{position:absolute;right:7px;bottom:7px;font-family:var(--mono);font-size:8px;color:#EFE9DB;
+  background:var(--scrim);padding:2px 6px;border-radius:4px}
+.take .bd{padding:9px 10px 10px}
+.take .bd b{font-weight:600;font-size:11.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.take .bd small{font-size:9.5px;color:var(--mut2);display:block;margin-top:2px}
+.take .act{margin:8px 10px 10px;height:26px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+  gap:5px;font-size:10px;font-weight:700;border:1px solid var(--hair2);background:var(--card2);color:var(--txt)}
+.take .act.gold{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+
+/* ═══ FEATURED — "premiere" karta ═══ */
+.prem{margin:0 14px;position:relative;border-radius:15px;overflow:hidden;cursor:pointer;aspect-ratio:352/168;
+  border:1px solid var(--hair)}
+.prem .art{position:absolute;inset:0;background:
+  radial-gradient(130% 100% at 82% 0%,rgba(238,194,108,.5),transparent 52%),
+  radial-gradient(90% 90% at 8% 100%,rgba(120,60,150,.45),transparent 60%),
+  linear-gradient(150deg,#241533,#0A0510);
+  animation:kb 18s ease-in-out infinite alternate}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.07) translate(-6px,-4px)}}
+.prem .sheen{position:absolute;inset:0;background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.08) 50%,transparent 58%);
+  transform:translateX(-110%);animation:sheen 6s 2s ease-in-out infinite}
+@keyframes sheen{0%,55%{transform:translateX(-110%)}75%,100%{transform:translateX(110%)}}
+.prem .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,13,23,0) 30%,rgba(15,13,23,.92))}
+.prem .badge{position:absolute;top:10px;left:10px;font-family:var(--mono);font-weight:700;font-size:8px;
+  letter-spacing:.08em;padding:3px 7px;border-radius:4px;background:var(--gold);color:var(--gold-ink)}
+.prem .fresh{position:absolute;top:10px;right:10px;font-family:var(--mono);font-weight:700;font-size:8px;
+  letter-spacing:.12em;padding:3px 7px;border-radius:4px;background:var(--scrim);color:var(--gold-hi);border:1px solid rgba(238,194,108,.35)}
+.prem .bot{position:absolute;left:13px;right:13px;bottom:12px;display:flex;align-items:flex-end;gap:10px}
+.prem .bot .tx{flex:1;min-width:0}
+.prem .bot b{font-family:var(--disp);font-weight:700;font-size:15.5px;display:block;color:#fff;letter-spacing:.01em}
+.prem .bot small{font-size:10px;color:#BBB2CE;margin-top:3px;display:block}
+.prem .imp{height:29px;display:inline-flex;align-items:center;gap:6px;padding:0 13px;border-radius:999px;
+  background:var(--gold);color:var(--gold-ink);font-weight:700;font-size:10.5px;cursor:pointer;border:0;flex:none;
+  transition:box-shadow .25s}
+.prem .imp:hover{box-shadow:0 0 0 4px rgba(238,194,108,.22)}
+.prem .imp svg{width:12px;height:12px}
+.dots{display:flex;gap:5px;justify-content:center;padding:10px 0 0}
+.dots i{width:5px;height:5px;border-radius:50%;background:var(--hair2);display:block}
+.dots i.on{background:var(--gold);width:15px;border-radius:99px}
+
+/* ═══ FOOTER — kredit hikoyasi ═══ */
+.cred{margin:20px 14px 16px;display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:12px;
+  background:linear-gradient(90deg,var(--gold-dim),transparent 70%),var(--card);border:1px solid rgba(238,194,108,.22)}
+.cred .s{color:var(--gold);font-size:14px;flex:none}
+.cred .tx{font-size:11px;color:#E4DCC9;flex:1}
+.cred .tx b{font-weight:700;color:var(--gold-hi)}
+.cred .cta{font-size:10.5px;font-weight:700;color:var(--gold);cursor:pointer;white-space:nowrap}
+
+/* reduced motion */
+@media (prefers-reduced-motion:reduce){
+  .rv{animation:none;opacity:1}
+  .beam,.ruler .ph,.ruler .rec i,.prem .art,.prem .sheen,.layer .bar i,.hero-h1 .g::after{animation:none}
+  .hero-h1 .g::after{transform:scaleX(1)}
+}
+</style>
+</head>
+<body>
+<div class="board">
+
+<header>
+  <div class="b-kick">FRAMEFLOW · HOME REDESIGN · V3</div>
+  <h1 class="b-title">"Projection Room" — yangi Home varianti</h1>
+  <p class="b-sub">Eski lime/qora "Editorial stack" dan butunlay boshqa til: montaj xonasi qorong'usida
+    yonayotgan tungsten-oltin nur, jonli timecode, AE layer-bar eshiklari. Yoqsa — shu tokenlar jonli
+    <b style="color:#E6E1F0">#homePage</b> ga ko'chiriladi.</p>
+  <div class="b-meta">
+    <span class="b-chip">panel <b>380 × 720</b> CEP</span>
+    <span class="b-chip">rang <b>#EEC26C oltin · #8F7BFF binafsha</b></span>
+    <span class="b-chip">shrift <b>Syne + Albert Sans + Space Mono</b></span>
+    <span class="b-chip">imzo <b>jonli timecode + playhead</b></span>
+  </div>
+</header>
+
+<div class="row">
+  <div>
+    <div class="frame">
+      <div class="fold"></div>
+
+      <!-- HEADER -->
+      <div class="hd rv">
+        <button class="hd-mark" title="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
+        </button>
+        <span class="hd-brand">FrameFlow</span>
+        <span class="hd-sp"></span>
+        <button class="hd-cred"><span class="s">✦</span>240<span class="plan">PRO</span></button>
+        <button class="hd-ava"><span class="init">D</span></button>
+      </div>
+
+      <!-- HERO -->
+      <div class="hero">
+        <div class="beam"></div>
+        <div class="ruler rv d1">
+          <span class="rec"><i></i>SESSION</span>
+          <span class="ph"></span>
+          <span class="tc mono">TC <b id="tc">00:00:00:00</b></span>
+        </div>
+        <div class="hero-copy rv d2">
+          <div class="hero-hi">Good evening, Dilnoza</div>
+          <div class="hero-h1">The room is dark.<br>Time to <span class="g">roll.</span></div>
+        </div>
+        <!-- DOORWAYS -->
+        <div class="layers">
+          <div class="layer ai rv d3">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2zm7 12l.9 3.1L23 18l-3.1.9L19 22l-.9-3.1L15 18l3.1-.9L19 14z"/></svg></span>
+            <span class="tx"><b>AI Studio</b><small>Image · Video · Voice · SFX</small><span class="cnt">GENERATE FROM ✦ 2</span></span>
+            <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            <span class="bar"><i></i></span>
+          </div>
+          <div class="layer tpl rv d4">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span>
+            <span class="tx"><b>Templates</b><small>Drag-and-drop packs for AE</small><span class="cnt">128 READY · 12 NEW</span></span>
+            <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+            <span class="bar"><i></i></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESUME -->
+      <div class="sec rv d5"><span class="kick">JUMP BACK IN</span><span class="sec-all">History →</span></div>
+      <div class="takes rv d5">
+        <div class="take">
+          <div class="thumb t-night"><span class="st"><i></i>READY</span><span class="dur mono">0:08</span></div>
+          <div class="bd"><b>Cyberpunk alley loop</b><small>AI Video · Kling · yesterday</small></div>
+          <div class="act gold">↓ Import</div>
+        </div>
+        <div class="take">
+          <div class="thumb t-ember"><span class="st gold"><i></i>IMPORTED</span></div>
+          <div class="bd"><b>Neon Titles Pack</b><small>Template · 2h ago</small></div>
+          <div class="act">↺ Re-import</div>
+        </div>
+        <div class="take">
+          <div class="thumb t-lagoon"><span class="st gold"><i></i>DRAFT</span></div>
+          <div class="bd"><b>"golden hour rooftop…"</b><small>AI Image · draft prompt</small></div>
+          <div class="act">→ Resume</div>
+        </div>
+      </div>
+
+      <!-- FEATURED -->
+      <div class="sec rv d6"><span class="kick">TONIGHT'S PREMIERE</span><span class="sec-all">See all →</span></div>
+      <div class="prem rv d6">
+        <div class="art"></div>
+        <div class="sheen"></div>
+        <div class="ov"></div>
+        <span class="badge">PRO</span>
+        <span class="fresh">NEW THIS WEEK</span>
+        <div class="bot">
+          <div class="tx"><b>Football Championship</b><small>Broadcast pack · 8 comps · 4K</small></div>
+          <button class="imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg>Import</button>
+        </div>
+      </div>
+      <div class="dots rv d6"><i class="on"></i><i></i><i></i></div>
+
+      <!-- CREDITS -->
+      <div class="cred rv d7">
+        <span class="s">✦</span>
+        <span class="tx"><b>240 credits</b> — enough for ~12 videos tonight</span>
+        <span class="cta">Top up →</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="notes">
+    <h4>Nega bu yo'nalish</h4>
+    <div class="note"><span class="dot">1</span><span><b>Imzo — jonli seans:</b> ruler ustida 24fps'da tiklovchi timecode, sekin suzayotgan playhead va aylanuvchi proyektor nuri. Panel ochilishi bilan "studiya yondi" hissi — hamma narsa bitta orkestrlangan sahnada, qolgani tinch.</span></div>
+    <div class="note"><span class="dot">2</span><span><b>Rang tili butunlay yangi:</b> lime yo'q. Tungsten-oltin <b>#EEC26C</b> = kutubxona/premium, binafsha <b>#8F7BFF</b> = generativ AI. Chuqur indigo fon (#0F0D17) qora emas — montaj xonasi qorong'usi.</span></div>
+    <div class="note"><span class="dot">3</span><span><b>Shrift almashdi:</b> Syne (display — geometrik, san'atkor) + Albert Sans (matn) + Space Mono (timecode/label). Eski Hanken/IBM Plex'dan iz ham yo'q.</span></div>
+    <div class="note"><span class="dot">4</span><span><b>Eshiklar — AE layer-bar:</b> ikki asosiy yo'l (AI Studio / Templates) timeline qatlami kabi: chapda rang chizig'i, pastda o'sib chiquvchi duration-bar. Struktura bezak emas — AE foydalanuvchisining ona tili.</span></div>
+    <div class="note"><span class="dot">5</span><span><b>Harakat intizomli:</b> yuklanishda pog'onali reveal, hero'da ambient nur, premiere kartada sekin Ken Burns + 6s sheen. Hover: layer 4px siljiydi, karta ko'tariladi. <b>prefers-reduced-motion</b> hammasini o'chiradi.</span></div>
+    <div class="note"><span class="dot">6</span><span><b>Fold (720px) ustida:</b> header, timecode-hero, ikkala eshik va "Jump back in" boshlanishi — asosiy harakatlar scrollsiz.</span></div>
+    <div class="note"><span class="dot">✦</span><span><b>Qurish xarajati past:</b> geometriya jonli Home bilan mos (52px header, 14px gutter, mavjud homeGo/openAccountSheet ulanishlari) — faqat tokenlar, shriftlar va hero almashadi.</span></div>
+  </div>
+</div>
+
+</div>
+<script>
+/* jonli timecode — 24fps */
+(function(){
+  var el=document.getElementById('tc');if(!el)return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent='00:00:12:07';return}
+  var f=0;
+  setInterval(function(){
+    f++;
+    var fr=f%24,s=Math.floor(f/24)%60,m=Math.floor(f/1440)%60,h=Math.floor(f/86400);
+    function p(n){return (n<10?'0':'')+n}
+    el.textContent=p(h)+':'+p(m)+':'+p(s)+':'+p(fr);
+  },1000/24);
+})();
+</script>
+</body>
+</html>

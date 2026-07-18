@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>FrameFlow Plugin V3 — Premium Noir Mockup</title>
+<style>
+  :root{
+    --bg:#0a0a0b; --panel:#111113; --card:#17171a; --card2:#1d1d21;
+    --line:#26262b; --line2:#333339;
+    --txt:#f2f2f0; --txt2:#a6a6ad; --txt3:#67676e;
+    --lime:#c8f04f; --lime-dim:#a8cf3a; --lime-ink:#1a2205;
+    --r:14px; --r-sm:10px;
+    --mono:"SF Mono",ui-monospace,Menlo,monospace;
+    --sans:-apple-system,"Inter","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050506;color:var(--txt);font-family:var(--sans);min-height:100vh;padding:28px 16px 80px}
+  ::-webkit-scrollbar{width:0;height:0}
+
+  .stage{max-width:1180px;margin:0 auto}
+  .stage-head{text-align:center;margin-bottom:22px}
+  .stage-head h1{font-size:17px;font-weight:600;letter-spacing:.2px}
+  .stage-head p{font-size:12.5px;color:var(--txt2);margin-top:4px}
+  .switch{display:flex;gap:6px;justify-content:center;margin:16px 0 26px;flex-wrap:wrap}
+  .switch button{background:var(--card);border:1px solid var(--line);color:var(--txt2);font-size:12.5px;
+    padding:8px 16px;border-radius:999px;cursor:pointer;font-family:var(--sans);transition:.18s}
+  .switch button:hover{color:var(--txt);border-color:var(--line2)}
+  .switch button.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);font-weight:600}
+
+  /* ── AE panel frame ── */
+  .frame{width:500px;margin:0 auto;background:var(--panel);border:1px solid var(--line);
+    border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  .screen{display:none;height:860px;overflow-y:auto;position:relative}
+  .screen.on{display:block}
+
+  /* ── shared header ── */
+  .hd{display:flex;align-items:center;gap:10px;padding:14px 16px;position:sticky;top:0;z-index:5;
+    background:linear-gradient(180deg,rgba(17,17,19,.97) 75%,rgba(17,17,19,0));backdrop-filter:blur(8px)}
+  .logo{width:30px;height:30px;border-radius:9px;background:var(--lime);display:flex;align-items:center;justify-content:center;flex:none}
+  .logo svg{width:15px;height:15px;fill:var(--lime-ink)}
+  .hd .tabs{display:flex;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px}
+  .hd .tabs span{font-size:12px;padding:6px 14px;border-radius:999px;color:var(--txt2);cursor:pointer}
+  .hd .tabs span.on{background:var(--card2);color:var(--txt);font-weight:600}
+  .hd .sp{flex:1}
+  .credits{font-family:var(--mono);font-size:11.5px;color:var(--txt);background:var(--card);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;display:flex;align-items:center;gap:6px;cursor:pointer}
+  .credits b{color:var(--lime);font-weight:600}
+  .ava{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#8a7cf0,#e07ab8);flex:none;cursor:pointer}
+
+  /* ── search + chips ── */
+  .srch{margin:4px 16px 12px;display:flex;gap:8px}
+  .srch .box{flex:1;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--r-sm);padding:9px 12px;color:var(--txt3);font-size:12.5px}
+  .srch .fbtn{width:36px;border-radius:var(--r-sm);background:var(--card);border:1px solid var(--line);
+    color:var(--txt2);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .chips{display:flex;gap:6px;padding:0 16px 14px;overflow-x:auto}
+  .chips span{font-size:11.5px;white-space:nowrap;padding:6px 12px;border-radius:999px;color:var(--txt2);
+    background:transparent;border:1px solid var(--line);cursor:pointer;transition:.15s}
+  .chips span:hover{color:var(--txt);border-color:var(--line2)}
+  .chips span.on{background:var(--txt);color:#101012;border-color:var(--txt);font-weight:600}
+
+  .secrow{display:flex;align-items:baseline;justify-content:space-between;padding:6px 16px 10px}
+  .sec{font-family:var(--mono);font-size:10.5px;letter-spacing:1.6px;color:var(--txt3);text-transform:uppercase}
+  .all{font-size:11.5px;color:var(--txt2);cursor:pointer}
+  .all:hover{color:var(--lime)}
+
+  /* ── catalog grid: content-first ── */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 20px}
+  .tcard{cursor:pointer}
+  .thumb{position:relative;border-radius:var(--r);overflow:hidden;aspect-ratio:16/10;border:1px solid var(--line);transition:.2s}
+  .tcard:hover .thumb{border-color:var(--line2);transform:translateY(-2px)}
+  .thumb .art{position:absolute;inset:0}
+  .thumb .tag{position:absolute;top:8px;left:8px;font-family:var(--mono);font-size:9px;letter-spacing:.8px;
+    padding:3px 7px;border-radius:6px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px)}
+  .thumb .tag.free{background:rgba(200,240,79,.92);color:var(--lime-ink);font-weight:700}
+  .thumb .dur{position:absolute;bottom:8px;right:8px;font-family:var(--mono);font-size:9.5px;
+    padding:2px 6px;border-radius:5px;background:rgba(0,0,0,.55);color:#ddd}
+  .thumb .act{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:rgba(5,5,6,.45);opacity:0;transition:.18s}
+  .tcard:hover .act{opacity:1}
+  .thumb .act button{border:0;border-radius:999px;padding:8px 16px;font-size:11.5px;font-weight:600;cursor:pointer}
+  .thumb .act .go{background:var(--lime);color:var(--lime-ink)}
+  .thumb .act .pv{background:rgba(255,255,255,.14);color:#fff;backdrop-filter:blur(6px)}
+  .tmeta{padding:8px 2px 0}
+  .tmeta .nm{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tmeta .mt{font-size:11px;color:var(--txt3);margin-top:2px}
+  .tmeta .ok{color:var(--lime-dim);font-family:var(--mono);font-size:10px}
+
+  /* ── AI studio: prompt bar + preset shelves ── */
+  .askbar{margin:4px 16px 18px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+  .askbar .ph{color:var(--txt3);font-size:13px;min-height:20px}
+  .askbar .row{display:flex;align-items:center;gap:8px;margin-top:12px}
+  .mchip{font-family:var(--mono);font-size:10.5px;color:var(--txt2);border:1px solid var(--line);
+    border-radius:8px;padding:5px 9px;cursor:pointer}
+  .mchip:hover{border-color:var(--line2);color:var(--txt)}
+  .gen{margin-left:auto;background:var(--lime);color:var(--lime-ink);border:0;border-radius:10px;
+    padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;gap:7px;align-items:center;transition:.15s}
+  .gen:hover{filter:brightness(1.06)}
+  .gen small{font-family:var(--mono);font-weight:600;opacity:.75}
+
+  .shelf{display:flex;gap:10px;overflow-x:auto;padding:0 16px 6px;scroll-snap-type:x mandatory}
+  .shelf::after{content:"";flex:none;width:6px}
+  .pcard{flex:none;width:128px;scroll-snap-align:start;cursor:pointer}
+  .pcard .pv{position:relative;aspect-ratio:3/4;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);transition:.2s}
+  .pcard:hover .pv{border-color:var(--lime);transform:translateY(-3px)}
+  .pcard .pv .art{position:absolute;inset:0}
+  .pcard .pv .cr{position:absolute;bottom:7px;right:7px;font-family:var(--mono);font-size:9px;
+    background:rgba(0,0,0,.6);color:var(--lime);padding:2px 6px;border-radius:5px}
+  .pcard .pv .hot{position:absolute;top:7px;left:7px;font-size:9px;font-family:var(--mono);letter-spacing:.5px;
+    background:rgba(200,240,79,.95);color:var(--lime-ink);font-weight:700;padding:2px 6px;border-radius:5px}
+  .pcard .pv .in{position:absolute;top:7px;right:7px;width:20px;height:20px;border-radius:6px;
+    background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#cfcfd6;font-size:10px}
+  .pcard .nm{font-size:11.5px;font-weight:600;margin-top:7px;text-align:left}
+  .pcard .ds{font-size:10px;color:var(--txt3);margin-top:1px}
+  .shelfwrap{margin-bottom:16px}
+
+  /* ── composer ── */
+  .pill-preset{margin:4px 16px 12px;display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(200,240,79,.10),transparent 70%);
+    border:1px solid rgba(200,240,79,.35);border-radius:12px;padding:10px 12px}
+  .pill-preset .ic{width:34px;height:34px;border-radius:9px;flex:none;overflow:hidden;position:relative}
+  .pill-preset b{font-size:12.5px}
+  .pill-preset i{font-size:10.5px;color:var(--txt3);font-style:normal;display:block;margin-top:1px}
+  .pill-preset .x{margin-left:auto;color:var(--txt3);cursor:pointer;font-size:14px}
+  .drop{margin:0 16px 12px;border:1.5px dashed var(--line2);border-radius:14px;padding:22px 14px;text-align:center;cursor:pointer;transition:.15s}
+  .drop:hover{border-color:var(--lime);background:rgba(200,240,79,.03)}
+  .drop b{font-size:12.5px}
+  .drop span{display:block;font-size:11px;color:var(--txt3);margin-top:3px}
+  .params{display:flex;gap:6px;padding:0 16px 14px;flex-wrap:wrap}
+  .prm{font-family:var(--mono);font-size:10.5px;color:var(--txt2);background:var(--card);
+    border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .prm:hover{color:var(--txt);border-color:var(--line2)}
+  .bigen{margin:0 16px;width:calc(100% - 32px);background:var(--lime);color:var(--lime-ink);border:0;
+    border-radius:12px;padding:13px;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;justify-content:center;gap:8px;transition:.15s}
+  .bigen:hover{filter:brightness(1.07)}
+  .bigen small{font-family:var(--mono);font-weight:600;opacity:.7}
+  .draftln{text-align:center;font-size:11px;color:var(--txt3);margin:10px 0 18px}
+  .draftln u{color:var(--txt2);cursor:pointer;text-decoration-color:var(--line2)}
+  .draftln u:hover{color:var(--lime)}
+
+  .recent2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 16px 20px}
+  .rc{position:relative;aspect-ratio:1;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line);cursor:pointer}
+  .rc .art{position:absolute;inset:0}
+  .rc:hover{border-color:var(--line2)}
+  .rc .k{position:absolute;top:6px;left:6px;font-family:var(--mono);font-size:8.5px;letter-spacing:.6px;
+    background:rgba(0,0,0,.55);color:#ccc;padding:2px 5px;border-radius:4px}
+  .rc .add{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(5,5,6,.5);opacity:0;transition:.15s}
+  .rc:hover .add{opacity:1}
+  .rc .add button{background:var(--lime);color:var(--lime-ink);border:0;border-radius:999px;padding:6px 12px;font-size:10.5px;font-weight:700;cursor:pointer}
+
+  /* status footer */
+  .foot{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;padding:9px 16px;font-family:var(--mono);
+    font-size:10px;color:var(--txt3);background:linear-gradient(0deg,rgba(17,17,19,.97) 60%,rgba(17,17,19,0))}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--lime)}
+  .foot .r{margin-left:auto}
+
+  /* generating state */
+  .genstate{margin:0 16px 16px;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--card)}
+  .genstate .t{display:flex;align-items:center;gap:9px;font-size:12px}
+  .spin{width:14px;height:14px;border:2px solid var(--line2);border-top-color:var(--lime);border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .bar{height:4px;border-radius:99px;background:var(--card2);margin-top:11px;overflow:hidden}
+  .bar i{display:block;height:100%;width:38%;border-radius:99px;background:var(--lime);animation:gr 3s ease-in-out infinite alternate}
+  @keyframes gr{to{width:72%}}
+  .genstate .steps{font-family:var(--mono);font-size:9.5px;color:var(--txt3);margin-top:8px}
+  .genstate .steps b{color:var(--lime-dim);font-weight:500}
+
+  /* gradient art helpers (mock thumbnails) */
+  .a1{background:radial-gradient(120% 100% at 20% 10%,#ff9a5c 0%,#b8422f 34%,#26141f 78%)}
+  .a2{background:radial-gradient(130% 110% at 80% 15%,#5cc8ff 0%,#2f52b8 40%,#141a2b 80%)}
+  .a3{background:radial-gradient(120% 120% at 50% 90%,#c8f04f 0%,#3f7a2e 45%,#12200f 85%)}
+  .a4{background:radial-gradient(140% 100% at 15% 80%,#e07ab8 0%,#7d3ba0 45%,#1d1230 85%)}
+  .a5{background:radial-gradient(130% 110% at 70% 75%,#f2e05c 0%,#c2703a 45%,#241408 85%)}
+  .a6{background:radial-gradient(120% 120% at 30% 30%,#8a7cf0 0%,#41348f 45%,#131028 85%)}
+  .a7{background:radial-gradient(150% 100% at 85% 20%,#6ff0d6 0%,#2b8f7e 45%,#0d211d 85%)}
+  .a8{background:radial-gradient(130% 100% at 40% 15%,#f0f0f0 0%,#8d8d94 40%,#1c1c22 85%)}
+  .noise::after{content:"";position:absolute;inset:0;background:repeating-conic-gradient(rgba(255,255,255,.015) 0 1deg,transparent 1deg 2deg)}
+  .vin::before{content:"";position:absolute;inset:0;background:radial-gradient(90% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.5));z-index:1}
+
+  .note{max-width:500px;margin:14px auto 0;font-size:11.5px;color:var(--txt3);text-align:center;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="stage-head">
+    <h1>FrameFlow Plugin V3 — Premium noir + lime</h1>
+    <p>4 ekran · interaktiv mockup · hover holatlarini sinang</p>
+  </div>
+  <div class="switch">
+    <button class="on" data-s="s1">1 · Katalog</button>
+    <button data-s="s2">2 · AI Studio (presetlar)</button>
+    <button data-s="s3">3 · Kompozer</button>
+    <button data-s="s4">4 · Generatsiya holati</button>
+  </div>
+
+  <div class="frame">
+
+    <!-- ════ SCREEN 1: KATALOG ════ -->
+    <section class="screen on" id="s1">
+      <div class="hd">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+        <div class="tabs"><span class="on">Katalog</span><span>AI Studio</span></div>
+        <div class="sp"></div>
+        <div class="credits">✦ <b>444</b></div>
+        <div class="ava"></div>
+      </div>
+
+      <div class="srch">
+        <div class="box">⌕&nbsp; Shablon qidirish…</div>
+        <div class="fbtn">≔</div>
+      </div>
+      <div class="chips">
+        <span class="on">Hammasi</span><span>Video</span><span>Motion</span><span>Grafika</span><span>LUT</span><span>Musiqa</span><span>SFX</span>
+      </div>
+
+      <div class="secrow"><div class="sec">Yangi qo'shilgan · 5</div><div class="all">Hammasi →</div></div>
+      <div class="grid">
+        <div class="tcard">
+          <div class="thumb"><div class="art a1 vin noise"></div><span class="tag free">FREE</span><span class="dur">0:07</span>
+            <div class="act"><button class="pv">▶</button><button class="go">Import</button></div></div>
+          <div class="tmeta"><div class="nm">Fast Light Leaks Logo Intro</div><div class="mt">Logo Reveal · Ae · <span class="ok">✓ yuklab olingan</span></div></div>
+        </div>
+        <div class="tcard">
+          <div class="thumb"><div class="art a2 vin noise"></div><span class="tag free">FREE</span><span class="dur">0:12</span>
+            <div class="act"><button class="pv">▶</button><button class="go">Import</button></div></div>
+          <div class="tmeta"><div class="nm">Creative Logo Mockups</div><div class="mt">Mockups · Ae · <span class="ok">✓ yuklab olingan</span></div></div>
+        </div>
+        <div class="tcard">
+          <div class="thumb"><div class="art a8 vin noise"></div><span class="tag free">FREE</span><span class="dur">0:10</span>
+            <div class="act"><button class="pv">▶</button><button class="go">Import</button></div></div>
+          <div class="tmeta"><div class="nm">Animated Grunge Textures</div><div class="mt">Overlays · Ae</div></div>
+        </div>
+        <div class="tcard">
+          <div class="thumb"><div class="art a5 vin noise"></div><span class="tag free">FREE</span><span class="dur">0:15</span>
+            <div class="act"><button class="pv">▶</button><button class="go">Import</button></div></div>
+          <div class="tmeta"><div class="nm">Fast Light Leaks Transitions</div><div class="mt">Transitions · Ae</div></div>
+        </div>
+      </div>
+
+      <div class="secrow"><div class="sec">Siz uchun · AI Stock</div><div class="all">Hammasi →</div></div>
+      <div class="grid">
+        <div class="tcard">
+          <div class="thumb"><div class="art a6 vin noise"></div><span class="tag">AI</span><span class="dur">4K</span>
+            <div class="act"><button class="pv">▶</button><button class="go">Import</button></div></div>
+          <div class="tmeta"><div class="nm">Sleek Modern Robot Dance</div><div class="mt">Technology</div></div>
+        </div>
+        <div class="tcard">
+          <div class="thumb"><div class="art a7 vin noise"></div><span class="tag">AI</span><span class="dur">hd</span>
+            <div class="act"><button class="pv">▶</button><button class="go">Import</button></div></div>
+          <div class="tmeta"><div class="nm">Emergency Alarm</div><div class="mt">Sound Effects</div></div>
+        </div>
+      </div>
+
+      <div class="foot"><span class="dot"></span> server ulangan <span class="r">Pro · 16 yuklab olish</span></div>
+    </section>
+
+    <!-- ════ SCREEN 2: AI STUDIO — presetlar bosh ekranda ════ -->
+    <section class="screen" id="s2">
+      <div class="hd">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+        <div class="tabs"><span>Katalog</span><span class="on">AI Studio</span></div>
+        <div class="sp"></div>
+        <div class="credits">✦ <b>444</b></div>
+        <div class="ava"></div>
+      </div>
+
+      <div class="askbar">
+        <div class="ph">Nima yaratamiz? Yozing — yoki pastdan tayyor preset tanlang…</div>
+        <div class="row">
+          <span class="mchip">🖼 Rasm</span><span class="mchip">🎬 Video</span><span class="mchip">🔊 Ovoz</span>
+          <button class="gen">Generate <small>+4</small></button>
+        </div>
+      </div>
+
+      <div class="secrow"><div class="sec">⭐ Trend presetlar</div><div class="all">Hammasi →</div></div>
+      <div class="shelfwrap"><div class="shelf">
+        <div class="pcard"><div class="pv"><div class="art a2 vin noise"></div><span class="hot">HOT</span><span class="cr">~75 kr</span><span class="in">🖼</span></div><div class="nm">Earth Zoom Out</div><div class="ds">1 rasm · 5s video</div></div>
+        <div class="pcard"><div class="pv"><div class="art a6 vin noise"></div><span class="hot">HOT</span><span class="cr">~75 kr</span><span class="in">🖼</span></div><div class="nm">Eyes In</div><div class="ds">1 rasm · 5s video</div></div>
+        <div class="pcard"><div class="pv"><div class="art a1 vin noise"></div><span class="cr">~75 kr</span><span class="in">🖼</span></div><div class="nm">Explode</div><div class="ds">1 rasm · ovozli</div></div>
+        <div class="pcard"><div class="pv"><div class="art a4 vin noise"></div><span class="cr">~75 kr</span><span class="in">🖼🖼</span></div><div class="nm">AI Hug</div><div class="ds">2 rasm · 5s video</div></div>
+        <div class="pcard"><div class="pv"><div class="art a5 vin noise"></div><span class="cr">~40 kr</span><span class="in">🎞</span></div><div class="nm">Trend Copy</div><div class="ds">trend + o'z rasmingiz</div></div>
+      </div></div>
+
+      <div class="secrow"><div class="sec">Kamera harakatlari</div><div class="all">15 preset →</div></div>
+      <div class="shelfwrap"><div class="shelf">
+        <div class="pcard"><div class="pv"><div class="art a8 vin noise"></div><span class="cr">~75 kr</span><span class="in">🖼</span></div><div class="nm">Crash Zoom</div><div class="ds">keskin yaqinlashish</div></div>
+        <div class="pcard"><div class="pv"><div class="art a3 vin noise"></div><span class="cr">~75 kr</span><span class="in">🖼</span></div><div class="nm">Bullet Time</div><div class="ds">360° muzlagan vaqt</div></div>
+        <div class="pcard"><div class="pv"><div class="art a7 vin noise"></div><span class="cr">~75 kr</span><span class="in">🖼</span></div><div class="nm">FPV Drone</div><div class="ds">dron parvozi</div></div>
+        <div class="pcard"><div class="pv"><div class="art a2 vin noise"></div><span class="cr">~75 kr</span><span class="in">🖼</span></div><div class="nm">Dolly Zoom</div><div class="ds">Hitchcock effekti</div></div>
+      </div></div>
+
+      <div class="secrow"><div class="sec">Motion-dizayn tool'lari</div><div class="all">Hammasi →</div></div>
+      <div class="shelfwrap"><div class="shelf">
+        <div class="pcard"><div class="pv"><div class="art a3 vin noise"></div><span class="cr">~75 kr</span><span class="in">🏷</span></div><div class="nm">Logo Reveal</div><div class="ds">logo → 8 uslub intro</div></div>
+        <div class="pcard"><div class="pv"><div class="art a6 vin noise"></div><span class="cr">~40 kr</span><span class="in">✍️</span></div><div class="nm">Loop fon</div><div class="ds">cheksiz aylanuvchi</div></div>
+        <div class="pcard"><div class="pv"><div class="art a7 vin noise"></div><span class="cr">~75 kr</span><span class="in">🖼🖼</span></div><div class="nm">Morph o'tish</div><div class="ds">2 kadr orasida</div></div>
+        <div class="pcard"><div class="pv"><div class="art a4 vin noise"></div><span class="cr">~50 kr</span><span class="in">🟩</span></div><div class="nm">Green-screen FX</div><div class="ds">avto-Keylight bilan</div></div>
+      </div></div>
+
+      <div class="foot"><span class="dot"></span> 3 model jonli <span class="r">so'nggi: go-kart · 2 daq oldin</span></div>
+    </section>
+
+    <!-- ════ SCREEN 3: KOMPOZER (preset tanlangan) ════ -->
+    <section class="screen" id="s3">
+      <div class="hd">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+        <span style="font-size:13px;font-weight:600">‹ &nbsp;Video yaratish</span>
+        <div class="sp"></div>
+        <div class="credits">✦ <b>444</b></div>
+        <div class="ava"></div>
+      </div>
+
+      <div class="pill-preset">
+        <div class="ic"><div class="art a2 vin"></div></div>
+        <div><b>Earth Zoom Out</b><i>kamera preset · subyektdan kosmosgacha</i></div>
+        <span class="x">✕</span>
+      </div>
+
+      <div class="drop">
+        <b>Rasm yuklang</b>
+        <span>yoki AE kompozitsiyasining joriy kadridan oling</span>
+      </div>
+
+      <div class="params">
+        <span class="prm">720p ▾</span><span class="prm">16:9 ▾</span><span class="prm">5s ▾</span><span class="prm">🔊 ovoz: yoq ▾</span><span class="prm" style="color:var(--txt3)">⚙ qo'shimcha</span>
+      </div>
+
+      <button class="bigen">Generate <small>~75 kredit · ~2 daq</small></button>
+      <div class="draftln">Avval arzon sinab ko'ring: <u>Draft 480p — 12 kredit</u></div>
+
+      <div class="secrow"><div class="sec">So'nggi natijalar</div><div class="all">Sessiya →</div></div>
+      <div class="recent2">
+        <div class="rc"><div class="art a3 vin noise"></div><span class="k">IMG</span><div class="add"><button>+ AE'ga</button></div></div>
+        <div class="rc"><div class="art a6 vin noise"></div><span class="k">VID</span><div class="add"><button>+ AE'ga</button></div></div>
+        <div class="rc"><div class="art a5 vin noise"></div><span class="k">IMG</span><div class="add"><button>+ AE'ga</button></div></div>
+      </div>
+
+      <div class="foot"><span class="dot"></span> Seedance 2.0 · BytePlus <span class="r">narx kafolatlangan (quote)</span></div>
+    </section>
+
+    <!-- ════ SCREEN 4: GENERATSIYA HOLATI ════ -->
+    <section class="screen" id="s4">
+      <div class="hd">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></div>
+        <span style="font-size:13px;font-weight:600">‹ &nbsp;Earth Zoom Out</span>
+        <div class="sp"></div>
+        <div class="credits">✦ <b>369</b></div>
+        <div class="ava"></div>
+      </div>
+
+      <div class="genstate">
+        <div class="t"><span class="spin"></span> <b>Video yaratilmoqda…</b>&nbsp;<span style="color:var(--txt3);font-family:var(--mono);font-size:10.5px">1:24 / ~2:00</span></div>
+        <div class="bar"><i></i></div>
+        <div class="steps"><b>✓ navbat</b> → <b>✓ kadr tayyorlash</b> → <b>● video sintez</b> → yuklab olish</div>
+      </div>
+
+      <div style="margin:0 16px 16px;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:16/9;border:1px solid var(--line)">
+        <div class="art a2 vin noise" style="position:absolute;inset:0;filter:blur(14px) brightness(.7)"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px">
+          <div style="font-size:11px;color:var(--txt2);font-family:var(--mono)">PREVIEW TAYYORLANMOQDA</div>
+          <div style="font-size:10px;color:var(--txt3)">tayyor bo'lganda avtomatik ko'rsatiladi</div>
+        </div>
+      </div>
+
+      <div style="margin:0 16px;display:flex;gap:8px">
+        <button class="prm" style="flex:1;text-align:center;padding:10px">Orqa fonda davom etsin</button>
+        <button class="prm" style="flex:1;text-align:center;padding:10px;color:#e07a7a;border-color:#3a2626">Bekor qilish · refund</button>
+      </div>
+
+      <div class="secrow" style="margin-top:14px"><div class="sec">Navbatda</div><div class="all"></div></div>
+      <div style="margin:0 16px;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px">
+        <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;position:relative;flex:none"><div class="art a4 vin"></div></div>
+        <div style="font-size:11.5px"><b>AI Hug</b> <span style="color:var(--txt3)">· 2 rasm · kutmoqda</span></div>
+        <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--txt3)">#2</span>
+      </div>
+
+      <div class="foot"><span class="dot"></span> xato bo'lsa kredit avto-qaytadi <span class="r">job: bp_7f2…</span></div>
+    </section>
+
+  </div>
+
+  <p class="note">Bu mockup — dizayn-til namunasi: kontent-birinchi katalog (karta = thumbnail, tugmalar hover'da),
+  preset-kartalar AI Studio'ning BOSH ekranida, bitta lime-accent qoidasi, mono-label tizimi, jonli progress.
+  Yoqsa — shu tildagi to'liq redizayn plaginga ko'chiriladi (batch8 o'rniga V3 etalon bo'ladi).</p>
+</div>
+
+<script>
+  function show(id){
+    document.querySelectorAll('.switch button').forEach(x=>x.classList.toggle('on',x.dataset.s===id));
+    document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('on',x.id===id));
+  }
+  document.querySelectorAll('.switch button').forEach(b=>{ b.onclick=()=>show(b.dataset.s); });
+  // Panel ichidagi header-tablar ham ishlaydi (Katalog ↔ AI Studio)
+  document.querySelectorAll('.hd .tabs span').forEach(t=>{
+    t.style.cursor='pointer';
+    t.onclick=()=>show(t.textContent.trim()==='AI Studio'?'s2':'s1');
+  });
+  // Preset kartasi bosilsa → kompozer ochiladi (demo oqim)
+  document.querySelectorAll('#s2 .pcard').forEach(p=>{ p.onclick=()=>show('s3'); });
+  // Kompozerdagi Generate → holat ekrani; '‹' orqaga → AI Studio
+  var big=document.querySelector('#s3 .bigen'); if(big) big.onclick=()=>show('s4');
+  document.querySelectorAll('.hd span').forEach(s=>{
+    if(s.textContent.indexOf('‹')===0){ s.style.cursor='pointer'; s.onclick=()=>show('s2'); }
+  });
+</script>
+</body>
+</html>

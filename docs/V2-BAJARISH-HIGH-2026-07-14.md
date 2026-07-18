@@ -18,7 +18,14 @@
 > + 15-daq slot xavfsizlik to'ri (refund oqimi buzilmadi). P32: CORS prod hard-fail · monthStart
 > UTC (🔴 deploy'da chegara 1 marta siljiydi) · register atomik · avatar magic-byte · limiterlar.
 > 🔴 QOLDIQ REPORT: in-memory rate-limit per-instance = miqyos cheki (shared store, launch'dan keyin).
-> 👉 QOLDI: **JONLI-TEST** (P22·P24·P35·P28 — AE/Windows, ega ishtiroki, birma-bir).
+> ✅ **P35 KOD BAJARILDI (2026-07-14, commit 500bfae, push YO'Q):** plugin footage-to'plami
+> import (`.aep`/`.mogrt` yo'q bo'lsa media'ni FOOTAGE bin'ga import, download +1 marta) +
+> server zip'dan marketing (preview/thumbnail) strip (`ingest-zip` detektor + `serve-asset`
+> filtrlangan `pack.dl.zip` + backfill skript DRY_RUN). 🔴 XAVFSIZLIK (P35.3): manba
+> papkasidagi (footage/) preview strip QILINMAYDI — referenced footage saqlanadi. Pul-zona
+> tegilmadi. Round-trip testlar toza. ⏳ QOLDI: deploy + backfill (ega) + JONLI AE test
+> ("Fast Light Leaks Bundle" — kliplar bin'da + web zipда preview yo'q).
+> 👉 QOLDI: **JONLI-TEST** (P22·P24·P28 — AE/Windows, ega ishtiroki, birma-bir).
 
 ## BAJARISH TARTIBI (qat'iy — bog'liqliklar bor)
 

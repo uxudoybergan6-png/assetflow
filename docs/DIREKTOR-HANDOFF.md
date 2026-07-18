@@ -61,7 +61,7 @@ qaysi modelда ishlatishни aniq aytadi (Sonnet 5 / Fable 5 / Opus 4.8 — 1-b
 **Batch fayl:** bir "davra"/kun uchun bitta fayl — `docs/FIX-PROMPTS-BATCH<N>-<sana>.md`.
 Yangi davra boshlанганда yangi fayl ochiladi (eskиси tarix bo'lib qoladi).
 Batch fayl **TO'LIQ ingliz tilида** yoziladi (header, izoh, prompt — hammasi English).
-Joriy aktiv: `docs/FIX-PROMPTS-BATCH5-2026-07-11.md` (Seedance fal→BytePlus migratsiya).
+Joriy aktiv: `docs/FIX-PROMPTS-SC-2026-07-16.md` (SC oqimi — plagin CMS + topilgan muammolar).
 
 ### Yangi chatда davom etish (kontekst tugаганда)
 Foydalanuvchi yangi chat ochганда: bu faylни Claude'ga beradi → Claude **ROL (1-bo'lim)ни qabul
@@ -109,6 +109,11 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
   AE'да internet YO'Q (shrift self-host, inline SVG). `node --check` + DOM/handler bilan tasdiqla.
 - **Commit** aniq xabar bilan, **`Co-Authored-By` YO'Q** (deploy bloklaydi). **PUSH QILMA.**
 - **Minimal, tor diff.** Mavjudni qayta ishlat, regress qilma. Har prompt self-contained (`/clear`).
+- **PLAGIN UI KONSTITUTSIYASI (2026-07-17, ega tasdig'i — HAR UI promptiga kiritiladi):**
+  (1) bitta chrome — yagona top bar, ikkinchi to'liq bar taqiq; (2) karta yuzi = media +
+  tur belgisi, qolgani hover/fokusda; (3) zona budjeti — doimiy ko'rinadigan boshqaruv
+  ≤5, ortig'i bitta ⋯/disclosure ortida; (4) progressiv ochilish — funksiya O'ChMAYDI,
+  ko'chadi; (5) faqat tema tokenlari, bitta spacing shkala; (6) narx/kredit doim ko'rinadi.
 - **Referens (Artlist/Higgsfield) = ILHOM, 1:1 nusxa EMAS.** Naqsh/oqim/kayfiyat olinadi; kod,
   asset, piksel-klon TAQIQ. ⚠️ YANGILANDI (2026-07-12, USER so'rovnomasi): eski "lime accent
   saqlanadi" qoidasi BEKOR — USER hozirgi identikadan voz kechdi; yangi identika BATCH6'da
@@ -300,7 +305,94 @@ Qidiruv **indekssiz ILIKE** — 5000'da 5 ms, lekin chiziqli. ~15-20k'dan keyin 
   ⚠️ Repo'да aralash unpushed commitlar (MUAMMOLAR 3 + BATCH6 + V2 boshlanishi) — push
   hammasini birga chiqaradi.
   👉 KEYINGI: **USER PUSH + jonli ko'rik** → V2-EASY combined (endi platform/index.html
-  TOZA — BATCH6 guard to'sig'i yo'q) → BATCH7 CMS → BATCH8 plagin (#0-R mockup jarayonда).
+  TOZA — BATCH6 guard to'sig'i yo'q) → BATCH7 CMS → BATCH8 plagin (#0-R mockup TAYYOR;
+  USER 2026-07-15: **Dashboard B = default Home** + **1:1 web-parity QAT'IY talab**;
+  ✅ #0.5 BAJARILDI (ecc1364): Pro-gate + gen-progress pane + 820/620/500 balandlik + popover
+  polish; LEKIN parity'да 3 xato — Code BATCH6 maketни haqiqat deb oldi (Improve/modal-matn/
+  chip-shakl production'дан farqli). 🔴 QOIDA: maket vs production farq qilsa —
+  **production (`platform/index.html`) yutadi**. Port 2 promptда (SKIN ONLY, Fable 5 High).
+  ✅ **PORT 1/2 BAJARILDI (584e6a1, push YO'Q):** mockup-fix + noir/neon/cold tokenlar
+  (legacy-token alias'lar bilan — eski panellar buzilmaydi) + Space Grotesk/Inter/JetBrains
+  lokal (12 woff2) + Dashboard B (real hook'lар: hmList/homeGo/kredit) + auth/device-code +
+  install-cep.sh FIX (shriftlar hech qachon ko'chirilmasdi!).
+  ✅ **PORT 2/2 BAJARILDI (34636f6, push YO'Q) = BATCH8 KOD TUGADI.** Asosiy topilma:
+  plagin avvalgi batch'lардан allaqachon skin'langan ekan — qolgan ish: 30+ hardcode lime
+  literal → tema-token (noir/cold'да lime oqishi tuzatildi) + "Enhance · ✦1" + "Choose a
+  model" matnlari. 41-qatorlik 1:1 diff, mantiq/pul-zona tegilmagan, 7 inline script
+  node--check OK. ⚠️ Deferred: model-sheet qidiruvi (xatti-harakat o'zgarishi = SKIN-ONLY
+  taqiq — alohida qaror) · gen-progress kartalari offline tekshirib bo'lmadi (jonli testda).
+  ✅ **Prompt #3 ham BAJARILDI (70ab4d4):** model-sheet qidiruvi (sanktsiyalangan kichik
+  xatti-harakat) + app-bar maket anatomiyasi (brend + kontekst-label, id/handler'lар
+  saqlangan). **PUSH BO'LDI** — origin/main = 70ab4d4. Seedance-plaginda-ochish = alohida
+  mahsulot qarori (ochiq). 👉 QOLDI: **USER AE to'liq restart (⌘Q) + JONLI TEST**
+  (login + Dashboard B + ↻ Sync + 1 generatsiya [progress kartasi!] + 1 import + 3 tema +
+  model qidiruv). Solishtirish: `docs/mockups/batch8-plugin/compare.html`).
+  🔴 **JONLI TEST NATIJASI (2026-07-16): USER skin-portni RAD ETDI** — tuzilish eski
+  (launcher, karta-composer), maket bilan 1:1 emas. **USER QARORI: "faqat skin" (variant B)
+  BEKOR → STRUKTURAVIY 1:1, xatti-harakat saqlanadi.** Reja: **#R1** (AI Studio workspace:
+  launcher o'chadi, sessiya-lenta + dok-composer + mockup natija-kartalari) → USER jonli
+  test → **#R2** (Browse/Library/Settings/States/Auth + eski qoldiqlar). Ikkalasi batch
+  faylда tayyor (Fable 5 High). Feature-survival ro'yxati to'liq kuchda.
+  ✅ **#R1 BAJARILDI (4e15e04, push YO'Q):** AI Studio 3 view (image/video/audio) mockup
+  workspace anatomiyasiga qayta qurildi — sessiya-lenta + viewbar + stage + dok-composer;
+  hamma id/handler saqlangan (rewire, rewrite EMAS), `.axws` scoped CSS. Kalta panel ≤560px
+  = butun workspace scroll (Generate hech qachon kesilmaydi). ⚠️ #R2'ga qoldi: Upscale
+  source-first composer (hozir halol toast) · Browse/Library/Settings/States/Auth tuzilishi.
+  🔴 #R1 jonli AE'да BUZILDI (prompt ko'rinmas, layout rasvo) — #R1 QA sun'iy overlay'да
+  o'tgan edi. ✅ **#R1-FIX BAJARILDI (b078d70):** 2 ildiz-sabab: (1) balandlik zanjiri
+  cheklanmagan → composer fold'дан 1.5 ekran pastда; (2) chip-editor CSS `.pbox` scope'да
+  qolib, ko'chirilgan promptга umuman uslub tegmagan (ko'rinmas 22px). 21-qator fix:
+  #aiPage.axws-tool height:100% zanjiri + overflow-y:auto degradatsiya + .axws-promptwrap
+  chipedit uslublari + Generate ichida cost-tag qaytarildi. In-place matritsa PASS.
+  🔴 **USER QARORI (2026-07-16): STRATEGIYA O'ZGARDI — TAB-MA-TAB QAYTA QURISH.**
+  Plagin UX/UI holati yomon; eski plagin ko'rinishi ENDI DIZAYN MANBASI EMAS. Direktor
+  dizayner sifatida har tab uchun to'liq spetsifikatsiya yozadi (asos: tuzatilgan BATCH8
+  mockup + production tokenlar), Code yangi namespace'да noldan quradi, USER har tabни
+  ko'rib tasdiqlaydi, keyin keyingisiga o'tiladi. Tartib: **HOME (#H1)** → USER ko'rigi →
+  keyingi tab (AI Studio / Catalog / Library / Settings). #R2 muzlatildi (bekor emas,
+  strategiya almashdi).
+  🔎 **DIREKTOR JONLI AUDIT (2026-07-16, computer-use bilan AE ichida, panel ≈345px):**
+  HOME: chap-kesik (kritik layout bug) · balans 2x · hero dekorlari media ustida · kulrang
+  CTA · tokcha meta xato. AI: pill'lar "MODEL V."/"OUT 16:..." gacha qisqargan · 6 boshqaruv
+  1 qatorda · sessiya=xom prompt matn · audio bo'sh karta · app-bar yo'q (3 xil header).
+  LIBRARY: har kartada 6 belgisiz ikonka · bo'sh placeholder'lar · yuklanish=qora ekran.
+  CATALOG: har kartada Re-import tugma · pastda 2 texnik bar (build hash ko'rinadi) ·
+  340px'da 3 ustun. YAXShI: Account sheet, tema tizimi, umumiy noir baza. #H1 prompt shu
+  audit asosida qayta yozildi (6 defekt, Fable 5 Medium) — USER'ga berildi.
+  🔴 **USER #H1'ni ham RAD ETDI — "eski plaginni yamash emas, YANGI dizayn kerak".**
+  Direktor chuqur so'rovnoma o'tkazdi (3 bosqich). ✅ **YANGI STRUKTURA TASDIQLANDI
+  (2026-07-16, USER so'rovnoma javoblari):** yagona tepa panel, 4 tab **Home · AI ·
+  Stock · Ishlarim**; HOME = banner + so'nggi ishlar + shablon tanlovi (prompt YO'Q);
+  AI = composer (rejim prompt yonida) + sessiya/Projects TO'LIQ qoladi + gen FONDA
+  (erkin yurish, tugaganda xabar); ISHLARIM = AI ishlar + yuklab olganlar BIRGA
+  (filtr + Projects + bulk); hisob/kredit/top-up/tema — BITTA avatar oynasida;
+  texnik barlar Account ichiga. Eski launcher/marketing-Home/3xil header O'CHADI.
+  ✅ **DIZAYN-USLUB HAM TASDIQLANDI (so'rovnoma):** referens = Higgsfield + Artlist/
+  Frame.io · rang muhiti = DARK asosiy + LIGHT tanlov · aksent = BITTA rang: MOVIY-OSMON
+  (sky blue, lime BEKOR) · zichlik = HAVODOR (katta bo'shliq, yirik element) · sarlavha =
+  geometrik-zamonaviy (Space Grotesk qoladi). Eski #H1/#R2 promptlari BEKOR (eski strukturaga edi).
+  ✅ **YANGI #H1 BAJARILDI (9448382, PUSH BO'LDI — origin/main=9448382):** Home tab clean-room
+  `.fhome` (Direktor spec 1:1) — jonli model narxlari (`/gen/models`), real-katalog javoni
+  (fallback yo'q), QA: 3 tema × 320/420/600 × 820/620/500 PASS, install-cep.sh bajarilgan.
+  ✅ **SC-2 DAVRA TUGADI (2026-07-17): 16/16 (SC_25–SC_40), har biriga commit, PUSH
+  qisman** — `docs/FIX-PROMPTS-SC2-2026-07-17.md` + jamlama `docs/SESSION-REPORT.md`
+  (SC_30 amal-matritsasi + SC_27 13-model PASS jadvali shu yerda). Asosiylari: sessiya
+  scoping/rename · Use ▾ amallari · bulk delete · qidiruv · CMS zanjiri (prod media =
+  worker redeploy!) · auth audit · per-model payloadlar · to'liq-panel + jonli resize ·
+  konstitutsiya passi · −34KB o'lik kod. 👉 EGA: (1) `wrangler deploy` cdn-proxy —
+  prod CMS media shuni kutyapti · (2) push + API deploy (rename PATCH ham) · (3) bucket
+  CORS (dev presign) · (4) jonli AE E2E (⌘Q: resize, CMS 5daq, har rejim 1 gen, Import,
+  rename, bulk delete, search, sign-out/in). Plagin UI Konstitutsiyasi 4-bo'limda.
+  ✅ **SC OQIMI TUGADI (2026-07-17): 23/23 bajarildi, 23 commit, PUSH YO'Q** —
+  `docs/FIX-PROMPTS-SC-2026-07-16.md` + `docs/SESSION-REPORT.md`. Asosiylari: Plugin CMS
+  (backend+admin+plagin wiring, `landing/` CDN 403 bug fix) · doimiy markaziy 3-tab seg ·
+  History→My Library · session picker + toza nomlar · Upscale butunlay o'chirildi
+  (pul-zona tegilmagan, cost-quote toza 400) · fon-generatsiya + toast · Home redesign
+  jonlandi · katalog karta/detal/grid · composer + chip fix · compact/microcopy/skeleton
+  sweep'lar. 👉 KEYINGI (EGA): push → API deploy → `wrangler deploy` (cdn-proxy) →
+  CF Pages → prod migratsiya `plugin_content_config` → AE ⌘Q + jonli E2E (CMS edit→5daq
+  plagin · gen→toast · import). Qo'lda: landing megamenyuda "Video Upscale · Topaz" qatori
+  qoldi (ffl- scope tashqarisi edi). Web account compact — xohlasa alohida.
 - ⏳ **Deferred:** headless admin E2E · BATCH5 Prompt #3 (fal Seedance cleanup — prod'да 1-2 hafta
   barqarorlikdan KEYIN) · **BATCH7 = Site CMS kengaytmasi** (BATCH6'dan KEYIN: help/legal(versiyali)/
   promo-strip/SEO-OG/ticker/cinema/presets/mega-model-ro'yxat admin'дан; page-builder EMAS) ·
