@@ -15124,7 +15124,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   @keyframes vaEq{from{transform:scaleY(.45)}to{transform:scaleY(1)}}
   /* ── top nav (A1) ── */
   /* SC_12: 3-ustun grid — markaziy seg bo'lim almashganda bir pikselga ham siljimaydi */
-  .ff .va-nav{height:64px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 32px;border-bottom:1px solid var(--hair);background:rgba(6,8,11,.9);position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  /* SC_25: side ustunlar KONTENTdan kichraymaydi (min=max-content) — mobil kenglikда o'ng klaster
+     (credpill/avatar) markaziy seg ostiga sirg'alib TEGMAYDI (plagin af-topbar fix bilan bir xil). */
+  .ff .va-nav{height:64px;display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:16px;padding:0 32px;border-bottom:1px solid var(--hair);background:rgba(6,8,11,.9);position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
   .ff .va-nav-l{display:flex;align-items:center;min-width:0}
   .ff .va-nav-c{display:flex;justify-content:center;min-width:0}
   .ff .va-nav-r{display:flex;align-items:center;gap:14px;justify-content:flex-end;min-width:0}
