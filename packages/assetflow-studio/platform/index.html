@@ -15790,7 +15790,11 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     .ff .va-lb-panel{width:auto;border-left:none;border-top:1px solid var(--hair)}
   }
   .ff .va-axres.sel{outline:2px solid var(--lime);outline-offset:-2px}
-  .ff .va-axabar{position:absolute;left:9px;right:9px;bottom:9px;display:flex;align-items:center;gap:6px;z-index:2}
+  /* SC_36 (rule 2): karta yuzi = MEDIA + tur belgisi. "Use ▾" + amal ikonlari hover/focus'да ochiladi
+     (overlay — layout siljimaydi). Plagin recentgrid kartasi bilan bir xil naqsh. */
+  .ff .va-axabar{position:absolute;left:9px;right:9px;bottom:9px;display:flex;align-items:center;gap:6px;z-index:2;opacity:0;transition:opacity .12s ease}
+  .ff .va-axcell:hover .va-axabar,.ff .va-axcell:focus-within .va-axabar{opacity:1}
+  @media (hover:none){ .ff .va-axabar{opacity:1} } /* touch: hover yo'q — bar doim ko'rinadi */
   .ff .va-axuse{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;background:var(--spend-grad);color:var(--onlime);border:none;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer}
   .ff .va-axaico{width:32px;height:32px;border-radius:50%;background:rgba(10,12,16,.78);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;font-size:12.5px;color:#DFE5EC;cursor:pointer;flex:none}
   .ff .va-axaico:hover{border-color:rgba(255,255,255,.3)}

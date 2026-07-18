@@ -3142,7 +3142,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .recentgrid .rc-pend .rc-pprompt{font-size:9.5px;color:var(--mut);line-height:1.4;text-align:center;max-height:26px;overflow:hidden;width:100%}
 .recentgrid .rc-pend .rc-pcancel{font-size:10px;font-weight:600;color:var(--mut2);cursor:pointer;padding:2px 8px;border-radius:7px;border:1px solid var(--line2)}
 .recentgrid .rc-pend .rc-pcancel:hover{color:var(--red);border-color:rgba(255,107,94,.4)}
-.recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* SC_36 (rule 2): karta yuzi = MEDIA + kichik tur belgisi (.tg). Sarlavha (.bd) hover/focus'да ko'rinadi
+   (overlay — layout siljimaydi). Klaviatura fokusi ham ochadi (.rc[tabindex] :focus / :focus-within). */
+.recentgrid .rc .bd{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10px;padding:14px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .12s ease}
+.recentgrid .rc:hover .bd,.recentgrid .rc:focus .bd,.recentgrid .rc:focus-within .bd{opacity:1}
+.recentgrid .rc:focus-visible{outline:2px solid var(--acc,var(--accent));outline-offset:2px}
 .recentgrid .rc .tg{position:absolute;top:5px;left:5px;width:22px;height:22px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;display:flex;align-items:center;justify-content:center;border-radius:7px}
 .recentgrid .rc .pv{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
 .recentgrid .empt{column-span:all;grid-column:1/-1;color:var(--mut2);font-size:12px;padding:14px;text-align:center}
@@ -3151,8 +3155,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .recentgrid .empt button:hover{border-color:var(--mut2)}
 /* hover amallar (yuqori-o'ng) + select checkbox (yuqori-chap) + batch bar */
 /* SC_16: 6-ikon strip o'rniga BITTA "Use ▾" tugma — menyu afUseMenuOpen bilan kartaga langarlanadi */
+/* SC_36 (rule 2): "Use ▾" hover/focus'да ochiladi — audio karta ham (ilgari doim ko'rinardi). */
 .recentgrid .rc .racts{position:absolute;top:5px;right:5px;display:flex;gap:4px;opacity:0;transition:opacity .12s;z-index:3}
-.recentgrid .rc:hover .racts,.recentgrid .rc.rc-aud .racts{opacity:1}
+.recentgrid .rc:hover .racts,.recentgrid .rc:focus .racts,.recentgrid .rc:focus-within .racts{opacity:1}
 .recentgrid .rc .racts b.useb{width:auto;height:25px;padding:0 10px;border-radius:999px;background:var(--accent);border:0;color:var(--on-accent);display:grid;place-items:center;cursor:pointer;font:700 9.5px/1 var(--font-sans);white-space:nowrap}
 .recentgrid .rc .racts b.useb:hover{filter:brightness(1.07)}
 /* Umumiy langar menyu */
@@ -3906,7 +3911,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-tab:hover{color:var(--text)}
 .axws-tab.active{background:var(--surface-3);color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
 .axws-tab .ct{margin-left:4px;color:var(--accent);font-family:var(--font-mono);font-size:9px;font-weight:700}
-.axws-meta{flex:1 1 auto;min-width:0;text-align:right;padding-left:6px}
+.axws-meta{flex:1 1 auto;min-width:0;text-align:left;padding:0 4px}
 .axws-meta strong{display:block;color:var(--text);font-family:var(--font-mono);font-size:8.5px;font-weight:700;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axws-meta span{display:block;margin-top:3px;color:var(--faint);font-size:8.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axws-density{flex:0 0 auto;display:flex;gap:3px}
@@ -4019,6 +4024,20 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-mrow{width:100%;min-height:32px;padding:7px;border:0;border-radius:8px;background:transparent;color:var(--text-2);display:flex;align-items:center;gap:8px;text-align:left;font-family:inherit;font-size:10px;font-weight:700;cursor:pointer}
 .axws-mrow:hover,.axws-mrow.active{background:var(--accent-soft);color:var(--accent)}
 .axws-mrow .ic{flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:7px;font-weight:700}
+/* SC_36: viewbar ⋯ menyu — ikkilamchi boshqaruvlar (refresh · My Library · card size · settings).
+   .axws-pop class'ini qayta ishlatadi (closePops/Escape darhol ishlaydi) — pastga ochiladi. */
+.axws-morewrap{flex:0 0 auto;position:relative}
+.axws-more{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;padding:0;transition:border-color .12s,color .12s}
+.axws-more svg{width:16px;height:16px;display:block}
+.axws-more:hover,.axws-more.on{border-color:var(--accent);color:var(--text)}
+.axws-menu{top:calc(100% + 6px);bottom:auto;left:auto;right:0;width:auto;min-width:174px;padding:5px}
+.axws-menu.open{display:flex;flex-direction:column;gap:1px}
+.axws-menu .axws-mi{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--text);font-family:inherit;font-size:11.5px;font-weight:550;cursor:pointer;text-align:left;line-height:1}
+.axws-menu .axws-mi:hover{background:rgba(255,255,255,.06)}
+.axws-menu .axws-mi svg{width:15px;height:15px;flex:0 0 auto;color:var(--muted)}
+.axws-menu .axws-mi:hover svg{color:var(--text)}
+.axws-menu .axws-mi.active,.axws-menu .axws-mi.active svg{color:var(--accent)}
+.axws-mi-densewrap{display:block}
 /* preset chips (video) — mavjud #vgEditPresets shu yerda; qo'shimcha uslub */
 .axws-dock .vg-editpresets{margin:0 0 8px}
 /* audio dock — textarea + frames + voice pills ixchamlashadi */
@@ -4056,19 +4075,14 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
   .axws-genwrap .ai-set.enhance,.axws-genwrap .axws-clear{flex:0 1 auto;justify-content:center}
   .axws-genwrap .gensend{flex:1 0 100%;width:100%}
   .axws-refadd{width:38px;height:38px}
-  .axws-tools .ai-icon{width:26px;height:26px}
   .axws-viewbar{gap:6px}
 }
-/* SC_25: ≤360px — workspace toolbar 320px'ga sig'adi: gap/padding ixchamlashadi,
-   meta (sessiya sarlavhasi — bu enда ellipsis bilan bir slivergача qisilardi) yashiriladi,
-   tools ikonlari zich. Barcha boshqaruvlar ikon-o'lchamda ko'rinadi (overflow menyu shart emas). */
+/* SC_36: ≤360px — slim viewbar 320px'ga sig'adi. Faqat 2 boshqaruv (Visuals/Audio filter + ⋯);
+   meta endi YASHIRILMAYDI (ilgari yashirilardi — endi joy yetadi, sessiya nomi ko'rinib turadi). */
 @media(max-width:360px){
   .axws-viewbar{gap:5px;padding:7px 8px}
-  .axws-meta{display:none}
-  .axws-density{display:none}
   .axws-tabs{padding:2px}
   .axws-tab{padding:5px 7px}
-  .axws-tools{gap:3px}
   /* SC_25: 320px'да settings 3 chip bitta qatorда qolishi uchun model/out qat'iy qisqaradi
      (to'liq qiymat tegishli sheet/tooltip'да) — mode+model+out bitta qator, keyin Enhance·Clear, keyin Generate */
   .axws-dock .pill-model .pval{max-width:60px}
@@ -4520,19 +4534,24 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                             <!-- #igBack: eski launcher tugmasi — JS binding (12430) uchun saqlanadi, workspace'да yashirin -->
                             <button type="button" class="ai-back" id="igBack" title="AI Tools" style="display:none"></button>
                             <!-- SC_18: session chip-strip o'chirildi — sessiya almashish faqat back → picker -->
+                            <!-- SC_36: slim sub-row — back · session name/meta · [Visuals/Audio filter] · [⋯ menyu].
+                                 Ikkilamchi boshqaruvlar (refresh · My Library · card size · settings) endi ⋯ menyusида.
+                                 Dublikat avatar OLIB TASHLANDI (doimiy top-bar egadir). ID/handler'lar saqlangan. -->
                             <div class="axws-viewbar">
                               <button type="button" class="axws-back" onclick="if(window.afSessionPicker)afSessionPicker('image')" title="Sessions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                              <div class="axws-meta"><strong id="igViewT">NEW SESSION</strong><span id="igViewS">Describe an idea below</span></div>
                               <div class="axws-tabs">
                                 <button type="button" class="axws-tab active" id="igTabVis" title="Visual generations">Visuals <span class="ct" id="igTabVisCt">0</span></button>
                                 <button type="button" class="axws-tab" id="igTabAud" onclick="if(window.axGo)window.axGo('audgen')" title="Audio generations">Audio <span class="ct" id="igTabAudCt">0</span></button>
                               </div>
-                              <div class="axws-meta"><strong id="igViewT">NEW SESSION</strong><span id="igViewS">Describe an idea below</span></div>
-                              <div class="axws-density" id="igDensity"><button type="button" data-dense="toggle" title="Card size"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg></button></div>
-                              <div class="axws-tools">
-                                <div class="ai-icon" id="igRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
-                                <div class="ai-icon" id="igHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
-                                <div class="ai-icon" id="igSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                                <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                              <div class="axws-morewrap">
+                                <button type="button" class="axws-more" data-wsmenu title="More" aria-haspopup="true" aria-label="More options"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+                                <div class="axws-pop axws-menu">
+                                  <button type="button" class="axws-mi" id="igRefreshBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Refresh</button>
+                                  <button type="button" class="axws-mi" id="igHist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>My Library</button>
+                                  <div id="igDensity" class="axws-mi-densewrap"><button type="button" class="axws-mi" data-dense="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg>Card size</button></div>
+                                  <button type="button" class="axws-mi" id="igSet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+                                </div>
                               </div>
                             </div>
 
@@ -4666,19 +4685,22 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                           <div class="axws">
                             <button type="button" class="ai-back" id="vgBack" title="AI Tools" style="display:none"></button>
                             <!-- SC_18: session chip-strip o'chirildi — sessiya almashish faqat back → picker -->
+                            <!-- SC_36: slim sub-row + ⋯ menyu (rule 1) — imggen bilan bir xil naqsh, vg id'lar saqlangan -->
                             <div class="axws-viewbar">
                               <button type="button" class="axws-back" onclick="if(window.afSessionPicker)afSessionPicker('video')" title="Sessions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                              <div class="axws-meta"><strong id="vgViewT">NEW SESSION</strong><span id="vgViewS">Video mode</span></div>
                               <div class="axws-tabs">
                                 <button type="button" class="axws-tab active" id="vgTabVis" title="Visual generations">Visuals <span class="ct" id="vgTabVisCt">0</span></button>
                                 <button type="button" class="axws-tab" id="vgTabAud" onclick="if(window.axGo)window.axGo('audgen')" title="Audio generations">Audio <span class="ct" id="vgTabAudCt">0</span></button>
                               </div>
-                              <div class="axws-meta"><strong id="vgViewT">NEW SESSION</strong><span id="vgViewS">Video mode</span></div>
-                              <div class="axws-density" id="vgDensity"><button type="button" data-dense="toggle" title="Card size"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg></button></div>
-                              <div class="axws-tools">
-                                <div class="ai-icon" id="vgRefreshBtn" title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></div>
-                                <div class="ai-icon" id="vgHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
-                                <div class="ai-icon" id="vgSet" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-                                <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                              <div class="axws-morewrap">
+                                <button type="button" class="axws-more" data-wsmenu title="More" aria-haspopup="true" aria-label="More options"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+                                <div class="axws-pop axws-menu">
+                                  <button type="button" class="axws-mi" id="vgRefreshBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Refresh</button>
+                                  <button type="button" class="axws-mi" id="vgHist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>My Library</button>
+                                  <div id="vgDensity" class="axws-mi-densewrap"><button type="button" class="axws-mi" data-dense="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg>Card size</button></div>
+                                  <button type="button" class="axws-mi" id="vgSet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+                                </div>
                               </div>
                             </div>
 
@@ -4868,18 +4890,22 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                           <!-- #R1: audio workspace anatomiyasi — barcha ag id saqlangan. -->
                           <div class="axws">
                             <!-- SC_18: session chip-strip o'chirildi — sessiya almashish faqat back → picker -->
+                            <!-- SC_36: slim sub-row + ⋯ menyu (rule 1). audgen'да settings ikonкаси aslida yo'q edi —
+                                 qo'shilmaydi (faqat mavjud boshqaruvlar ko'chiriladi): Refresh (afRefreshAll) · My Library · Card size. -->
                             <div class="axws-viewbar">
                               <button type="button" class="axws-back" onclick="if(window.afSessionPicker)afSessionPicker('audio')" title="Sessions"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                              <div class="axws-meta"><strong id="agViewT">NEW SESSION</strong><span id="agViewS">Audio mode</span></div>
                               <div class="axws-tabs">
                                 <button type="button" class="axws-tab" id="agTabVis" onclick="if(window.axGo)window.axGo('imggen')" title="Visual generations">Visuals <span class="ct" id="agTabVisCt">0</span></button>
                                 <button type="button" class="axws-tab active" id="agTabAud" title="Audio generations">Audio <span class="ct" id="agTabAudCt">0</span></button>
                               </div>
-                              <div class="axws-meta"><strong id="agViewT">NEW SESSION</strong><span id="agViewS">Audio mode</span></div>
-                              <div class="axws-density" id="agDensity"><button type="button" data-dense="toggle" title="Card size"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg></button></div>
-                              <div class="axws-tools">
-                                <div class="ai-icon" onclick="if(window.afRefreshAll)window.afRefreshAll()" title="Sync — refresh everything"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg></div>
-                                <div class="ai-icon" id="agHist" title="My Library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
-                                <button type="button" class="ai-ava" title="Account" onclick="if(typeof openAccountSheet==='function')openAccountSheet()"></button>
+                              <div class="axws-morewrap">
+                                <button type="button" class="axws-more" data-wsmenu title="More" aria-haspopup="true" aria-label="More options"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+                                <div class="axws-pop axws-menu">
+                                  <button type="button" class="axws-mi" onclick="if(window.afRefreshAll)window.afRefreshAll()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>Refresh</button>
+                                  <button type="button" class="axws-mi" id="agHist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>My Library</button>
+                                  <div id="agDensity" class="axws-mi-densewrap"><button type="button" class="axws-mi" data-dense="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/></svg>Card size</button></div>
+                                </div>
                               </div>
                             </div>
 
@@ -11400,6 +11426,7 @@ async function bootPlugin(){
     function card(it,ctx){
       ctx=ctx||{}; var cat=it.cat||'image';
       var d=document.createElement('div'); d.className='rc'+(ctx.isSelected&&ctx.isSelected(it)?' sel':'');
+      d.tabIndex=0; d.setAttribute('role','button'); // SC_36: klaviatura fokusi — sarlavha+"Use ▾" fokusда ochiladi
       var arCss=genAspectCss(it); if(arCss) d.style.aspectRatio=arCss; // P5: haqiqiy nisbat (1/1 default'ni yengadi)
       if(cat==='video'){
         // haqiqiy poster (thumbUrl ≠ video url) bo'lsa u darhol chiziladi; bo'lmasa birinchi kadr yuklanadi
@@ -11479,6 +11506,8 @@ async function bootPlugin(){
       d.appendChild(ra);
       var cb=document.createElement('div'); cb.className='rcb'; cb.innerHTML=IC.chk; d.appendChild(cb);
       d.addEventListener('click',function(){ if(ctx.selecting&&ctx.selecting()){ ctx.onToggleSelect&&ctx.onToggleSelect(it,d); } else openLightbox(it,ctx); });
+      // SC_36: Enter/Space kartani ochadi (klaviatura) — sichqonchasiz ham ishlaydi
+      d.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '||e.keyCode===13||e.keyCode===32){ if(e.target!==d)return; e.preventDefault(); if(ctx.selecting&&ctx.selecting()){ ctx.onToggleSelect&&ctx.onToggleSelect(it,d); } else openLightbox(it,ctx); } });
       return d;
     }
     // ---- PENDING (gen ishlamoqda) karta — grid ichida 0-100% shkala. seq bo'yicha yangilanadi. ----
@@ -16449,7 +16478,7 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
   // SC_18: renderStrip (session chip-strip) O'CHIRILDI — sessiya almashish faqat
   // back → session picker orqali (bitta mental model). My Library/Projects o'z
   // joylarida (top-bar / launcher).
-  function closePops(){ var ps=document.querySelectorAll('.axws-pop.open'); for(var i=0;i<ps.length;i++)ps[i].classList.remove('open'); }
+  function closePops(){ var ps=document.querySelectorAll('.axws-pop.open'); for(var i=0;i<ps.length;i++)ps[i].classList.remove('open'); var mb=document.querySelectorAll('.axws-more.on'); for(var j=0;j<mb.length;j++)mb[j].classList.remove('on'); } // SC_36: ⋯ tugma holatini ham tozalaydi
 
   // go() dan chaqiriladi — active composer view'ini sozlaydi.
   window.axwsAfterView=function(id){
@@ -16468,6 +16497,13 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     // mode popover ochish/yopish
     var mp=t.closest&&t.closest('[data-modepop]');
     if(mp){ var wrap=mp.parentNode, pop=wrap&&wrap.querySelector('.axws-pop'); if(pop){ var was=pop.classList.contains('open'); closePops(); if(!was)pop.classList.add('open'); } e.stopPropagation(); return; }
+    // SC_36: viewbar ⋯ menyu ochish/yopish
+    var wm=t.closest&&t.closest('[data-wsmenu]');
+    if(wm){ var wr=wm.parentNode, wp=wr&&wr.querySelector('.axws-pop'); var wo=wp&&wp.classList.contains('open'); closePops(); if(wp&&!wo){ wp.classList.add('open'); wm.classList.add('on'); } e.stopPropagation(); return; }
+    // SC_36: ⋯ menyu ichidagi amal bosildi → menyuni yop (amalning o'z handleri/onclick alohida ishlaydi).
+    // Density ([data-dense]) bu bandga TUSHMAYDI — u pastdagi maxsus shoxда ishlanadi (menyu ochiq qoladi).
+    var wmi=t.closest&&t.closest('.axws-menu .axws-mi');
+    if(wmi&&!(t.closest&&t.closest('[data-dense]'))){ closePops(); /* return YO'Q — id-bindingли handler shu bosishда ishlaydi */ }
     // mode tanlash
     var mr=t.closest&&t.closest('[data-mode]');
     if(mr){ var m=mr.getAttribute('data-mode'); closePops();
