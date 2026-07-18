@@ -15472,7 +15472,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-ract{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
   /* PHASE B — dock evolved into the mockup composer (bottom-docked inside the workspace) */
   /* #7 — kompakt, markazlashgan suzuvchi kompozer (chetdan-chetga emas; Artlist ilhomi) */
-  .ff .va-dock{position:absolute;left:0;right:0;margin-inline:auto;width:min(920px,calc(100% - 48px));bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5)}
+  .ff .va-dock{position:absolute;left:0;right:0;margin-inline:auto;width:min(920px,calc(100% - 48px));bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5);container-type:inline-size;container-name:vacmp}
   /* #1 — Artlist-uslub katta prompt paneli: default ~4-5 qator, uzun prompt 60vh gacha
      kengayadi, undan keyin ICHKI scroll (tepasi hech qachon kesilmaydi) */
   .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.6;min-height:92px;max-height:60vh;overflow-y:auto;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
@@ -15507,9 +15507,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   /* P16 — pastki qator DOIM bir qatorda: chap chiplar guruhi + o'ngga MAHKAMLANGAN COST+Generate (hech qachon wrap bo'lmaydi).
      MUHIM: guruhda overflow YO'Q — `overflow-x:auto` `overflow-y`ni ham `auto` qiladi va TEPAGA ochiladigan popover'ni QIRQADI
      (chip popover'lari bo'sh ko'rinardi). O'rniga chiplar torlashsa qisqaradi (ellipsis), popover'lar to'liq ko'rinadi. */
-  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:nowrap;min-width:0}
-  .ff .va-setgroup{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto}
+  /* SC_54: boshqaruv qatori HAR kenglikda BITTA qator (o'ralmaydi/overflow yo'q). SETTINGS guruhi
+     qisqaradi (overflow yashiradi); AMAL guruhi (COST + Generate) qat'iy → Generate hech qachon
+     kesilmaydi/o'ralmaydi. Kompaktlash zinapoyasi = .va-dock container query'lari (pastda). */
+  .ff .va-dockrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:nowrap;min-width:0;overflow:hidden}
+  .ff .va-setgroup{display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto;overflow:hidden}
+  .ff .va-setgroup > *{flex-shrink:1}
   .ff .va-genwrap{display:flex;align-items:center;gap:9px;flex:0 0 auto;margin-left:auto}
+  .ff .va-genwrap *{flex-shrink:0}
   .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap;flex:0 1 auto;min-width:0}
   /* mode/model/settings chip yorlig'i tor joyda qisqaradi (popover buzilmasin) */
   /* SC_20: qiymat kontentgacha keng (~180px kap), model nomi boshi doim ko'rinadi */
@@ -15523,6 +15528,29 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   /* P12 — Clear chipi (kontent bo'lsa ko'rinadi) */
   .ff .va-clearchip{color:var(--muted2);font-weight:600}
   .ff .va-clearchip:hover{color:var(--text);border-color:var(--hair2)}
+  /* ── SC_54 — WEB kompaktlash zinapoyasi (.va-dock container query) — plagin bilan bir xil tartib.
+     Ikonka/chevron hech qachon kesilmaydi; faqat LABEL qisqaradi; Generate hech qachon degradatsiya
+     bo'lmaydi (genwrap qat'iy). Enhance ✦1 to'liq qoladi (money guard). */
+  @container vacmp (max-width:640px){
+    .ff .va-setgroup .va-set>b{max-width:130px}
+    .ff .va-setgear b{max-width:150px}
+  }
+  @container vacmp (max-width:540px){
+    /* trailing chevron tushadi (faqat popover-chip'larda) + Clear ikonka-faqat */
+    .ff .va-set[data-pop] > svg.va-ic:last-child{display:none}
+    .ff .va-clr-lbl{display:none}
+    .ff .va-setgroup .va-set>b{max-width:104px}
+  }
+  @container vacmp (max-width:460px){
+    /* settings ikonka-faqat + model nomi qat'iy qisqaradi (min ~8ch b-ellipsis'da) */
+    .ff .va-setgear b{display:none}
+    .ff .va-setgroup .va-set>b{max-width:84px}
+  }
+  @container vacmp (max-width:400px){
+    /* mode ikonka-faqat (eng tor) */
+    .ff .va-set.mode>b{display:none}
+    .ff .va-setgroup .va-set>b{max-width:70px}
+  }
   /* P14 — drop zonasi belgisi + gen kartasi drag affordansi */
   .ff .va-dock.va-dropon{outline:2px dashed var(--lime);outline-offset:3px;background:rgba(163,230,53,.06)}
   .ff .va-axres[draggable="true"]{cursor:grab}
@@ -17220,7 +17248,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   </div></sc-if>
                 </span></sc-if>
                 <span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span>
-                <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)">✕ Clear</span></sc-if>
+                <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)">✕ <span class="va-clr-lbl">Clear</span></span></sc-if>
                 </div>
                 <div class="va-genwrap">
                   <span class="va-axcost"><span class="lbl">COST</span>{{ axQuote }}</span>

@@ -3676,8 +3676,15 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-promptwrap .chipexp:hover{color:var(--text)}
 .axws-promptwrap .chipexp svg{transition:transform .15s ease}
 .axws-promptwrap .chipexp.on svg{transform:rotate(180deg)}
-.axws-dockrow{min-width:0;margin-top:10px;display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
-.axws-setgroup{min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:7px}
+.axws-dockrow{min-width:0;margin-top:10px;display:flex;align-items:center;gap:7px;flex-wrap:nowrap;overflow:hidden}
+/* SC_54: boshqaruv qatori HAR kenglikda BITTA qator. SETTINGS guruhi qisqaradi (overflow yashiradi),
+   AMAL guruhi (Enhance·Clear·Generate) qisqarmaydi → Generate hech qachon kesilmaydi/o'ralmaydi. */
+.axws-setgroup{min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:7px;overflow:hidden}
+.axws-setgroup > *{flex:0 0 auto}
+/* ikonka/badge/chevron hech qachon kesilmaydi; faqat LABEL span qisqaradi */
+.axws .ai-set-icon,.axws .ai-set-chev,.axws-dock .pillseg .picon,.axws-dock .pillseg::after,
+.axws .ai-set.enhance svg,.axws-clear svg,.axws .gensend .costtag{flex-shrink:0}
+.axws .ai-set b,.axws-dock .pillseg .pval{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* pill (mode/model/output) — mavjud .pillseg qayta uslublanadi + yangi mode pill */
 .axws .ai-set,.axws-dock .pillseg{height:34px;max-width:100%;padding:0 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--text-2);display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:10px;font-weight:650;white-space:nowrap;cursor:pointer;transition:border-color .14s,background .14s}
 .axws .ai-set:hover,.axws-dock .pillseg:hover{background:var(--surface-3);border-color:var(--accent)}
@@ -3693,9 +3700,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-dock .pill-model .pval{min-width:8ch}
 .axws-dock .pill-out{flex:0 0 auto}
 .axws-dock .pill-out .pval{max-width:none}
-/* Tor panelда qator 2 qatorga o'raladi — Generate oxirgi-o'ngda, hech qachon kesilmaydi
-   (.axws-genwrap'da margin-left:auto allaqachon bor) */
-.axws-dockrow{flex-wrap:wrap}
+/* SC_54: eski `.axws-dockrow{flex-wrap:wrap}` OLIB TASHLANDI — qator endi HECH QACHON o'ralmaydi.
+   Torlashganda intizomli KOMPAKTLASH ZINAPOYASI (kc1…kc6) qo'llanadi (JS o'lchab data-compact qo'yadi). */
 .axws-dock .pillseg::after{content:"⌄";flex:0 0 auto;color:var(--muted);font-size:11px;line-height:1}
 .axws-modewrap{flex:0 0 auto;position:relative}
 .axws .ai-set.mode{background:var(--surface-3);border-color:transparent;color:var(--text)}
@@ -3779,33 +3785,43 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
   .recentgrid{columns:260px}
   .axws-stage .recentgrid.dense1{columns:440px}
 }
-/* ── tor kenglik moslashuvi (320/420) — SC_25 intizomli 3-qatorli kompozer ──
-   Row1 = textarea; Row2 = mode+model+out (ixcham, grow YO'Q → bitta qatorга sig'adi);
-   Row3 = [Enhance · Clear] + Generate (Generate to'liq-kenglik, hech qachon kesilmaydi, narx yorlig'i ko'rinadi). */
-@media(max-width:452px){
-  .axws-dockrow{flex-wrap:wrap}
-  /* SETTINGS guruhi — content o'lchamli chiplar bitta qatorда (cho'zilmaydi) */
-  .axws-setgroup{flex:1 0 100%;flex-wrap:wrap;gap:6px;justify-content:flex-start}
-  .axws-dock .pillseg{flex:0 1 auto}
-  .axws-dock .pill-model .pval{min-width:0;max-width:96px}
-  .axws-dock .pill-out .pval{max-width:88px}
-  /* AMAL guruhi — [Enhance · Clear] bitta qatorда, Generate to'liq-kenglik keyingi qatorда */
-  .axws-genwrap{flex:1 0 100%;width:100%;margin-left:0;margin-top:4px;flex-wrap:wrap;gap:6px;justify-content:flex-start}
-  .axws-genwrap .ai-set.enhance,.axws-genwrap .axws-clear{flex:0 1 auto;justify-content:center}
-  .axws-genwrap .gensend{flex:1 0 100%;width:100%}
-  .axws-refadd{width:38px;height:38px}
-  .axws-viewbar{gap:6px}
-}
-/* SC_36: ≤360px — slim viewbar 320px'ga sig'adi. Faqat 2 boshqaruv (Visuals/Audio filter + ⋯);
-   meta endi YASHIRILMAYDI (ilgari yashirilardi — endi joy yetadi, sessiya nomi ko'rinib turadi). */
+/* ── SC_54 — KOMPAKTLASH ZINAPOYASI (kompozer boshqaruv qatori HAR kenglikda bitta qator) ──
+   JS (.axws-setgroup overflow'ini o'lchab) qatorga data-compact="0..6" + kc1…kc6 klasslarini
+   qo'yadi; har zina faqat oldingisi yetmasa qo'llanadi (kumulyativ). Tartib (owner spec):
+   1 ikkilamchi label so'zlar → 2 model nomi ellipsis (min ~8ch) → 3 Clear ikonka-faqat →
+   4 mode ikonka-faqat · audio toggle-faqat → 5 Enhance ikonka+✦1 → 6 output ikonka+qiymat.
+   HECH QACHON qisqarmaydi: Generate (label + narx yorlig'i to'liq). ✦1 krediti doim ko'rinadi. */
+.axws-dockrow[data-compact] .ai-set,.axws-dockrow[data-compact] .pillseg,
+.axws-dockrow[data-compact] .axws-clear,.axws-dockrow[data-compact] .enh-word,
+.axws-dockrow[data-compact] .axws-clr-lbl,.axws-dockrow[data-compact] .ai-set.mode b,
+.axws-dockrow[data-compact] .ai-set.mode .ai-set-chev{transition:none}
+/* zina 1 — audio toggle qiymat so'zi ("Off"/"On") yashiriladi (toggle + qisqa label qoladi) */
+.axws-dockrow.kc1 .pillseg.tgl .pval{display:none}
+/* zina 2 — model nomi ellipsis (min ~8ch title tooltip'да to'liq) */
+.axws-dockrow.kc2 .pill-model .pval{max-width:88px}
+/* zina 3 — Clear ikonka-faqat (so'z tooltip'да) */
+.axws-dockrow.kc3 .axws-clear .axws-clr-lbl{display:none}
+.axws-dockrow.kc3 .axws-clear{padding:0 8px}
+/* zina 4 — mode ikonka-faqat · audio toggle-faqat */
+.axws-dockrow.kc4 .ai-set.mode b,.axws-dockrow.kc4 .ai-set.mode .ai-set-chev{display:none}
+.axws-dockrow.kc4 .ai-set.mode{padding:0 9px}
+.axws-dockrow.kc4 .pillseg.tgl .plab{display:none}
+/* zina 5 — Enhance ikonka + ✦1 (so'z tushadi, kredit qoladi) */
+.axws-dockrow.kc5 .enh-word,.axws-dockrow.kc5 .enh-sep{display:none}
+.axws-dockrow.kc5 .ai-set.enhance{padding:0 9px}
+/* zina 6 — output ikonka + qiymat (chevron tushadi, model/output qat'iy qisqaradi) */
+.axws-dockrow.kc6 .pill-out::after{display:none}
+.axws-dockrow.kc6 .pill-out .pval{max-width:64px}
+.axws-dockrow.kc6 .pill-model .pval{max-width:64px}
+/* SC_36: ≤360px — slim viewbar 320px'ga sig'adi. Faqat 2 boshqaruv (Visuals/Audio filter + ⋯). */
 @media(max-width:360px){
   .axws-viewbar{gap:5px;padding:7px 8px}
   .axws-tabs{padding:2px}
   .axws-tab{padding:5px 7px}
-  /* SC_25: 320px'да settings 3 chip bitta qatorда qolishi uchun model/out qat'iy qisqaradi
-     (to'liq qiymat tegishli sheet/tooltip'да) — mode+model+out bitta qator, keyin Enhance·Clear, keyin Generate */
-  .axws-dock .pill-model .pval{max-width:60px}
-  .axws-dock .pill-out .pval{max-width:36px}
+}
+@media(max-width:452px){
+  .axws-refadd{width:38px;height:38px}
+  .axws-viewbar{gap:6px}
 }
 /* qisqa balandlik (≤560) — dock pinlanmaydi; butun workspace .scroll ichida scroll bo'ladi
    (Generate kesilmaydi — spec: "may scroll with content but must not clip Generate"). */
@@ -4344,8 +4360,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                      Tor panelда: [Enhance · Clear] bitta qatorda, Generate to'liq-kenglik pastda (kesilmaydi).
                                      Keng panelда: uchalasi o'ngда jamlanadi. ID/handler'lar o'zgarmaydi. -->
                                 <div class="axws-genwrap">
-                                  <button type="button" class="ai-set enhance" id="igEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span>Enhance · ✦1</span></button>
-                                  <button type="button" class="axws-clear" id="igClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</button>
+                                  <button type="button" class="ai-set enhance" id="igEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></button>
+                                  <button type="button" class="axws-clear" id="igClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> <span class="axws-clr-lbl">Clear</span></button>
                                   <button class="gensend" id="igGen" disabled title="Generate" aria-label="Generate image">Generate<span class="costtag" id="igCost">✦—</span></button>
                                 </div>
                               </div>
@@ -4507,8 +4523,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                 </div>
                                 <!-- SC_25: Enhance + Clear endi Generate bilan bitta AMAL-guruhida (axws-genwrap) — tor panel 3-qatorli intizom -->
                                 <div class="axws-genwrap">
-                                  <button type="button" class="ai-set enhance" id="vgEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span>Enhance · ✦1</span></button>
-                                  <button type="button" class="axws-clear" id="vgClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</button>
+                                  <button type="button" class="ai-set enhance" id="vgEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></button>
+                                  <button type="button" class="axws-clear" id="vgClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> <span class="axws-clr-lbl">Clear</span></button>
                                   <button class="gensend" id="vgGen" disabled title="Generate video" aria-label="Generate video">Generate<span class="costtag" id="vgCost">✦—</span></button>
                                 </div>
                               </div>
@@ -4699,8 +4715,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                 </div>
                                 <!-- SC_25/SC_27: Enhance + Clear + Generate bitta AMAL-guruhida (axws-genwrap) — tor panel 3-qatorli intizom -->
                                 <div class="axws-genwrap">
-                                  <button type="button" class="ai-set enhance" id="agEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span>Enhance · ✦1</span></button>
-                                  <button type="button" class="axws-clear" id="agClearBtn" title="Clear text"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> Clear</button>
+                                  <button type="button" class="ai-set enhance" id="agEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></button>
+                                  <button type="button" class="axws-clear" id="agClearBtn" title="Clear text"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> <span class="axws-clr-lbl">Clear</span></button>
                                   <button class="gensend" id="agGen" disabled title="Generate" aria-label="Generate audio">Generate<span class="costtag" id="agCost">✦—</span></button>
                                 </div>
                               </div>
@@ -6279,12 +6295,61 @@ function afOnResize(){
     const t=document.getElementById('afTabs'); if(t){ afRefreshStrip(t); afScrollActiveStripIntoView(t); }
     const c=document.getElementById('afCatChips'); if(c && !c.hasAttribute('hidden')){ afRefreshStrip(c); afScrollActiveStripIntoView(c); }
   }catch(e){}
+  try{ axwsFitDockrows(); }catch(e){}
 }
 try{
   window.addEventListener('resize',function(){
     if(__afResizeTimer)clearTimeout(__afResizeTimer);
     __afResizeTimer=setTimeout(afOnResize,100);
   },{passive:true});
+}catch(e){}
+
+/* SC_54 — kompozer boshqaruv qatorini BITTA qatorda ushlash: .axws-setgroup content overflow'ini
+   o'lchab, minimal zarur kompaktlash zinasini (kc1…kc6 + data-compact) qo'yamiz. Har zina faqat
+   oldingisi yetmasa. Generate (amal guruhi) qisqarmaydi. Faqat transform/opacity-siz — layout
+   sakramaydi (kompaktlash bir marta, o'lchov paytida). */
+function axwsFitRow(row){
+  var sg=row.querySelector('.axws-setgroup'); if(!sg)return;
+  row.classList.remove('kc1','kc2','kc3','kc4','kc5','kc6');
+  row.setAttribute('data-compact','0');
+  for(var lvl=1; lvl<=6; lvl++){
+    if(sg.scrollWidth <= sg.clientWidth + 1) break; // sig'di
+    row.classList.add('kc'+lvl);
+    row.setAttribute('data-compact',String(lvl));
+  }
+}
+function axwsFitDockrows(){
+  var rows=document.querySelectorAll('.axws-dockrow');
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    if(r.offsetParent===null) continue; // yashirin tool — o'tkazib yubor
+    try{ axwsFitRow(r); }catch(e){}
+  }
+}
+var __axwsFitTimer=null;
+function axwsScheduleFit(){
+  if(__axwsFitTimer)clearTimeout(__axwsFitTimer);
+  __axwsFitTimer=setTimeout(function(){ try{ axwsFitDockrows(); }catch(e){} },100);
+}
+window.axwsFitDockrows=axwsFitDockrows;
+window.axwsScheduleFit=axwsScheduleFit;
+/* observerlar: RO = kenglik o'zgarishi (jonli AE panel resize); MO = kontent o'zgarishi
+   (model nomi, mode almashuvi, audio toggle paydo bo'lishi). Ikkalasi ham debounce'langan. */
+try{
+  var _docks=document.querySelectorAll('.axws-dock');
+  if(window.ResizeObserver){
+    var _ro=new ResizeObserver(function(){ axwsScheduleFit(); });
+    for(var d=0; d<_docks.length; d++){ try{ _ro.observe(_docks[d]); }catch(e){} }
+  }
+  if(window.MutationObserver){
+    var _mo=new MutationObserver(function(){ axwsScheduleFit(); });
+    for(var s=0; s<_docks.length; s++){
+      var _sg=_docks[s].querySelector('.axws-setgroup');
+      if(_sg){ try{ _mo.observe(_sg,{subtree:true,childList:true,characterData:true,attributes:true}); }catch(e){} }
+    }
+  }
+  // dastlabki moslashuv (layout tayyor bo'lgach)
+  setTimeout(function(){ try{ axwsFitDockrows(); }catch(e){} },300);
 }catch(e){}
 
 function selectResFilter(el,value,label){
@@ -16389,6 +16454,7 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var cfg=VIEWS[id]; if(!cfg)return;
     ensureObserver(cfg);
     syncEmpty(cfg);
+    try{ if(window.axwsScheduleFit)window.axwsScheduleFit(); }catch(e){} // SC_54: yangi ko'rinadigan kompozer qatorini bir qatorga moslash
   };
 
   // ── Delegatsiyalangan hodisalar (re-parent'ga chidamli) ──
