@@ -3636,8 +3636,16 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 /* SC_19: [+] tugmadagi ixcham referens hisoblagichi (faqat ≥1 ref) */
 .axws-refadd{position:relative}
 .axws-refadd .refct{position:absolute;top:-6px;right:-6px;padding:2px 5px;border-radius:999px;background:var(--accent);color:var(--on-accent);font:700 8px/1 var(--font-mono);letter-spacing:.02em;pointer-events:none}
+/* SC_42: birlashgan attachment strip (frames + refs) + [+] add-input menyu */
+.vg-strip{display:flex;align-items:center;gap:8px;min-width:0}
+.vg-strip-frame{flex:0 0 auto;width:60px}
+.axvg .vg-strip .vg-strip-frame .fbox{width:60px;height:46px}
+.vg-strip .vg-refgrid{display:flex;align-items:center;gap:8px;min-width:0}
+.axws-addmenu{width:190px}
+.axws-addmenu .axws-mrow.dim{opacity:.4;cursor:not-allowed}
 /* SC_19: referens limiti — ikonkali tranzient ichki pill */
 .axws-limitnote{display:none;align-items:center;gap:6px;margin-bottom:8px;padding:6px 9px;border:1px solid rgba(255,178,124,.35);border-radius:9px;background:rgba(255,178,124,.10);color:var(--amber,#FFB27C);font-size:10.5px;font-weight:600}
+.axws-limitnote.on{display:flex}
 .axws-limitnote.on{display:flex}
 .axws-limitnote svg{flex:none}
 .axws-promptwrap{position:relative}
@@ -4270,7 +4278,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                               <div class="axws-limitnote" id="igLimitNote"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span id="igLimitNoteTx">Reference limit reached</span></div>
                               <div class="mention" id="igMention"></div>
                               <div class="axws-promptwrap"><div class="chipwrap">
-                                <div id="igPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="What should we create? Type @ to bring up references. E.g.: apply @img1 material to @img2 shape"></div>
+                                <div id="igPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="Describe the image… @ for references"></div>
                                 <button type="button" class="chipexp" id="igPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button>
                               </div></div>
                               <div class="ai-polnote" id="igPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
@@ -4395,30 +4403,44 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                             <div class="axws-dock">
                               <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Start frame is required — add it with +.</span></div>
                               <div class="lowcred" id="vgLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="vgLowNeed"></div></div></div>
-                              <!-- Frames = video referens strip (mockup START/END FRAME thumbs) -->
-                              <div class="sect" id="vgFrameSect">
-                                <div class="vg-lblrow"><span class="vg-lbl">Frames</span><span class="kadrtag" id="vgKadrTag" style="display:none">FAST</span></div>
-                                <div class="frames">
-                                  <div class="frame" title="Add a start frame, then write a prompt to generate a video"><div class="fbox" id="vgStartBox"></div><div class="fcap">Start</div></div>
-                                  <div class="frame" title="Optional — pick an end frame"><div class="fbox" id="vgEndBox"></div><div class="fcap">End (optional)</div></div>
+                              <!-- SC_42: UNIFIED INPUT ZONE — one [+] add-input menu + attachment strip.
+                                   FRAMES box, "Frames"/"References" labels, the counter line and the limits
+                                   sentence are GONE from the resting composer; their functionality lives in the
+                                   [+] menu (model-aware items + limits tooltip) and the strip (role-badged thumbs).
+                                   Eski +Image/+Video/+Audio tugmalari YASHIRIN ANKER sifatida qoladi (handler/anchor
+                                   saqlanadi) — [+] menyu ularni proksi qiladi. -->
+                              <span id="vgKadrTag" style="display:none">FAST</span>
+                              <div class="axws-refs" id="vgRefSect">
+                                <div class="axws-modewrap">
+                                  <div class="addbtn axws-refadd" id="vgRefAdd" data-modepop title="Add a start/end frame or an image, video or audio reference"><span class="pl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span><span class="refct" id="vgRefCt" style="display:none"></span></div>
+                                  <div class="axws-pop axws-addmenu" id="vgAddMenu">
+                                    <div class="lb">ADD INPUT</div>
+                                    <button type="button" class="axws-mrow" id="vgAddStart"><span class="ic">▣</span>Start frame</button>
+                                    <button type="button" class="axws-mrow" id="vgAddEnd"><span class="ic">▣</span>End frame</button>
+                                    <button type="button" class="axws-mrow" id="vgAddImgM"><span class="ic">IMG</span>Image</button>
+                                    <button type="button" class="axws-mrow" id="vgAddVidM"><span class="ic">VID</span>Video</button>
+                                    <button type="button" class="axws-mrow" id="vgAddAudM"><span class="ic">AUD</span>Audio</button>
+                                  </div>
                                 </div>
+                                <div class="axws-refwrap"><div class="vg-strip" id="vgAttachStrip">
+                                  <div class="frame vg-strip-frame" id="vgStartWrap" style="display:none"><div class="fbox" id="vgStartBox"></div></div>
+                                  <div class="frame vg-strip-frame" id="vgEndWrap" style="display:none"><div class="fbox" id="vgEndBox"></div></div>
+                                  <div class="vg-refgrid" id="vgRefGrid"></div>
+                                </div></div>
                               </div>
-                              <!-- SC_27: media-referens bo'limi (Omni/Seedance media-refs) — mavjud mref mashinasi endi jonli DOM bilan -->
-                              <div class="sect" id="vgMediaSect" style="display:none">
-                                <div class="vg-lblrow"><span class="vg-lbl">References</span><span class="vg-refmeta" id="vgRefMeta"></span></div>
-                                <div class="vg-refgrid" id="vgRefGrid"></div>
-                                <div class="vg-refadds">
-                                  <button type="button" class="vg-refadd" id="vgAddImg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Image</button>
-                                  <button type="button" class="vg-refadd" id="vgAddVid"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Video</button>
-                                  <button type="button" class="vg-refadd" id="vgAddAud"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Audio</button>
-                                </div>
-                                <div class="vg-reflimits" id="vgRefLimits"></div>
+                              <!-- SC_42: yashirin anker tugmalar (eski openerlar/anchor'lar saqlanadi; [+] menyu proksi qiladi) -->
+                              <div style="display:none" aria-hidden="true">
+                                <button type="button" id="vgAddImg"></button>
+                                <button type="button" id="vgAddVid"></button>
+                                <button type="button" id="vgAddAud"></button>
+                                <span id="vgRefMeta"></span>
+                                <span id="vgRefLimits"></span>
                               </div>
-                              <!-- SC_18: "Fast: ..." explainer o'chirildi — hint kadr slotlari title/placeholder'ida -->
+                              <div class="axws-limitnote" id="vgLimitNote"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span id="vgLimitNoteTx">Reference limit reached</span></div>
                               <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
                               <div class="mention" id="vgMention"></div>
                               <div class="axws-promptwrap"><div class="chipwrap">
-                                <div id="vgPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="Animate the frame: raindrops, neon reflection, slow dolly-in…"></div>
+                                <div id="vgPrompt" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="Describe the shot… @ for references"></div>
                                 <button type="button" class="chipexp" id="vgPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button>
                               </div></div>
                               <div class="ai-polnote" id="vgPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
@@ -13130,17 +13152,19 @@ window.afGallery=(function(){
       : "<b>Fast:</b> Add a start frame, optionally pick an end frame, then write a prompt to generate a video.";
   }
   function vgPromptPlaceholder(){
+    // SC_42: bitta qisqa qator — uzun "(@Image1 / @Video1 / @Audio1)" tail @-menyu/tooltip'ga ko'chdi
     return vm.refKind==='media-refs'
-      ? 'What do you want to happen? Type @ to see your references… (@Image1 / @Video1 / @Audio1)'
+      ? 'Describe the shot… @ for references'
       : vm.refKind==='none'
-      ? 'Describe the video. For a reference-free model, spell out the scene, motion, camera, and style.'
-      : 'Bring the frame to life: raindrops, neon reflections, a slow dolly-in…';
+      ? 'Describe the scene, motion, camera and style…'
+      : 'Describe the shot… @ for references';
   }
   function applyVgGuide(){
     var g=$('vgGuide'); if(g)g.innerHTML=vgGuideText();
   }
   function applyVgPromptUi(){
-    var ta=$('vgPrompt'); if(ta)ta.placeholder=vgPromptPlaceholder();
+    // SC_42: vgPrompt = contenteditable → placeholder data-ph orqali (:empty::before)
+    var ta=$('vgPrompt'); if(ta){ ta.placeholder=vgPromptPlaceholder(); ta.setAttribute('data-ph',vgPromptPlaceholder()); }
   }
   function setVgWarn(msg){
     var w=$('vgWarn'); if(!w)return;
@@ -13877,11 +13901,8 @@ window.afGallery=(function(){
     var isNone=vm.refKind==='none';
     // BATCH5 #5: kadr bo'limi framesOk flag'idan (media-refs model ham kadr qo'llashi mumkin)
     // P13 — hovuzda kadr bo'lsa (start/end) bo'lim TURADI (xira ko'rinadi), model qo'llamasa ham
-    var hasFrame=!!(st.start||st.end);
-    var fs=$('vgFrameSect'); if(fs)fs.style.display=((isNone||(isMedia&&!vm.framesOk))&&!hasFrame)?'none':'';
-    var ms=$('vgMediaSect'); if(ms)ms.style.display=(isMedia||mref.length)?'':'none';
-    // Yakuniy kadr qutisi — model endFrame qo'llasa (Veo) YOKI hovuzda end kadr bo'lsa (xira, P13)
-    var eb=$('vgEndBox'); if(eb&&eb.parentNode)eb.parentNode.style.display=((vm.framesOk&&vm.endFrameOk)||!!st.end)?'':'none';
+    // SC_42: vgFrameSect/vgMediaSect O'CHIRILDI — birlashgan [+] menyu + attachment strip.
+    //   Kadr/media ko'rinishi renderFrameBoxes (bo'sh=yashirin) + updAddMenu (item darvozalari) bilan boshqariladi.
     // Lightbox/So'nggi "Referens kadr" menyusida Yakuniy varianti ham endFrame'ga bog'liq
     var reOpt=$('vgRefEnd'); if(reOpt)reOpt.style.display=vm.endFrameOk?'':'none';
     // SC_27: "FAST" nishoni faqat kadr MAJBURIY modelda (Seedance Fast merosxo'ri) — Veo'da chalg'itardi
@@ -14090,6 +14111,7 @@ window.afGallery=(function(){
       h.textContent=hh.length?('Max '+hh.join(' · ')+(lim.total?(' · total '+lim.total):'')):'';
     }
     applyVgArLock(); // video referens qo'shildi/olindi → nisbat chipi qulfi yangilansin (Omni)
+    if(typeof updAddMenu==='function')updAddMenu(); // SC_42: [+] badge/menyu item darvozalari
   }
   // Nisbat chipi qulfi: model video-referens bilan nisbatni e'tiborga olmasa (Omni: API 400 bermasligi
   // uchun adapter aspect'ni tashlab yuboradi) — chip xira + tushuntirish, foydalanuvchi aldanmaydi.
@@ -14354,6 +14376,33 @@ window.afGallery=(function(){
       var b=$(p[0]); if(b)b.addEventListener('click',function(){ openMediaSrc(p[1],b); });
     });
   })();
+  // SC_42: [+] add-input menyu — model-aware; mavjud openerlarni [+] anchor bilan proksi qiladi.
+  (function(){
+    var menu=$('vgAddMenu'), addBtn=$('vgRefAdd');
+    function pick(fn){ return function(){ if(menu)menu.classList.remove('open'); fn(); }; }
+    var map=[['vgAddStart',function(){ openFrameSrc('start',addBtn); }],
+             ['vgAddEnd',function(){ openFrameSrc('end',addBtn); }],
+             ['vgAddImgM',function(){ openMediaSrc('image',addBtn); }],
+             ['vgAddVidM',function(){ openMediaSrc('video',addBtn); }],
+             ['vgAddAudM',function(){ openMediaSrc('audio',addBtn); }]];
+    map.forEach(function(m){ var b=$(m[0]); if(b)b.addEventListener('click',pick(m[1])); });
+  })();
+  // SC_42: [+] menyu item ko'rinishi/disabled + [+] badge + limits tooltip — model imkoniyati + limitlardan.
+  function updAddMenu(){
+    var lim=vm.mediaRefs||{};
+    function setItem(id,show,full,reason){ var b=$(id); if(!b)return; b.style.display=show?'':'none'; b.classList.toggle('dim',!!full); b.disabled=!!full; b.title=full?(reason||'Limit reached'):''; }
+    var framesOk=!!vm.framesOk, endOk=!!(vm.framesOk&&vm.endFrameOk);
+    setItem('vgAddStart',framesOk,!!st.start,'Start frame already added');
+    setItem('vgAddEnd',endOk,!!st.end,'End frame already added');
+    setItem('vgAddImgM',(lim.image||0)>0,cntRef('image')>=(lim.image||0),'Up to '+(lim.image||0)+' images');
+    setItem('vgAddVidM',(lim.video||0)>0,cntRef('video')>=(lim.video||0),'Up to '+(lim.video||0)+' videos');
+    setItem('vgAddAudM',(lim.audio||0)>0,cntRef('audio')>=(lim.audio||0),'Up to '+(lim.audio||0)+' audio');
+    var total=(st.start?1:0)+(st.end?1:0)+mref.length;
+    var badge=$('vgRefCt'); if(badge){ if(total>0){ badge.style.display=''; badge.textContent=total; } else badge.style.display='none'; }
+    var add=$('vgRefAdd'); if(add){ var t=[]; if(framesOk)t.push('Start'+(endOk?'/End':'')+' frame'); if(lim.image)t.push('Up to '+lim.image+' images'); if(lim.video)t.push(lim.video+' video'); if(lim.audio)t.push(lim.audio+' audio'); add.title=t.length?('Add input — '+t.join(' · ')):'Add input'; }
+    var any=framesOk||(lim.image||0)>0||(lim.video||0)>0||(lim.audio||0)>0;
+    var sect=$('vgRefSect'); if(sect)sect.style.display=any?'':'none';
+  }
   (function(){
     var full=$('vgClipFull'), part=$('vgClipPart'), cancel=$('vgClipCancel'), apply=$('vgClipApply'), audioTgl=$('vgClipAudioToggle');
     if(full)full.addEventListener('click',function(){
@@ -14444,30 +14493,29 @@ window.afGallery=(function(){
   }
 
   // ── kadr render (fbox ichiga thumb/spinner/× qo'yadi) ──
-  function renderFrameBoxes(){ renderFbox('vgStartBox',st.start,'start'); renderFbox('vgEndBox',st.end,'end'); }
+  function renderFrameBoxes(){ renderFbox('vgStartBox',st.start,'start'); renderFbox('vgEndBox',st.end,'end'); if(typeof updAddMenu==='function')updAddMenu(); }
   function renderFbox(id,frame,which){
     var box=$(id); if(!box)return;
+    var wrap=box.parentNode; // SC_42: vgStartWrap/vgEndWrap — bo'sh kadr strip'da KO'RSATILMAYDI
     box.innerHTML='';
     // P13 — kadr ROL: model qo'llamasa XIRA (o'chirilmaydi, hovuzda qoladi). start=framesOk; end=framesOk&&endFrameOk.
     var active=(which==='start')?!!vm.framesOk:!!(vm.framesOk&&vm.endFrameOk);
-    box.classList.toggle('dim',!!frame&&!active);
-    box.title=(!!frame&&!active)?(((vm.model&&vm.model.label)||'This model')+((which==='end')?" doesn't accept an end frame":" doesn't use frames")+' — kept'):'';
-    if(frame){
-      box.classList.add('has-img');
-      var img=document.createElement('img'); img.className='fb-thumb'; img.src=frame.dataUrl; box.appendChild(img);
-      if(frame.loading){
-        var sp=document.createElement('div'); sp.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border-radius:9px;z-index:2'; sp.textContent='Loading…'; box.appendChild(sp);
-      } else {
-        var tag=document.createElement('span'); tag.className='fbtag'; tag.textContent='frame '+(which==='start'?1:2); box.appendChild(tag);
-        var x=document.createElement('div'); x.className='fbx'; x.textContent='×'; x.title='Remove';
-        (function(w){ x.addEventListener('click',function(e){ e.stopPropagation(); if(w==='start')st.start=null; else st.end=null; renderFbox(id,null,w); refreshVgBtn(); }); })(which);
-        box.appendChild(x);
-        // re-pick on click (frame bor bo'lsa ham kadrni o'zgartirish)
-        (function(w){ box.addEventListener('click',function(){ if(!box.querySelector('.fbx:hover'))openFrameSrc(w); }); })(which);
-      }
+    if(!frame){ box.classList.remove('has-img'); if(wrap)wrap.style.display='none'; return; }
+    if(wrap)wrap.style.display='';
+    box.classList.toggle('dim',!active);
+    box.title=(!active)?(((vm.model&&vm.model.label)||'This model')+((which==='end')?" doesn't accept an end frame":" doesn't use frames")+' — kept'):'';
+    box.classList.add('has-img');
+    var img=document.createElement('img'); img.className='fb-thumb'; img.src=frame.dataUrl; box.appendChild(img);
+    if(frame.loading){
+      var sp=document.createElement('div'); sp.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border-radius:9px;z-index:2'; sp.textContent='Loading…'; box.appendChild(sp);
     } else {
-      box.classList.remove('has-img');
-      var add=document.createElement('div'); add.className='fbadd'; add.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg><small>add frame</small>'; box.appendChild(add);
+      // SC_42: rol nishoni START / END (frame 1/2 o'rniga)
+      var tag=document.createElement('span'); tag.className='fbtag'; tag.textContent=(which==='start')?'START':'END'; box.appendChild(tag);
+      var x=document.createElement('div'); x.className='fbx'; x.textContent='×'; x.title='Remove';
+      (function(w){ x.addEventListener('click',function(e){ e.stopPropagation(); if(w==='start')st.start=null; else st.end=null; renderFbox(id,null,w); if(typeof updAddMenu==='function')updAddMenu(); refreshVgBtn(); }); })(which);
+      box.appendChild(x);
+      // re-pick on click (frame bor bo'lsa ham kadrni o'zgartirish)
+      (function(w){ box.addEventListener('click',function(){ if(!box.querySelector('.fbx:hover'))openFrameSrc(w,$('vgRefAdd')); }); })(which);
     }
   }
 
