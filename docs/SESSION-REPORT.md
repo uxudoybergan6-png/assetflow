@@ -1,23 +1,21 @@
-# SESSION-REPORT — SC_55: SC_54 composer dead-click + model-overflow regression fix — 2026-07-18
+# SESSION-REPORT — SC_57 (Seedance failure + BytePlus models) 2026-07-20
 
-Fixed two live defects introduced by SC_54 (commit 25199cb) in the AI composer control row.
+**Qilindi (2 commit, push YO'Q):**
+- PART 1: Seedance r2v FAIL root-cause topildi + tuzatildi.
+- PART 2: 3 aktivlashgan BytePlus modeli qo'shildi/yoqildi.
 
-**Root cause of dead clicks:** SC_54 added `overflow:hidden` to `.axws-dockrow` + `.axws-setgroup`
-(and web `.va-dockrow`/`.va-setgroup`). Those clip the upward-opening chip popovers
-(`.axws-pop`/`.ffa-pop`, `bottom:calc(100%+8px)` — above the clipped box) to **0 height**: clicking
-mode/voice/duration opened an invisible menu → "nothing happens". Compounding it, the non-shrink
-setting chips overflowed the shrunk setgroup and sat **under** the action group, so model/output
-clicks landed on Enhance. `overflow:hidden` masked the visual spill but left dead click zones.
+**Topildi (PART 1 root cause):** `optimizeVideoReferenceForUpload` faqat BALANDLIKNI 720 ga
+cheklardi (`scale=-2:min(720,ih)`) → portret video-referens 406×720 = ~292k px, BytePlus
+Seedance r2v'ning HAR KADR ≥409600 px minimumidan past → `InvalidParameter` 400 → Failed+Refund.
+Egasining "50 kredit" job'i = 480p×10s×0.6 video-input multiplier = FAQAT video-referens bilan.
+Tuzatish: QISQA tomon 720 ga (720×1280 portret / 1280×720 landshaft), maydon ≥518400. `expired`
+poll statusi ham endi failed'ga map qilinadi.
 
-**Plugin fix:** removed both `overflow:hidden`; setgroup `flex:1 0 auto` so overflow surfaces to the
-row; measurement now overlap-based (settings' right edge vs genwrap's left) since a shrunk setgroup
-hides child overflow from `scrollWidth`; ladder extended — kc6 shrink-backstop (chips floor at
-icon+padding, label ellipsizes INSIDE the chip → fixes model-name spill) + kc7/8/9 dropping
-Clear→output→model near ~320px where the protected action group can't share the row.
-**Web fix:** removed `overflow:hidden`; label `min-width:8ch`→0 (ellipsis in chip); chevron-drop
-breakpoint 540→690 to cover the overlap band; hide gear/model under ~460px. Generate+cost & Enhance ✦1
-never degraded; exactly one row at every width.
+**PART 2:** Seedance 2.0 Fast (3101, video) + Seedream 5.0 Lite (1020) + Seedream 4.5 (1022 yangi)
+yoqildi — jonli probe: aktiv. 4.5 `output_format` param'ni rad etadi → adapter tashlaydi. Mini +
+Seedream 4.0 aktiv EMAS (qoldirildi). Yangi narxlar cost'dan past emas, boot floor o'tdi.
 
-**QA:** every control clicked at 320/380/420/560/900 in image/video/audio — all fire, zero dead
-clicks; 30-width sweep (×3 tools) one-row + no overlap + no text outside chip bounds; 3 themes;
-`node --check` all 10 inline scripts OK; install-cep.sh OK; console clean (plugin+web).
+**Tekshirildi:** verify-gen-payloads ALL PASS (16 yoqilgan model quote OK); real gen: Seedance Fast
+video, portret video-ref 480p/10s (eski FAIL sahnasi endi "done"), Lite 2K, Seedream 4.5 2K — hammasi done.
+
+**Kutilmoqda:** deploy (Cloud Run) — productionda tasdiqlash; egadan: agar Mini/4.0 kerak bo'lsa prepay pack.
