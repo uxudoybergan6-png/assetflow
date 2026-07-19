@@ -107,7 +107,8 @@ async function main() {
 
   // Ataylab-noto'g'ri kombolar — hujjatlangan 4xx kutiladi
   const negatives = [
-    { name: "disabled model 3101 (Seedance Fast)", body: { modelId: 3101, mode: "video", params: {} }, expect: 400 },
+    // SC_57: 3101 (Seedance Fast) endi YOQILGAN — o'rniga hali disabled 3006 (Seedance 2.0, fal-ulanmagan).
+    { name: "disabled model 3006 (Seedance 2.0)", body: { modelId: 3006, mode: "video", params: {} }, expect: 400 },
     { name: "mode mismatch (3001 sifatida image)", body: { modelId: 3001, mode: "image", params: {} }, expect: 400 },
     { name: "unknown model 9999", body: { modelId: 9999, mode: "image", params: {} }, expect: 400 },
   ];

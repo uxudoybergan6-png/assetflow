@@ -356,7 +356,10 @@ export const GEN_MODELS: GenModel[] = [
     brand: "bytedance",
     provider: "byteplus",
     byteplusModel: "seedream-5-0-260128",
-    enabled: false, // jonli test OK (2026-07-11, 2K/32s) LEKIN rasmiy USD narxi tasdiqlanmagan — narx aniqlangach yoqiladi
+    // SC_57: konsolда AKTIVLASHTIRILGAN (jonli tekshirildi 2026-07-20: 2K/4K rasm chiqadi, adapter
+    // o'zgarishsiz ishlaydi). Lite Pro'dan arzonroq → {2K:8,4K:16} kredit konservativ (hech qачон
+    // cost'dan past emas). Rasmiy USD narxi birinchi invoice + Apply margin bilan aniqlanadi.
+    enabled: true,
     feature: "text-to-image",
     cost: 8, // fallback (2K); imgSettings.quality.cost ustun (Nano Banana 2 tier nusxasi — placeholder)
     qualityCost: { "2K": 8, "4K": 16 },
@@ -396,6 +399,37 @@ export const GEN_MODELS: GenModel[] = [
     imgSettings: {
       aspect: { param: "aspect_ratio", options: SEEDREAM_ASPECTS, def: "1:1" },
       quality: { label: "Quality", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 4, "2K": 8 } },
+      num: [1, 2, 3, 4],
+    },
+    imgModalities: ["image"],
+  },
+  {
+    // SC_57: ByteDance-Seedream-4.5 — konsolда AKTIVLASHTIRILGAN (jonli tekshirildi 2026-07-20:
+    // 2K/4K rasm + referens/edit ishlaydi). DIQQAT: 4.5 `output_format` param'ini QABUL QILMAYDI
+    // (5.0 Pro/Lite qabul qiladi) — byteplus.ts adapter uni shu model uchun jimgina tashlaydi.
+    // 1K QO'LLANMAYDI (min 2K, docs §8 bilan mos). Nisbat→piksel Lite jadvalidan (byteplus.ts).
+    // Narx {2K:8,4K:16} konservativ (Lite bilan bir xil, cost'dan past emas); birinchi invoice + Apply margin.
+    id: 1022,
+    mode: "image",
+    key: "seedream-4-5-251128",
+    label: "Seedream 4.5",
+    brand: "bytedance",
+    provider: "byteplus",
+    byteplusModel: "seedream-4-5-251128",
+    enabled: true,
+    feature: "text-to-image",
+    cost: 8, // fallback (2K); imgSettings.quality.cost ustun
+    qualityCost: { "2K": 8, "4K": 16 },
+    referenceMode: "image-edit", // referens bo'lsa i2i (Seedream multi-ref); referenssiz sof t2i
+    refMode: "optional",
+    maxRefs: 14, // docs §8: ref rasm ≤14 (pro bo'lmagan Seedream)
+    inputs: ["image-ref"],
+    aspects: SEEDREAM_ASPECTS, // nisbat + tier → aniq piksel size (§8 Lite jadval, narxga ta'sir yo'q)
+    resolutions: ["2K", "4K"],
+    count: [1, 2, 3, 4],
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: SEEDREAM_ASPECTS, def: "1:1" },
+      quality: { label: "Quality", param: "quality", options: ["2K", "4K"], def: "2K", cost: { "2K": 8, "4K": 16 } },
       num: [1, 2, 3, 4],
     },
     imgModalities: ["image"],
@@ -1065,7 +1099,10 @@ export const GEN_MODELS: GenModel[] = [
     provider: "byteplus", // BATCH5: fal → BytePlus ModelArk (~2-3x arzon, o'sha Seedance)
     byteplusModel: "dreamina-seedance-2-0-fast-260128", // faqat 480p/720p — katalog mos
     // falModel: "bytedance/seedance-2.0/fast/image-to-video", // fal zaxira
-    enabled: false, // BytePlus Fast pack hali olinmagan (2026-07-11) — pack olingach yoqiladi
+    // SC_57: konsolда AKTIVLASHTIRILGAN (jonli tekshirildi 2026-07-20: submit+succeed, 480p/4s).
+    // Fast standart 3102'dan ARZONROQ (docs §6: $5.6/$3.3 vs $7/$4.3 per 1M tok) → o'sha perSec
+    // stavkalari cost-xavfsiz. Narx: birinchi invoice + Apply margin bilan aniqlanadi.
+    enabled: true,
     feature: "image-to-video",
     cost: 12,
     referenceMode: "video-ref",

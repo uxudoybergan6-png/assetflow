@@ -329,6 +329,13 @@ const SEEDREAM_PIXEL_SIZES: Record<string, Record<string, Record<string, string>
     },
   },
 };
+// SC_57: Seedream 4.5 (2K/4K) Lite bilan bir xil nisbat→piksel jadvalini qabul qiladi (jonli
+// tekshirildi 2026-07-20: 2K/4K har nisbat OK) — takrorlamasdan qayta ishlatamiz.
+SEEDREAM_PIXEL_SIZES["seedream-4-5-251128"] = SEEDREAM_PIXEL_SIZES["seedream-5-0-260128"];
+
+// SC_57: bu modellar `output_format` param'ini QABUL QILMAYDI (400 InvalidParameter) — 5.0 Pro/Lite
+// qabul qiladi, Seedream 4.5 esa yo'q. byteplusImage shu modellar uchun output_format'ni tashlaydi.
+const SEEDREAM_NO_OUTPUT_FORMAT = new Set<string>(["seedream-4-5-251128"]);
 
 /**
  * (model, tier, nisbat) → yuboriladigan `size` qiymati. Nisbat berilgan va jadvalda mavjud
@@ -383,10 +390,10 @@ export async function byteplusImage(
   const body: Record<string, unknown> = {
     model,
     prompt: p.prompt,
-    output_format: "png",
     response_format: "url",
     watermark: false, // ⚠️ BIZDA HAR DOIM false
   };
+  if (!SEEDREAM_NO_OUTPUT_FORMAT.has(model)) body.output_format = "png"; // 4.5 bu param'ni rad etadi
   const refs = (p.imageUrls || []).filter((u) => typeof u === "string" && u.length > 0);
   if (refs.length) body.image = refs.length === 1 ? refs[0] : refs; // string | string[] (docs §8)
   const size = seedreamSize(model, p.size, p.aspect); // nisbat bo'lsa aniq piksel, aks holda tier
