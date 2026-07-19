@@ -171,6 +171,9 @@ VIEWS.plugincms = function () {
             <div>${axFlab("RECENT WORKS")}${pcInput("home.sections.recent", c.home.sections.recent)}</div>
             <div>${axFlab("TEMPLATE SHELF")}${pcInput("home.sections.shelf", c.home.sections.shelf)}</div>
             <div>${axFlab("BROWSE-ALL LINK")}${pcInput("home.sections.browseAll", c.home.sections.browseAll)}</div>
+            <div>${axFlab("CONTINUE A SESSION")}${pcInput("home.sections.continueSessions", (c.home.sections.continueSessions) || "Continue a session")}</div>
+            <div>${axFlab("EXPLORE")}${pcInput("home.sections.explore", (c.home.sections.explore) || "Explore")}</div>
+            <div>${axFlab("BROWSE BY CATEGORY")}${pcInput("home.sections.categories", (c.home.sections.categories) || "Browse by category")}</div>
           </div>`)}
         ${pcCard("Home rails", "Two admin-curated, auto-scrolling template rails on Home (plugin + web). Paste template IDs — one per line (or comma-separated), max 12 each, in the order they should appear. IDs that no longer exist or are unpublished are skipped; an empty rail is hidden.", `
           <div style="margin-bottom:14px">

@@ -43,6 +43,10 @@ export interface PluginContentConfigData {
       recent: string;
       shelf: string;
       browseAll: string;
+      // SC_56: plagin Home yangi bo'limlari sarlavhalari (additive) — admin tahrirlaydi.
+      continueSessions: string;
+      explore: string;
+      categories: string;
     };
     // SC_52: admin-kuratsiya qilingan "New releases" va "Top templates" rellslari.
     // Faqat template ID'lari saqlanadi (denormalizatsiya YO'Q) — klient katalogdan hal qiladi.
@@ -82,6 +86,10 @@ export const DEFAULT_PLUGIN_CONTENT_CONFIG: PluginContentConfigData = {
       recent: "Jump back in",
       shelf: "Fresh for your next cut",
       browseAll: "Browse all →",
+      // SC_56: plagin Home yangi bo'lim sarlavhalari (default = plagin ships qiladigan matn)
+      continueSessions: "Continue a session",
+      explore: "Explore",
+      categories: "Browse by category",
     },
     rails: {
       newReleases: { title: "New releases", templateIds: [] },
@@ -149,6 +157,10 @@ export const pluginContentConfigSchema = z
             recent: shortText.optional(),
             shelf: shortText.optional(),
             browseAll: shortText.optional(),
+            // SC_56: additive Home bo'lim sarlavhalari
+            continueSessions: shortText.optional(),
+            explore: shortText.optional(),
+            categories: shortText.optional(),
           })
           .optional(),
         // SC_52: rails — har ro'yxatда ≤12 ta template ID + tahrirlanadigan sarlavha.

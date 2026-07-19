@@ -3838,9 +3838,19 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 /* SC_55 — zina 7..9: ikonka-min ham sig'masa (o'ta tor, ~320px panel) ikkilamchi boshqaruvlarni
    bosqichma-bosqich tashla. Himoyalangan (mode·Enhance ✦1·Generate) HECH QACHON tashlanmaydi.
    Overflow/overlap (o'lik-bosish) o'rniga toza degradatsiya — barcha ko'rinadigan chip bosiladi. */
-.axws-dockrow.kc7 .axws-clear{display:none}          /* 7 — Clear (qulaylik; ⌘Z/qo'lда o'chirish qoladi) */
-.axws-dockrow.kc8 .pill-out{display:none}            /* 8 — output chip (default "Auto") */
-.axws-dockrow.kc9 .pill-model{display:none}          /* 9 — model chip (oxirgi chora: mode+Enhance+Generate qoladi) */
+/* SC_56: kc7/kc8/kc9 (Clear/output/model'ni YASHIRISH) O'CHIRILDI — bu boshqaruvni yo'qotardi.
+   Endi sig'may qolgan boshqaruvlar ⋯ overflow popover'ga KO'CHIRILADI (axwsFitRow move-fazasi):
+   har bir boshqaruv doim yetiladi — qatorda yoki ⋯ ichida. */
+.axws-ovfwrap{flex:0 0 auto;position:relative;display:inline-flex;align-items:center}
+.axws-ovf{width:34px;height:34px;padding:0;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+.axws-ovf:hover{color:var(--text);border-color:var(--accent)}
+.axws-ovfpop{left:auto;right:0;width:auto;min-width:190px}
+.axws-ovfpop .axws-ovfbody{display:flex;flex-direction:column;gap:7px;padding:2px}
+/* ⋯ ichidagi ko'chirilgan chiplar to'liq kenglikda, yorliqlar/qiymatlar to'liq (kesilmaydi) */
+.axws-ovfpop .axws-ovfbody > *{width:100%;max-width:none;justify-content:flex-start}
+.axws-ovfpop .axws-ovfbody .pval{max-width:none!important;display:inline!important}
+.axws-ovfpop .axws-ovfbody .ai-set.mode b,.axws-ovfpop .axws-ovfbody .ai-set.mode .ai-set-chev,
+.axws-ovfpop .axws-ovfbody .axws-clr-lbl,.axws-ovfpop .axws-ovfbody .plab{display:inline!important}
 /* SC_36: ≤360px — slim viewbar 320px'ga sig'adi. Faqat 2 boshqaruv (Visuals/Audio filter + ⋯). */
 @media(max-width:360px){
   .axws-viewbar{gap:5px;padding:7px 8px}
@@ -4198,6 +4208,12 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                           <div class="fhome-sechd"><h2 id="fhomeTopHd">Top templates</h2></div>
                           <div class="fhome-rail" data-dir="right"><div class="fhome-rail-track" id="homeTopTrack"></div></div>
                         </div>
+                        <!-- SC_56: EXPLORE — kuratsiya qilingan AI-Stock qatori (Stock katalog "AI Stock" manbasidan
+                             qayta ishlatiladi; manba bo'sh → butun bo'lim yashirin). Director tartibi: Top rail → Explore → Categories. -->
+                        <div id="fhomeExploreSec" style="display:none">
+                          <div class="fhome-sechd"><h2 id="fhomeExploreHd">Explore</h2></div>
+                          <div class="fhome-sessrow fhome-explorerow" id="homeExploreRow"></div>
+                        </div>
                         <!-- SC_50: BROWSE BY CATEGORY — 6 katalog turi (real navigatsiya) -->
                         <div id="fhomeCatSec">
                           <div class="fhome-sechd"><h2 id="fhomeCatHd">Browse by category</h2></div>
@@ -4388,6 +4404,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                      Tor panelда: [Enhance · Clear] bitta qatorda, Generate to'liq-kenglik pastda (kesilmaydi).
                                      Keng panelда: uchalasi o'ngда jamlanadi. ID/handler'lar o'zgarmaydi. -->
                                 <div class="axws-genwrap">
+                                  <!-- SC_56: torlik ⋯ overflow — sig'may qolgan boshqaruvlar shu popover'ga KO'CHIRILADI (yashirilmaydi) -->
+                                  <div class="axws-ovfwrap" style="display:none"><button type="button" class="axws-ovf" data-modepop title="More settings" aria-label="More settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button><div class="axws-pop axws-ovfpop"><div class="lb">SETTINGS</div><div class="axws-ovfbody"></div></div></div>
                                   <button type="button" class="ai-set enhance" id="igEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></button>
                                   <button type="button" class="axws-clear" id="igClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> <span class="axws-clr-lbl">Clear</span></button>
                                   <button class="gensend" id="igGen" disabled title="Generate" aria-label="Generate image">Generate<span class="costtag" id="igCost">✦—</span></button>
@@ -4551,6 +4569,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                 </div>
                                 <!-- SC_25: Enhance + Clear endi Generate bilan bitta AMAL-guruhida (axws-genwrap) — tor panel 3-qatorli intizom -->
                                 <div class="axws-genwrap">
+                                  <!-- SC_56: torlik ⋯ overflow — sig'may qolgan boshqaruvlar shu popover'ga KO'CHIRILADI -->
+                                  <div class="axws-ovfwrap" style="display:none"><button type="button" class="axws-ovf" data-modepop title="More settings" aria-label="More settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button><div class="axws-pop axws-ovfpop"><div class="lb">SETTINGS</div><div class="axws-ovfbody"></div></div></div>
                                   <button type="button" class="ai-set enhance" id="vgEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></button>
                                   <button type="button" class="axws-clear" id="vgClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> <span class="axws-clr-lbl">Clear</span></button>
                                   <button class="gensend" id="vgGen" disabled title="Generate video" aria-label="Generate video">Generate<span class="costtag" id="vgCost">✦—</span></button>
@@ -4743,6 +4763,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
                                 </div>
                                 <!-- SC_25/SC_27: Enhance + Clear + Generate bitta AMAL-guruhida (axws-genwrap) — tor panel 3-qatorli intizom -->
                                 <div class="axws-genwrap">
+                                  <!-- SC_56: torlik ⋯ overflow — sig'may qolgan boshqaruvlar shu popover'ga KO'CHIRILADI -->
+                                  <div class="axws-ovfwrap" style="display:none"><button type="button" class="axws-ovf" data-modepop title="More settings" aria-label="More settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button><div class="axws-pop axws-ovfpop"><div class="lb">SETTINGS</div><div class="axws-ovfbody"></div></div></div>
                                   <button type="button" class="ai-set enhance" id="agEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></button>
                                   <button type="button" class="axws-clear" id="agClearBtn" title="Clear text"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg> <span class="axws-clr-lbl">Clear</span></button>
                                   <button class="gensend" id="agGen" disabled title="Generate" aria-label="Generate audio">Generate<span class="costtag" id="agCost">✦—</span></button>
@@ -6351,28 +6373,72 @@ function axwsRowOverflow(row){
   }
   return row.scrollWidth > row.clientWidth + 1; // Generate o'ngdan chiqib ketishi (zaxira tekshiruv)
 }
+/* SC_56: ⋯ overflow — sig'may qolgan boshqaruvni YASHIRMAY (kc7/8/9 o'chirildi) popover'ga KO'CHIRAMIZ.
+   Aynan bir xil jonli element (marker-comment bilan asl joyi eslab qolinadi) — handler/holat saqlanadi. */
+function axwsOvfBody(row){ var w=row.querySelector('.axws-ovfwrap'); return w?w.querySelector('.axws-ovfbody'):null; }
+/* Ko'chiriladigan boshqaruvlar — Director ustuvorligi: output & audio → Clear → (voice/dur) → mode → model.
+   HECH QACHON: Enhance, Generate(+narx). Ro'yxat ASL joyidagi (restoreAll'dan keyin) holatдан quriladi. */
+function axwsMovables(row){
+  var sg=row.querySelector('.axws-setgroup'), gw=row.querySelector('.axws-genwrap'), out=[];
+  function ok(el){ return el&&el.offsetParent!==null; }
+  function add(el){ if(ok(el)&&out.indexOf(el)<0)out.push(el); }
+  if(sg){ add(sg.querySelector('.pill-out')); Array.prototype.forEach.call(sg.querySelectorAll('.pillseg.tgl'),add); }
+  if(gw)add(gw.querySelector('.axws-clear'));
+  if(sg){
+    ['agVoiceWrap','agDurWrap'].forEach(function(idv){ var el=document.getElementById(idv); if(el&&sg.contains(el))add(el); }); // audio: voice/dur chip
+    var mb=sg.querySelector('.ai-set.mode'); add(mb?mb.closest('.axws-modewrap'):null); // mode
+    add(sg.querySelector('.pill-model')); // model — oxirgi chora
+  }
+  return out;
+}
+function axwsMoveToOvf(el,body){
+  if(!el||!body||el.parentNode===body)return;
+  if(!el.__ovfMarker){ var m=document.createComment('ovf'); if(el.parentNode)el.parentNode.insertBefore(m,el); el.__ovfMarker=m; }
+  body.appendChild(el);
+}
+function axwsRestoreEl(el){
+  if(!el||!el.__ovfMarker)return; var m=el.__ovfMarker;
+  if(m.parentNode)m.parentNode.replaceChild(el,m); el.__ovfMarker=null;
+}
+function axwsRestoreAll(row){
+  var body=axwsOvfBody(row); if(!body)return;
+  Array.prototype.slice.call(body.children).forEach(axwsRestoreEl);
+}
+function axwsOvfSync(row){
+  var w=row.querySelector('.axws-ovfwrap'), body=axwsOvfBody(row); if(!w||!body)return;
+  var has=body.children.length>0; w.style.display=has?'':'none';
+  if(!has){ var pop=w.querySelector('.axws-ovfpop'); if(pop)pop.classList.remove('open'); }
+}
 function axwsFitRow(row){
   var sg=row.querySelector('.axws-setgroup'); if(!sg)return;
-  row.classList.remove('kc1','kc2','kc3','kc4','kc5','kc6','kc7','kc8','kc9');
+  axwsRestoreAll(row); // 1) hammani asl joyiga — to'liq qatordan hisoblaymiz (deterministik)
+  row.classList.remove('kc1','kc2','kc3','kc4','kc5','kc6');
   row.setAttribute('data-compact','0');
-  /* SC_55: zinapoya 1..9. 1..5 = yorliqlarni tashla, 6 = chiplar ikonka-min + shrink-backstop.
-     Agar SHUNDA HAM sig'masa (masalan 320px panel — AMAL guruhi ~207px + 3 chip qatorga sig'maydi)
-     ikkilamchi boshqaruvlarni bosqichma-bosqich OLIB TASHLAYMIZ: 7=Clear, 8=output chip, 9=model chip.
-     HECH QACHON olib tashlanmaydi: mode, Enhance ✦1, Generate + narx (himoyalangan). Bu overflow/overlap
-     (o'lik-bosish) o'rniga deterministik, halol degradatsiya. */
-  for(var lvl=1; lvl<=9; lvl++){
-    if(!axwsRowOverflow(row)) break; // sig'di
-    row.classList.add('kc'+lvl);
-    row.setAttribute('data-compact',String(lvl));
+  // 2) yorliq-kompaktlash zinasi 1..6 (SC_54/SC_55): avval so'zlar tashlanadi, model nomi ellipsis
+  var lvl; for(lvl=1; lvl<=6; lvl++){ if(!axwsRowOverflow(row))break; row.classList.add('kc'+lvl); row.setAttribute('data-compact',String(lvl)); }
+  // 3) hali sig'masa — boshqaruvlarni ⋯ popover'ga ustuvorlik tartibida KO'CHIRAMIZ (yashirmaymiz)
+  var body=axwsOvfBody(row), w=row.querySelector('.axws-ovfwrap');
+  if(body&&axwsRowOverflow(row)){
+    if(w)w.style.display=''; // ⋯ endi kenglik oladi — o'lchov to'g'ri bo'lsin
+    var mv=axwsMovables(row), i, guard=0;
+    for(i=0;i<mv.length&&guard<12;i++,guard++){ if(!axwsRowOverflow(row))break; axwsMoveToOvf(mv[i],body); }
   }
+  axwsOvfSync(row);
 }
+/* SC_56: fit paytida SETgroup MO'sini uzamiz — ko'chirish (childList) o'zi qayta-fit trigger qilmasin
+   (aks holda ko'chir→MO→fit→ko'chir cheksiz aylanardi). Tashqi o'zgarish (model nomi, mode) fit'dan
+   keyin qayta ulanganda ushlanadi. */
+var __axwsSetMo=null, __axwsSetGroups=[];
+function __axwsMoObserve(){ if(!__axwsSetMo)return; try{ for(var i=0;i<__axwsSetGroups.length;i++)__axwsSetMo.observe(__axwsSetGroups[i],{subtree:true,childList:true,characterData:true,attributes:true}); }catch(e){} }
 function axwsFitDockrows(){
+  if(__axwsSetMo)try{ __axwsSetMo.disconnect(); }catch(e){}
   var rows=document.querySelectorAll('.axws-dockrow');
   for(var i=0;i<rows.length;i++){
     var r=rows[i];
     if(r.offsetParent===null) continue; // yashirin tool — o'tkazib yubor
     try{ axwsFitRow(r); }catch(e){}
   }
+  __axwsMoObserve();
 }
 var __axwsFitTimer=null;
 function axwsScheduleFit(){
@@ -6390,11 +6456,12 @@ try{
     for(var d=0; d<_docks.length; d++){ try{ _ro.observe(_docks[d]); }catch(e){} }
   }
   if(window.MutationObserver){
-    var _mo=new MutationObserver(function(){ axwsScheduleFit(); });
+    __axwsSetMo=new MutationObserver(function(){ axwsScheduleFit(); });
     for(var s=0; s<_docks.length; s++){
       var _sg=_docks[s].querySelector('.axws-setgroup');
-      if(_sg){ try{ _mo.observe(_sg,{subtree:true,childList:true,characterData:true,attributes:true}); }catch(e){} }
+      if(_sg)__axwsSetGroups.push(_sg);
     }
+    __axwsMoObserve();
   }
   // dastlabki moslashuv (layout tayyor bo'lgach)
   setTimeout(function(){ try{ axwsFitDockrows(); }catch(e){} },300);
@@ -7379,7 +7446,7 @@ async function retryCatalog(){
   }
   render();
   // SC_52/SC_50: katalog yuklangach Home rellslari + kategoriya kafellari qayta chizilsin (assets endi to'la)
-  try{ if(document.documentElement.classList.contains('home-mode')){ if(typeof renderHomeRails==='function')renderHomeRails(); if(typeof renderHomeCategories==='function')renderHomeCategories(); } }catch(e){}
+  try{ if(document.documentElement.classList.contains('home-mode')){ if(typeof renderHomeRails==='function')renderHomeRails(); if(typeof renderHomeCategories==='function')renderHomeCategories(); if(typeof renderHomeExplore==='function')renderHomeExplore(); } }catch(e){}
 }
 window.retryCatalog=retryCatalog;
 
@@ -7861,6 +7928,7 @@ function renderHome(){
   renderHomeHero();
   renderHomeRecent(); // SC_07 — "Jump back in" strip
   renderHomeSessions(); // SC_50 — "Continue a session"
+  renderHomeExplore(); // SC_56 — "Explore" (kuratsiya AI-Stock)
   renderHomeCategories(); // SC_50 — "Browse by category"
   renderHomeRails(); // SC_52 — admin-kuratsiya New/Top rellslari (eski shelf o'rniga)
   // SC_04: login'dan keyin ham CMS matnlari qayta qo'llanadi (idempotent, arzon)
@@ -7944,6 +8012,49 @@ function renderHomeSessions(){
     row.appendChild(c);
   });
 }
+/* SC_56: EXPLORE — kuratsiya qilingan AI-Stock qatori. Stock katalog "AI Stock" bo'limi ishlatadigan
+   endpoint (/api/plugin/catalog?templateType=ai-stock) qayta ishlatiladi — yangi route YO'Q. Manba
+   bo'sh/xato → butun bo'lim yashirin (soxta karta yo'q). Bir marta yuklab keshlanadi (so'rov bo'roni yo'q). */
+var __homeExplore={items:null,at:0,inflight:false};
+function renderHomeExplore(){
+  var sec=document.getElementById('fhomeExploreSec'), row=document.getElementById('homeExploreRow');
+  if(!row)return;
+  var items=__homeExplore.items;
+  if(items&&items.length){ hmExploreCards(sec,row,items); return; }
+  if(items&&!items.length){ if(sec)sec.style.display='none'; row.innerHTML=''; return; }
+  // hali yuklanmagan → bo'lim yashirin, bir marta yuklab kelamiz
+  if(sec)sec.style.display='none';
+  if(__homeExplore.inflight||(__homeExplore.at&&(Date.now()-__homeExplore.at<270000)))return;
+  __homeExplore.inflight=true;
+  var url=afCmsBase()+'/api/plugin/catalog?templateType=ai-stock&take=12';
+  fetch(url).then(function(r){ return r.ok?r.json():null; }).then(function(d){
+    __homeExplore.inflight=false; __homeExplore.at=Date.now();
+    __homeExplore.items=(d&&Array.isArray(d.items))?d.items:[];
+    renderHomeExplore();
+  }).catch(function(){ __homeExplore.inflight=false; __homeExplore.at=Date.now(); __homeExplore.items=[]; renderHomeExplore(); });
+}
+function hmExploreLbItem(u){
+  var isVid=(u.nav==='video')||/video/i.test(String(u.cat||u.catLabel||''));
+  return { id:u.id, url:u.previewUrl||u.thumbUrl||u.thumb||'', thumb:u.thumbUrl||u.thumb||'', cat:isVid?'video':'image', title:u.name||u.title||'Explore' };
+}
+function hmExploreCtx(){
+  return { isCEP:(typeof IS_CEP!=='undefined'&&IS_CEP),
+    list:function(){ return (__homeExplore.items||[]).map(hmExploreLbItem); },
+    onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.url; a.download=(it.title||'explore'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} } };
+}
+function hmExploreCards(sec,row,items){
+  if(sec)sec.style.display='';
+  row.innerHTML='';
+  items.forEach(function(u){
+    var it=hmExploreLbItem(u), thumb=it.thumb;
+    var c=document.createElement('div'); c.className='fhome-sesscard fhome-explorecard';
+    c.innerHTML='<div class="sc-thumb"'+(thumb?(' style="background-image:url(\''+hmEsc(thumb)+'\')"'):'')+'>'
+      +(thumb?'':'<span class="sc-glyph">▧</span>')
+      +(it.cat==='video'?'<span class="sc-glyph" style="font-size:16px">▶</span>':'')+'</div>';
+    c.addEventListener('click',function(){ if(window.afRecent&&window.afRecent.openLightbox&&it.url)window.afRecent.openLightbox(it,hmExploreCtx()); });
+    row.appendChild(c);
+  });
+}
 /* SC_50: Browse by category — 6 katalog turi kafeli (real navigatsiya; son ko'rsatilmaydi agar ochiq bo'lmasa). */
 var FHOME_CATS=[
   {nav:'video',label:'Video Templates',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg>'},
@@ -7955,7 +8066,11 @@ var FHOME_CATS=[
 ];
 function renderHomeCategories(){
   var host=document.getElementById('homeCatTiles'); if(!host)return;
-  var counts=null; try{ if(typeof AssetFlowCatalog!=='undefined'&&typeof AssetFlowCatalog.categoryCounts==='function')counts=AssetFlowCatalog.categoryCounts(); }catch(e){}
+  // SC_56: real son FAQAT butun katalog per-nav to'liq yuklangan bo'lsa ko'rsatiladi. Katalog API
+  // per-kategoriya facet/jami sonini bermaydi va browse SAHIFALANGAN (getCountByNav = faqat yuklangan
+  // sahifadagi itemlar) — shu sabab jami sonni to'qib chiqarmaymiz; ko'rsatilmaydi (spec: "omit").
+  // Ishonchli jami paydo bo'lsa (masalan kelajakda facet endpoint) shu yerdan ulanadi.
+  var counts=null;
   host.innerHTML='';
   FHOME_CATS.forEach(function(c){
     var n=(counts&&typeof counts[c.nav]==='number')?counts[c.nav]:null;
@@ -8115,6 +8230,10 @@ function afCmsApply(){
     afCmsSetText('#fhomeRecentSec .fhome-sechd h2',s.recent);
     afCmsSetText('#fhomeShelfSec .fhome-sechd h2',s.shelf);
     afCmsSetText('.fhome-browse',s.browseAll);
+    // SC_56: yangi Home bo'lim sarlavhalari (bo'sh → afCmsSetText tegmaydi, plagin default matni qoladi)
+    afCmsSetText('#fhomeSessHd',s.continueSessions);
+    afCmsSetText('#fhomeExploreHd',s.explore);
+    afCmsSetText('#fhomeCatHd',s.categories);
     // Guest ekran (title/sub \n qo'llab-quvvatlaydi; features[3])
     var g=c.guest||{};
     afCmsSetLines('#homeGuest .gu-h1',g.title);
@@ -16492,6 +16611,9 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
   // back → session picker orqali (bitta mental model). My Library/Projects o'z
   // joylarida (top-bar / launcher).
   function closePops(){ var ps=document.querySelectorAll('.axws-pop.open'); for(var i=0;i<ps.length;i++)ps[i].classList.remove('open'); var mb=document.querySelectorAll('.axws-more.on'); for(var j=0;j<mb.length;j++)mb[j].classList.remove('on'); } // SC_36: ⋯ tugma holatini ham tozalaydi
+  // SC_56: `keep`'dan boshqa barcha popover'larni yop. ⋯ overflow ichidan bir chip (mode) o'z popoverini
+  // ochganda ⋯ popoverini OCHIQ qoldirish uchun (aks holda ⋯ yopilib, chip'ning ankeri yo'qolardi).
+  function closePopsExcept(keep){ var ps=document.querySelectorAll('.axws-pop.open'); for(var i=0;i<ps.length;i++){ if(ps[i]!==keep)ps[i].classList.remove('open'); } var mb=document.querySelectorAll('.axws-more.on'); for(var j=0;j<mb.length;j++)mb[j].classList.remove('on'); }
 
   // go() dan chaqiriladi — active composer view'ini sozlaydi.
   window.axwsAfterView=function(id){
@@ -16510,7 +16632,7 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var t=e.target;
     // mode popover ochish/yopish
     var mp=t.closest&&t.closest('[data-modepop]');
-    if(mp){ var wrap=mp.parentNode, pop=wrap&&wrap.querySelector('.axws-pop'); if(pop){ var was=pop.classList.contains('open'); closePops(); if(!was)pop.classList.add('open'); } e.stopPropagation(); return; }
+    if(mp){ var wrap=mp.parentNode, pop=wrap&&wrap.querySelector('.axws-pop'); if(pop){ var was=pop.classList.contains('open'); closePopsExcept(mp.closest('.axws-ovfpop')); if(!was)pop.classList.add('open'); } e.stopPropagation(); return; }
     // SC_36: viewbar ⋯ menyu ochish/yopish
     var wm=t.closest&&t.closest('[data-wsmenu]');
     if(wm){ var wr=wm.parentNode, wp=wr&&wr.querySelector('.axws-pop'); var wo=wp&&wp.classList.contains('open'); closePops(); if(wp&&!wo){ wp.classList.add('open'); wm.classList.add('on'); } e.stopPropagation(); return; }
