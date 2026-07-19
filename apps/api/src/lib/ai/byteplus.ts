@@ -265,10 +265,15 @@ export async function byteplusPollStep(taskId: string): Promise<OrResult<Byteplu
     if (!videoUrl) return { ok: false, error: "byteplus: video URL not found" };
     return { ok: true, data: { state: "completed", data: { videoUrl, usage: j?.usage } } };
   }
-  if (status === "failed" || status === "cancelled") {
+  // Docs enum: queued | running | succeeded | failed | expired. `expired` (execution_expires_after,
+  // 48h) ilgari e'tiborsiz qolib poll abadiy pending qaytarardi → faqat reconciler 20 daq+ kutib
+  // hal qilardi. Endi failed sifatida map qilamiz (haqiqiy tugash → refund yo'li to'g'ri ishlaydi).
+  if (status === "failed" || status === "cancelled" || status === "expired") {
     const code = j?.error?.code || "";
     const msg = j?.error?.message || "";
-    const text = [code, msg].filter(Boolean).join(": ") || "byteplus: generation failed";
+    const text =
+      [code, msg].filter(Boolean).join(": ") ||
+      (status === "expired" ? "byteplus: task expired before completion" : "byteplus: generation failed");
     return { ok: false, error: mapByteplusError(text) };
   }
   return { ok: true, data: { state: "pending" } }; // queued|running

@@ -340,6 +340,12 @@ type VideoRefPreset = {
   preset: string;
 };
 
+// Qisqa tomonni 720 ga belgilaydi (juft o'lcham, aspect saqlanadi) → HAR KADR maydoni ≥ 518400
+// piksel, BytePlus Seedance r2v'ning 409600 minimumidan yuqori. Landshaft → balandlik 720; portret/
+// kvadrat → kenglik 720; ikkinchi o'lcham `-2` bilan avtomatik (juft). Kichik manba shu chegaraga
+// ko'tariladi (BytePlus baribir shu pikselni talab qiladi), katta manba kichrayadi.
+const VIDEO_REF_SCALE_EXPR = "scale='if(gt(iw,ih),-2,720)':'if(gt(iw,ih),720,-2)'";
+
 async function transcodeVideoReferencePass(
   inputPath: string,
   outputPath: string,
@@ -387,9 +393,16 @@ export async function optimizeVideoReferenceForUpload(
 ): Promise<boolean> {
   if (!fs.existsSync(filePath)) return false;
   const tmp = `${filePath}.refopt.mp4`;
+  // BytePlus Seedance r2v `reference_video` HAR KADR piksel sonini ≥ 409600 talab qiladi (aks holda
+  // InvalidParameter 400 → gen fail+refund). Eski `scale=-2:min(720,ih)` FAQAT balandlikni cheklardi:
+  // portret manba (masalan 1080×1920) 405×720 = 291600 ga tushib chegaradan o'tmасди. Endi QISQA
+  // tomonni 720 ga belgilaymiz (juft o'lcham) → maydon ≥ 720×720 = 518400 (landshaft/portret/kvadrat
+  // hammasi xavfsiz); katta manba kichrayadi, kichigi shu chegaraga ko'tariladi. Faqat fps/crf fallback
+  // fayl hажmini kamaytiradi — o'lcham HECH QACHON chegaradan pastga tushmaydi.
+  const scaleExpr = VIDEO_REF_SCALE_EXPR;
   const presets: VideoRefPreset[] = [
-    { scaleExpr: "scale=-2:'min(720,ih)'", fps: "12", crf: "30", preset: "veryfast" },
-    { scaleExpr: "scale=-2:'min(480,ih)'", fps: "10", crf: "34", preset: "veryfast" },
+    { scaleExpr, fps: "12", crf: "30", preset: "veryfast" },
+    { scaleExpr, fps: "10", crf: "36", preset: "veryfast" },
   ];
   for (const preset of presets) {
     try {
