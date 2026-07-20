@@ -1394,15 +1394,15 @@ export async function processGeneration(genId: string): Promise<void> {
       );
       // P30.5 — provayder KONTENT rad etsa: LOGGA yoz (provayder/model/kategoriya/son) + P30.4
       // rate-limit sanog'i (refund-farming). Tasnif ASL xato matnidan (normalize'dan oldingi signal).
-      const rej = classifyGenRejection(reason);
+      const model = getModelById(gen.modelId);
+      const rej = classifyGenRejection(reason, { provider: model?.provider });
       if (rej.isContent) {
-        const model = getModelById(gen.modelId);
         await writeAuditLog({
           actorId: gen.userId,
           action: "provider.content_rejected",
           targetType: "generation",
           targetId: genId,
-          detail: rej.reason.slice(0, 240),
+          detail: (rej.raw || rej.reason).slice(0, 240), // audit: ASL provayder matni (toza sabab emas)
           meta: { provider: model?.provider || null, modelId: gen.modelId, mode: gen.mode, category: rej.category },
         }).catch(() => {});
         await noteBlockedAttempt(gen.userId).catch(() => {});

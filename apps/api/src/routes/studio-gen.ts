@@ -60,6 +60,7 @@ import {
   modelSupportsEndFrame,
   modelPolicyStrictness,
   suggestLenientAlternative,
+  suggestRealFaceAlternative,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
 import { resolvePricedModel } from "../lib/model-pricing.js";
@@ -1988,10 +1989,16 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
   // fires; refunded=true bo'lsa qaytarilgan summa = gen.cost. Money-zona TEGILMAYDI (faqat o'qish).
   let rejection: unknown = undefined;
   if (gen.status === "failed") {
-    const rej = classifyGenRejection(gen.error);
+    const model = getModelById(gen.modelId);
+    const rej = classifyGenRejection(gen.error, { provider: model?.provider });
     if (rej.isContent) {
-      const model = getModelById(gen.modelId);
-      const alt = model ? suggestLenientAlternative(model) : undefined;
+      // R4_04 — real yuz bloki (Google) → real-yuz QO'LLAYDIGAN model (BytePlus) taklif qilinadi;
+      // aks holda mo''tadilroq alternativa. Taklif hech qachon rad etgan modeldan qattiqroq bo'lmaydi.
+      const alt = model
+        ? rej.category === "realface"
+          ? suggestRealFaceAlternative(model) || suggestLenientAlternative(model)
+          : suggestLenientAlternative(model)
+        : undefined;
       rejection = {
         isContent: true,
         category: rej.category,

@@ -19391,7 +19391,16 @@ class Component extends DCLogic {
   }
   errMsg(e) {
     if (e && e.message === 'NETWORK') return "Can't reach the server — check your connection";
-    return (e && e.message) || 'Something went wrong';
+    const raw = (e && e.message) || String((e && e.error) || '') || 'Something went wrong';
+    // R4_04 — Google real yuz / mashhur shaxs bloki (Responsible AI): toza xabar, xom JSON emas.
+    if (/restricted individual|responsible ai|could not be submitted|real (?:person|people|face)|public figure|\bcelebrit/i.test(raw))
+      return 'This model won’t process real people or public figures — your credits were refunded';
+    if (/sensitive content|nsfw|nudity|sexual|content polic|safety (system|filter)|no image was returned|moderation (blocked|failed|rejected)/i.test(raw))
+      return 'The model’s content filter rejected this request — your credits were refunded';
+    // R4_04 — xom provayder JSON HECH QACHON ko'rsatilmasin (masalan "Omni 400: {\"error\":...}").
+    if (/\{["']?\s*error\b/i.test(raw) || /^\s*\w[\w .()\/-]*\d{3}\s*:\s*[\[{]/.test(raw))
+      return 'The request was rejected by the model — your credits were refunded';
+    return raw;
   }
   fmtDate(iso) {
     if (!iso) return '';
@@ -20559,11 +20568,14 @@ class Component extends DCLogic {
         // va boshqa (mo''tadil siyosatli) MODEL taklifi (banner). Oddiy xato → oddiy error toast.
         const rej = g.rejection;
         if (rej && rej.isContent) {
+          // R4_04 — sabab backend'da toza; belt-and-suspenders: xom JSON tushsa errMsg tozalaydi.
+          const reason = (rej.reason && !/\{["']?\s*error\b/i.test(rej.reason)) ? rej.reason : this.errMsg({ message: rej.reason || g.error || '' });
           const refNote = rej.refunded ? (' · ✦' + rej.refunded + ' refunded') : '';
-          this.toast((rej.reason || 'The provider rejected this content') + refNote, 'error');
-          this.setState({ rejectBanner: { reason: rej.reason || 'The provider rejected this content', refunded: rej.refunded || 0, modelLabel: rej.modelLabel || '', provider: rej.provider || '', suggestModelId: rej.suggestModelId || null, suggestModelLabel: rej.suggestModelLabel || '', mode: g.mode } });
+          this.toast(reason + refNote, 'error');
+          this.setState({ rejectBanner: { reason: reason, refunded: rej.refunded || 0, modelLabel: rej.modelLabel || '', provider: rej.provider || '', suggestModelId: rej.suggestModelId || null, suggestModelLabel: rej.suggestModelLabel || '', mode: g.mode } });
         } else {
-          this.toast(g.error || 'Generation failed — credits refunded', 'error');
+          // R4_04 — xom provayder xatosini ham errMsg orqali (Omni 400 JSON hech qachon xom ko'rinmasin).
+          this.toast(this.errMsg({ message: g.error || 'Generation failed — credits refunded' }), 'error');
         }
         this.refreshCredits();
         return;

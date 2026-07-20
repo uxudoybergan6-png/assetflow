@@ -1594,6 +1594,30 @@ export function suggestLenientAlternative(model: GenModel): GenModel | undefined
   return candidates[0];
 }
 
+/**
+ * R4_04 — real yuz / mashhur shaxsni QO'LLAYDIGAN alternativa. Google (Vertex/Omni/Imagen) real
+ * yuzni bloklaydi; BytePlus (Seedance video / Seedream rasm) mo''tadil siyosatли va real yuzni
+ * qayta ishlaydi. Bir xil mode, yoqilgan, byteplus, op emas, o'zi emas; feature-oila afzal.
+ * Topilmasa suggestLenientAlternative'ga qaytadi (chaqiruvchida).
+ */
+export function suggestRealFaceAlternative(model: GenModel): GenModel | undefined {
+  const isImageish = (f: GenFeature) => f === "text-to-image" || f === "image-edit";
+  const isVideoish = (f: GenFeature) =>
+    f === "text-to-video" || f === "image-to-video" || f === "reference-to-video";
+  const family = (a: GenFeature, b: GenFeature) =>
+    (isImageish(a) && isImageish(b)) || (isVideoish(a) && isVideoish(b)) || a === b;
+  const cands = GEN_MODELS.filter(
+    (m) =>
+      m.enabled !== false &&
+      m.id !== model.id &&
+      m.mode === model.mode &&
+      m.provider === "byteplus" &&
+      !m.opType
+  );
+  if (!cands.length) return undefined;
+  return cands.find((m) => family(m.feature, model.feature)) || cands[0];
+}
+
 /** Reference rejimi — deklaratsiya bo'lmasa mode'dan default (eski modellar uchun ham xavfsiz). */
 export function getReferenceMode(model: GenModel): ReferenceMode {
   if (model.referenceMode) return model.referenceMode;

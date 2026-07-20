@@ -9709,7 +9709,10 @@ function handleGenRejection(gn, switchFn){
   var rej = gn && gn.rejection;
   if(!(rej && rej.isContent)) return false;
   var refNote = rej.refunded ? (' · ✦'+rej.refunded+' refunded') : '';
-  if(typeof showToast==='function') showToast((rej.reason||'The provider rejected this content')+refNote, 'error');
+  // R4_04 — sabab HAR DOIM toza (backend toza yuboradi); belt-and-suspenders: xom JSON tushsa tozalaymiz.
+  var reason = rej.reason || 'The provider rejected this content';
+  if(/\{["']?\s*error\b/i.test(reason)) reason = (typeof friendlyError==='function') ? friendlyError({message:reason}) : 'This request was rejected by the model’s content policy';
+  if(typeof showToast==='function') showToast(reason+refNote, 'error');
   if(rej.suggestModelId && rej.suggestModelLabel && typeof switchFn==='function' && typeof window.afConfirm==='function'){
     var prov = ({'vertex-image':'Google','vertex':'Google','vertex-omni':'Google','google-tts':'Google','byteplus':'BytePlus','fal':'fal','elevenlabs':'ElevenLabs'})[rej.provider]||'';
     window.afConfirm((rej.modelLabel||'This model')+(prov?(' ('+prov+')'):'')+' refused this content.\nTry '+rej.suggestModelLabel+' — a model with a different content policy?', {ok:'Switch model', cancel:'Not now'}).then(function(ok){ if(ok) try{ switchFn(rej.suggestModelId, rej.suggestModelLabel); }catch(e){} });
@@ -9728,6 +9731,10 @@ function friendlyError(e){
     return 'Too many requests — wait a moment and try again';
   // P30 §3 (29c) — HALOL xato, "soften the prompt" (evasion maslahati) OLIB TASHLANDI. Kredit
   // qaytariladi; rad etilishida handleGenRejection() boshqa-model taklifini ko'rsatadi.
+  // R4_04 — Google real yuz / mashhur shaxs bloki ("restricted individuals ... Responsible AI ...
+  // could not be submitted") — xom JSON o'rniga toza xabar. handleGenRejection backend suggestModel'ni ko'rsatadi.
+  if(/restricted individual|responsible ai|could not be submitted|real (?:person|people|face)|public figure|\bcelebrit/i.test(raw))
+    return 'This model won’t process real people or public figures — your credits were refunded';
   if(/output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system|no image was returned/i.test(raw))
     return 'The model’s content filter rejected this request — your credits were refunded';
   if(/Failed to fetch|NetworkError|ENOTFOUND|ECONNREFUSED|network/i.test(raw))
@@ -9753,6 +9760,9 @@ function friendlyError(e){
     return 'After Effects script didn’t respond — restart AE';
   if(/redirect limit|Pack HTTP/i.test(raw))
     return 'Couldn’t download the file — the pack URL is invalid or was removed';
+  // R4_04 — xom provayder JSON HECH QACHON foydalanuvchiga ko'rsatilmasin (masalan "Omni 400: {\"error\":...}").
+  if(/\{["']?\s*error\b/i.test(raw) || /^\s*\w[\w .()\/-]*\d{3}\s*:\s*[\[{]/.test(raw))
+    return 'The request was rejected by the model — your credits were refunded';
   return raw||'Unknown error';
 }
 
