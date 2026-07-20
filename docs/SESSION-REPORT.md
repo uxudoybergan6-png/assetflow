@@ -1,18 +1,29 @@
-# SESSION-REPORT — R4_07 (Topaz catalog: enhance/upscale ops) 2026-07-20
+# SESSION-REPORT — R4 round (R4_05 · R4_06 · R4_08 · R4_04) 2026-07-20
 
-**Qilindi (1 commit, push YO'Q):**
-- 3 Topaz OP katalogga qo'shildi (opType — composer picker'idan filtrlangan, generativ model EMAS):
-  5001 Upscale Video (Proteus, prob-4), 5002 Upscale Image (Gigapixel Standard V2), 5003 Remove BG.
-- Narx (margin rule, TOPAZ_USD_PER_CREDIT env def $0.10): image op 11 kr; Proteus perSec 720p/1080p/4k = 3/5/17.
-- provider-cost.ts: 5001 VIDEO_USD_PER_SEC + 5002/5003 IMAGE_USD_PER_UNIT (Topaz-cr×tier).
-- runTopazImage endpoint/model deskriptordan; runTopazVideo sourceKey→external R2 URL + output geometry.
-- /gen/models opType filtri; verify-gen-payloads.mjs ops bo'limi + 429-retry; scripts/probe-topaz-ops.mjs.
+**4 commit (push YO'Q), har task alohida. Build PASS · boot pricing-floor PASS · money-zone TEGILMAGAN.**
 
-**Topilgan (jonli probe, obuna FAOL):**
-- Gigapixel E2E PASS (credits=1) · Proteus video TO'LIQ lifecycle E2E PASS · RemoveBG 3/3 FAIL
-  (submit OK+1cr rezerv, /matting job "Failed") → 5003 enabled:false.
+- **R4_05** (d5a5eb6) — o'lchangan (measured) provider xarajatini marja/pricing hisobiga uladi.
+  measured-cost.ts: `getMeasuredProviderUsd` (median), `resolveProviderUsd` (measured→table→estimate,
+  safety qoidasi). BytePlus rasm `usage.total_tokens` → measured USD (gen-processor). **Lite/4.5 margin
+  BEFORE −229% ($0.50 fail-safe) → AFTER +54% ($0.0705 measured)**. Control Nano Banana 2 cost-quote 4→4.
+  ⚠️ Rasm token→USD RASMIY EMAS (Pro 1K token=$0.0176 vs konsol $0.045) → measured RASMDA faqat
+  jadvalsiz modelда (Lite/4.5) ishlatiladi, tasdiqlangan jadvalni PASAYTIRMAYDI; VIDEO to'liq ishonchli.
+- **R4_06** (fd4a7ef) — Pricing panelда measured badge ("measured (N)"/"table"/"estimate"), per-model
+  **Measure cost** tugmasi (POST /pricing/measure-cost — BytePlus probe), **Measure all missing**,
+  "cost rose — review" chip + confirm-gated bulk apply. Admin UI'da JONLI tekshirildi (console toza).
+- **R4_08** (65331b5) — kartada **Use ▾ → Upscale** (bir-bosishlik Topaz): plagin + web. Yangi GET
+  /gen/ops (yoqilgan op'lar); imzolangan quote → gen → poll → refund-on-fail. **FIX: /gen config gate'da
+  "topaz" yo'q edi → 503 bo'lardi (endi ishlaydi).** Real Gigapixel upscale E2E PASS (✦11, R2'ga).
+- **R4_04** (4520fcb) — Google real-yuz rad etilishi (restricted individuals/Responsible AI) endi XOM
+  JSON emas, TOZA rejection oqimi: backend "realface" kategoriya + toza sabab + real-yuz QO'LLAYDIGAN
+  taklif (**Omni Flash → Seedance 2.0 Fast**); klient friendlyError/errMsg xom "Omni 400: {…}" ni bloklaydi.
+  Control (bad-params 400, non-Google) over-match qilmaydi.
 
-**Natija:** build PASS (51 entry, 24 yoqilgan) · boot pricing-floor PASS · verify ALL PASS ·
-ops composer'da KO'RINMAYDI · money-zone TEGILMAGAN (control Nano Banana 2 = 4/64 o'zgarmadi).
+**Bir-bosishlik Topaz (yoqilgan):** Upscale Image (Gigapixel 5002) · Upscale Video 2×/4× (Proteus 5001).
+Remove BG (5003) hali YO'Q (subscription).
 
-**OWNER ACTION:** Topaz plan'ida "Matting / Background Removal"ni yoqing (yoki support) → 5003 enabled:true.
+**OWNER ACTIONS:**
+1. Topaz "Matting / Background Removal" entitlement → 5003 enabled:true (kod tayyor).
+2. Seedream rasm ANIQ narxi uchun REAL BytePlus invoice bilan token→USD stavkasini tasdiqlang (yoki
+   Lite/4.5 ga tasdiqlangan statik narx qo'shing) — hozir measured ($0.07) owner aytgan diapazonда.
+3. Measure cost FAQAT BytePlus (token usage); boshqa provayderlar jadvaldan narxlanadi.
