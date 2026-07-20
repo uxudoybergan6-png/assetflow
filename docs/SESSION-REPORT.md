@@ -1,21 +1,18 @@
-# SESSION-REPORT — SC_57 (Seedance failure + BytePlus models) 2026-07-20
+# SESSION-REPORT — R4_07 (Topaz catalog: enhance/upscale ops) 2026-07-20
 
-**Qilindi (2 commit, push YO'Q):**
-- PART 1: Seedance r2v FAIL root-cause topildi + tuzatildi.
-- PART 2: 3 aktivlashgan BytePlus modeli qo'shildi/yoqildi.
+**Qilindi (1 commit, push YO'Q):**
+- 3 Topaz OP katalogga qo'shildi (opType — composer picker'idan filtrlangan, generativ model EMAS):
+  5001 Upscale Video (Proteus, prob-4), 5002 Upscale Image (Gigapixel Standard V2), 5003 Remove BG.
+- Narx (margin rule, TOPAZ_USD_PER_CREDIT env def $0.10): image op 11 kr; Proteus perSec 720p/1080p/4k = 3/5/17.
+- provider-cost.ts: 5001 VIDEO_USD_PER_SEC + 5002/5003 IMAGE_USD_PER_UNIT (Topaz-cr×tier).
+- runTopazImage endpoint/model deskriptordan; runTopazVideo sourceKey→external R2 URL + output geometry.
+- /gen/models opType filtri; verify-gen-payloads.mjs ops bo'limi + 429-retry; scripts/probe-topaz-ops.mjs.
 
-**Topildi (PART 1 root cause):** `optimizeVideoReferenceForUpload` faqat BALANDLIKNI 720 ga
-cheklardi (`scale=-2:min(720,ih)`) → portret video-referens 406×720 = ~292k px, BytePlus
-Seedance r2v'ning HAR KADR ≥409600 px minimumidan past → `InvalidParameter` 400 → Failed+Refund.
-Egasining "50 kredit" job'i = 480p×10s×0.6 video-input multiplier = FAQAT video-referens bilan.
-Tuzatish: QISQA tomon 720 ga (720×1280 portret / 1280×720 landshaft), maydon ≥518400. `expired`
-poll statusi ham endi failed'ga map qilinadi.
+**Topilgan (jonli probe, obuna FAOL):**
+- Gigapixel E2E PASS (credits=1) · Proteus video TO'LIQ lifecycle E2E PASS · RemoveBG 3/3 FAIL
+  (submit OK+1cr rezerv, /matting job "Failed") → 5003 enabled:false.
 
-**PART 2:** Seedance 2.0 Fast (3101, video) + Seedream 5.0 Lite (1020) + Seedream 4.5 (1022 yangi)
-yoqildi — jonli probe: aktiv. 4.5 `output_format` param'ni rad etadi → adapter tashlaydi. Mini +
-Seedream 4.0 aktiv EMAS (qoldirildi). Yangi narxlar cost'dan past emas, boot floor o'tdi.
+**Natija:** build PASS (51 entry, 24 yoqilgan) · boot pricing-floor PASS · verify ALL PASS ·
+ops composer'da KO'RINMAYDI · money-zone TEGILMAGAN (control Nano Banana 2 = 4/64 o'zgarmadi).
 
-**Tekshirildi:** verify-gen-payloads ALL PASS (16 yoqilgan model quote OK); real gen: Seedance Fast
-video, portret video-ref 480p/10s (eski FAIL sahnasi endi "done"), Lite 2K, Seedream 4.5 2K — hammasi done.
-
-**Kutilmoqda:** deploy (Cloud Run) — productionda tasdiqlash; egadan: agar Mini/4.0 kerak bo'lsa prepay pack.
+**OWNER ACTION:** Topaz plan'ida "Matting / Background Removal"ni yoqing (yoki support) → 5003 enabled:true.

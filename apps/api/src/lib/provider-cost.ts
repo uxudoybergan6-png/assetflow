@@ -25,6 +25,18 @@ import { GEN_MODELS, resolveVideoParams, resolveImageCount } from "./gen-models.
  */
 export const DEFAULT_PROVIDER_USD = 0.5;
 
+/**
+ * R4_07 — Topaz-credit → USD stavkasi (owner obuna tier'i). ENV bilan sozlanadi (kod o'zgarmaydi):
+ * PAYG $0.195 · obuna 400/$39.99=$0.10 · 1400/$99.99=$0.071 · 3000/$199.99=$0.067 · 20000=$0.05.
+ * Default $0.10 = eng qimmat obuna stavkasi (400/$39.99 kirish tier'i) → margin never-below-cost;
+ * owner arzonroq tier'da bo'lsa marja faqat oshadi. Topaz op catalog kredit narxlari (gen-models.ts
+ * cost/perSec) shu default tier'da hisoblangan — env o'zgarsa margin panel qayta hisoblaydi.
+ */
+export const TOPAZ_USD_PER_CREDIT = (() => {
+  const v = Number(process.env.TOPAZ_USD_PER_CREDIT);
+  return Number.isFinite(v) && v > 0 ? v : 0.1;
+})();
+
 /** Rasm: model id → sifat(1K/2K/4K...) bo'yicha bir-dona provider USD.
  *  BATCH4 #3 — bazaviy tier'lar RASMIY sahifadan USER-tasdiqlangan (2026-07); yuqori
  *  tier'lar (2K/4K) hali TAXMINIY (rasmiy per-tier narx e'lon qilinmagan) — konservativ. */
@@ -43,6 +55,10 @@ export const IMAGE_USD_PER_UNIT: Record<number, Record<string, number>> = {
   // R4_02 — Kling Image 3.0 (direct API) RASMIY narx (docs Pricing Image): 1K/2K $0.028; Omni +4K $0.056.
   1030: { "1K": 0.028, "2K": 0.028 }, // Kling Image 3.0
   1031: { "1K": 0.028, "2K": 0.028, "4K": 0.056 }, // Kling Image 3.0 Omni
+  // R4_07 — Topaz image OP (per output-MP; Gigapixel/RemoveBG 24 MP/credit → tipik ≤24MP = 1 Topaz-cr).
+  // `base` kaliti (op'da resolution/quality yo'q → imageQualityKey undefined → table[first]).
+  5002: { base: round4(1 * TOPAZ_USD_PER_CREDIT) }, // Gigapixel (Standard V2) ~1 Topaz-cr
+  5003: { base: round4(1 * TOPAZ_USD_PER_CREDIT) }, // RemoveBG ~1 Topaz-cr
 };
 
 /** Video (per-second): model id → resolution bo'yicha soniya USD.
@@ -70,6 +86,9 @@ export const VIDEO_USD_PER_SEC: Record<number, Record<string, number>> = {
   3004: { "720p": 0.126, "1080p": 0.168, "4k": 0.42 }, // Kling 3.0 (worst-case: with native audio)
   3008: { "720p": 0.126, "1080p": 0.168, "4k": 0.42 }, // Kling 3.0 Omni (worst-case: with video input)
   3005: { "720p": 0.112, "1080p": 0.14 }, // Kling 3.0 Turbo (native audio — sole tier)
+  // R4_07 — Topaz Proteus video upscale (per-reference; per-second derivatsiya). Topaz-cr/s:
+  // 720p 0.2 · 1080p 0.4 · 4k 1.6 → × TOPAZ_USD_PER_CREDIT. Aniq narx R4_08 POST /video/ estimate.
+  5001: { "720p": round4(0.2 * TOPAZ_USD_PER_CREDIT), "1080p": round4(0.4 * TOPAZ_USD_PER_CREDIT), "4k": round4(1.6 * TOPAZ_USD_PER_CREDIT) },
 };
 
 /** Video (per-generation): model id → sobit USD. */

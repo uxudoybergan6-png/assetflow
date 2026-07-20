@@ -825,7 +825,10 @@ studioGenRouter.delete("/gen/references/:id", async (req: Request, res: Response
 /** GET /gen/models?mode= — model katalog. */
 studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
   const mode = req.query.mode ? String(req.query.mode) : undefined;
-  const base = mode ? getModelsByMode(mode) : GEN_MODELS;
+  // R4_07 — Topaz enhance/upscale OPERATSIYALARI (opType) composer model picker'ida KO'RINMAYDI
+  // (ular generativ model emas; R4_08 gen/library kartalarida "Use ▾" bilan ochiladi). Katalogda
+  // qoladi (cost-quote/pricing panel getModelById orqali ko'radi) — faqat bu ro'yxatdan filtrlanadi.
+  const base = (mode ? getModelsByMode(mode) : GEN_MODELS).filter((m) => !m.opType);
   res.json({
     // refKind'ni HAR modelga qo'shamiz (So'nggi-grid "Referens" model-aware bo'lishi uchun).
     // P30 (29c) — policyStrictness ham (klient "qattiq siyosat" ogohlantirishi + boshqa-model taklifi uchun).

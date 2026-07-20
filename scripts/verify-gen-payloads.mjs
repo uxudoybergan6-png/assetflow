@@ -17,15 +17,22 @@ const IMG = "https://example.com/ref.png"; // quote URL'ni tekshirmaydi — shak
 const VID = "https://example.com/ref.mp4";
 const AUD = "https://example.com/ref.mp3";
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function jpost(path, body, token) {
-  const r = await fetch(API + path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
-    body: JSON.stringify(body),
-  });
-  let j = null;
-  try { j = await r.json(); } catch { /* bo'sh javob */ }
-  return { status: r.status, body: j };
+  // studio-gen router rate-limiter: 40 so'rov / 60s. 429 bo'lsa retryAfter kutib qayta uramiz
+  // (verify skript ko'p quote yuboradi — bu limit MAHSULOT xatosi emas, test-tezligi cheklovi).
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const r = await fetch(API + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
+      body: JSON.stringify(body),
+    });
+    let j = null;
+    try { j = await r.json(); } catch { /* bo'sh javob */ }
+    if (r.status === 429) { await sleep(((j?.retryAfter || 5) + 1) * 1000); continue; }
+    return { status: r.status, body: j };
+  }
+  return { status: 429, body: { error: "rate-limited after retries" } };
 }
 
 // ── Klient payload quruvchi (web/plagin bilan BIR XIL qoidalar) ──
@@ -84,14 +91,21 @@ async function main() {
   const token = login.body && (login.body.token || login.body.accessToken);
   if (!token) { console.error("LOGIN FAILED", login.status, login.body); process.exit(1); }
 
-  const mr = await fetch(API + "/api/studio/gen/models", { headers: { Authorization: "Bearer " + token } });
-  const models = ((await mr.json()).models || []).filter((m) => m.enabled !== false);
+  let modelsJson = null;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const mr = await fetch(API + "/api/studio/gen/models", { headers: { Authorization: "Bearer " + token } });
+    const jb = await mr.json().catch(() => null);
+    if (mr.status === 429) { await sleep(((jb?.retryAfter || 5) + 1) * 1000); continue; }
+    modelsJson = jb; break;
+  }
+  const models = ((modelsJson?.models) || []).filter((m) => m.enabled !== false);
   console.log(`API=${API} · yoqilgan modellar: ${models.length}\n`);
 
   const rows = [];
   let fails = 0;
   for (const m of models) {
     for (const variant of ["default", "rich"]) {
+      await sleep(200); // cost-quote rate-limiter'ni chetlab o'tish (aks holda tail 429 bo'ladi)
       const params = buildDefaultParams(m, variant);
       const q = await jpost("/api/studio/gen/cost-quote", { modelId: m.id, mode: m.mode, params }, token);
       const ok = q.status === 200 && typeof q.body?.price === "number" && q.body.price > 0 && !!q.body.signature;
@@ -114,10 +128,41 @@ async function main() {
   ];
   const negRows = [];
   for (const n of negatives) {
+    await sleep(200);
     const q = await jpost("/api/studio/gen/cost-quote", n.body, token);
     const ok = q.status === n.expect;
     if (!ok) fails++;
     negRows.push({ ...n, got: q.status, ok });
+  }
+
+  // R4_07 — Topaz enhance/upscale OPERATSIYALARI. Bular composer /gen/models'dan FILTRLANGAN
+  // (opType) → yuqoridagi loop ularni ko'rmaydi; shu sabab cost-quote'ni TO'G'RIDAN-TO'G'RI ID
+  // bilan tekshiramiz. Image op (flat narx) manbasiz cost-quote qaytaradi; video op (video-upscale)
+  // manba (sourceKey) talab qiladi → manbasiz hujjatlangan 400 (UPSCALE_SOURCE_REQUIRED) = wiring PASS.
+  const opRows = [];
+  // ENABLED image op (Gigapixel) → 200 + narx. RemoveBG (5003) DISABLED (matting entitlement) →
+  // 400 "Unknown or disabled model" (disable gate isboti).
+  {
+    await sleep(200);
+    const q = await jpost("/api/studio/gen/cost-quote", { modelId: 5002, mode: "image", params: { referenceUrls: [IMG] } }, token);
+    const ok = q.status === 200 && typeof q.body?.price === "number" && q.body.price > 0 && !!q.body.signature;
+    if (!ok) fails++;
+    opRows.push({ id: 5002, label: "Upscale Image (Gigapixel)", status: q.status, price: q.body?.price, ok, note: ok ? "" : JSON.stringify(q.body || {}).slice(0, 120) });
+  }
+  {
+    await sleep(200);
+    const q = await jpost("/api/studio/gen/cost-quote", { modelId: 5003, mode: "image", params: { referenceUrls: [IMG] } }, token);
+    const ok = q.status === 400; // disabled → to'siq
+    if (!ok) fails++;
+    opRows.push({ id: 5003, label: "Remove BG (DISABLED)", status: q.status, price: "(disabled)", ok, note: ok ? "matting entitlement — owner action" : JSON.stringify(q.body || {}).slice(0, 120) });
+  }
+  // Proteus video op — manbasiz cost-quote 400 UPSCALE_SOURCE_REQUIRED kutiladi (source-gated wiring).
+  {
+    await sleep(200);
+    const q = await jpost("/api/studio/gen/cost-quote", { modelId: 5001, mode: "video", params: {} }, token);
+    const ok = q.status === 400 && q.body?.code === "UPSCALE_SOURCE_REQUIRED";
+    if (!ok) fails++;
+    opRows.push({ id: 5001, label: "Upscale Video (Proteus)", status: q.status, price: "(src-gated)", ok, note: ok ? "expects source" : JSON.stringify(q.body || {}).slice(0, 120) });
   }
 
   console.log(pad("ID", 6) + pad("MODEL", 30) + pad("MODE", 7) + pad("VARIANT", 9) + pad("HTTP", 6) + pad("PRICE", 7) + "RESULT");
@@ -131,6 +176,12 @@ async function main() {
   }
   console.log("\nNegative (hujjatlangan 4xx):");
   for (const n of negRows) console.log(`  ${n.ok ? "PASS" : "FAIL"} · ${n.name} → ${n.got} (kutilgan ${n.expect})`);
+
+  console.log("\nR4_07 Topaz OPERATSIYALARI (opType — composer'dan filtrlangan, cost-quote to'g'ridan):");
+  for (const o of opRows) {
+    console.log(`  ${o.ok ? "PASS" : "FAIL"} · ${pad(o.id, 6)}${pad(o.label.slice(0, 28), 30)} HTTP ${o.status} price=${o.price}${o.note ? " · " + o.note : ""}`);
+  }
+
   console.log(`\n${fails === 0 ? "ALL PASS" : fails + " FAILURE(S)"}`);
   process.exit(fails === 0 ? 0 : 1);
 }

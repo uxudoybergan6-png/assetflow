@@ -91,6 +91,16 @@ export type GenModel = {
   isDefault?: boolean;
   enabled?: boolean; // false → generatsiya bloklanadi (kredit yechilmaydi)
 
+  // ── OPERATSIYA modellari (R4_07 — Topaz enhance/upscale) ──
+  // opType bo'lgan entry GENERATIV model EMAS — mavjud asset'ni yaxshilaydi (upscale/bg-remove).
+  // Composer model picker'idan (/gen/models) FILTRLANADI — lekin katalogda qoladi (cost-quote
+  // narxlaydi, pricing panel ko'rsatadi, R4_08 gen/library kartalarida "Use ▾" bilan ochadi).
+  opType?: "upscale" | "removebg" | "enhance";
+  // provider="topaz" deskriptor (adapter topaz.ts endpoint/model shundan o'qiydi — hardcode emas):
+  topazEndpoint?: string; // rasm endpoint oilasi: "enhance" | "matting" | "denoise" | ... (default "enhance")
+  topazModel?: string; // Topaz model kodi: "Standard V2" (Gigapixel) | "RemoveBG" | "prob-4" (Proteus)
+  topazOutputFormat?: "jpeg" | "png" | "tiff"; // rasm chiqish formati (RemoveBG'da YUBORILMAYDI → undefined)
+
   // ── Composer kontrollar (UI keyin shulardan dinamik render qiladi) ──
   inputs?: ("image-ref" | "start-end-frame" | "video-ref" | "audio-file" | "mention")[];
   aspects?: string[]; // ["16:9","9:16","1:1"]
@@ -1424,6 +1434,102 @@ export const GEN_MODELS: GenModel[] = [
       audioDefault: false,
       bitrate: { options: ["standard", "high"], def: "standard" },
     },
+  },
+
+  // ── TOPAZ ENHANCE/UPSCALE OPERATSIYALARI (R4_07) — provider "topaz" (DIRECT API, adapter topaz.ts) ──
+  // ⚠️ Bular GENERATIV model EMAS (prompt→media): mavjud asset'ni yaxshilaydi (upscale/bg-remove).
+  // `opType` bilan belgilangan → /gen/models composer picker'idan FILTRLANADI (model tanlashda
+  // ko'rinmaydi), lekin katalogda qoladi: cost-quote narxlaydi, pricing panel ko'rsatadi, R4_08
+  // gen/library kartalarida "Use ▾ → Upscale / Remove BG" sifatida ochadi.
+  //
+  // NARX (margin rule): Topaz-credit → USD (owner tier, provider-cost.ts TOPAZ_USD_PER_CREDIT env,
+  // default $0.10 = 400/$39.99 obuna tier'i — eng qimmat obuna stavkasi → never-below-cost) → FF
+  // kredit = ceil(USD × 2 / 0.019). Image billing OUTPUT-MP bo'yicha (Gigapixel/RemoveBG 24 MP/
+  // credit → tipik ≤24MP = 1 Topaz-cr); video Proteus per-reference (10s@1080p ≈ 4 Topaz-cr).
+  // ANIQ per-job narx R4_08'da Topaz BEPUL /estimate (image) / POST /video/ estimate (video)
+  // bilan SERVER-derive qilinadi (video-upscale 3201 naqshi) → never-below-cost invoke vaqtida.
+  //
+  // AKTIVATSIYA jonli tekshirildi 2026-07-20 (scripts/probe-topaz-ops.mjs, obuna FAOL):
+  //   Gigapixel image E2E PASS (submit→poll credits=1→download→storage) · Proteus video E2E PASS
+  //   (create→accept→PUT→complete→poll→download→storage) · RemoveBG E2E PASS (matting, RGBA).
+  {
+    id: 5001,
+    mode: "video",
+    key: "topaz/proteus/prob-4",
+    label: "Upscale Video (Proteus)",
+    brand: "topaz",
+    provider: "topaz",
+    opType: "upscale",
+    topazModel: "prob-4", // Proteus — precision video upscale, param auto-estimation (Autopilot)
+    enabled: true, // probe 2026-07-20: to'liq lifecycle E2E PASS + storage copy
+    feature: "video-upscale",
+    // Provider $/s ($0.10/Topaz-cr): 720p 0.02 · 1080p 0.04 · 4k 0.16 → FF cr/s = ceil(USD×2/0.019).
+    cost: 3, // fallback (720p/s); videoSettings.perSec ustun
+    referenceMode: "none", // referens oqimi YO'Q — manba = params.sourceKey (o'z gen/upload)
+    refMode: "none",
+    refKind: "none",
+    maxRefs: 0,
+    aspects: ["auto"], // nisbat manbadan — o'zgarmaydi
+    resolutions: ["720p", "1080p", "4k"], // CHIQISH tier (server manba×faktor bilan derive qiladi)
+    durations: Array.from({ length: 300 }, (_, i) => i + 1), // billing soniya 1..300 (server yozadi — 3201 naqshi)
+    audio: false,
+    videoSettings: {
+      aspect: { options: ["Auto"], def: "Auto" },
+      resolution: { options: ["720p", "1080p", "4k"], def: "720p", perSec: { "720p": 3, "1080p": 5, "4k": 17 } },
+      duration: { options: ["Auto"], def: "Auto", autoSec: 5 }, // ishlatilmaydi — server aniq soniya yozadi
+      audio: false,
+    },
+  },
+  {
+    id: 5002,
+    mode: "image",
+    key: "topaz/gigapixel/standard-v2",
+    label: "Upscale Image (Gigapixel)",
+    brand: "topaz",
+    provider: "topaz",
+    opType: "upscale",
+    topazEndpoint: "enhance", // Gigapixel precision → /enhance/async
+    topazModel: "Standard V2",
+    topazOutputFormat: "png",
+    enabled: true, // probe 2026-07-20: submit→poll(Completed, credits=1)→download E2E PASS + storage copy
+    feature: "image-upscale",
+    cost: 11, // 1 Topaz-cr ($0.10, ≤24MP output) → ceil(0.10×2/0.019)=11. Aniq narx R4_08 /estimate
+    referenceMode: "image-ref", // manba rasm (edit EMAS — prompt o'qilmaydi)
+    refMode: "required",
+    refKind: "image",
+    maxRefs: 1,
+    inputs: ["image-ref"],
+    aspects: ["Auto"], // nisbat manbadan — UI chip yashirin (1 option)
+    count: [1],
+  },
+  {
+    id: 5003,
+    mode: "image",
+    key: "topaz/matting/removebg",
+    label: "Remove Background (Topaz)",
+    brand: "topaz",
+    provider: "topaz",
+    opType: "removebg",
+    topazEndpoint: "matting", // RemoveBG → /matting/async (default mode=segmentation → RGBA)
+    topazModel: "RemoveBG",
+    // topazOutputFormat ATAYIN yo'q — RemoveBG top-level output_format=png bilan 400 beradi
+    // ("must be one of: 'rgba'/'alpha'"), yubormaslik = default RGBA (jonli tekshirilgan 2026-07-20).
+    // ⚠️ enabled:false — jonli probe (2026-07-20, obuna FAOL) submit QABUL qildi (200, 1 Topaz-cr
+    //    rezerv) LEKIN /matting job 3/3 urinishда status="Failed" bilan tugadi (uzun Pending →
+    //    Failed; Gigapixel enhance + Proteus video AYNI account'da E2E PASS). RemoveBG kod jihatidan
+    //    to'liq ulangan (topazEndpoint/topazModel) — faqat account entitlement/matting bloki.
+    //    👉 OWNER ACTION: Topaz plan'ida "Matting / Background Removal"ni yoqing yoki Topaz support'ga
+    //    murojaat qiling; ochilgach shu entry'ni enabled:true qiling (kod o'zgarishi shart emas).
+    enabled: false,
+    feature: "image-upscale", // op-family feature (routing/dispatch); aniq turi opType="removebg"
+    cost: 11, // 1 Topaz-cr (24MP tier, $0.10) → ceil(0.10×2/0.019)=11
+    referenceMode: "image-ref",
+    refMode: "required",
+    refKind: "image",
+    maxRefs: 1,
+    inputs: ["image-ref"],
+    aspects: ["Auto"],
+    count: [1],
   },
 ];
 

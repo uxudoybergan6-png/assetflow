@@ -1,0 +1,2869 @@
+openapi: 3.1.2
+
+info:
+  title: Image API
+  version: 1.2.0
+
+servers:
+  - url: https://api.topazlabs.com/image/v1
+    description: Production Base URL
+
+tags:
+  - name: Enhance
+    description: |
+      Enhance images by removing noise, sharpening, and upscaling while preserving the details of your image, including the faces of important subjects.
+
+      Just pass in an image and our **Autopilot** will automatically determine the best settings for the highest quality.
+
+      Additional configuration can be optionally provided, specifically:
+        - `model`
+        - `output_height`
+        - `output_width`
+        - `output_format`
+        - `crop_to_fill`
+
+      Please see the reference for further details. Check out the [available models](https://developer.topazlabs.com/image-api/available-models) to see which model options you have.
+
+  - name: Sharpen
+    description: |
+      Use our advanced Sharpen models to bring clarity and crisp definition back to your images that appear soft or slightly out of focus. By analyzing the edges, textures, and details, our AI-based Sharpen endpoint intelligently enhances the clarity without introducing unwanted artifacts. Whether your image is suffering from camera shake, slight motion blur, or lens softness, Topaz Labs' Sharpen models help you restore the finer details with minimal effort.
+
+      Just pass in an image and our **Autopilot** will automatically determine the best settings for the highest quality.
+
+      Additional configuration can be optionally provided, specifically:
+        - `model`
+        - `output_format`
+
+      Please see the reference for further details. Check out the [available models](https://developer.topazlabs.com/image-api/available-models) to see which model options you have.
+
+  - name: Denoise
+    description: |
+      Our noise reduction models effectively remove grain and high-ISO noise from your photos, ensuring smooth yet detailed results. This endpoint is particularly beneficial when working with low-light photography or older images scanned from film, as it preserves essential image structure while greatly reducing unwanted noise or artifacts.
+
+      Just pass in an image and our **Autopilot** will automatically determine the best settings for the highest quality.
+
+      Additional configuration can be optionally provided, specifically:
+        - `model`
+        - `output_format`
+
+      Please see the reference for further details. Check out the [available models](https://developer.topazlabs.com/image-api/available-models) to see which model options you have.
+
+  - name: Restore
+    description: |
+      Our restoration models are designed to enhance photos that are older and of poorer quality.
+
+      Just pass in an image and our **Autopilot** will automatically determine the best settings for the highest quality.
+
+      Additional configuration can be optionally provided, specifically:
+        - `model`
+        - `output_format`
+
+      Please see the reference for further details. Check out the [available models](https://developer.topazlabs.com/image-api/available-models) to see which model options you have.
+
+  - name: Lighting
+    description: |
+      Our lighting models are used to adjust and balance your images to elevate it's quality despite the sub-optimal lighting conditions of the original photo.
+
+      Just pass in an image and our **Autopilot** will automatically determine the best settings for the highest quality.
+
+      Additional configuration can be optionally provided, specifically:
+        - `model`
+        - `output_format`
+
+      Please see the reference for further details. Check out the [available models](https://developer.topazlabs.com/image-api/available-models) to see which model options you have.
+
+  - name: Matting
+    description: |
+      Extract subjects from images using advanced AI matting technology. Generate alpha masks or segmentation maps to isolate objects from their backgrounds with precision.
+      
+      Just pass in an image and our **Autopilot** will automatically determine the best settings for the highest quality.
+      
+      Additional configuration can be optionally provided, specifically:
+        - `model`
+        - `mode`
+        - `output_format`
+      
+      Please see the reference for further details.
+
+  - name: Tool
+    description: |
+      Specialized image processing tools for specific use cases, including upscaling images with transparent backgrounds upto 4x while preserving alpha channels.
+      
+      Just pass in an image and our **Autopilot** will automatically determine the best settings for the highest quality.
+      
+      Additional configuration can be optionally provided, specifically:
+        - `model`
+        - `output_height`
+        - `output_width`
+        - `output_format`
+        - `crop_to_fill`
+      
+      Please see the reference for further details.
+
+  - name: Status
+    description: |
+      Check and manage the statuses of your image processing jobs. Whether you are handling a single job or managing a queue of bulk image processing tasks, the Status endpoints allow you to monitor the progress and completion of your tasks.
+
+      This is particularly useful for long-running jobs, where you can track progress and retrieve details such as percentage completion, estimated finish time, and current state (e.g., pending, processing, completed).
+
+  - name: Download
+    description: |
+      Access presigned URLs for downloading input or processed images. These endpoints allow you to securely retrieve the input or the processed image with an expiring URL.
+
+  - name: Estimate
+    description: |
+      Our estimates will allow you to predict the amount of time required and the number of credits that would be consumed in order to run a set of enhancements on a given image with certain input parameters.
+
+  - name: Cancel
+    description: |
+      If an image processing job is no longer needed or was started in error, you can cancel it before it completes. The job must be in a cancellable state (e.g., not already completed or failed) for the request to be successful.
+
+paths:
+  /enhance/async:
+    post:
+      tags:
+        - Enhance
+      summary: Enhance
+      operationId: postEnhance
+      description: |
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image enhancement job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/EnhanceGANRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the enhanced image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /enhance-gen/async:
+    post:
+      tags:
+        - Enhance
+      summary: Enhance Generative
+      operationId: postEnhanceGen
+      description: |
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image enhancement job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/EnhanceGenRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the enhanced image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /sharpen/async:
+    post:
+      tags:
+        - Sharpen
+      summary: Sharpen
+      operationId: postSharpen
+      description: |
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image sharpening job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SharpenGANRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the enhanced image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /sharpen-gen/async:
+    post:
+      tags:
+        - Sharpen
+      summary: Sharpen Generative
+      operationId: postSharpenGen
+      description: |
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image sharpening job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SharpenGenRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the enhanced image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /denoise/async:
+    post:
+      tags:
+        - Denoise
+      summary: Denoise
+      operationId: postDenoise
+      description: |
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image denoising job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/DenoiseGANRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the enhanced image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /restore-gen/async:
+    post:
+      tags:
+        - Restore
+      summary: Restore Generative
+      operationId: postRestoreGen
+      description: |
+        The following are our restoration models designed to enhance photos that are older and of poorer quality.
+
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image restoration job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/RestoreGenRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the enhanced image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /lighting/async:
+    post:
+      tags:
+        - Lighting
+      summary: Lighting
+      operationId: postLighting
+      description: |
+        The following are our lighting models used to adjust and balance your images to elevate it's quality despite the sub-optimal lighting conditions of the original photo.
+
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image lighting adjustment job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/LightingGANRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the enhanced image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /matting/async:
+    post:
+      tags:
+        - Matting
+      summary: Matting
+      operationId: postMatting
+      description: |
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image matting job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MattingGANRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the processed image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /tool/async:
+    post:
+      tags:
+        - Tool
+      summary: Tool
+      operationId: postTool
+      description: |
+        Returns `process_id` and `eta` to use as an efficient way to track the progress of the image tool processing job:
+          - Use the `Status` endpoints to check the status of this job using the returned `process_id`.
+          - Use the `Download` endpoints to download the input or processed image (once it is ready).
+          - Use the `Cancel` endpoint to cancel the job while it is in progress.
+
+        The same `process_id` and `eta` are also returned in the response headers as `X-Process-ID` and `X-ETA` respectively.
+
+        > The `eta` represents when the job is expected to finish in Unix time. We recommend using this to know when you can expect your (bulk) jobs to finish processing.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ToolGANRequest"
+      responses:
+        "200":
+          description: Image processing request has been successfully created.
+          headers:
+            X-Process-ID:
+              description: Unique identifier of the image processing job.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-Source-ID:
+              description: Unique identifier of the source image.
+              schema:
+                type: string
+                examples:
+                  - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+            X-ETA:
+              description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+              schema:
+                type: integer
+                examples:
+                  - 1617220000
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AsyncResponse"
+          links:
+            GetStatusByProcessId:
+              description: Retrieve the status of your image processing job using the `process_id`.
+              operationId: getStatus
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadInputByProcessId:
+              description: Access the download link for the input image once the job is completed.
+              operationId: getDownloadInput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            DownloadOutputByProcessId:
+              description: Access the download link for the processed image once the job is completed.
+              operationId: getDownloadOutput
+              parameters:
+                process_id: $response.header.X-Process-ID
+            CancelByProcessId:
+              description: Cancel the image processing job if it is still in progress.
+              operationId: cancelTask
+              parameters:
+                process_id: $response.header.X-Process-ID
+        "400":
+          $ref: "#/components/responses/BadRequestImage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "412":
+          $ref: "#/components/responses/PreconditionFailed"
+        "413":
+          $ref: "#/components/responses/RequestEntityTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "425":
+          $ref: "#/components/responses/TooEarly"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /status:
+    get:
+      tags:
+        - Status
+      summary: Get All Statuses
+      operationId: getAllStatuses
+      description: |
+        Retrieve the status of all image processing jobs.
+
+        **Pagination (Highly Recommended):**
+        For better performance and to handle large numbers of statuses, pagination is highly recommended. Enable pagination by setting `paginated=true`. When pagination is enabled:
+          - Use the `limit` parameter to control the number of results per page (default: 50, maximum: 100)
+          - Use the `cursor` parameter to retrieve subsequent pages
+          - The response will include pagination metadata with `next_cursor` and `has_next_page` fields
+
+        **Non-Paginated Response:**
+        When `paginated=false` (default) or omitted, the endpoint returns all statuses **up to 7 days old** as a simple array. This may be slow or fail for accounts with many statuses.
+      parameters:
+        - name: paginated
+          in: query
+          required: false
+          description: Enable pagination for the response. Highly recommended for better performance.
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          required: false
+          description: Number of results per page when pagination is enabled. Ignored if `paginated=false`. Defaults to 50, maximum is 100.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor for pagination. Use the `next_cursor` value from the previous response to retrieve the next page. Ignored if `paginated=false`.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Statuses of all processes. The response format depends on whether pagination is enabled.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    description: Non-paginated response (when `paginated=false` or omitted)
+                    items:
+                      $ref: "#/components/schemas/StatusResponse"
+                  - $ref: "#/components/schemas/PaginatedStatusesResponse"
+              examples:
+                nonPaginated:
+                  summary: Non-paginated response
+                  value:
+                    - process_id: d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+                      source_id: d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+                      filename: image.png
+                      input_format: png
+                      input_height: 720
+                      input_width: 1280
+                      output_format: jpeg
+                      output_height: 1080
+                      output_width: 1920
+                      category: Enhance
+                      model_type: GAN
+                      model: Standard V2
+                      crop_to_fill: false
+                      status: Completed
+                      progress: 100
+                      eta: 1617220000
+                      creation_time: 1633024800
+                      modification_time: 1633038400
+                      credits: 2
+                paginated:
+                  summary: Paginated response
+                  value:
+                    data:
+                      - process_id: d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+                        source_id: d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+                        filename: image.png
+                        input_format: png
+                        input_height: 720
+                        input_width: 1280
+                        output_format: jpeg
+                        output_height: 1080
+                        output_width: 1920
+                        category: Enhance
+                        model_type: GAN
+                        model: Standard V2
+                        crop_to_fill: false
+                        status: Completed
+                        progress: 100
+                        eta: 1617220000
+                        creation_time: 1633024800
+                        modification_time: 1633038400
+                        credits: 2
+                    pagination:
+                      next_cursor: eyJwcm9jZXNzX2lkIjoiZDdiM2IzYjMzLTdiM2ItNGIzYi04YjNiLTNiM2IzYjNiM2IzYiJ9
+                      has_next_page: true
+        "400":
+          $ref: "#/components/responses/BadRequestProcess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags:
+        - Status
+      summary: Delete All Statuses
+      operationId: deleteAllStatuses
+      description: |
+        Remove all image processing job statuses. This operation can be used to delete the statuses of finished jobs, cleaning up the response of `Get All Statuses`, for example.
+      responses:
+        "200":
+          description: The number of statuses that were deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted_count:
+                    type: integer
+                    description: The number of statuses that were deleted.
+                    examples:
+                      - 10
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /status/{process_id}:
+    get:
+      tags:
+        - Status
+      summary: Get Status
+      operationId: getStatus
+      description: |
+        Use this endpoint to retrieve status information for your image processing jobs.
+      parameters:
+        - name: process_id
+          in: path
+          required: true
+          description: The UUID of the image processing job.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Status of the process
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestProcess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      tags:
+        - Status
+      summary: Delete Status
+      operationId: deleteStatus
+      description: |
+        Remove an image processing job status by its `process_id`. This operation can be used to delete the statuses of finished jobs, cleaning up the response of `GET Status`, for example.
+      parameters:
+        - name: process_id
+          in: path
+          required: true
+          description: The UUID of the image processing job.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: The image processing job status was successfully deleted. No content returned.
+        "400":
+          $ref: "#/components/responses/BadRequestProcess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /download/{process_id}:
+    get:
+      tags:
+        - Download
+      summary: Download Output
+      operationId: getDownloadOutput
+      description: |
+        A presigned download link to the image is provided in the response, as well as an expiration time (in Unix time). If the image is not ready, this request will fail with a conflict error. Images are stored for **7 days** after the image has been processed.
+      parameters:
+        - name: process_id
+          in: path
+          required: true
+          description: The UUID of the image processing job.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Presigned download URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestProcess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /download/input/{process_id}:
+    get:
+      tags:
+        - Download
+      summary: Download Input
+      operationId: getDownloadInput
+      description: |
+        A presigned download link to the input image is provided in the response, as well as an expiration time (in Unix time). Input images are stored for **7 days** after the image has been uploaded.
+      parameters:
+        - name: process_id
+          in: path
+          required: true
+          description: The UUID of the image processing job.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Presigned download URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestProcess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /estimate:
+    post:
+      tags:
+        - Estimate
+      summary: Estimate
+      operationId: postEstimate
+      description: |
+        Validates the request against our standard models and returns the estimated time taken to complete a given processing job and the credits that would be consumed for that job.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/EstimateGANRequest"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstimateGANRequest"
+      responses:
+        "200":
+          description: The estimated time taken in seconds and the credits that would be consumed on process.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EstimationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestEstimate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /estimate-gen:
+    post:
+      tags:
+        - Estimate
+      summary: Estimate Generative
+      operationId: postEstimateGen
+      description: |
+        Validates the request against our generative models and returns the estimated time taken to complete a given processing job and the credits that would be consumed for that job.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/EstimateGenRequest"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstimateGenRequest"
+      responses:
+        "200":
+          description: The estimated time taken in seconds.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EstimationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestEstimate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /estimate-bulk:
+    post:
+      tags:
+        - Estimate
+      summary: Estimate Bulk
+      operationId: postEstimateBulk
+      description: |
+        Validates a list of requests and returns the estimated time taken to complete a given processing job and the credits that would be consumed for each job.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EstimateBulkRequest"
+      responses:
+        "200":
+          description: The estimated time taken in seconds and the credits that would be consumed on process.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EstimationBulkResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestEstimate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /cancel/{process_id}:
+    delete:
+      tags:
+        - Cancel
+      summary: Cancel
+      operationId: cancelTask
+      description: |
+        Cancel a pending image processing job. If the job has already completed, or if it is not in a cancellable state, this request will fail with a conflict error. Use this to prevent unnecessary costs for jobs started in error.
+      parameters:
+        - name: process_id
+          in: path
+          required: true
+          description: The UUID of the image processing job.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: The image processing job was successfully cancelled. No content returned.
+        "400":
+          $ref: "#/components/responses/BadRequestProcess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  schemas:
+    EnhanceGANRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - jpeg (or jpg)
+              - png
+              - tiff (or tif)
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Standard V2
+            - Low Resolution V2
+            - CGI
+            - High Fidelity V2
+            - Text Refine
+          default: Standard V2
+        output_height:
+          type: integer
+          description: The desired height of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1080
+        output_width:
+          type: integer
+          description: The desired width of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1920
+        crop_to_fill:
+          type: boolean
+          description: Default behavior is to letterbox the image if a differing aspect ratio is chosen. Enable `crop_to_fill` by setting this to `true` if you instead want to crop the image to fill the dimensions.
+          default: false
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    EnhanceGenRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - jpeg (or jpg)
+              - png
+              - tiff (or tif)
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Standard MAX
+            - Recovery V2
+            - Wonder
+            - Redefine
+          default: Redefine
+        output_height:
+          type: integer
+          description: The desired height of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1080
+        output_width:
+          type: integer
+          description: The desired width of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1920
+        crop_to_fill:
+          type: boolean
+          description: Default behavior is to letterbox the image if a differing aspect ratio is chosen. Enable `crop_to_fill` by setting this to `true` if you instead want to crop the image to fill the dimensions.
+          default: false
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    SharpenGANRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - jpeg (or jpg)
+              - png
+              - tiff (or tif)
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Standard
+            - Strong
+            - Lens Blur
+            - Lens Blur V2
+            - Motion Blur
+            - Natural
+            - Refocus
+            - Wildlife
+            - Portrait
+          default: Standard
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    SharpenGenRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - jpeg (or jpg)
+              - png
+              - tiff (or tif)
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Super Focus V2
+          default: Super Focus V2
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    DenoiseGANRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - jpeg (or jpg)
+              - png
+              - tiff (or tif)
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Normal
+            - Strong
+            - Extreme
+          default: Normal
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    RestoreGenRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - jpeg (or jpg)
+              - png
+              - tiff (or tif)
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Dust-Scratch
+            - Dust-Scratch V2
+          default: Dust-Scratch
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    LightingGANRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - jpeg (or jpg)
+              - png
+              - tiff (or tif)
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Adjust
+            - Adjust V2
+            - White Balance
+            - Colorize
+          default: Adjust
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    MattingGANRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - jpeg (or jpg)
+              - png
+              - tiff (or tif)
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Object
+          default: Object
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - png
+          default: png
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    ToolGANRequest:
+      type: object
+      properties:
+        image:
+          type: string
+          contentMediaType: application/octet-stream
+          description: |
+            The image file to be processed. Supported formats:
+              - png
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_url:
+          type: string
+          description: The URL of the source image.
+          examples:
+            - https://example.com/image.jpg
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Transparency Upscale
+          default: Transparency Upscale
+        output_height:
+          type: integer
+          description: The desired height of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1080
+        output_width:
+          type: integer
+          description: The desired width of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1920
+        crop_to_fill:
+          type: boolean
+          description: Default behavior is to letterbox the image if a differing aspect ratio is chosen. Enable `crop_to_fill` by setting this to `true` if you instead want to crop the image to fill the dimensions.
+          default: false
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - png
+          default: png
+        webhook_url:
+          type: string
+          description: |
+            The URL to send the webhook to. When provided, a POST request with a JSON payload will be sent to this URL when the job status changes or completes.
+
+            **Request Body:**
+            The webhook will be sent as a POST request with `Content-Type: application/json` containing the following fields:
+              - `notification_id` (string, ULID): Unique identifier for this notification. Can be used to order messages in case they are received out of order; see the [ULID specification](https://github.com/ulid/spec)
+              - `process_id` (string, UUID): Unique identifier of the image processing job.
+              - `status` (string): Current status of the job (i.e., "Pending", "Processing", "Completed", "Cancelled", "Failed").
+              - `creation_time` (integer): Unix timestamp in seconds when the job was created.
+              - `modification_time` (integer): Unix timestamp in seconds when the job was last modified.
+              - `progress` (integer): Progress of the job as a percentage (0-100).
+              - `download_url` (string, optional): Presigned GET URL for the processed image. Only present once the job is completed.
+              - `head_url` (string, optional): Presigned HEAD URL for the processed image. Only present once the job is completed.
+              - `input_download_url` (string): Presigned GET URL for the input image.
+              - `input_head_url` (string): Presigned HEAD URL for the input image.
+
+            **Retry Behavior:**
+            If the webhook endpoint returns a 5xx server error, the system will retry the webhook with exponential backoff. The backoff starts at 5 seconds and doubles with each retry attempt (5s, 10s, 20s, 40s, etc.), up to a maximum of 15 minutes. Client errors (4xx status codes) are not retried and the notification is discarded.
+          examples:
+            - https://example.com/webhook
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    EstimateGANRequest:
+      type: object
+      required:
+        - input_height
+        - input_width
+      properties:
+        category:
+          type: string
+          description: Indicates which category of model is being used.
+          enum:
+            - Enhance
+            - Sharpen
+            - Denoise
+            - Restore
+            - Lighting
+            - Matting
+            - Tool
+          default: Enhance
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Standard V2
+            - Low Resolution V2
+            - CGI
+            - High Fidelity V2
+            - Text Refine
+            - Standard
+            # Note: Strong is a model name for both Denoise and Sharpen models
+            - Strong
+            - Lens Blur
+            - Lens Blur V2
+            - Motion Blur
+            - Natural
+            - Refocus
+            - Wildlife
+            - Portrait
+            - Normal
+            - Extreme
+            - Adjust
+            - Adjust V2
+            - White Balance
+            - Colorize
+            - Object
+            - Transparency Upscale
+          default: Standard V2
+        input_height:
+          type: integer
+          description: The height of the input image in pixels.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1080
+        input_width:
+          type: integer
+          description: The width of the input image in pixels.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1920
+        output_height:
+          type: integer
+          description: The desired height of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally. Only applicable for Enhance models.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1080
+        output_width:
+          type: integer
+          description: The desired width of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally. Only applicable for Enhance models.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1920
+        crop_to_fill:
+          type: boolean
+          description: Default behavior is to letterbox the image if a differing aspect ratio is chosen. Enable `crop_to_fill` by setting this to `true` if you instead want to crop the image to fill the dimensions.
+          default: false
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    EstimateGenRequest:
+      type: object
+      required:
+        - input_height
+        - input_width
+      properties:
+        category:
+          type: string
+          description: Indicates which category of model is being used.
+          enum:
+            - Enhance
+            - Sharpen
+            - Denoise
+            - Restore
+            - Lighting
+            - Matting
+            - Tool
+          default: Enhance
+        model:
+          type: string
+          description: The model to use for processing the image.
+          enum:
+            - Standard MAX
+            - Recovery V2
+            - Wonder
+            - Redefine
+            - Super Focus V2
+            - Dust-Scratch
+            - Dust-Scratch V2
+          default: Redefine
+        input_height:
+          type: integer
+          description: The height of the input image in pixels.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1080
+        input_width:
+          type: integer
+          description: The width of the input image in pixels.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1920
+        output_height:
+          type: integer
+          description: The desired height of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally. Only applicable for Enhance models.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1080
+        output_width:
+          type: integer
+          description: The desired width of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally. Only applicable for Enhance models.
+          minimum: 1
+          maximum: 32000
+          examples:
+            - 1920
+        crop_to_fill:
+          type: boolean
+          description: Default behavior is to letterbox the image if a differing aspect ratio is chosen. Enable `crop_to_fill` by setting this to `true` if you instead want to crop the image to fill the dimensions.
+          default: false
+        output_format:
+          type: string
+          description: The desired format of the output image.
+          enum:
+            - jpeg
+            - jpg
+            - png
+            - tiff
+            - tif
+          default: jpeg
+      additionalProperties:
+        type: string
+        description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    EstimateBulkRequest:
+      type: array
+      items:
+        type: object
+        required:
+          - input_height
+          - input_width
+        properties:
+          category:
+            type: string
+            description: Indicates which category of model is being used.
+            enum:
+              - Enhance
+              - Sharpen
+              - Denoise
+              - Restore
+              - Lighting
+            default: Enhance
+          model:
+            type: string
+            description: The model to use for processing the image.
+            enum:
+              - Standard V2
+              - Low Resolution V2
+              - CGI
+              - High Fidelity V2
+              - Text Refine
+              - Standard MAX
+              - Recovery V2
+              - Wonder
+              - Redefine
+              - Standard
+              # Note: Strong is a model name for both Denoise and Sharpen models
+              - Strong
+              - Lens Blur
+              - Lens Blur V2
+              - Motion Blur
+              - Natural
+              - Refocus
+              - Wildlife
+              - Portrait
+              - Super Focus V2
+              - Normal
+              - Extreme
+              - Dust-Scratch
+              - Dust-Scratch V2
+              - Adjust
+              - Adjust V2
+              - White Balance
+              - Colorize
+              - Object
+              - Transparency Upscale
+            default: Standard V2
+          input_height:
+            type: integer
+            description: The height of the input image in pixels.
+            minimum: 1
+            maximum: 32000
+            examples:
+              - 1080
+          input_width:
+            type: integer
+            description: The width of the input image in pixels.
+            minimum: 1
+            maximum: 32000
+            examples:
+              - 1920
+          output_height:
+            type: integer
+            description: The desired height of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally. Only applicable for Enhance models.
+            minimum: 1
+            maximum: 32000
+            examples:
+              - 1080
+          output_width:
+            type: integer
+            description: The desired width of the output image in pixels. Your image will automatically be upscaled to this specified value. If only one of `output_height` and `output_width` is set, then the other dimension is scaled proportionally. Only applicable for Enhance models.
+            minimum: 1
+            maximum: 32000
+            examples:
+              - 1920
+          crop_to_fill:
+            type: boolean
+            description: Default behavior is to letterbox the image if a differing aspect ratio is chosen. Enable `crop_to_fill` by setting this to `true` if you instead want to crop the image to fill the dimensions.
+            default: false
+          output_format:
+            type: string
+            description: The desired format of the output image.
+            enum:
+              - jpeg
+              - jpg
+              - png
+              - tiff
+              - tif
+            default: jpeg
+        additionalProperties:
+          type: string
+          description: Additional key-value pairs to be used as model settings. Only pairs relevant for your chosen model are used. Please see the [available models](https://developer.topazlabs.com/image-api/available-models) for more details.
+
+    AsyncResponse:
+      type: object
+      required:
+        - process_id
+        - source_id
+        - eta
+      properties:
+        process_id:
+          type: string
+          description: Unique identifier of the image processing job.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        eta:
+          type: integer
+          description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+          examples:
+            - 1617220000
+
+    StatusResponse:
+      type: object
+      required:
+        - process_id
+        - filename
+        - input_format
+        - input_height
+        - input_width
+        - output_format
+        - output_height
+        - output_width
+        - category
+        - model_type
+        - model
+        - crop_to_fill
+        - status
+        - progress
+        - eta
+        - creation_time
+        - modification_time
+        - credits
+      properties:
+        process_id:
+          type: string
+          description: Unique identifier of the image processing job.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        source_id:
+          type: string
+          description: Unique identifier of the source image.
+          examples:
+            - d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b
+        filename:
+          type: string
+          description: Name of the file being processed.
+          examples:
+            - image.png
+        input_format:
+          type: string
+          description: Format of the input file.
+          examples:
+            - png
+        input_height:
+          type: integer
+          description: Height of the input image in pixels.
+          examples:
+            - 720
+        input_width:
+          type: integer
+          description: Width of the input image in pixels.
+          examples:
+            - 1280
+        output_format:
+          type: string
+          description: Format of the output file.
+          examples:
+            - jpeg
+        output_height:
+          type: integer
+          description: Height of the output image in pixels.
+          examples:
+            - 1080
+        output_width:
+          type: integer
+          description: Width of the output image in pixels.
+          examples:
+            - 1920
+        category:
+          type: string
+          description: Category of model used for processing.
+          examples:
+            - Enhance
+        model_type:
+          type: string
+          description: Type of model used for processing.
+          examples:
+            - GAN
+        model:
+          type: string
+          description: Model used for processing.
+          examples:
+            - Standard V2
+        crop_to_fill:
+          type: boolean
+          description: Whether cropping to fill is enabled.
+          examples:
+            - false
+        options_json:
+          type: string
+          description: Additional options in JSON format.
+          examples:
+            - '{"creativity": 90}'
+        status:
+          type: string
+          description: Status of the job.
+          enum:
+            - Pending
+            - Processing
+            - Completed
+            - Cancelled
+            - Failed
+          examples:
+            - Completed
+        progress:
+          type: integer
+          description: Progress of the job as a percentage. Useful for displaying a progress bar or loading spinners etc.
+          minimum: 0
+          maximum: 100
+          examples:
+            - 100
+        eta:
+          type: integer
+          description: Estimated time of arrival (ETA) for the process to complete in Unix time.
+          examples:
+            - 1617220000
+        creation_time:
+          type: integer
+          description: Creation time of the job in Unix epoch format.
+          examples:
+            - 1633024800
+        modification_time:
+          type: integer
+          description: Last modification time of the job in Unix epoch format.
+          examples:
+            - 1633038400
+        credits:
+          type: integer
+          description: Credits (to be) consumed on image processing completion.
+          examples:
+            - 2
+
+    DownloadResponse:
+      type: object
+      required:
+        - head_url
+        - download_url
+        - expiry
+      properties:
+        download_url:
+          type: string
+          description: The presigned URL for downloading the image. This URL is temporary and will **expire after 1 hour**.
+          examples:
+            - https://<...>/d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b?<presigned_headers>
+        head_url:
+          type: string
+          description: The presigned URL for fetching the metadata of the image's file. Useful for retrieving the image's size before download. This URL is temporary and will **expire after 1 hour**.
+          examples:
+            - https://<...>/d7b3b3b3-7b3b-4b3b-8b3b-3b3b3b3b3b3b?<presigned_headers>
+        expiry:
+          type: integer
+          description: The expiration time (in Unix epoch) of the presigned download link, set as 1 hour after download link generation. After this time, the link will no longer be valid.
+          examples:
+            - 1617220000
+
+    EstimationResponse:
+      type: object
+      required:
+        - duration
+        - credits
+      properties:
+        duration:
+          type: integer
+          description: The estimated time taken in seconds for the image to be enhanced with the given parameters.
+          minimum: 0
+          examples:
+            - 30
+        credits:
+          type: integer
+          description: The number of credits that would be consumed if the given requests was executed.
+          minimum: 1
+          examples:
+            - 2
+
+    EstimationBulkResponse:
+      type: array
+      items:
+        oneOf:
+          - type: object
+            required:
+              - duration
+              - credits
+              - status
+            properties:
+              duration:
+                type: integer
+                description: The estimated time taken in seconds for the image to be enhanced with the given parameters.
+                minimum: 0
+                examples:
+                  - 30
+              credits:
+                type: integer
+                description: The number of credits that would be consumed if the given requests was executed.
+                minimum: 1
+                examples:
+                  - 2
+              status:
+                type: string
+                enum:
+                  - success
+                description: Indicates that the estimation for this item in the bulk request was successful.
+                examples:
+                  - success
+          - type: object
+            required:
+              - status
+              - code
+              - message
+            properties:
+              status:
+                type: string
+                enum: [error]
+                description: Indicates that an error occurred while processing this item in the bulk request.
+                examples:
+                  - error
+              code:
+                type: integer
+                description: HTTP-like error code
+                examples:
+                  - 413
+              message:
+                type: string
+                description: Error message
+                examples:
+                  - Output image dimensions exceed maximum allowed of 256 MP.
+
+    PaginationMetadata:
+      type: object
+      required:
+        - has_next_page
+      properties:
+        next_cursor:
+          type: string
+          description: The cursor to use for retrieving the next page of results. Omitted if there are no more pages.
+          examples:
+            - eyJwcm9jZXNzX2lkIjoiZDdiM2IzYjMzLTdiM2ItNGIzYi04YjNiLTNiM2IzYjNiM2IzYiJ9
+        has_next_page:
+          type: boolean
+          description: Indicates whether there are more pages of results available.
+          examples:
+            - true
+
+    PaginatedStatusesResponse:
+      type: object
+      required:
+        - data
+        - pagination
+      properties:
+        data:
+          type: array
+          description: Array of status responses for the current page.
+          items:
+            $ref: "#/components/schemas/StatusResponse"
+        pagination:
+          $ref: "#/components/schemas/PaginationMetadata"
+
+  responses:
+    BadRequestImage:
+      description: The request contains malformed data in the body, path, or query parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            badRequestImageExample:
+              summary: The `output_height` of the enhance request is invalid.
+              value:
+                code: 400
+                message: Invalid output height.
+
+    BadRequestProcess:
+      description: The request contains malformed data in the body, path, or query parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            badRequestProcessExample:
+              summary: An invalid `process_id` was provided.
+              value:
+                code: 400
+                message: Invalid process ID. Please ensure it is a valid UUID.
+
+    BadRequestEstimate:
+      description: The request contains malformed data in the body, path, or query parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            badRequestProcessExample:
+              summary: An invalid `input_height` was provided.
+              value:
+                code: 400
+                message: Please provide a valid input resolution.
+
+    Unauthorized:
+      description: Authentication is required and has failed or has not yet been provided.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            unauthorizedExample:
+              summary: The API key provided is invalid or expired.
+              value:
+                code: 401
+                message: Unauthorized
+
+    PaymentRequired:
+      description: Payment is required to access the resource.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            paymentRequiredExample:
+              summary: The account does not have sufficient funds to process the request.
+              value:
+                code: 402
+                message: Insufficient funds.
+    Forbidden:
+      description: The API key doesn't have permissions to perform the request.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            forbiddenExample:
+              summary: The provided token does not have access to the endpoint.
+              value:
+                code: 403
+                message: Forbidden
+
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            notFoundExample:
+              summary: The requested image processing job could not be found.
+              value:
+                code: 404
+                message: An image with the given process ID was not found.
+
+    Conflict:
+      description: The request conflicts with the current state.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            conflictExample:
+              summary: The requested image processing job is not in a cancellable state.
+              value:
+                code: 409
+                message: The process cannot be cancelled as it is not in a cancellable state.
+
+    PreconditionFailed:
+      description: The preconditions to process the request were not met.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            preconditionFailedExample:
+              summary: No valid API subscription exists for this request.
+              value:
+                code: 412
+                message: Precondition Failed
+
+    RequestEntityTooLarge:
+      description: The request is larger than the server is willing or able to process.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            requestEntityTooLargeExample:
+              summary: The image file uploaded exceeds the maximum allowed size.
+              value:
+                code: 413
+                message: Request Entity Too Large
+
+    UnsupportedMediaType:
+      description: The request entity has a media type which the server or resource does not support.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            unsupportedMediaTypeExample:
+              summary: The image file uploaded is in an unsupported format.
+              value:
+                code: 415
+                message: Image could not be decoded to a supported image type.
+
+    UnprocessableEntity:
+      description: The request was well-formed but was unable to be followed due to semantic errors.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            unprocessableEntityExample:
+              summary: Image has invalid dimensions (width or height is zero).
+              value:
+                code: 422
+                message: Image has invalid dimensions (width or height is zero).
+
+    TooEarly:
+      description: The request was sent too early to be processed. Please wait before retrying.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            tooEarlyExample:
+              summary: The request was sent too early to be processed.
+              value:
+                code: 425
+                message: Too early to reserve credits. An order for more credits is in progress.
+
+    TooManyRequests:
+      description: Too many requests hit the API too quickly. A backoff (e.g. exponential) is recommended for your requests.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            tooManyRequestsExample:
+              summary: The rate limit for requests has been exceeded.
+              value:
+                code: 429
+                message: Too Many Requests
+
+    InternalServerError:
+      description: Unexpected error on our end.
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              code:
+                type: integer
+                description: The HTTP status code.
+              message:
+                type: string
+                description: A human readable error message.
+          examples:
+            internalServerErrorExample:
+              summary: The server encountered an unexpected condition.
+              value:
+                code: 500
+                message: An internal server error occurred. Please try again later. If the problem persists, please contact support.
+
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        Authentication via the Topaz generated key in the `X-API-Key` header.
+
+security:
+  - apiKeyAuth: []

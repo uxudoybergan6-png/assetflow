@@ -17,6 +17,7 @@ import {
   makeImageDisplayFile,
   makeVideoPreviewFile,
   probeMediaDimensions,
+  probeVideoMetaUrl, // R4_07 — Topaz video upscale chiqish geometriyasi (manba meta × faktor)
 } from "./optimize-preview.js";
 import fs from "fs";
 import os from "os";
@@ -59,17 +60,16 @@ import {
   KLING_TIMEOUT_ERROR,
 } from "./ai/kling.js";
 import {
-  // R4_03 PHASE 0 — Topaz provider plumbing (dormant: hech qanday katalog model bu yo'lga tushmaydi).
+  // R4_03 foundation + R4_07 enabled ops (Proteus video / Gigapixel + RemoveBG image).
   topazSubmitImageEnhance,
   topazPollImageStep,
   topazImageDownload,
   topazCreateVideoRequest,
   topazAcceptVideoRequest,
-  topazUploadVideoParts,
-  topazCompleteVideoUpload,
   topazPollVideoStep,
   topazVideoUrlToBuffer,
   TOPAZ_TIMEOUT_ERROR,
+  type TopazImageEndpoint,
 } from "./ai/topaz.js";
 import {
   getModelById,
@@ -1021,10 +1021,14 @@ async function runTopazImage(
   if (saved?.provider === "topaz-image") {
     processId = saved.processId;
   } else {
+    // R4_07 — endpoint/model/output model DEKLARATSIYASIDAN (topazEndpoint/topazModel/
+    // topazOutputFormat): Gigapixel → enhance+"Standard V2"+png · RemoveBG → matting+"RemoveBG"+
+    // (format YO'Q → default RGBA). params.topazModel override (kelajakda UI).
     const sub = await topazSubmitImageEnhance({
       sourceUrl,
-      model: typeof params.topazModel === "string" ? params.topazModel : "Standard V2",
-      outputFormat: "png",
+      endpoint: (model.topazEndpoint as TopazImageEndpoint | undefined) || "enhance",
+      model: model.topazModel || (typeof params.topazModel === "string" ? params.topazModel : "Standard V2"),
+      outputFormat: model.topazOutputFormat, // undefined → adapter output_format yubormaydi (RemoveBG)
     });
     if (!sub.ok) return { ok: false, error: sub.error };
     processId = sub.data.processId;
@@ -1034,7 +1038,6 @@ async function runTopazImage(
       submittedAt: new Date().toISOString(),
     });
   }
-  void model; // R4_04: model.topaz* deskriptoridan endpoint/model/output o'qiladi
   for (let i = 0; i < 120; i++) {
     await sleep(byteplusWaitMs(i));
     const step = await topazPollImageStep(processId);
@@ -1056,31 +1059,49 @@ async function runTopazVideo(
   if (saved?.provider === "topaz-video") {
     requestId = saved.requestId;
   } else {
-    // Standart lifecycle: create (bepul) → accept (rezerv) → [tashqi manba bo'lmasa PUT upload] → complete.
-    const sourceUrl = typeof params.sourceUrl === "string" ? params.sourceUrl : "";
+    // R4_07 — manba = params.sourceKey (o'z gen/upload; cost-quote canonicalize qiladi). Bizning R2/GCS
+    // presigned URL S3-mos → Topaz tashqi manba sifatida O'ZI yuklab oladi (re-upload SHART EMAS).
+    let sourceUrl = typeof params.sourceUrl === "string" ? params.sourceUrl : "";
+    const sourceKey = typeof params.sourceKey === "string" ? params.sourceKey : "";
+    if (!sourceUrl && sourceKey) {
+      try { sourceUrl = await getSignedDownloadUrl(sourceKey, 3600); } catch { /* pastda tekshiriladi */ }
+    }
+    if (!sourceUrl) return { ok: false, error: "A source video is required for Topaz upscale" };
+    // Chiqish geometriyasi manba metasi × faktor'dan (Proteus upscale nisbatni saqlaydi).
+    const meta = await probeVideoMetaUrl(sourceUrl);
+    const factor = Number(params.factor) === 4 ? 4 : 2;
+    const output: Record<string, unknown> = meta
+      ? {
+          resolution: { width: meta.width * factor, height: meta.height * factor },
+          frameRate: meta.fps || 30,
+          audioCodec: "AAC",
+          audioTransfer: "Copy",
+          videoEncoder: "H265",
+          videoProfile: "Main",
+          dynamicCompressionLevel: "High",
+          container: "mp4",
+        }
+      : {};
     const create = await topazCreateVideoRequest({
-      source: { container: "mp4", external: sourceUrl ? { provider: "s3", presignedUrl: sourceUrl } : undefined },
-      filters: [{ model: typeof params.topazModel === "string" ? params.topazModel : "prob-4", auto: "Auto" }],
-      output: {},
+      source: {
+        container: "mp4",
+        ...(meta ? { duration: meta.durationSec, frameRate: meta.fps, resolution: { width: meta.width, height: meta.height } } : {}),
+        external: { provider: "s3", presignedUrl: sourceUrl },
+      },
+      filters: [{ model: model.topazModel || (typeof params.topazModel === "string" ? params.topazModel : "prob-4"), auto: "Auto" }],
+      output,
     });
     if (!create.ok) return { ok: false, error: create.error };
     requestId = create.data.requestId;
     const accept = await topazAcceptVideoRequest(requestId);
     if (!accept.ok) return { ok: false, error: accept.error };
-    if (accept.data.urls.length && !sourceUrl) {
-      // R4_04: manba bufer params.sourceKey'dan olinadi va bu yerda PUT qilinadi (hozircha bo'sh).
-      const up = await topazUploadVideoParts(accept.data.urls, Buffer.alloc(0));
-      if (!up.ok) return { ok: false, error: up.error };
-      const done = await topazCompleteVideoUpload(requestId, up.data);
-      if (!done.ok) return { ok: false, error: done.error };
-    }
+    // Tashqi manba → Topaz o'zi yuklab oladi (urls bo'lsa ham PUT shart emas); bo'lmasa lifecycle davom etadi.
     await persistProviderJob(genId, params, {
       provider: "topaz-video",
       requestId,
       submittedAt: new Date().toISOString(),
     });
   }
-  void model;
   for (let i = 0; i < 180; i++) {
     await sleep(byteplusWaitMs(i));
     const step = await topazPollVideoStep(requestId);
