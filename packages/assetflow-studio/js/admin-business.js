@@ -29,15 +29,28 @@ function bizModeBadge(mode){
 let PRICING_DATA = null;
 let PRICING_FILTER = "all";
 let PRICING_SHOW_ALL = false; // BATCH4 #3 — default: faqat enabled (o'chirilgan zaxiralar yashirin)
+// R4_06 — hozir o'lchanayotgan model ID'lar (proba davomida qatorni bloklash uchun).
+const MEASURING = new Set();
 
 VIEWS.pricing = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
 window.afterRender.pricing = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='pricing') tba.innerHTML =
     `<button class="adx-btn sm" onclick="applyMarginAll()" title="Every enabled model: credits = ceil(provider cost × target margin ÷ credit value)"><i class="ph ph-magic-wand"></i>Apply target margin</button>`+
+    `<button class="adx-btn2 sm" onclick="measureAllMissing()" title="Measure real provider cost for every enabled BytePlus model that has no measured data yet — one cheap gen each"><i class="ph ph-gauge"></i>Measure all missing</button>`+
     `<button class="adx-btn2 sm" onclick="openPricingConfig()"><i class="ph ph-currency-circle-dollar"></i>Credit &amp; margin</button>`;
   await loadPricing();
 };
+
+/** R4_06 — provider xarajat manbai badge'i: measured (yashil) / table / estimate (amber, ma'lumot yo'q). */
+function providerCostBadge(m){
+  const src = m.providerCostSource || 'estimate';
+  if(src==='measured') return `<span class="adx-bdg" style="color:#C2F04A;background:rgba(194,240,74,.14)" title="Measured from ${m.measuredSamples||1} real generation(s)">measured (${m.measuredSamples||1})</span>`;
+  if(src==='table') return `<span class="adx-bdg adx-bdg-soft" title="From the provider-cost.ts price table">table</span>`;
+  return `<span class="adx-bdg" style="color:#FFB27C;background:rgba(255,178,124,.14)" title="No cost data yet — $0.50 fail-safe. Click Measure cost to calibrate.">estimate</span>`;
+}
+/** BytePlus modellar per-gen token usage qaytaradi → "Measure cost" faqat shular uchun ma'noli. */
+function isMeasurable(m){ return m && m.provider==='byteplus' && m.catalogEnabled!==false; }
 
 /** BATCH4 #3 — "Apply target margin": maqsad so'raladi (default 2.0×, DB hali 1.8 bo'lsa ham)
  *  → POST apply-margin (marginTarget'ni config'ga YOZADI + barcha enabled narxni derive qiladi). */
@@ -56,8 +69,20 @@ async function applyMarginAll(){
   try {
     const res = await StudioApi.applyAdminPricingMargin({ marginTarget: mt });
     const r = res && res.report;
-    toast('Margin applied', `${r?r.applied.length:0} model(s) repriced at ${r?r.marginTarget:mt}× · ${r?r.skippedPinned.length:0} pinned skipped`, 'success');
+    const rose = (r && r.skippedNeedsConfirm) || [];
+    let msg = `${r?r.applied.length:0} model(s) repriced at ${r?r.marginTarget:mt}× · ${r?r.skippedPinned.length:0} pinned skipped`;
+    if(rose.length) msg += ` · ${rose.length} skipped (cost rose)`;
+    toast('Margin applied', msg, 'success');
     if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Auto-margin applied',{action:'pricing',detail:`x${r?r.marginTarget:mt}`});
+    // R4_05/06 — measured xarajat statik bazadan YUQORI modellar JIMGINA narxlanmadi (obunachi narxi
+    // sakramasin). Aniq tasdiq bilan ularni ham qo'llash mumkin (confirmModelIds).
+    if(rose.length){
+      const names = rose.map(s=>`• ${s.label}  ($${(s.staticUsd||0).toFixed(3)} → measured $${(s.measuredUsd||0).toFixed(3)})`).join('\n');
+      if(confirm(`${rose.length} model(s) have a MEASURED cost higher than their table cost, so Apply skipped them to avoid silently raising subscriber prices:\n\n${names}\n\nRe-apply INCLUDING these — this raises their credit price to (measured cost × margin)?`)){
+        await StudioApi.applyAdminPricingMargin({ marginTarget: mt, confirmModelIds: rose.map(s=>s.modelId) });
+        toast('Applied with confirm', `${rose.length} risen-cost model(s) repriced to measured cost`, 'success');
+      }
+    }
     await loadPricing();
   } catch(e){ toast('Error',(e&&e.message)||'Failed to apply margin','danger'); }
 }
@@ -70,6 +95,53 @@ async function autoPriceRow(modelId){
     toast('Auto-priced', t || 'Price recalculated at the target margin', 'success');
     await loadPricing();
   } catch(e){ toast('Error',(e&&e.message)||'No provider cost table — set the price manually','danger'); }
+}
+
+/** R4_06 — bitta model "Measure cost": eng arzon tier'da BIR MARTA real gen → measured xarajat.
+ *  Kredit yechilmaydi; kichik provider puli sarflanadi (tasdiq dialogi bilan). */
+async function measureRowCost(modelId){
+  const m = PRICING_DATA && PRICING_DATA.models.find(x=>x.modelId===modelId);
+  if(!m) return;
+  const est = m.mode==='video' ? '~$0.03–0.20 and up to a minute to finish' : '~$0.02–0.09';
+  if(!confirm(`Measure "${m.label}" by generating ONE ${m.mode} at its lowest tier.\n\nThis spends a small REAL provider cost (${est}) — no subscriber credits are used. The result calibrates this model's cost/margin. Continue?`)) return;
+  MEASURING.add(modelId); renderPricing();
+  try {
+    const res = await StudioApi.measureAdminPricingCost(modelId);
+    const r = res && res.result;
+    toast('Measured', `${m.label}: $${(r&&r.usd||0).toFixed(4)} (${r&&r.tokens||0} tokens) → cost & margin recalculated`, 'success');
+    if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Cost measured',{action:'pricing',detail:`${modelId}:$${(r&&r.usd||0).toFixed(4)}`});
+  } catch(e){
+    toast('Measure failed', (e&&e.message)||'Probe failed', 'danger');
+  } finally {
+    MEASURING.delete(modelId);
+    await loadPricing(); // yangi measured qiymat bilan qatorni yangilaydi
+  }
+}
+
+/** R4_06 — "Measure all missing": measured ma'lumoti yo'q har enabled BytePlus modelni ketma-ket
+ *  o'lchaydi (rate-limit'ga xush, har birini kutib). Butun jadval bir bosishda kalibrlaydi. */
+async function measureAllMissing(){
+  if(!PRICING_DATA) return;
+  const targets = pricingRows().filter(m=> isMeasurable(m) && m.providerCostSource!=='measured' && !MEASURING.has(m.modelId));
+  if(!targets.length){ toast('Nothing to measure','Every visible BytePlus model already has a measured cost','info'); return; }
+  if(!confirm(`Measure ${targets.length} model(s) that have no measured cost yet?\n\nEach runs ONE real low-tier generation (small provider cost, no subscriber credits). Video models take up to a minute each. They run one at a time.`)) return;
+  let done=0, failed=0;
+  for(const m of targets){
+    MEASURING.add(m.modelId); renderPricing();
+    try {
+      const res = await StudioApi.measureAdminPricingCost(m.modelId);
+      const r = res && res.result;
+      done++;
+      toast('Measured', `${m.label}: $${(r&&r.usd||0).toFixed(4)}`, 'success');
+    } catch(e){
+      failed++;
+      toast('Skipped '+m.label, (e&&e.message)||'probe failed', 'danger');
+    } finally {
+      MEASURING.delete(m.modelId);
+    }
+  }
+  await loadPricing();
+  toast('Measure all done', `${done} measured${failed?` · ${failed} skipped`:''}`, failed?'warn':'success');
 }
 
 async function loadPricing(){
@@ -114,7 +186,8 @@ function renderPricing(){
           const off = m.catalogEnabled===false; // BATCH4 #3 — o'chirilgan zaxira: xira + marja "—"
           const rep = m.price.representative;
           const perSec = m.mode==='video' && (m.price.pricing==='per-second' || m.price.pricing==null);
-          const cost = m.estCostUsd;
+          // R4_05 — YECHILGAN provider xarajati (measured→table→estimate); eski estCostUsd fallback.
+          const cost = (m.providerCostUsd!=null) ? m.providerCostUsd : m.estCostUsd;
           // representative = TOTAL credit for default params (computeGenCost) → we compare totals.
           const subUsd = rep!=null ? rep*creditUsd : null;
           const marginPct = (subUsd!=null && cost!=null && subUsd>0) ? Math.round((subUsd - cost)/subUsd*100) : null;
@@ -122,17 +195,24 @@ function renderPricing(){
           const credStr = rep!=null ? '✦ '+rep : '—';
           const subStr = subUsd!=null ? bizUsd(subUsd) : '—';
           const perSecHint = perSec ? '<div style="font-size:9px;color:#5E6675">per second</div>' : '';
+          const measuring = MEASURING.has(m.modelId);
+          const riseChip = (!off && m.needsConfirm) ? ` <span class="adx-bdg" style="color:#FFB27C;background:rgba(255,178,124,.14);margin-left:5px" title="Measured cost ($${(m.measuredUsd||0).toFixed(3)}) is HIGHER than the table cost — review before it raises subscriber prices">cost rose — review</span>` : '';
           const badges = (off?' <span class="adx-bdg adx-bdg-draft" style="margin-left:5px">Disabled</span>':'')
             + (m.pinned?' <span class="adx-bdg adx-bdg-info" style="margin-left:5px" title="Product-priced — Apply target margin skips this row">Pinned</span>':'');
+          const measureBtn = (!off && isMeasurable(m))
+            ? (measuring
+                ? `<button class="adx-iact" disabled title="Measuring…"><span class="adx-spin"><i class="ph ph-arrow-clockwise"></i></span></button> `
+                : `<button class="adx-iact" title="Measure cost — generate once at the lowest tier to learn the real provider cost" onclick="measureRowCost(${m.modelId})"><i class="ph ph-gauge"></i></button> `)
+            : '';
           return `<tr ${off?'style="opacity:.45"':(m.belowTarget?'style="background:rgba(255,107,94,.05)"':'')}>
-            <td style="color:var(--text);font-weight:600">${esc(m.label)}${!off&&m.belowTarget?' <i class="ph ph-warning" style="color:#FF6B5E;font-size:12px" title="Margin below target"></i>':''}${badges}</td>
+            <td style="color:var(--text);font-weight:600">${esc(m.label)}${!off&&m.belowTarget?' <i class="ph ph-warning" style="color:#FF6B5E;font-size:12px" title="Margin below target"></i>':''}${badges}${riseChip}</td>
             <td>${bizModeBadge(m.mode)}</td>
             <td style="font-size:11.5px;color:#B7C0CE">${esc(m.provider)}</td>
-            <td class="r adx-num" style="color:#7CC4FF">${off?'—':costStr}</td>
+            <td class="r adx-num" style="color:#7CC4FF">${off?'—':`${costStr}<div style="margin-top:2px">${providerCostBadge(m)}</div>`}</td>
             <td class="r adx-num" style="color:var(--text)">${credStr}${perSecHint}</td>
             <td class="r adx-num">${off?'—':subStr}</td>
             <td class="r adx-num" style="color:${off?'#5E6675':bizMarginColor(marginPct)}">${off?'not charged':(marginPct!=null?marginPct+'%':'—')}</td>
-            <td class="r" style="white-space:nowrap">${off?'':`<button class="adx-iact" title="Auto — set to target margin (${marginT}×)" onclick="autoPriceRow(${m.modelId})"><i class="ph ph-magic-wand"></i></button> `}<button class="adx-iact" title="Edit price" onclick="openPriceEdit(${m.modelId})"><i class="ph ph-pencil-simple"></i></button></td>
+            <td class="r" style="white-space:nowrap">${off?'':measureBtn+`<button class="adx-iact" title="Auto — set to target margin (${marginT}×)" onclick="autoPriceRow(${m.modelId})"><i class="ph ph-magic-wand"></i></button> `}<button class="adx-iact" title="Edit price" onclick="openPriceEdit(${m.modelId})"><i class="ph ph-pencil-simple"></i></button></td>
           </tr>`;
         }).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-currency-circle-dollar"></i></span><div style="font-size:12px;color:var(--muted2)">No models of this type</div></div></td></tr>`}</tbody>
       </table></div>
@@ -161,7 +241,7 @@ function updatePriceMarginPreview(modelId){
   const m = PRICING_DATA.models.find(x=>x.modelId===modelId);
   const creditUsd = PRICING_DATA.creditUsdValue;
   const val = Number(document.getElementById('priceEditVal')?.value)||0;
-  const cost = m.estCostUsd;
+  const cost = (m.providerCostUsd!=null) ? m.providerCostUsd : m.estCostUsd; // R4_05 yechilgan xarajat
   const subUsd = val*creditUsd;
   const marginPct = (cost!=null && subUsd>0) ? Math.round((subUsd-cost)/subUsd*100) : null;
   const col = bizMarginColor(marginPct);

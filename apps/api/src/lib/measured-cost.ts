@@ -141,7 +141,15 @@ export function computeResolvedProviderCost(
   const hasTable = hasProviderCostEntry(model);
   const fallbackSource: ProviderCostSource = hasTable ? "table" : "estimate";
 
-  if (measured && measured.samples >= MEASURED_SAMPLE_MIN && measured.usd > 0) {
+  // ⚠️ ISHONCH: VIDEO token→USD ($4.30/1M, BATCH5 real invoice bilan TASDIQLANGAN) → measured'ga
+  // to'liq ishonamiz. IMAGE token→USD esa TASDIQLANMAGAN: Seedream rasm FLAT per-tier billing qilinadi
+  // (token = piksel/hisob metrikasi, dollar emas — jonli tekshiruv 2026-07-20: Pro 1K=4096tok bo'lsa ham
+  // konsol $0.045, token×rate=$0.0176 ≈ 2.5× past). Shu sabab RASM uchun token-measured'ni FAQAT statik
+  // jadvali YO'Q modelda (Seedream Lite/4.5 → $0.5 fail-safe'dan qutulish; owner aytgan ~$0.045-0.09'ga
+  // mos) ishlatamiz; jadvali BOR rasm modelda (Pro) measured JADVALNI PASAYTIRMAYDI (underprice xavfi).
+  const trustMeasured = model.mode !== "image" || !hasTable;
+
+  if (trustMeasured && measured && measured.samples >= MEASURED_SAMPLE_MIN && measured.usd > 0) {
     const rose = measured.usd > staticUsd + EPS;
     if (!rose || opts?.allowRaise) {
       // Pasaytiradi (yoki teng) → ERKIN qabul; yoki admin ko'tarishni tasdiqlagan.

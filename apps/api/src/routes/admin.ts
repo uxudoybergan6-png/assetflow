@@ -38,6 +38,7 @@ import {
   PINNED_MODEL_IDS,
 } from "../lib/pricing-automargin.js";
 import { getMeasuredProviderUsdMap, computeResolvedProviderCost } from "../lib/measured-cost.js";
+import { probeModelCost } from "../lib/measure-probe.js";
 import { computeMargins, spendByProvider } from "../lib/model-margin.js";
 import {
   payoutPerDownloadCents,
@@ -686,6 +687,33 @@ adminRouter.post("/pricing/apply-margin", async (req, res) => {
     },
   });
   res.json({ report });
+});
+
+/** R4_06 — POST /api/admin/pricing/measure-cost {modelId}: bitta modelni eng arzon tier'da BIR
+ *  MARTA real generatsiya qilib, provayder token usage'idan real xarajatni o'lchaydi va measured
+ *  ProviderSpend qatori yozadi (R4_05 resolveProviderUsd shundan kalibrlaydi). Admin-guarded +
+ *  audited. Kredit YECHILMAYDI (subscriber oqimi emas). MUHIM: /pricing/:modelId dan OLDIN. */
+adminRouter.post("/pricing/measure-cost", async (req, res) => {
+  const parsed = z.object({ modelId: z.number().int() }).safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
+    return;
+  }
+  const result = await probeModelCost(parsed.data.modelId);
+  await writeAuditLog({
+    actorId: req.user?.userId ?? null,
+    action: "pricing.cost.measure",
+    targetType: "modelPricing",
+    targetId: String(parsed.data.modelId),
+    meta: { ok: result.ok, code: result.code ?? null, usd: result.usd ?? null, tier: result.tier ?? null, tokens: result.tokens ?? null },
+  });
+  if (!result.ok) {
+    const status = result.code === "UNSUPPORTED" ? 400 : result.code === "NOT_CONFIGURED" ? 503 : 502;
+    res.status(status).json({ error: result.error || "Measurement failed", code: result.code, result });
+    return;
+  }
+  const view = (await listPricingView()).find((v) => v.modelId === parsed.data.modelId) ?? null;
+  res.json({ result, view });
 });
 
 /** BATCH4 #3 — POST /api/admin/pricing/:modelId/auto: bitta model uchun auto-marja

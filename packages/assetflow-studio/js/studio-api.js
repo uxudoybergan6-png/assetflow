@@ -653,6 +653,11 @@ const StudioApi = (() => {
   async function autoAdminPricingModel(modelId) {
     return request(`/api/admin/pricing/${encodeURIComponent(modelId)}/auto`, { method: "POST", body: {} });
   }
+  /** R4_06 — "Measure cost": modelni eng arzon tier'da real gen qilib provider token usage'dan
+   *  real xarajatni o'lchaydi (measured ProviderSpend yozadi). Video sekin (server poll qiladi). */
+  async function measureAdminPricingCost(modelId) {
+    return request(`/api/admin/pricing/measure-cost`, { method: "POST", body: { modelId } });
+  }
   async function getAdminFinance(month) {
     return request(`/api/admin/finance${month ? `?month=${encodeURIComponent(month)}` : ""}`);
   }
@@ -815,6 +820,7 @@ const StudioApi = (() => {
     patchAdminPricingConfig,
     applyAdminPricingMargin,
     autoAdminPricingModel,
+    measureAdminPricingCost,
     getAdminFinance,
     getAdminGenSpend,
     getUserGenerations,
