@@ -382,10 +382,16 @@ export type ByteplusImageParams = {
  * ISHLATILMAYDI — kelajak faza). 429 → qisqa backoff bilan qayta urinish; baribir limit
  * bo'lsa oddiy xato (sinxron oqim — refund yo'li ishlaydi, video sentinel semantikasi EMAS).
  */
+// R4_05 — rasm natijasi bilan birga usage'ni ham qaytaramiz (token→USD o'lchash uchun; OrResult
+// bilan strukturaviy mos: ok/data/error/status maydonlari o'zgarmaydi, faqat `usage` qo'shildi).
+export type ByteplusImageResult =
+  | { ok: true; data: Buffer[]; usage?: ByteplusUsage }
+  | { ok: false; error: string; status?: number };
+
 export async function byteplusImage(
   model: string,
   p: ByteplusImageParams
-): Promise<OrResult<Buffer[]>> {
+): Promise<ByteplusImageResult> {
   if (!isByteplusConfigured()) return NOT_CONFIGURED;
   const body: Record<string, unknown> = {
     model,
@@ -437,7 +443,10 @@ export async function byteplusImage(
         `[byteplus] image usage total_tokens=${j.usage.total_tokens ?? "?"} (model=${model})`
       );
     }
-    return { ok: true, data: bufs };
+    // R4_05 — usage'ni yuqoriga uzatamiz: BytePlus rasm ham token bilan billing qilinadi
+    // (jonli tekshiruv 2026-07-20: Seedream 2K ≈ 16k token × $4.3/1M ≈ $0.07). gen-processor
+    // buni recordMeasuredProviderCost bilan measured xarajat sifatida yozadi (money zone emas).
+    return { ok: true, data: bufs, usage: j?.usage };
   }
   return { ok: false, error: "byteplus: image rate limit — please try again shortly" };
 }

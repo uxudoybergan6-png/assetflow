@@ -156,8 +156,9 @@ export function estimateProviderUsd(
   }
 }
 
-/** Model uchun ANIQ narx jadvali bormi (DEFAULT_PROVIDER_USD'ga tushmaydimi)? */
-function hasProviderCostEntry(model: GenModel): boolean {
+/** Model uchun ANIQ narx jadvali bormi (DEFAULT_PROVIDER_USD'ga tushmaydimi)?
+ *  R4_05 — resolver (measured-cost.ts) buni "table" vs "estimate" manbasini aniqlash uchun oladi. */
+export function hasProviderCostEntry(model: GenModel): boolean {
   if (model.mode === "video") {
     return model.pricing === "per-generation"
       ? typeof VIDEO_USD_FLAT[model.id] === "number"

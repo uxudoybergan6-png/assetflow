@@ -1548,6 +1548,9 @@ export async function processGeneration(genId: string): Promise<void> {
       if (isUpscale && !vertexRefUrls.length)
         return void (await fail("A source image is required for upscaling"));
       const upFactor: "x2" | "x4" = params.quality === "x4" ? "x4" : "x2"; // imageUnitCost def bilan mos (x2)
+      // R4_05 — BytePlus (Seedream) rasm token sarfini job bo'yicha yig'amiz (count>1 = N chaqiruv);
+      // job tugagach token→USD measured xarajat sifatida yoziladi (flat-price rasm o'lchovi). Analitika.
+      let byteplusImageTokens = 0;
       const genOne = (): Promise<OrResult<Buffer>> =>
         useTopazImg
           ? runTopazImage(model, params, genId) // R4_03 PHASE 0 — dormant (never hit; no topaz model)
@@ -1575,12 +1578,14 @@ export async function processGeneration(genId: string): Promise<void> {
               size: imageConfig.image_size,
               aspect: imageConfig.aspect_ratio,
             }).then(
-              (r): OrResult<Buffer> =>
-                r.ok
+              (r): OrResult<Buffer> => {
+                if (r.ok) byteplusImageTokens += Number(r.usage?.total_tokens) || 0; // R4_05 measured
+                return r.ok
                   ? r.data[0]
                     ? { ok: true, data: r.data[0] }
                     : { ok: false, error: "byteplus: empty result" }
-                  : r
+                  : r;
+              }
             )
           : useVertexImg
           ? isUpscale
@@ -1633,6 +1638,17 @@ export async function processGeneration(genId: string): Promise<void> {
           // P1 (owner 2026-07-14): AI-gen HECH QACHON suv belgilanmaydi (kredit = to'lov). watermarkKey yozilmaydi.
           data: { generationId: genId, type: ASSET_TYPE.image, url: s.url, resultKey: s.key, thumbUrl: s.thumbUrl ?? s.url, thumbKey: s.thumbKey, displayKey: s.displayKey, width: s.width, height: s.height, aspectRatio: imgAspect, sizeBytes: s.sizeBytes },
         });
+      }
+      // R4_05 — BytePlus rasm real token sarfini O'LCHANGAN USD sifatida ProviderSpend'ga yozamiz
+      // (video token o'lchovining rasm ekvivalenti; billing token bilan — jonli tasdiqlangan). Best-effort,
+      // ANALITIKA: kredit/refund matematikasiga TEGMAYDI. Bu measured qiymat resolveProviderUsd orqali
+      // marja panel + apply-margin'ni Seedream Lite/4.5 uchun $0.5 fail-safe'dan haqiqiy ~$0.07'ga kalibrlaydi.
+      if (useByteplusImg && byteplusImageTokens > 0) {
+        const usd = byteplusTokensToUsd(byteplusImageTokens);
+        console.log(
+          `[byteplus] image job=${genId} total_tokens=${byteplusImageTokens} → measured $${usd.toFixed(4)}`
+        );
+        if (usd > 0) await recordMeasuredProviderCost(genId, usd);
       }
       // P19.1 — muvaffaqiyatli tugadi: saqlangan fal-image job'ni tozalaymiz (no-op agar yo'q) →
       // reconcile/resume endi bu (done) gen'ga tegmaydi.

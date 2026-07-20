@@ -32,7 +32,12 @@ import {
   upsertModelPricing,
   updatePricingConfig,
 } from "../lib/model-pricing.js";
-import { applyAutoMarginAll, deriveAutoPricing, PINNED_MODEL_IDS } from "../lib/pricing-automargin.js";
+import {
+  applyAutoMarginAll,
+  deriveAutoPricingResolved,
+  PINNED_MODEL_IDS,
+} from "../lib/pricing-automargin.js";
+import { getMeasuredProviderUsdMap, computeResolvedProviderCost } from "../lib/measured-cost.js";
 import { computeMargins, spendByProvider } from "../lib/model-margin.js";
 import {
   payoutPerDownloadCents,
@@ -565,19 +570,34 @@ adminRouter.post("/plugin-subscribers/:userId/message", async (req, res) => {
 
 /** GET /api/admin/pricing — har model: joriy kredit narx + real USD + marja + bayroq. */
 adminRouter.get("/pricing", async (req, res) => {
-  const [config, view, margins] = await Promise.all([
+  const [config, view, margins, measuredMap] = await Promise.all([
     getPricingConfig(),
     listPricingView(),
     computeMargins(),
+    getMeasuredProviderUsdMap(), // R4_05 — o'lchangan xarajat (bitta so'rov, per-model median)
   ]);
   const marginById = new Map(margins.models.map((m) => [m.modelId, m]));
-  const models = view.map((v) => ({
-    ...v,
-    pinned: PINNED_MODEL_IDS.has(v.modelId), // BATCH4 #3 — mahsulot-narxi (auto-apply tegmaydi)
-    margin: marginById.get(v.modelId) ?? null,
-    belowTarget: marginById.get(v.modelId)?.belowTarget ?? false,
-    missingCost: marginById.get(v.modelId)?.missingCost ?? true,
-  }));
+  const models = view.map((v) => {
+    // R4_05 — yechilgan provider xarajati (measured → statik → default). Panel providerCostUsd'ni
+    // shundan oladi → Seedream Lite/4.5 ≥1 o'lchovdan keyin $0.5 fail-safe o'rniga real ~$0.07 ko'rsatadi.
+    const model = getModelById(v.modelId);
+    const resolved = model
+      ? computeResolvedProviderCost(model, {}, measuredMap.get(v.modelId) ?? null)
+      : null;
+    return {
+      ...v,
+      pinned: PINNED_MODEL_IDS.has(v.modelId), // BATCH4 #3 — mahsulot-narxi (auto-apply tegmaydi)
+      margin: marginById.get(v.modelId) ?? null,
+      belowTarget: marginById.get(v.modelId)?.belowTarget ?? false,
+      missingCost: marginById.get(v.modelId)?.missingCost ?? true,
+      // R4_05 additive fields (javob shakli buzilmaydi — mavjud estCostUsd o'z joyida qoladi):
+      providerCostUsd: resolved ? resolved.usd : v.estCostUsd,
+      providerCostSource: resolved ? resolved.source : "estimate",
+      measuredUsd: resolved ? resolved.measuredUsd : null,
+      measuredSamples: resolved ? resolved.samples : 0,
+      needsConfirm: resolved ? resolved.needsConfirm : false,
+    };
+  });
   res.json({
     creditUsdValue: config.creditUsdValue,
     marginTarget: config.marginTarget,
@@ -635,7 +655,11 @@ adminRouter.patch("/pricing/config", async (req, res) => {
  *  Pinned modellar (mahsulot-narxi) chetlab o'tiladi va javobda ko'rsatiladi. */
 adminRouter.post("/pricing/apply-margin", async (req, res) => {
   const parsed = z
-    .object({ marginTarget: z.number().gt(0).max(1000).optional() })
+    .object({
+      marginTarget: z.number().gt(0).max(1000).optional(),
+      // R4_05 — o'lchangan xarajat OSHGAN (needsConfirm) modellar ID'lari; faqat shular narx ko'tarilishini qabul qiladi.
+      confirmModelIds: z.array(z.number().int()).max(500).optional(),
+    })
     .safeParse(req.body ?? {});
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
@@ -644,7 +668,9 @@ adminRouter.post("/pricing/apply-margin", async (req, res) => {
   if (parsed.data.marginTarget != null) {
     await updatePricingConfig({ marginTarget: parsed.data.marginTarget }, req.user?.userId ?? null);
   }
-  const report = await applyAutoMarginAll(req.user?.userId ?? null);
+  const report = await applyAutoMarginAll(req.user?.userId ?? null, {
+    confirmModelIds: parsed.data.confirmModelIds,
+  });
   await writeAuditLog({
     actorId: req.user?.userId ?? null,
     action: "pricing.margin.apply",
@@ -652,9 +678,11 @@ adminRouter.post("/pricing/apply-margin", async (req, res) => {
     targetId: "all-enabled",
     meta: {
       marginTarget: report.marginTarget,
-      applied: report.applied.map((a) => ({ id: a.modelId, tiers: a.tiers })),
+      applied: report.applied.map((a) => ({ id: a.modelId, tiers: a.tiers, src: a.providerCostSource })),
       skippedPinned: report.skippedPinned.map((a) => a.modelId),
       skippedNoCost: report.skippedNoCost,
+      skippedNeedsConfirm: report.skippedNeedsConfirm.map((a) => a.modelId),
+      confirmModelIds: parsed.data.confirmModelIds ?? [],
     },
   });
   res.json({ report });
@@ -670,7 +698,10 @@ adminRouter.post("/pricing/:modelId/auto", async (req, res) => {
     return;
   }
   const config = await getPricingConfig();
-  const d = deriveAutoPricing(model, config.marginTarget, config.creditUsdValue);
+  // R4_05 — bitta qatorli auto ham measured-aware. Admin aniq shu qatorda bosgani = xarajat
+  // ko'tarilishini ham TASDIQLAGAN (confirm:true) — ongli qaror; bulk apply'dan farqli.
+  const confirm = req.body?.confirm !== false; // default true (aniq admin harakati)
+  const d = await deriveAutoPricingResolved(model, config.marginTarget, config.creditUsdValue, { confirm });
   if (!d.patch) {
     res.status(400).json({ error: "No provider cost table for this model — set the price manually", code: "NO_COST_TABLE" });
     return;
@@ -681,7 +712,7 @@ adminRouter.post("/pricing/:modelId/auto", async (req, res) => {
     action: "pricing.margin.apply",
     targetType: "modelPricing",
     targetId: String(modelId),
-    meta: { marginTarget: config.marginTarget, tiers: d.tiers, pinnedOverride: d.pinned },
+    meta: { marginTarget: config.marginTarget, tiers: d.tiers, pinnedOverride: d.pinned, src: d.providerCostSource },
   });
   const view = (await listPricingView()).find((v) => v.modelId === modelId) ?? null;
   res.json({ derived: d, row, view });
