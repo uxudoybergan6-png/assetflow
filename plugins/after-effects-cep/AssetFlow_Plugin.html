@@ -8806,6 +8806,57 @@ async function studioPostForm(path,form,ms){
     }catch(e){ reject(e); }
   });
 }
+
+// R4_08 — YOQILGAN Topaz enhance/upscale operatsiyalari (opType). /gen/models composer'dan filtrlangan;
+// bu ro'yxat So'nggi-grid / galereya kartalaridagi "Use ▾ → Upscale" bir-bosishlik amallari uchun.
+window.afTopazOps = window.afTopazOps || [];
+window.afLoadTopazOps = function(){
+  return studioGet('/api/studio/gen/ops').then(function(r){ window.afTopazOps=(r&&r.ops)||[]; return window.afTopazOps; }).catch(function(){ return window.afTopazOps; });
+};
+window.afTopazOpFor = function(cat){
+  var ops=window.afTopazOps||[];
+  if(cat==='video') return ops.filter(function(o){ return o.feature==='video-upscale'&&o.mode==='video'; })[0]||null;
+  if(cat==='image'||!cat) return ops.filter(function(o){ return o.feature==='image-upscale'&&o.mode==='image'; })[0]||null;
+  return null; // voice/sfx — enhance op yo'q
+};
+// Bir-bosishlik op: manba gen'ning YANGI imzolangan URL'i → params → imzolangan quote → gen → poll.
+// Refund SERVER'da (money-zona tegilmagan): op muvaffaqiyatsiz bo'lsa kredit qaytadi.
+window.afRunTopazOp = function(op, it, factor){
+  if(!op||!it||!it.id) return;
+  if(window.__afTopazBusy){ if(typeof showToast==='function')showToast('An enhance is already running — please wait','warn'); return; }
+  window.__afTopazBusy=true;
+  var mode=op.mode;
+  if(typeof showToast==='function')showToast((op.opType==='removebg'?'Removing background…':'Upscaling…'),'info');
+  studioGet('/api/studio/gen/'+encodeURIComponent(it.id)).then(function(g){
+    var url=(g&&g.assets&&g.assets[0]&&g.assets[0].url)||(g&&g.asset&&g.asset.url)||it.url||'';
+    if(!url) throw new Error('Could not load the source asset');
+    var params=(mode==='video')?{sourceUrl:url,factor:(factor===4?4:2)}:{referenceUrl:url,referenceUrls:[url]};
+    return Promise.all([
+      studioPost('/api/studio/gen/cost-quote',{modelId:op.id,mode:mode,params:params,idempotencyKey:afUuid()}),
+      studioPost('/api/studio/gen/sessions',{mode:mode,title:op.label})
+    ]).then(function(arr){
+      var quote=arr[0], sid=(arr[1]&&arr[1].id);
+      var genParams=(quote&&quote.pricedParams)||params; // upscale: imzo SERVER canonical params ustidan
+      return studioPost('/api/studio/gen',{sessionId:sid,mode:mode,modelId:op.id,prompt:op.label,params:genParams,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000);
+    });
+  }).then(function(res){
+    if(!res||!res.jobId) throw new Error('Job was not created');
+    if(res&&typeof res.creditsLeft==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(res.creditsLeft);
+    var jobId=res.jobId, tries=0;
+    (function poll(){
+      studioGet('/api/studio/gen/'+encodeURIComponent(jobId)).then(function(st){
+        var s=st&&st.status;
+        if(s==='done'||s==='completed'){ window.__afTopazBusy=false; if(typeof showToast==='function')showToast('Done — added to your recent generations','success'); if(typeof window.afRefreshRecentGrids==='function')window.afRefreshRecentGrids(); }
+        else if(s==='failed'||s==='error'){ window.__afTopazBusy=false; if(typeof showToast==='function')showToast((typeof friendlyError==='function'?friendlyError(st):null)||'Enhance failed — your credits were refunded','error'); }
+        else if(tries++<150){ setTimeout(poll,4000); }
+        else { window.__afTopazBusy=false; if(typeof showToast==='function')showToast('Still processing — check your recent generations shortly','info'); }
+      }).catch(function(){ if(tries++<150)setTimeout(poll,4000); else window.__afTopazBusy=false; });
+    })();
+  }).catch(function(err){
+    window.__afTopazBusy=false;
+    if(typeof showToast==='function')showToast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Enhance failed','error');
+  });
+};
 /** /api/studio DELETE — auth bilan (gen natijani o'chirish). */
 async function studioDelete(path){
   const res=await pubFetch(path,{method:'DELETE',headers:pubAuthHeaders()},20000);
@@ -10915,6 +10966,8 @@ async function bootPlugin(){
         studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){});
         // P3 (step 34) — AI Stock topshiriq holatlarini bir marta yuklaymiz (kartada "yuborilgan").
         if(!window._afExploreLoaded && typeof window.afLoadExploreSubs==='function'){ window._afExploreLoaded=true; window.afLoadExploreSubs(); }
+        // R4_08 — yoqilgan Topaz enhance/upscale operatsiyalarini bir marta yuklaymiz (kartada "Use ▾").
+        if(!window._afTopazOpsLoaded && typeof window.afLoadTopazOps==='function'){ window._afTopazOpsLoaded=true; window.afLoadTopazOps(); }
       } }catch(e){}
     }
   }
@@ -11545,6 +11598,17 @@ async function bootPlugin(){
         if(ctx.onAddProject&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>',label:'Add to project',fn:function(){ ctx.onAddProject(it); }});
         if(ctx.onAddExplore&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',label:(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),fn:function(){ ctx.onAddExplore(it); }});
         if(ctx.refAllowed&&ctx.refAllowed(it))items.push({ic:IC.ref,label:'Use as reference',fn:function(){ ctx.onRef&&ctx.onRef(it); }});
+        // R4_08 — Topaz bir-bosishlik enhance/upscale (faqat yoqilgan op + mos media turida)
+        var _tzIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+        var _tzOp=(typeof window.afTopazOpFor==='function')?window.afTopazOpFor(it.cat||'image'):null;
+        if(_tzOp){
+          if((it.cat||'image')==='video'){
+            items.push({ic:_tzIco,label:'Upscale video 2×',fn:function(){ window.afRunTopazOp(_tzOp,it,2); }});
+            items.push({ic:_tzIco,label:'Upscale video 4×',fn:function(){ window.afRunTopazOp(_tzOp,it,4); }});
+          } else {
+            items.push({ic:_tzIco,label:'Upscale image',fn:function(){ window.afRunTopazOp(_tzOp,it,null); }});
+          }
+        }
         if(ctx.onRestore&&it.prompt)items.push({ic:IC.rst,label:'Regenerate',fn:function(){ ctx.onRestore(it); }});
         if(it.prompt)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
         if(!ctx.isCEP)items.push({ic:IC.dl,label:'Download',fn:function(){ ctx.onDownload&&ctx.onDownload(it); }});
@@ -12348,6 +12412,17 @@ window.afGallery=(function(){
           if(it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',label:(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),fn:function(){ window.afAddToExplore(it); }});
           // SC_30: Regenerate faqat rasm/video uchun — audio restore yo'li yo'q (avval audio genni
           // rasm tool'iga noto'g'ri yo'naltirardi); mumkin bo'lmagan kind uchun band ko'rsatilmaydi.
+          // R4_08 — Topaz bir-bosishlik enhance/upscale (faqat yoqilgan op + mos media turida)
+          var _tzOp2=(typeof window.afTopazOpFor==='function')?window.afTopazOpFor(it.cat||'image'):null;
+          if(_tzOp2){
+            var _tzI='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+            if((it.cat||'image')==='video'){
+              items.push({ic:_tzI,label:'Upscale video 2×',fn:function(){ window.afRunTopazOp(_tzOp2,it,2); }});
+              items.push({ic:_tzI,label:'Upscale video 4×',fn:function(){ window.afRunTopazOp(_tzOp2,it,4); }});
+            } else if(it.cat==='image'||!it.cat){
+              items.push({ic:_tzI,label:'Upscale image',fn:function(){ window.afRunTopazOp(_tzOp2,it,null); }});
+            }
+          }
           if(it.prompt&&(it.cat==='image'||it.cat==='video'))items.push({ic:IC.rst,label:'Regenerate',fn:function(){ galRestore(it); }});
           if(it.prompt)items.push({ic:IC.copy,label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
           if(!isCEP())items.push({ic:IC.dl,label:'Download',fn:function(){ download(it); }});

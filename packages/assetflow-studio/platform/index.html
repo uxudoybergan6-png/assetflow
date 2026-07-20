@@ -17134,6 +17134,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                               <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}"><span class="mic">⧉</span>Copy prompt</div></sc-if>
                               <div class="{{ axMenuDelCls }}" onclick="{{ axMenuDelete }}"><span class="mic">🗑</span>{{ axMenuDelLabel }}</div>
                               <div class="va-axmdiv"></div>
+                              <!-- R4_08 — Topaz enhance/upscale bir-bosishlik (faqat yoqilgan op + mos media turida ko'rinadi) -->
+                              <sc-if value="{{ axUpscaleImgRow }}" hint-placeholder-val="{{ false }}">
+                                <div class="va-axmi plain" title="Upscale this image with Topaz Gigapixel" onclick="{{ axUseUpscaleImg }}"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>{{ axUpscaleImgLabel }}<span class="sub">Topaz Gigapixel · signed price</span></span></div>
+                              </sc-if>
+                              <sc-if value="{{ axUpscaleVidRow }}" hint-placeholder-val="{{ false }}">
+                                <div class="va-axmi plain" title="Upscale this video 2× with Topaz Proteus" onclick="{{ axUseUpscaleVid2 }}"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>Upscale video 2×<span class="sub">Topaz Proteus · signed price</span></span></div>
+                                <div class="va-axmi plain" title="Upscale this video 4× with Topaz Proteus" onclick="{{ axUseUpscaleVid4 }}"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>Upscale video 4×<span class="sub">Topaz Proteus · signed price</span></span></div>
+                              </sc-if>
                               <!-- BATCH4 #1 — Upscale JONLI (Imagen imagegeneration@002); ✦ narx imzolangan quote'dan composer'da tasdiqlanadi -->
                               <!-- SC_17: Upscale x2/x4 menyu qatorlari o'chirildi (funksiya butunlay olib tashlandi) -->
                               <div class="va-axmi plain off" onclick="{{ stop }}"><span class="mic">✦</span>Make variations<span class="soon">SOON</span></div>
@@ -19684,6 +19692,8 @@ class Component extends DCLogic {
         });
       } catch (e) {}
     }
+    // R4_08 — YOQILGAN Topaz enhance/upscale operatsiyalari (composer'dan filtrlangan; kartada "Use ▾").
+    try { const or = await FFAPI.ops(); this.setState({ topazOps: (or && or.ops) || [] }); } catch (e) {}
     this.setState({ genModelsLoaded: true }); // FAZA C — featured-loader shu bilan o'chadi
     // §A (P2) — model ro'yxati umuman kelmasa: doimiy "Loading…" o'rniga avto-retry
     // (2 marta, o'sib boruvchi kutish), so'ng halol xabar.
@@ -20423,6 +20433,46 @@ class Component extends DCLogic {
       else if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — you won't be charged unless it goes through", () => this.generate(true));
       else { this._genIdemKey = null; this.toast(this.errMsg(e)); }
     } finally { this._genSubmitting = false; }
+  }
+  // R4_08 — kartadagi "Use ▾ → Upscale" bir-bosishlik Topaz op: manba gen'ning YANGI imzolangan
+  // URL'ini oladi → params (rasm: referenceUrl; video: sourceUrl+factor) → imzolangan quote → gen →
+  // faol ishlar ro'yxati + poll (natija shu sessiya grid'ida chiqadi). Refund SERVER'da (money-zona
+  // tegilmagan): op muvaffaqiyatsiz bo'lsa kredit qaytadi. Composer holatiga TEGMAYDI (mustaqil oqim).
+  async runTopazOp(op, sourceGenId, factor) {
+    if (!op || !sourceGenId || this._topazBusy) return;
+    this._topazBusy = true;
+    try {
+      const g = await FFAPI.genGet(sourceGenId);
+      const url = (g && g.assets && g.assets[0] && g.assets[0].url) || (g && g.asset && g.asset.url) || '';
+      if (!url) { this.toast('Could not load the source asset'); return; }
+      const mode = op.mode;
+      const params = (mode === 'video')
+        ? { sourceUrl: url, factor: (factor === 4 ? 4 : 2) }
+        : { referenceUrl: url, referenceUrls: [url] };
+      const q = await FFAPI.quote(op.id, mode, params);
+      const genParams = q.pricedParams || params; // upscale: imzo SERVER canonical params ustidan
+      const committed = (this.state.activeJobs || []).reduce((a, j) => a + (j.cost || 0), 0);
+      if (q.price > (this.state.credits - committed)) { this.setState({ showCredits: true }); return; }
+      let sid = this.state.curSessId;
+      if (!sid) { const s = await FFAPI.session(mode, op.label); sid = s.id; this.setState({ curSessId: sid, viewSess: sid, sessGens: [] }); }
+      const idemKey = 'topaz-' + op.id + '-' + sourceGenId + '-' + (factor || '') + '-' + Date.now();
+      let r;
+      try {
+        r = await FFAPI.gen({ sessionId: sid, mode, prompt: op.label, modelId: op.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey });
+      } catch (ge) {
+        if (ge && ge.status === 404) { const s2 = await FFAPI.session(mode, op.label); sid = s2.id; this.setState({ curSessId: s2.id, viewSess: s2.id, sessGens: [] }); r = await FFAPI.gen({ sessionId: s2.id, mode, prompt: op.label, modelId: op.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey }); }
+        else { throw ge; }
+      }
+      const job = { id: r.jobId, tempId: 'j' + (this._jobSeq = (this._jobSeq || 0) + 1), sessionId: sid, mode, modelName: op.label || 'Upscale', cost: q.price, startedAt: Date.now() };
+      this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]), credits: (typeof r.creditsLeft === 'number' ? r.creditsLeft : s.credits) }));
+      this._persistActiveJob(job);
+      this.pollJob(r.jobId);
+      this.toast((op.opType === 'removebg' ? 'Removing background…' : 'Upscaling…') + ' ✦' + q.price);
+    } catch (e) {
+      if (e && e.code === 'INSUFFICIENT_CREDITS') this.setState({ showCredits: true });
+      else if (e && (e.status === 429 || e.code === 'TOO_MANY_ACTIVE_GENERATIONS')) this.toast('Too many generations running — wait for one to finish');
+      else this.toast(this.errMsg(e));
+    } finally { this._topazBusy = false; }
   }
   // FIX A5 (P6) — faol ishlarni sessionStorage'ga saqlaymiz: refresh (shu tab) mid-gen'da
   // poll'lar qayta ulanadi (aks holda uchayotgan ish "yo'qoladi", faqat fokus/qo'lda reload'da
@@ -21714,6 +21764,13 @@ class Component extends DCLogic {
     const axI2vOk = axSrcIsImage && axHasI2vModel;
     const axEditTip = axEditOk ? '' : (axSrcIsImage ? 'No edit-capable image model available' : 'Available for image results');
     const axI2vTip = axI2vOk ? '' : (axSrcIsImage ? 'No image-to-video model available' : 'Available for image results');
+    // R4_08 — Topaz enhance/upscale (bir-bosishlik): manba media turiga qarab yoqilgan op mavjud bo'lsa ko'rsatiladi.
+    const topazOps = this.state.topazOps || [];
+    const axImgUpscaleOp = topazOps.find(o => o.feature === 'image-upscale' && o.mode === 'image') || null;
+    const axVidUpscaleOp = topazOps.find(o => o.feature === 'video-upscale' && o.mode === 'video') || null;
+    const axSrcIsVideo = !!activeGenRaw && activeGenRaw.type === 'video';
+    const axUpscaleImgOk = axSrcIsImage && !!axImgUpscaleOp;
+    const axUpscaleVidOk = axSrcIsVideo && !!axVidUpscaleOp;
     // SC_17: Use ▾ Upscale hisob-kitob konstantalari o'chirildi (menyu qatorlari yo'q)
     // Rejim QO'LDA almashsa referens tozalanadi (start-kadr voice/SFX da ma'nosiz)
     // BATCH4 #1 — taqqos model-KALIT bo'yicha: Image↔Upscale ham tozalaydi (limitlar farqli)
@@ -22596,6 +22653,13 @@ class Component extends DCLogic {
       axSrcImgRows: axSrcIsImage, // SC_30: Edit/i2v bandlari faqat RASM natijada ko'rinadi
       axUseEdit: (e) => { e.stopPropagation(); if (!axEditOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('edit', activeGenRaw.id); },
       axUseI2V: (e) => { e.stopPropagation(); if (!axI2vOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.useGenAsRef('i2v', activeGenRaw.id); },
+      // R4_08 — Topaz enhance/upscale bir-bosishlik amallari (imzolangan quote → gen → refund-on-fail server'da)
+      axUpscaleImgRow: axUpscaleImgOk,
+      axUpscaleVidRow: axUpscaleVidOk,
+      axUpscaleImgLabel: axImgUpscaleOp ? axImgUpscaleOp.label : 'Upscale image',
+      axUseUpscaleImg: (e) => { e.stopPropagation(); if (!axUpscaleImgOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.runTopazOp(axImgUpscaleOp, activeGenRaw.id, null); },
+      axUseUpscaleVid2: (e) => { e.stopPropagation(); if (!axUpscaleVidOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.runTopazOp(axVidUpscaleOp, activeGenRaw.id, 2); },
+      axUseUpscaleVid4: (e) => { e.stopPropagation(); if (!axUpscaleVidOk || !activeGenRaw) return; this.setState({ useMenuOpen: false }); this.runTopazOp(axVidUpscaleOp, activeGenRaw.id, 4); },
       useMenuOpen: this.state.useMenuOpen,
       onMediaView: (e) => this.setState({ aiMediaView: e.currentTarget.dataset.v, useMenuOpen: false }),
       onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = wsGens.find(x => x.id === id); if (g) { this.setState({ lightbox: g, useMenuOpen: false }); this.refreshLightboxUrl(id); } } else this.setState({ activeGenId: id, useMenuOpen: false }); },

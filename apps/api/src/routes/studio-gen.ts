@@ -21,6 +21,7 @@ import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isFalConfigured } from "../lib/ai/fal.js";
 import { isByteplusConfigured } from "../lib/ai/byteplus.js";
 import { isKlingConfigured } from "../lib/ai/kling.js";
+import { isTopazConfigured } from "../lib/ai/topaz.js";
 import {
   isVertexEnhanceConfigured,
   vertexEnhancePrompt,
@@ -837,6 +838,26 @@ studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
   });
 });
 
+/** R4_08 — GET /gen/ops: YOQILGAN enhance/upscale OPERATSIYALARI (opType). Composer picker'idan
+ *  filtrlangan (generativ model emas) — bu ro'yxat gen/library kartalaridagi "Use ▾ → Upscale /
+ *  Remove BG" bir-bosishlik amallari uchun. Klient shu ro'yxatdan qaysi op mavjudligini biladi
+ *  (o'chirilgan/entitlement yo'q op umuman ko'rinmaydi). Katalog-driven: enabled bayrog'i yagona manba. */
+studioGenRouter.get("/gen/ops", (_req: Request, res: Response) => {
+  const ops = GEN_MODELS.filter((m) => m.opType && m.enabled !== false).map((m) => ({
+    id: m.id,
+    opType: m.opType,
+    mode: m.mode,
+    feature: m.feature,
+    label: m.label,
+    brand: m.brand ?? null,
+    provider: m.provider ?? null,
+    cost: m.cost,
+    // video-upscale 2×/4× faktorni qo'llaydi (video-upscale.ts params.factor); rasm op'lari yo'q.
+    supportsFactor: m.feature === "video-upscale",
+  }));
+  res.json({ ops });
+});
+
 // params hajmi cheklanadi — z.record(z.any()) cheksiz; ulkan obyekt DB'ga yoziladi + har quote/gen'da
 // hash qilinadi (DoS/storage-amplifikatsiya). Haqiqiy params (sozlama + referens URL'lar) ≪16KB.
 const boundedParams = z
@@ -1284,6 +1305,8 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
           ? isByteplusConfigured()
           : model.provider === "kling"
           ? isKlingConfigured()
+          : model.provider === "topaz" // R4_08 — Topaz enhance/upscale op'lari (TOPAZ_API_KEY)
+          ? isTopazConfigured()
           : model.provider === "vertex"
           ? isVertexConfigured()
           : model.provider === "vertex-omni"

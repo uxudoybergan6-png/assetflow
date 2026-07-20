@@ -212,6 +212,8 @@
     // P17 — quote SOF hisob+imzo (server DB yozmaydi / consume qilmaydi) → cold-start'da
     // xavfsiz qayta uriladi (idempotent:true). "Can't reach the server" ko'pincha shu edi.
     quote: function (modelId, mode, params) { return req("/api/studio/gen/cost-quote", { method: "POST", body: { modelId: modelId, mode: mode, params: params || {} }, idempotent: true }); },
+    // R4_08 — YOQILGAN Topaz enhance/upscale operatsiyalari (composer'dan filtrlangan; kartada "Use ▾").
+    ops: function () { return req("/api/studio/gen/ops"); },
     // P18 — har job-yaratish urinishi uchun BITTA idempotency kaliti: req() ichki qayta
     // urinishlari (cold-start) shu kalitni qayta ishlatadi → server dedup qiladi, IKKINCHI
     // charge YO'Q. 404-session qayta urinishi FFAPI.gen'ni qaytadan chaqiradi → yangi kalit
