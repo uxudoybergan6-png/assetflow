@@ -34,12 +34,12 @@ const FEATURES = new Set([
   "image-to-video", "reference-to-video", "video-upscale", "text-to-sfx",
 ]);
 const PROVIDERS = new Set([
-  "openrouter", "freepik", "elevenlabs", "magnific", "fal", "vertex", "vertex-omni", "vertex-image", "google-tts", "byteplus", "kling", undefined,
+  "openrouter", "freepik", "elevenlabs", "magnific", "fal", "vertex", "vertex-omni", "vertex-image", "google-tts", "byteplus", "kling", "topaz", undefined,
 ]);
 // gen-processor dispatch'ida REAL branch bor provider+feature juftliklari (yangi provider →
 // yangi adapter branch SHART; ro'yxatga qo'shishdan oldin gen-processor.ts'ga branch yozing).
-const VIDEO_DISPATCH = new Set(["fal", "vertex", "vertex-omni", "openrouter", "byteplus", "kling", undefined]);
-const IMAGE_DISPATCH = new Set(["fal", "vertex-image", "magnific", "openrouter", "byteplus", "kling", undefined]);
+const VIDEO_DISPATCH = new Set(["fal", "vertex", "vertex-omni", "openrouter", "byteplus", "kling", "topaz", undefined]);
+const IMAGE_DISPATCH = new Set(["fal", "vertex-image", "magnific", "openrouter", "byteplus", "kling", "topaz", undefined]);
 
 export type ModelIssue = { modelId: number | string; field: string; message: string };
 

@@ -50,7 +50,7 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image" | "google-tts" | "byteplus" | "kling";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image" | "google-tts" | "byteplus" | "kling" | "topaz";
   falModel?: string; // provider=fal: queue.fal.run/<slug> (masalan openai/gpt-image-2/edit)
   byteplusModel?: string; // provider=byteplus: ModelArk model ID (masalan dreamina-seedance-2-0-260128)
   // provider=kling (R4_02, DIRECT API): endpoint + body oilasini belgilaydi (adapter kling.ts):

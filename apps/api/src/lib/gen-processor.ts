@@ -59,6 +59,19 @@ import {
   KLING_TIMEOUT_ERROR,
 } from "./ai/kling.js";
 import {
+  // R4_03 PHASE 0 — Topaz provider plumbing (dormant: hech qanday katalog model bu yo'lga tushmaydi).
+  topazSubmitImageEnhance,
+  topazPollImageStep,
+  topazImageDownload,
+  topazCreateVideoRequest,
+  topazAcceptVideoRequest,
+  topazUploadVideoParts,
+  topazCompleteVideoUpload,
+  topazPollVideoStep,
+  topazVideoUrlToBuffer,
+  TOPAZ_TIMEOUT_ERROR,
+} from "./ai/topaz.js";
+import {
   getModelById,
   resolveVideoParams,
   resolveImageCount,
@@ -226,6 +239,9 @@ type StoredProviderJob =
   | ({ provider: "fal-image"; submittedAt: string } & FalQueueJob)
   | { provider: "byteplus-video"; taskId: string; submittedAt: string }
   | { provider: "kling-video"; taskId: string; submittedAt: string }
+  // R4_03 PHASE 0 — Topaz resume kalitlari (dormant; hozircha yozilmaydi, R4_04'da ishlatiladi).
+  | { provider: "topaz-image"; processId: string; submittedAt: string }
+  | { provider: "topaz-video"; requestId: string; submittedAt: string }
   | { provider: "vertex-video"; operationName: string; submittedAt: string };
 type StoredProviderWebhook = {
   provider: "fal";
@@ -274,6 +290,20 @@ function readProviderJob(params: Record<string, unknown>): StoredProviderJob | n
     return {
       provider,
       taskId: job.taskId,
+      submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
+    };
+  }
+  if (provider === "topaz-image" && typeof job.processId === "string" && job.processId) {
+    return {
+      provider,
+      processId: job.processId,
+      submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
+    };
+  }
+  if (provider === "topaz-video" && typeof job.requestId === "string" && job.requestId) {
+    return {
+      provider,
+      requestId: job.requestId,
       submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
     };
   }
@@ -970,6 +1000,100 @@ async function runKlingVideo(
   });
 }
 
+// ── TOPAZ (R4_03) — PHASE 0 DORMANT runnerlar. ⚠️ HOZIRCHA HECH QANDAY katalog model provider
+//    "topaz" EMAS → bu ikki funksiya normal oqimda CHAQIRILMAYDI (switch'ga ulangan, kompilyatsiya
+//    qilinadi, lekin hit bo'lmaydi). R4_04 modellarni (Proteus video / Gigapixel rasm) yoqadi.
+//    byteplus runner naqshi: submit → persist → poll → download. Money-zone TEGILMAGAN.
+async function runTopazImage(
+  model: GenModel,
+  params: Record<string, unknown>,
+  genId: string
+): Promise<OrResult<Buffer>> {
+  const sourceUrl =
+    typeof params.sourceUrl === "string"
+      ? params.sourceUrl
+      : typeof params.referenceUrl === "string"
+        ? params.referenceUrl
+        : "";
+  if (!sourceUrl) return { ok: false, error: "A source image is required for Topaz enhance" };
+  const saved = readProviderJob(params);
+  let processId: string;
+  if (saved?.provider === "topaz-image") {
+    processId = saved.processId;
+  } else {
+    const sub = await topazSubmitImageEnhance({
+      sourceUrl,
+      model: typeof params.topazModel === "string" ? params.topazModel : "Standard V2",
+      outputFormat: "png",
+    });
+    if (!sub.ok) return { ok: false, error: sub.error };
+    processId = sub.data.processId;
+    await persistProviderJob(genId, params, {
+      provider: "topaz-image",
+      processId,
+      submittedAt: new Date().toISOString(),
+    });
+  }
+  void model; // R4_04: model.topaz* deskriptoridan endpoint/model/output o'qiladi
+  for (let i = 0; i < 120; i++) {
+    await sleep(byteplusWaitMs(i));
+    const step = await topazPollImageStep(processId);
+    if (!step.ok) return { ok: false, error: step.error };
+    if (step.data.state === "completed") return topazImageDownload(processId);
+  }
+  return { ok: false, error: TOPAZ_TIMEOUT_ERROR };
+}
+
+async function runTopazVideo(
+  model: GenModel,
+  _prompt: string,
+  params: Record<string, unknown>,
+  _userId: string,
+  genId: string
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const saved = readProviderJob(params);
+  let requestId: string;
+  if (saved?.provider === "topaz-video") {
+    requestId = saved.requestId;
+  } else {
+    // Standart lifecycle: create (bepul) → accept (rezerv) → [tashqi manba bo'lmasa PUT upload] → complete.
+    const sourceUrl = typeof params.sourceUrl === "string" ? params.sourceUrl : "";
+    const create = await topazCreateVideoRequest({
+      source: { container: "mp4", external: sourceUrl ? { provider: "s3", presignedUrl: sourceUrl } : undefined },
+      filters: [{ model: typeof params.topazModel === "string" ? params.topazModel : "prob-4", auto: "Auto" }],
+      output: {},
+    });
+    if (!create.ok) return { ok: false, error: create.error };
+    requestId = create.data.requestId;
+    const accept = await topazAcceptVideoRequest(requestId);
+    if (!accept.ok) return { ok: false, error: accept.error };
+    if (accept.data.urls.length && !sourceUrl) {
+      // R4_04: manba bufer params.sourceKey'dan olinadi va bu yerda PUT qilinadi (hozircha bo'sh).
+      const up = await topazUploadVideoParts(accept.data.urls, Buffer.alloc(0));
+      if (!up.ok) return { ok: false, error: up.error };
+      const done = await topazCompleteVideoUpload(requestId, up.data);
+      if (!done.ok) return { ok: false, error: done.error };
+    }
+    await persistProviderJob(genId, params, {
+      provider: "topaz-video",
+      requestId,
+      submittedAt: new Date().toISOString(),
+    });
+  }
+  void model;
+  for (let i = 0; i < 180; i++) {
+    await sleep(byteplusWaitMs(i));
+    const step = await topazPollVideoStep(requestId);
+    if (!step.ok) return { ok: false, error: step.error };
+    if (step.data.state === "completed") {
+      const dl = await topazVideoUrlToBuffer(step.data.data.videoUrl);
+      if (!dl.ok) return { ok: false, error: dl.error };
+      return { ok: true, buf: dl.data };
+    }
+  }
+  return { ok: false, error: TOPAZ_TIMEOUT_ERROR };
+}
+
 /** data:URI yoki http(s) URL'ni Vertex kutgan inline base64 rasmga aylantiradi. */
 async function refUrlToInlineImage(
   refUrl: string
@@ -1322,6 +1446,7 @@ export async function processGeneration(genId: string): Promise<void> {
       const useVertexImg = model.provider === "vertex-image"; // Imagen/Nano Banana — Google to'g'ridan-to'g'ri
       const useByteplusImg = model.provider === "byteplus"; // Seedream (ModelArk, sinxron /images/generations)
       const useKlingImg = model.provider === "kling"; // R4_02 — Kling Image 3.0 (direct API, async task)
+      const useTopazImg = model.provider === "topaz"; // R4_03 PHASE 0 — dormant (hech qanday model yo'q)
       const mModel = model.magnificModel ?? "realism";
       // Dedicated Magnific tool (upscale/relight/camera/skin/extend/removebg) — manba rasm yeydi.
       // Faqat provider=magnific; openrouter'да ekvivalent yo'q → aniq xato (UI "Tez orada" qoladi).
@@ -1403,7 +1528,9 @@ export async function processGeneration(genId: string): Promise<void> {
         return void (await fail("A source image is required for upscaling"));
       const upFactor: "x2" | "x4" = params.quality === "x4" ? "x4" : "x2"; // imageUnitCost def bilan mos (x2)
       const genOne = (): Promise<OrResult<Buffer>> =>
-        useKlingImg
+        useTopazImg
+          ? runTopazImage(model, params, genId) // R4_03 PHASE 0 — dormant (never hit; no topaz model)
+          : useKlingImg
           ? // R4_02 — Kling Image (async task; bitta rasm/chaqiruv, count>1 = mapLimit N ta alohida).
             klingImage(model, {
               prompt: gen.prompt,
@@ -1540,6 +1667,8 @@ export async function processGeneration(genId: string): Promise<void> {
       const out =
         model.provider === "kling"
           ? await runKlingVideo(model, gen.prompt, params, gen.userId, genId) // R4_02 — Kling 3.0 (direct)
+          : model.provider === "topaz"
+          ? await runTopazVideo(model, gen.prompt, params, gen.userId, genId) // R4_03 PHASE 0 — dormant
           : model.provider === "byteplus"
           ? await runByteplusVideo(model, gen.prompt, params, gen.userId, genId) // BATCH5 — Seedance (i2v + r2v)
           : model.feature === "video-upscale"
@@ -1567,6 +1696,7 @@ export async function processGeneration(genId: string): Promise<void> {
         (out.error.startsWith("FAL_TIMEOUT") ||
           out.error.startsWith("BYTEPLUS_TIMEOUT") ||
           out.error.startsWith("KLING_TIMEOUT") ||
+          out.error.startsWith("TOPAZ_TIMEOUT") ||
           out.error.startsWith("OPENROUTER_TIMEOUT") ||
           out.error.startsWith("VERTEX_TIMEOUT"))
       ) {
