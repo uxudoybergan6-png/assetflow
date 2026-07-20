@@ -55,6 +55,9 @@ export const VIDEO_USD_PER_SEC: Record<number, Record<string, number>> = {
   // (token/s ≈ width·height·24/1024): fast video-input $3.3/1M; standard (r2v) $4.3/1M.
   3101: { "480p": 0.032, "720p": 0.071 }, // Seedance 2.0 Fast (BytePlus)
   3102: { "480p": 0.042, "720p": 0.093, "1080p": 0.209, "4k": 0.836 }, // Seedance 2.0 (BytePlus)
+  // R4_01 — Seedance 2.0 Mini: rasmiy $/1M repo docs'da yo'q → KONSERVATIV ravishda Fast (3101)
+  // stavkasi (Mini ≤ Fast → auto-marja hech qachon xarajatdan past emas); invoice bilan aniqlansin.
+  3103: { "480p": 0.032, "720p": 0.071 }, // Seedance 2.0 Mini (BytePlus)
   // Topaz video upscale (fal, RASMIY tarif ✅): $/s CHIQISH bo'yicha; 60fps ×2 billing
   // duration'ga kiritilgan (derive), shu sabab bu jadval sof tier stavkasi.
   3201: { "720p": 0.01, "1080p": 0.02, "4k": 0.08 },

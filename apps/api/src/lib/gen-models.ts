@@ -1218,6 +1218,61 @@ export const GEN_MODELS: GenModel[] = [
       bitrate: { options: ["standard", "high"], def: "standard" },
     },
   },
+
+  // R4_01 — Seedance 2.0 Mini (BytePlus) — eng arzon tier. 3102 bilan AYNAN bir xil imkoniyat
+  // (multimodal referens image≤9 + video≤3 + audio≤3, i2v kadr, video edit/extend, generate_audio),
+  // FAQAT resolution 480p/720p bilan cheklangan (1080p/4k YO'Q) va arzonroq. Aktivatsiya jonli
+  // tekshirildi 2026-07-20 (scripts/probe-byteplus-model.mjs): t2v 480p/4s submit+succeed → ENABLED.
+  // NARX: Mini rasmiy $/1M repo docs'da yo'q → KONSERVATIV ravishda Fast (3101) provider stavkasini
+  // ishlatamiz (Mini "cost-effective" ≤ Fast → marja faqat baland, HECH QACHON xarajatdan past emas);
+  // birinchi invoice + Apply-margin bilan aniqlashtiriladi. Adapter/gen-processor byteplus yo'li
+  // qayta ishlatiladi (provider === "byteplus") — yangi kod SHART EMAS.
+  {
+    id: 3103,
+    mode: "video",
+    key: "bytedance/seedance-2.0/mini",
+    label: "Seedance 2.0 Mini",
+    brand: "bytedance",
+    provider: "byteplus",
+    byteplusModel: "dreamina-seedance-2-0-mini-260615",
+    enabled: true,
+    feature: "reference-to-video",
+    cost: 8,
+    referenceMode: "video-ref",
+    refMode: "optional", // referenssiz ham ishlaydi (faqat prompt) — 3102 kabi
+    endFrame: true,
+    refKind: "media-refs",
+    mediaRefs: { image: 9, video: 3, audio: 3, total: 12 },
+    mediaRefMaxBytes: { image: 30 * 1024 * 1024, audio: 15 * 1024 * 1024 },
+    mediaRefMaxTotalBytes: { video: 50 * 1024 * 1024 },
+    mediaRefFormats: {
+      image: ["jpg", "jpeg", "png", "webp"],
+      video: ["mp4", "mov"],
+      audio: ["mp3", "wav"],
+    },
+    videoInputPerSecMultiplier: 0.6,
+    inputs: ["start-end-frame", "image-ref", "video-ref", "audio-file"],
+    aspects: ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+    resolutions: ["480p", "720p"], // Mini: 1080p/4k YO'Q (docs §2)
+    durations: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    audio: true,
+    videoSettings: {
+      aspect: { options: ["Auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"], def: "Auto" },
+      resolution: {
+        options: ["480p", "720p"],
+        def: "480p",
+        perSec: { "480p": 8, "720p": 12 }, // ≥2× marja (480p floor=4, 720p floor=8) — konservativ
+      },
+      duration: {
+        options: ["Auto", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
+        def: "Auto",
+        autoSec: 4,
+      },
+      audio: true,
+      audioDefault: false,
+      bitrate: { options: ["standard", "high"], def: "standard" },
+    },
+  },
 ];
 
 // Semantik qidiruv uchun embedding modeli (katalogda emas — ichki ishlatiladi).
