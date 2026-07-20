@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // R4 — bitta modelni TO'LIQ pipeline orqali generatsiya qiladi (login → session → cost-quote →
 // POST /gen → poll → done). Kredit YECHILADI (real e2e). Ishlatish:
-//   node scripts/e2e-gen-once.mjs <modelId> [resolution] [durationSec]
+//   VIDEO: node scripts/e2e-gen-once.mjs <modelId> [resolution] [durationSec]
+//   IMAGE: MODE=image node scripts/e2e-gen-once.mjs <modelId> [quality]
 const API = process.env.API_URL || "http://localhost:4000";
 const EMAIL = process.env.VERIFY_EMAIL || "user@assetflow.uz";
 const PASS = process.env.VERIFY_PASSWORD || "user123";
+const MODE = process.env.MODE === "image" ? "image" : "video";
 const modelId = Number(process.argv[2] || 3103);
-const resolution = process.argv[3] || "480p";
+const resolution = process.argv[3] || (MODE === "image" ? "1K" : "480p");
 const duration = String(process.argv[4] || "4");
 
 async function jpost(path, body, token) {
@@ -24,18 +26,21 @@ const login = await jpost("/api/plugin/login", { email: EMAIL, password: PASS })
 const token = login.body?.token || login.body?.accessToken;
 if (!token) { console.error("LOGIN FAILED", login.status, login.body); process.exit(1); }
 
-const sess = await jpost("/api/studio/gen/sessions", { mode: "video", title: "R4 e2e" }, token);
+const sess = await jpost("/api/studio/gen/sessions", { mode: MODE, title: "R4 e2e" }, token);
 const sessionId = sess.body?.id;
 console.log("session", sessionId);
 
-const params = { aspectRatio: "auto", resolution, duration, audio: false };
-const quote = await jpost("/api/studio/gen/cost-quote", { modelId, mode: "video", params }, token);
+const REF = process.env.REF || ""; // ixtiyoriy referenceUrl (i2v boshlang'ich kadr)
+const params = MODE === "image"
+  ? { aspectRatio: "1:1", quality: resolution, count: 1 }
+  : { aspectRatio: "auto", resolution, duration, audio: false, ...(REF ? { referenceUrl: REF } : {}) };
+const quote = await jpost("/api/studio/gen/cost-quote", { modelId, mode: MODE, params }, token);
 if (quote.status !== 200) { console.error("QUOTE FAILED", quote.status, quote.body); process.exit(1); }
 console.log("quote price", quote.body.price, "sig", String(quote.body.signature).slice(0, 12) + "...");
 
-const idem = "r4e2e-" + modelId + "-" + resolution + "-" + duration + "-" + token.slice(-6);
+const idem = "r4e2e-" + MODE + "-" + modelId + "-" + resolution + "-" + duration + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
 const gen = await jpost("/api/studio/gen", {
-  sessionId, mode: "video", prompt: "a calm ocean wave at sunset, cinematic slow motion",
+  sessionId, mode: MODE, prompt: "a calm ocean wave at sunset, cinematic slow motion",
   modelId, params, price: quote.body.price, costQuoteSignature: quote.body.signature, idempotencyKey: idem,
 }, token);
 console.log("POST /gen ->", gen.status, JSON.stringify(gen.body).slice(0, 200));

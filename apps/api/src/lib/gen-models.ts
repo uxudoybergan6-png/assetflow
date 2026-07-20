@@ -50,9 +50,14 @@ export type GenModel = {
   mode: "image" | "voice" | "video" | "music" | "sfx";
   key: string; // OpenRouter model ID (yoki provider-ichki kalit)
   label: string;
-  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image" | "google-tts" | "byteplus";
+  provider?: "openrouter" | "freepik" | "elevenlabs" | "magnific" | "fal" | "vertex" | "vertex-omni" | "vertex-image" | "google-tts" | "byteplus" | "kling";
   falModel?: string; // provider=fal: queue.fal.run/<slug> (masalan openai/gpt-image-2/edit)
   byteplusModel?: string; // provider=byteplus: ModelArk model ID (masalan dreamina-seedance-2-0-260128)
+  // provider=kling (R4_02, DIRECT API): endpoint + body oilasini belgilaydi (adapter kling.ts):
+  //  video30=t2v+i2v (kling-3.0) · turbo=i2v (kling-3.0-turbo, native audio) · omni-video=
+  //  (kling-3.0-omni, image+video refs) · image=/v1/images/generations (kling-v3) · omni-image=
+  //  /v1/images/omni-image (kling-v3-omni). Endpoint/model_name adapter ichida shu kalitdan chiqadi.
+  klingKind?: "video30" | "turbo" | "omni-video" | "image" | "omni-image";
   qualityCost?: Record<string, number>; // image: bir rasm narxi quality bo'yicha (low/medium/high/auto) — qualityCost ustun
   magnificModel?: string; // GEN_PROVIDER=magnific da Mystic model (realism/super_real/fluid...)
   magnificTool?: string; // dedicated Magnific tool endpoint slug (image-upscaler, image-relight, ...) — provider=magnific only
@@ -430,6 +435,62 @@ export const GEN_MODELS: GenModel[] = [
     imgSettings: {
       aspect: { param: "aspect_ratio", options: SEEDREAM_ASPECTS, def: "1:1" },
       quality: { label: "Quality", param: "quality", options: ["2K", "4K"], def: "2K", cost: { "2K": 8, "4K": 16 } },
+      num: [1, 2, 3, 4],
+    },
+    imgModalities: ["image"],
+  },
+
+  // ── KLING IMAGE 3.0 oilasi (R4_02) — DIRECT API (adapter kling.ts, ASYNC task). Aktivlashtirildi
+  // (probe 2026-07-20: code=0). Narx docs Pricing Image: 3.0 1K/2K $0.028; Omni +4K $0.056. Kredit =
+  // ceil(USD×2/0.019) → 1K/2K=3, 4K=6 (≥2× marja, never-below-cost). Provider USD → IMAGE_USD_PER_UNIT.
+  {
+    id: 1030,
+    mode: "image",
+    key: "kling/kling-v3", // Kling Image 3.0 — t2i + i2i (single ref), 1K/2K
+    label: "Kling Image 3.0",
+    brand: "kling",
+    provider: "kling",
+    klingKind: "image",
+    enabled: true,
+    feature: "text-to-image",
+    cost: 3, // fallback (1K); imgSettings.quality.cost ustun
+    qualityCost: { "1K": 3, "2K": 3 },
+    referenceMode: "image-edit", // referens bo'lsa i2i (bitta rasm); referenssiz sof t2i
+    refMode: "optional",
+    maxRefs: 1, // base image gen: bitta `image` referens
+    inputs: ["image-ref"],
+    aspects: SEEDREAM_ASPECTS, // Kling image nisbatlari (16:9/9:16/1:1/4:3/3:4/3:2/2:3/21:9) — bir xil to'plam
+    resolutions: ["1K", "2K"],
+    count: [1, 2, 3, 4],
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: SEEDREAM_ASPECTS, def: "1:1" },
+      quality: { label: "Quality", param: "quality", options: ["1K", "2K"], def: "1K", cost: { "1K": 3, "2K": 3 } },
+      num: [1, 2, 3, 4],
+    },
+    imgModalities: ["image"],
+  },
+  {
+    id: 1031,
+    mode: "image",
+    key: "kling/kling-v3-omni", // Kling Image 3.0 Omni — multi-image ref, 1K/2K/4K
+    label: "Kling Image 3.0 Omni",
+    brand: "kling",
+    provider: "kling",
+    klingKind: "omni-image",
+    enabled: true,
+    feature: "text-to-image",
+    cost: 3, // fallback (1K)
+    qualityCost: { "1K": 3, "2K": 3, "4K": 6 },
+    referenceMode: "image-edit",
+    refMode: "optional",
+    maxRefs: 10, // Omni: image_list (referens + element jami ≤10)
+    inputs: ["image-ref"],
+    aspects: SEEDREAM_ASPECTS,
+    resolutions: ["1K", "2K", "4K"],
+    count: [1, 2, 3, 4],
+    imgSettings: {
+      aspect: { param: "aspect_ratio", options: SEEDREAM_ASPECTS, def: "1:1" },
+      quality: { label: "Quality", param: "quality", options: ["1K", "2K", "4K"], def: "1K", cost: { "1K": 3, "2K": 3, "4K": 6 } },
       num: [1, 2, 3, 4],
     },
     imgModalities: ["image"],
@@ -1027,37 +1088,128 @@ export const GEN_MODELS: GenModel[] = [
       audioDefault: true,
     },
   },
+  // ── KLING 3.0 oilasi (R4_02) — DIRECT API (fal EMAS; adapter apps/api/src/lib/ai/kling.ts).
+  // Eski disabled fal placeholder'lar (3004/3005 "kwaivgi/...") REAL direct-Kling entrylar bilan
+  // almashtirildi. Aktivatsiya jonli tekshirildi 2026-07-20 (scripts/probe-kling.mjs): 5/5 model
+  // code=0 SUCCEED → ENABLED. NARX konservativ: har tier uchun WORST-CASE provider USD (audio/
+  // video-input bilan) 2× marja bilan olindi → audio/video yoqilsa ham HECH QACHON xarajatdan past
+  // emas (never-below-cost). Provider USD → provider-cost.ts VIDEO_USD_PER_SEC[id].
   {
     id: 3004,
     mode: "video",
-    key: "kwaivgi/kling-v3.0-std",
-    label: "Kling v3.0",
-    enabled: false, // B6: fal'ga ulanmagan
-    feature: "image-to-video",
-    cost: 12,
+    key: "kling/kling-3.0", // Kling 3.0 — t2v + i2v (first/last frame), native audio
+    label: "Kling 3.0",
+    brand: "kling",
+    provider: "kling",
+    klingKind: "video30",
+    enabled: true,
+    feature: "image-to-video", // t2v (referenssiz) + i2v (start/end frame) — refMode optional
+    cost: 14, // fallback 720p; videoSettings.perSec ustun
     referenceMode: "video-ref",
+    refMode: "optional",
+    // Kling 3.0 t2v QO'LLAYDI → boshlang'ich kadr MAJBUR EMAS (Seedance frames-default imageRequired:true'ni
+    // bekor qiladi). Bu yagona o'qiladigan kalit — Kling body'ni buildKlingVideoRequest quradi (fal EMAS).
+    videoInput: { imageRequired: false },
+    refKind: "frames", // Boshlang'ich/Yakuniy IMAGE kadr (i2v)
     endFrame: true,
-    aspects: ["16:9", "9:16", "1:1"],
-    resolutions: ["720p"],
+    inputs: ["start-end-frame"],
+    aspects: ["auto", "16:9", "9:16", "1:1"], // Kling faqat 16:9/9:16/1:1 (auto→16:9); i2v'да kadrdan
+    resolutions: ["720p", "1080p", "4k"],
     durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     audio: true,
-    inputs: ["start-end-frame"],
+    videoSettings: {
+      aspect: { options: ["Auto", "16:9", "9:16", "1:1"], def: "Auto" },
+      resolution: {
+        options: ["720p", "1080p", "4k"],
+        def: "720p",
+        perSec: { "720p": 14, "1080p": 18, "4k": 45 }, // ≥2× worst-case (audio) USD
+      },
+      duration: {
+        options: ["Auto", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
+        def: "Auto",
+        autoSec: 5,
+      },
+      audio: true,
+      audioDefault: false,
+    },
   },
   {
     id: 3005,
     mode: "video",
-    key: "kwaivgi/kling-v3.0-pro",
-    label: "Kling v3.0 Pro",
-    enabled: false, // B6: fal'ga ulanmagan
+    key: "kling/kling-3.0-turbo", // Kling 3.0 Turbo — i2v, native audio (first_frame SHART)
+    label: "Kling 3.0 Turbo",
+    brand: "kling",
+    provider: "kling",
+    klingKind: "turbo",
+    enabled: true,
     feature: "image-to-video",
-    cost: 18,
+    cost: 12, // fallback 720p
     referenceMode: "video-ref",
-    endFrame: true,
-    aspects: ["16:9", "9:16", "1:1"],
-    resolutions: ["720p"],
+    refMode: "required", // Turbo faqat image-to-video (boshlang'ich kadr SHART)
+    refKind: "frames",
+    endFrame: false, // Turbo: faqat first_frame (last_frame yo'q, docs)
+    maxRefs: 1,
+    inputs: ["start-end-frame"],
+    aspects: ["auto"], // i2v — nisbat kadrdan
+    resolutions: ["720p", "1080p"], // Turbo: 4k yo'q
     durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     audio: true,
-    inputs: ["start-end-frame"],
+    videoSettings: {
+      aspect: { options: ["Auto"], def: "Auto" },
+      resolution: {
+        options: ["720p", "1080p"],
+        def: "720p",
+        perSec: { "720p": 12, "1080p": 15 }, // ≥2× native-audio USD
+      },
+      duration: {
+        options: ["Auto", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
+        def: "Auto",
+        autoSec: 5,
+      },
+      audio: true,
+      audioDefault: true,
+      audioLocked: true, // Turbo native audio (o'chirib bo'lmaydi)
+    },
+  },
+  {
+    id: 3008,
+    mode: "video",
+    key: "kling/kling-3.0-omni", // Kling 3.0 Omni — multimodal (image + video refs) + frames
+    label: "Kling 3.0 Omni",
+    brand: "kling",
+    provider: "kling",
+    klingKind: "omni-video",
+    enabled: true,
+    feature: "reference-to-video", // ko'p-modal referens (refer_image + feature_video)
+    cost: 14,
+    referenceMode: "video-ref",
+    refMode: "optional",
+    endFrame: true,
+    refKind: "media-refs",
+    mediaRefs: { image: 4, video: 1, audio: 0, total: 4 }, // docs: video bilan refer_image jami ≤4, maks 1 video
+    mediaRefMaxBytes: { image: 50 * 1024 * 1024 },
+    mediaRefMaxTotalBytes: { video: 200 * 1024 * 1024 },
+    mediaRefFormats: { image: ["jpg", "jpeg", "png"], video: ["mp4", "mov"] },
+    inputs: ["start-end-frame", "image-ref", "video-ref"],
+    aspects: ["auto", "16:9", "9:16", "1:1"],
+    resolutions: ["720p", "1080p", "4k"],
+    durations: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    audio: true,
+    videoSettings: {
+      aspect: { options: ["Auto", "16:9", "9:16", "1:1"], def: "Auto" },
+      resolution: {
+        options: ["720p", "1080p", "4k"],
+        def: "720p",
+        perSec: { "720p": 14, "1080p": 18, "4k": 45 }, // ≥2× worst-case (video-input) USD
+      },
+      duration: {
+        options: ["Auto", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"],
+        def: "Auto",
+        autoSec: 5,
+      },
+      audio: true,
+      audioDefault: false,
+    },
   },
   {
     id: 3006,

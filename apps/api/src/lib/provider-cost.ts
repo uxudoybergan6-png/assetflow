@@ -40,6 +40,9 @@ export const IMAGE_USD_PER_UNIT: Record<number, Record<string, number>> = {
   // kirmaydi (kichik; kredit narxi konservativ qoplaydi). 1020 Lite ATAYIN YO'Q — rasmiy narxi
   // tasdiqlanmagan → DEFAULT_PROVIDER_USD (overestimate fail-safe); taxminiy PAST raqam yozilmaydi.
   1021: { "1K": 0.045, "2K": 0.09 }, // Seedream 5.0 Pro ✅
+  // R4_02 — Kling Image 3.0 (direct API) RASMIY narx (docs Pricing Image): 1K/2K $0.028; Omni +4K $0.056.
+  1030: { "1K": 0.028, "2K": 0.028 }, // Kling Image 3.0
+  1031: { "1K": 0.028, "2K": 0.028, "4K": 0.056 }, // Kling Image 3.0 Omni
 };
 
 /** Video (per-second): model id → resolution bo'yicha soniya USD.
@@ -61,6 +64,12 @@ export const VIDEO_USD_PER_SEC: Record<number, Record<string, number>> = {
   // Topaz video upscale (fal, RASMIY tarif ✅): $/s CHIQISH bo'yicha; 60fps ×2 billing
   // duration'ga kiritilgan (derive), shu sabab bu jadval sof tier stavkasi.
   3201: { "720p": 0.01, "1080p": 0.02, "4k": 0.08 },
+  // R4_02 — Kling 3.0 (direct API) RASMIY narx (docs Pricing Video). Har tier uchun WORST-CASE
+  // (audio/video-input yoqilgan) stavkasi → catalog kredit ≥2× marja bilan buni qoplaydi (audio
+  // yoqilsa ham never-below-cost). Kling 3.0 / Omni: 720p $0.126 · 1080p $0.168 · 4k $0.42 (video-in).
+  3004: { "720p": 0.126, "1080p": 0.168, "4k": 0.42 }, // Kling 3.0 (worst-case: with native audio)
+  3008: { "720p": 0.126, "1080p": 0.168, "4k": 0.42 }, // Kling 3.0 Omni (worst-case: with video input)
+  3005: { "720p": 0.112, "1080p": 0.14 }, // Kling 3.0 Turbo (native audio — sole tier)
 };
 
 /** Video (per-generation): model id → sobit USD. */

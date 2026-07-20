@@ -51,6 +51,14 @@ import {
   BYTEPLUS_TIMEOUT_ERROR,
 } from "./ai/byteplus.js";
 import {
+  buildKlingVideoRequest,
+  klingImage,
+  klingPollVideoStep,
+  klingSubmitVideo,
+  klingVideoUrlToBuffer,
+  KLING_TIMEOUT_ERROR,
+} from "./ai/kling.js";
+import {
   getModelById,
   resolveVideoParams,
   resolveImageCount,
@@ -217,6 +225,7 @@ type StoredProviderJob =
   // biz saqlay olmagan bo'lsak, responseUrl'dan qayta olib saqlaymiz (qayta to'lov YO'Q).
   | ({ provider: "fal-image"; submittedAt: string } & FalQueueJob)
   | { provider: "byteplus-video"; taskId: string; submittedAt: string }
+  | { provider: "kling-video"; taskId: string; submittedAt: string }
   | { provider: "vertex-video"; operationName: string; submittedAt: string };
 type StoredProviderWebhook = {
   provider: "fal";
@@ -255,6 +264,13 @@ function readProviderJob(params: Record<string, unknown>): StoredProviderJob | n
     };
   }
   if (provider === "byteplus-video" && typeof job.taskId === "string" && job.taskId) {
+    return {
+      provider,
+      taskId: job.taskId,
+      submittedAt: typeof job.submittedAt === "string" ? job.submittedAt : new Date().toISOString(),
+    };
+  }
+  if (provider === "kling-video" && typeof job.taskId === "string" && job.taskId) {
     return {
       provider,
       taskId: job.taskId,
@@ -860,6 +876,100 @@ async function runByteplusVideo(
   });
 }
 
+// ── KLING (R4_02) — DIRECT API video runner. byteplus runner naqshi: submit → persist (taskId) →
+//    poll → download. Webhook YO'Q (polling-only); server restart poll'ni davom ettiradi (resume).
+//    In-process semafor (Kling concurrency 1303 sentinel bilan birga) — hammasini bitta slotда emas.
+const KLING_VIDEO_CONCURRENCY = (() => {
+  const v = Number(process.env.KLING_VIDEO_CONCURRENCY);
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 3;
+})();
+let klActive = 0;
+const klWaiters: Array<() => void> = [];
+async function withKlingVideoSlot<T>(fn: () => Promise<T>): Promise<T> {
+  while (klActive >= KLING_VIDEO_CONCURRENCY) await new Promise<void>((r) => klWaiters.push(r));
+  klActive++;
+  try {
+    return await fn();
+  } finally {
+    klActive--;
+    const w = klWaiters.splice(0, klWaiters.length);
+    for (const r of w) r();
+  }
+}
+function klingWaitMs(i: number): number {
+  return i < 3 ? 3000 : i < 15 ? 6000 : 10000; // video ~5-10 daqiqagacha (120 iteratsiya)
+}
+
+/**
+ * Kling video (t2v/i2v/turbo/omni) — provider === "kling". Kadr referens (referenceUrl/End) HAM
+ * ko'p-modal referens (imageUrls/videoUrls) buildKlingVideoRequest orqali to'g'ri endpoint+body'ga
+ * tushadi. Referens URL'lar materializeRefUrl bilan provider-fetchable public/signed URL'ga aylanadi
+ * (byteplus naqshi). refund faqat HAQIQIY fail'da (timeout/rate-limit sentinel refund QILMAYDI).
+ */
+async function runKlingVideo(
+  model: GenModel,
+  prompt: string,
+  params: Record<string, unknown>,
+  userId: string,
+  genId: string
+): Promise<{ ok: true; buf: Buffer } | { ok: false; error: string }> {
+  const refUrl = typeof params.referenceUrl === "string" ? params.referenceUrl : null;
+  const refEndUrl = typeof params.referenceEndUrl === "string" ? params.referenceEndUrl : null;
+  if (!refUrl && videoRequiresStartFrame(model)) {
+    return { ok: false, error: "A start frame (referenceUrl) is required for video" };
+  }
+  const matAll = async (val: unknown): Promise<string[]> => {
+    const list = Array.isArray(val)
+      ? (val as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
+      : [];
+    return Promise.all(list.map((u) => materializeRefUrl(userId, genId, u)));
+  };
+  const lim = model.mediaRefs ?? { image: 0, video: 0, audio: 0, total: 0 };
+  const [startUrl, endUrl, imageUrlsRaw, videoUrlsRaw] = await Promise.all([
+    refUrl ? materializeRefUrl(userId, genId, refUrl) : Promise.resolve(undefined),
+    refEndUrl && model.endFrame ? materializeRefUrl(userId, genId, refEndUrl) : Promise.resolve(undefined),
+    matAll(params.imageUrls),
+    matAll(params.videoUrls),
+  ]);
+  const imageUrls = imageUrlsRaw.slice(0, lim.image);
+  const videoUrls = videoUrlsRaw.slice(0, lim.video);
+  const v = resolveVideoParams(model, params);
+  const { path, body } = buildKlingVideoRequest(model, prompt, v, {
+    startUrl,
+    endUrl,
+    imageUrls,
+    videoUrls,
+  });
+  return withKlingVideoSlot(async () => {
+    const saved = readProviderJob(params);
+    let taskId: string;
+    if (saved?.provider === "kling-video") {
+      taskId = saved.taskId; // restart'dan keyin resume — qayta submit YO'Q
+    } else {
+      const sub = await klingSubmitVideo(path, body);
+      if (!sub.ok) return { ok: false, error: sub.error };
+      taskId = sub.data.taskId;
+      console.log(`[kling] task yaratildi — model=${model.id} ${v.resolution}/${v.duration}s task=${taskId}`);
+      await persistProviderJob(genId, params, {
+        provider: "kling-video",
+        taskId,
+        submittedAt: new Date().toISOString(),
+      });
+    }
+    for (let i = 0; i < 120; i++) {
+      await sleep(klingWaitMs(i));
+      const step = await klingPollVideoStep(taskId);
+      if (!step.ok) return { ok: false, error: step.error };
+      if (step.data.state === "completed") {
+        const dl = await klingVideoUrlToBuffer(step.data.data.videoUrl);
+        if (!dl.ok) return { ok: false, error: dl.error };
+        return { ok: true, buf: dl.data };
+      }
+    }
+    return { ok: false, error: KLING_TIMEOUT_ERROR };
+  });
+}
+
 /** data:URI yoki http(s) URL'ni Vertex kutgan inline base64 rasmga aylantiradi. */
 async function refUrlToInlineImage(
   refUrl: string
@@ -1211,6 +1321,7 @@ export async function processGeneration(genId: string): Promise<void> {
       const useFal = model.provider === "fal"; // openai/gpt-image-2/edit (image-edit)
       const useVertexImg = model.provider === "vertex-image"; // Imagen/Nano Banana — Google to'g'ridan-to'g'ri
       const useByteplusImg = model.provider === "byteplus"; // Seedream (ModelArk, sinxron /images/generations)
+      const useKlingImg = model.provider === "kling"; // R4_02 — Kling Image 3.0 (direct API, async task)
       const mModel = model.magnificModel ?? "realism";
       // Dedicated Magnific tool (upscale/relight/camera/skin/extend/removebg) — manba rasm yeydi.
       // Faqat provider=magnific; openrouter'да ekvivalent yo'q → aniq xato (UI "Tez orada" qoladi).
@@ -1244,7 +1355,7 @@ export async function processGeneration(genId: string): Promise<void> {
       let falImageUrls: string[] = [];
       // byteplus (Seedream) ham referensni PUBLIC URL sifatida oladi — fal bilan bir xil yo'l;
       // farqi: Seedream'da referens IXTIYORIY (refMode 'optional') — bo'sh bo'lsa sof t2i.
-      const falNeedsRef = (useFal || useByteplusImg) && refMode !== "none"; // edit modeli referens talab qiladi; t2i — yo'q
+      const falNeedsRef = (useFal || useByteplusImg || useKlingImg) && refMode !== "none"; // edit modeli referens talab qiladi; t2i — yo'q
       if (falNeedsRef) {
         // P8 C3: fal yo'lida ham maxRefs server-side kesiladi.
         const falRefCap = typeof model.maxRefs === "number" && model.maxRefs > 0 ? model.maxRefs : undefined;
@@ -1255,7 +1366,7 @@ export async function processGeneration(genId: string): Promise<void> {
               ? [refUrl]
               : []
         ).slice(0, falRefCap);
-        if (!rawRefs.length && !(useByteplusImg && model.refMode !== "required"))
+        if (!rawRefs.length && !((useByteplusImg || useKlingImg) && model.refMode !== "required"))
           return void (await fail("An image is required for editing — upload one via ＋"));
         // PARALLEL — referenslar bir vaqtда R2'ga (odatda plagin allaqachon public R2 URL yuboradi → no-op).
         // Promise.all TARTIBNI saqlaydi → @imgN→image_urls[N-1] mapping buzilmaydi.
@@ -1292,7 +1403,22 @@ export async function processGeneration(genId: string): Promise<void> {
         return void (await fail("A source image is required for upscaling"));
       const upFactor: "x2" | "x4" = params.quality === "x4" ? "x4" : "x2"; // imageUnitCost def bilan mos (x2)
       const genOne = (): Promise<OrResult<Buffer>> =>
-        useByteplusImg
+        useKlingImg
+          ? // R4_02 — Kling Image (async task; bitta rasm/chaqiruv, count>1 = mapLimit N ta alohida).
+            klingImage(model, {
+              prompt: gen.prompt,
+              imageUrls: falImageUrls,
+              resolution: imageConfig.image_size,
+              aspect: imageConfig.aspect_ratio,
+            }).then(
+              (r): OrResult<Buffer> =>
+                r.ok
+                  ? r.data[0]
+                    ? { ok: true, data: r.data[0] }
+                    : { ok: false, error: "kling: empty result" }
+                  : r
+            )
+          : useByteplusImg
           ? // Seedream — sinxron, bitta rasm/chaqiruv (count>1 = mapLimit N ta alohida chaqiruv).
             // size: tier + nisbat → adapter §8 jadvaldan aniq piksel tanlaydi (nisbat narxga ta'sir qilmaydi).
             byteplusImage(model.byteplusModel ?? model.key, {
@@ -1412,7 +1538,9 @@ export async function processGeneration(genId: string): Promise<void> {
       model.feature === "video-upscale"
     ) {
       const out =
-        model.provider === "byteplus"
+        model.provider === "kling"
+          ? await runKlingVideo(model, gen.prompt, params, gen.userId, genId) // R4_02 — Kling 3.0 (direct)
+          : model.provider === "byteplus"
           ? await runByteplusVideo(model, gen.prompt, params, gen.userId, genId) // BATCH5 — Seedance (i2v + r2v)
           : model.feature === "video-upscale"
           ? await runFalVideoUpscale(model, params, genId) // BATCH4 #2 — Topaz (manba sourceKey)
@@ -1427,7 +1555,7 @@ export async function processGeneration(genId: string): Promise<void> {
                 : await runVideo(model, gen.prompt, params, gen.userId, genId);
       // BytePlus rate-limit (backoff ham yetmadi): FAILURE EMAS — refund yo'q, job queued'ga qaytadi;
       // resume jadvali (30s) qayta uradi, 20-daq reconcile cutoff'i baribir chegaralaydi.
-      if (!out.ok && out.error.startsWith("BYTEPLUS_RATE_LIMITED")) {
+      if (!out.ok && (out.error.startsWith("BYTEPLUS_RATE_LIMITED") || out.error.startsWith("KLING_RATE_LIMITED"))) {
         await prisma.generation.updateMany({
           where: { id: genId, status: "running" },
           data: { status: "queued" },
@@ -1438,6 +1566,7 @@ export async function processGeneration(genId: string): Promise<void> {
         !out.ok &&
         (out.error.startsWith("FAL_TIMEOUT") ||
           out.error.startsWith("BYTEPLUS_TIMEOUT") ||
+          out.error.startsWith("KLING_TIMEOUT") ||
           out.error.startsWith("OPENROUTER_TIMEOUT") ||
           out.error.startsWith("VERTEX_TIMEOUT"))
       ) {

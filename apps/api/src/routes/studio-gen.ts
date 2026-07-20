@@ -20,6 +20,7 @@ import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { isFalConfigured } from "../lib/ai/fal.js";
 import { isByteplusConfigured } from "../lib/ai/byteplus.js";
+import { isKlingConfigured } from "../lib/ai/kling.js";
 import {
   isVertexEnhanceConfigured,
   vertexEnhancePrompt,
@@ -568,6 +569,7 @@ studioGenRouter.get("/gen/health", (_req: Request, res: Response) => {
     elevenlabs: isElevenLabsConfigured(),
     fal: isFalConfigured(),
     byteplus: isByteplusConfigured(), // BATCH5 — ModelArk (Seedance)
+    kling: isKlingConfigured(), // R4_02 — Kling 3.0 (direct API)
   });
 });
 
@@ -1277,6 +1279,8 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
         ? isFalConfigured()
         : model.provider === "byteplus"
           ? isByteplusConfigured()
+          : model.provider === "kling"
+          ? isKlingConfigured()
           : model.provider === "vertex"
           ? isVertexConfigured()
           : model.provider === "vertex-omni"
