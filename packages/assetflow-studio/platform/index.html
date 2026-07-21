@@ -17104,8 +17104,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
                         <div class="va-axcell" data-pop-root="use">
                           <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
-                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}" onload="{{ axMediaLoaded }}" onerror="{{ axMediaError }}"></sc-if>
-                            <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" onloadedmetadata="{{ axMediaLoaded }}" onerror="{{ axMediaError }}"></video></sc-if>
+                            <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}"></sc-if>
+                            <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                             <span class="va-typeicon"><i class="ph-fill ph-{{ g.tIcon }}"></i></span>
                             <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
                             <sc-if value="{{ g.showBar }}" hint-placeholder-val="{{ false }}">
@@ -18880,28 +18880,54 @@ class Component extends DCLogic {
         if (ev.target && ev.target.closest && ev.target.closest('[data-pop-root]')) return;
         this._closePops();
       }, true);
-      // Launch Task B — ochiq (public) sahifalardagi .va-media rasm/video xatolari uchun umumiy
-      // fallback: bir marta cache-bust bilan qayta urinadi, keyin "Media unavailable" overlay
-      // ko'rsatadi. onerror="" bilan alohida ulangan elementlar (masalan, workspace galereyasidagi
-      // axMediaError) tegilmaydi — ular o'z handler'ini saqlaydi.
-      window.addEventListener('error', this._onMediaError = (ev) => {
+      // Launch Task B (tuzatish, 2026-07-21) — BARCHA `.va-media` rasm/video yuklanish/xatolik
+      // ishlovi FAQAT shu capture-fazadagi delegatsiya orqali bo'ladi.
+      // Ildiz-sabab: workspace galereyasida inline `onload="{{ axMediaLoaded }}"` /
+      // `onerror="{{ axMediaError }}"` atributlari bor edi. dc-runtime shablonni kompilyatsiya
+      // qilishdan OLDIN brauzer <x-dc> ichidagi xom DOM'ni parse qiladi, `src="{{ g.imgSrc }}"`
+      // yuklanishi 404 beradi va NATIVE inline handler ishga tushadi — atribut qiymati JS sifatida
+      // bajariladi → "ReferenceError: axMediaError is not defined". (Bundan tashqari
+      // `onloadedmetadata` React'da hech qachon bog'lanmagan: `onLoadedmetadata` ≠
+      // `onLoadedMetadata` — video skeletoni olinmasdi.) Endi hech qanday native inline media
+      // handler yo'q. Xatti-harakat o'zgarmadi: yuklanganda skeleton olinadi, xatoda BIR marta
+      // cache-bust bilan qayta urinadi, keyin "Media unavailable" qoplama + element yashiriladi.
+      /* FF-MEDIA-DELEGATION:START */
+      const ffIsMedia = (el) => !!(el && el.classList && el.classList.contains('va-media'));
+      // workspace kartasi (.va-axres) bo'lsa — qoplama shu kartaga; ochiq sahifalarda ota element.
+      const ffMediaHost = (el) => (el.closest ? (el.closest('.va-axres') || el.parentElement) : el.parentElement);
+      window.addEventListener('load', this._onMediaLoad = (ev) => { try {
         const el = ev.target;
-        if (!el || !el.classList || !el.classList.contains('va-media')) return;
-        if (el.getAttribute && el.getAttribute('onerror')) return;
+        if (!ffIsMedia(el)) return;
+        const host = el.closest ? el.closest('.va-axres') : null;
+        if (!host) return;
+        // P10#5 — skeletonni darhol olib tashla + _mediaLoaded'ga belgila (setState YO'Q).
+        host.classList.remove('va-skel');
+        const id = host.getAttribute('data-id');
+        if (id) (this._mediaLoaded || (this._mediaLoaded = new Set())).add(id);
+      } catch (er) {} }, true);
+      // <video> `load` bermaydi — metadata kelganda skeleton olinadi (ayni handler).
+      window.addEventListener('loadedmetadata', this._onMediaLoad, true);
+      window.addEventListener('error', this._onMediaError = (ev) => { try {
+        const el = ev.target;
+        if (!ffIsMedia(el)) return;
         if (!el.__ffRetried) {
           el.__ffRetried = 1;
           const src = el.getAttribute('src') || '';
           if (src && src.indexOf('data:') !== 0) { el.src = src + (src.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now(); return; }
         }
-        const host = el.parentElement;
-        if (host && !host.querySelector('.va-mediaerr')) {
-          const ov = document.createElement('div');
-          ov.className = 'va-mediaerr';
-          ov.textContent = 'Media unavailable';
-          host.appendChild(ov);
+        const host = ffMediaHost(el);
+        if (host) {
+          host.classList.remove('va-skel');
+          if (!host.querySelector('.va-mediaerr')) {
+            const ov = document.createElement('div');
+            ov.className = 'va-mediaerr';
+            ov.textContent = 'Media unavailable';
+            host.appendChild(ov);
+          }
         }
         el.style.display = 'none';
-      }, true);
+      } catch (er) {} }, true);
+      /* FF-MEDIA-DELEGATION:END */
       // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y); P11 — lightbox ochiq bo'lsa ←/→ nav
       window.addEventListener('keydown', this._onEsc = (ev) => {
         // SC_37 — ⌘K / Ctrl+K: Stock Catalog qidiruviga fokus (login bo'lgandagina).
@@ -19033,7 +19059,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._onMediaError) window.removeEventListener('error', this._onMediaError, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._onMediaError) window.removeEventListener('error', this._onMediaError, true); if (this._onMediaLoad) { window.removeEventListener('load', this._onMediaLoad, true); window.removeEventListener('loadedmetadata', this._onMediaLoad, true); } if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); this._syncModalFx(); }
@@ -22677,24 +22703,8 @@ class Component extends DCLogic {
       useMenuOpen: this.state.useMenuOpen,
       onMediaView: (e) => this.setState({ aiMediaView: e.currentTarget.dataset.v, useMenuOpen: false }),
       onGridTile: (e) => { const id = e.currentTarget.dataset.id; if (this.state.activeGenId === id) { const g = wsGens.find(x => x.id === id); if (g) { this.setState({ lightbox: g, useMenuOpen: false }); this.refreshLightboxUrl(id); } } else this.setState({ activeGenId: id, useMenuOpen: false }); },
-      // P10#5 — media yuklandi: skeletonni darhol olib tashla + _mediaLoaded'ga belgila (setState YO'Q).
-      axMediaLoaded: (e) => { try { const el = e.currentTarget; const host = el && el.closest ? el.closest('.va-axres') : null; if (host) { host.classList.remove('va-skel'); const id = host.getAttribute('data-id'); if (id) (this._mediaLoaded || (this._mediaLoaded = new Set())).add(id); } } catch (er) {} },
-      // P9 — media xatosi: BIR marta cache-bust bilan qayta urin; keyin "Media unavailable" qoplama
-      // (gradient jimgina qolib ketmasin). Barqaror CDN URL'da bu deyarli hech chiqmaydi (B).
-      axMediaError: (e) => { try {
-        const el = e.currentTarget; if (!el) return;
-        if (!el.__ffRetried) {
-          el.__ffRetried = 1;
-          const src = el.getAttribute('src') || el.src || '';
-          if (src && src.indexOf('data:') !== 0) { el.src = src + (src.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now(); return; }
-        }
-        const host = (el.closest ? (el.closest('.va-axres') || el.parentElement) : el.parentElement);
-        if (host) {
-          host.classList.remove('va-skel');
-          if (!host.querySelector('.va-mediaerr')) { const ov = document.createElement('div'); ov.className = 'va-mediaerr'; ov.textContent = 'Media unavailable'; host.appendChild(ov); }
-        }
-        el.style.display = 'none';
-      } catch (er) {} },
+      // P10#5 / P9 — workspace media yuklandi/xato: endi render prop EMAS, componentDidMount'dagi
+      // `FF-MEDIA-DELEGATION` capture-listener'lari bajaradi (native inline handler qolmadi).
       // P17 — toast'dagi "Retry" bosildi: AYNI operatsiyani (saqlangan idempotency kaliti bilan) qayta chaqir.
       toastRetryClick: () => { const fn = this._toastRetryFn; this._toastRetryFn = null; clearTimeout(this._t); this.setState({ toast: null, toastRetry: false }); if (typeof fn === 'function') { try { fn(); } catch (er) {} } },
       // P19 — .va-axgrid (CSS columns) ichida position:absolute menyu Chrome multicol

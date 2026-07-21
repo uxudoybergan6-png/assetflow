@@ -179,6 +179,35 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 >    script tegi = 4 inline + 6 tashqi (`src=`)**. Yozuv tuzatildi (yuqorida); `verify-public-copy.mjs`
 >    endi bu sonlarni va har bir inline skript tanasining `new Function()` sintaksisini avtomatik
 >    tekshiradi.
+> ✅ **TUZATISH AUDITI #2 — BRAUZER RUNTIME XATOSI (2026-07-21, push YO'Q):** Codex `dist/`ni
+> `prepare-cf-pages.mjs` bilan qurib, `http://localhost:4173/`da MUSTAQIL takrorladi: sahifa
+> ko'rinardi, lekin konsolda `ReferenceError: axMediaError is not defined`
+> (`HTMLImageElement.onerror` + `HTMLVideoElement.onerror`). Ildiz-sabab: dc-runtime shablonni
+> kompilyatsiya qilishdan OLDIN brauzer `<x-dc>` ichidagi xom DOM'ni parse qiladi va
+> `onerror="{{ axMediaError }}"` atributi NATIVE JS sifatida bajariladi — `axMediaError` esa
+> render qaytargan lokal funksiya, global identifikator EMAS. (Yon topilma: `onloadedmetadata`
+> React'da hech qachon bog'lanmagan — `onLoadedmetadata` ≠ `onLoadedMetadata`.) Avvalgi tekshiruv
+> "funksiya ta'rifi bormi" deb qarardi — bu FALSE-POSITIVE edi.
+> **Tuzatish:** ikkala workspace media elementidan inline `onload`/`onerror`/`onloadedmetadata`
+> atributlari OLIB TASHLANDI; hammasi `componentDidMount`dagi bitta capture-fazali delegatsiyaga
+> ko'chirildi (`FF-MEDIA-DELEGATION` markerlari: `error` + `load` + `loadedmetadata`),
+> `componentWillUnmount`da uchalasi ham tozalanadi. Global identifikator (window'ga yamoq)
+> QO'ShILMADI. Xatti-harakat AYNI: yuklanganda skeleton olinadi, xatoda 1 marta cache-bust retry,
+> so'ng "Media unavailable" qoplama + element yashiriladi; public-sahifa fallback'i saqlandi.
+> **Regressiya testi kuchaytirildi** (`scripts/verify-public-copy.mjs`): endi (a) manba VA
+> deploy-shaklidagi `dist/index.html`da avtomatik ishga tushadigan inline media atributi
+> (`onload/onerror/onloadedmetadata/…`) BO'LMASLIGINI, (b) hech bir inline handler atributi
+> `axMediaError/axMediaLoaded`ga murojaat qilmasligini va ular global sifatida e'lon
+> qilinmasligini, (c) `FF-MEDIA-DELEGATION` blokini JONLI manbadan ajratib olib soxta DOM ustida
+> HAQIQATAN bajarib (retry-once, qoplama, skeleton, public fallback) tekshiradi.
+> **Tekshiruv:** `verify-public-copy.mjs` → **67/67 o'tdi** (eski, buzuq HEAD manbasida shu tekshiruv
+> 5 ta native atributni topib FAIL beradi) · `prepare-cf-pages.mjs` OK, dist'dagi 4 inline skript
+> ham sintaksis OK · Task A himoyalangan xatti-harakat buzilmadi:
+> `test-plugin-release-contract.mjs` 14/14, `test-plugin-download-state.mjs` 10/10 · DB/API build
+> KERAK EMAS (diff'da `apps/api`/`packages/database` fayli yo'q) · `dist/` commit QILINMADI
+> (gitignore) · `test-downloads/` tegilmadi.
+> 🔴 **Qolgan qadam (Codex bajaradi):** haqiqiy brauzer desktop + mobil vizual/konsol QA — bu
+> tuzatishdan keyin hali BAJARILMAGAN.
 
 > ✅ **Launch Task A TUGADI (2026-07-21, push YO'Q):** AE plagin reliz paketi + ommaviy download oqimi.
 > `build-zxp.sh` staging'ga `css/` (tokens/ff-components/styles + `fonts/*.woff2`) yo'qolgan edi —

@@ -5,13 +5,22 @@
 //      foydalanuvchi", soxta reyting, Premiere/DaVinci qo'llab-quvvatlash, 5-o'rinli jamoa,
 //      brand kit, shaxsiy account manager) qidiradi;
 //   2) fabrikatsiya qilingan mijoz ismlarini (avvalgi testimonial'lar) qidiradi;
-//   3) media-xato fallback handler'lari (axMediaError/axMediaLoaded + umumiy .va-media listener)
-//      manba kodida chinakam FUNKSIYA sifatida aniqlanganini tasdiqlaydi;
+//   3) media yuklanish/xato fallback'i delegatsiya orqali ulanganini tasdiqlaydi (capture-fazadagi
+//      error/load/loadedmetadata listener'lari + unmount tozalash);
 //   4) [Correction audit, 2026-07-21] aniq "14-day money-back guarantee" da'vosi HECH QAYERDA
 //      qaytmasligini tasdiqlaydi (refund.html'da hali lawyer-review ostida — final muddat/shart
 //      tasdiqlanmagan, shuning uchun public marketing bu aniq iborani va'da qilmasligi SHART);
 //   5) platform/index.html'dagi <script> teglari sonini (4 inline + 6 tashqi = 10 jami) va har bir
-//      inline skript tanasining `new Function()` bilan sintaksis jihatdan yaroqli ekanini tekshiradi.
+//      inline skript tanasining `new Function()` bilan sintaksis jihatdan yaroqli ekanini tekshiradi;
+//   6) [Correction audit #2, 2026-07-21] NATIVE INLINE HANDLER KONTRAKTI — manba VA deploy-shaklidagi
+//      dist/index.html'da hech qanday avtomatik ishga tushadigan media atributi
+//      (onload/onerror/onloadedmetadata/...) qolmaganini tasdiqlaydi. Sabab: dc-runtime shablonni
+//      kompilyatsiya qilishdan oldin brauzer <x-dc> ichidagi xom DOM'ni parse qiladi va atribut
+//      qiymatini JS sifatida bajaradi — `onerror="{{ axMediaError }}"` real brauzerda
+//      "ReferenceError: axMediaError is not defined" berardi. Funksiya ta'rifi mavjudligini
+//      tekshirish buni USHLAMAYDI (false-positive), shuning uchun atribut kontrakti tekshiriladi;
+//   7) FF-MEDIA-DELEGATION blokini JONLI manbadan ajratib olib, soxta DOM ustida HAQIQATAN
+//      BAJARADI: skeleton olinishi, 1 martalik cache-bust retry, "Media unavailable" qoplama.
 // Ishlatish: node scripts/verify-public-copy.mjs
 import fs from "node:fs";
 import path from "node:path";
@@ -97,20 +106,33 @@ function hasFunctionDefinition(src, name) {
 }
 
 check(
-  "axMediaError workspace fallback funksiya sifatida aniqlangan",
-  hasFunctionDefinition(htmlSrc, "axMediaError"),
-);
-check(
-  "axMediaLoaded workspace fallback funksiya sifatida aniqlangan",
-  hasFunctionDefinition(htmlSrc, "axMediaLoaded"),
-);
-check(
-  "_onMediaError global public-media fallback listener funksiya sifatida aniqlangan",
+  "_onMediaError delegatsiya listener'i funksiya sifatida aniqlangan",
   hasFunctionDefinition(htmlSrc, "this\\._onMediaError"),
+);
+check(
+  "_onMediaLoad delegatsiya listener'i funksiya sifatida aniqlangan",
+  hasFunctionDefinition(htmlSrc, "this\\._onMediaLoad"),
+);
+check(
+  "'error' listener capture fazasida ro'yxatdan o'tgan",
+  /addEventListener\('error', this\._onMediaError = [\s\S]{0,2000}?\}, true\)/.test(htmlSrc),
+);
+check(
+  "'load' listener capture fazasida ro'yxatdan o'tgan",
+  /addEventListener\('load', this\._onMediaLoad = [\s\S]{0,2000}?\}, true\)/.test(htmlSrc),
+);
+check(
+  "'loadedmetadata' listener capture fazasida ro'yxatdan o'tgan (video skeleton)",
+  /addEventListener\('loadedmetadata', this\._onMediaLoad, true\)/.test(htmlSrc),
 );
 check(
   "_onMediaError componentWillUnmount'da tozalanadi (removeEventListener)",
   /removeEventListener\('error', this\._onMediaError, true\)/.test(htmlSrc),
+);
+check(
+  "_onMediaLoad componentWillUnmount'da tozalanadi (load + loadedmetadata)",
+  /removeEventListener\('load', this\._onMediaLoad, true\)/.test(htmlSrc) &&
+    /removeEventListener\('loadedmetadata', this\._onMediaLoad, true\)/.test(htmlSrc),
 );
 check(
   "'.va-mediaerr' CSS qoidasi mavjud (fallback overlay uslubi)",
@@ -162,6 +184,199 @@ inlineScripts.forEach((body, i) => {
   }
   check(`platform/index.html: inline <script> #${i + 1} sintaksis OK (new Function)`, ok, errMsg);
 });
+
+// ── 6) NATIVE INLINE HANDLER KONTRAKTI (manba + deploy-shaklidagi dist) ──
+// Brauzer <x-dc> shablonini dc-runtime kompilyatsiyasidan OLDIN xom HTML sifatida parse qiladi.
+// Shu sababli `<img src="{{ g.imgSrc }}" onerror="{{ axMediaError }}">` real 404 beradi va
+// atribut qiymati NATIVE JS sifatida bajariladi → ReferenceError. Quyidagi tekshiruv aynan shu
+// muvaffaqiyatsizlik rejimini ushlaydi: avtomatik ishga tushadigan media atributlari mutlaqo
+// bo'lmasligi va HECH BIR inline `on...=` atributi ichida axMediaError/axMediaLoaded
+// identifikatori uchramasligi SHART.
+console.log("\n── Native inline media handler kontrakti ──");
+
+// Brauzer element yuklanishida FOYDALANUVCHI ARALASHUVISIZ ishga tushiradigan atributlar.
+const AUTO_FIRING_MEDIA_ATTRS = /\son(load|error|loadedmetadata|loadstart|loadeddata|abort|stalled|suspend|canplay|canplaythrough|emptied)\s*=\s*(["'])([\s\S]*?)\2/gi;
+// Har qanday inline `on...="..."` atributi (dc-runtime ularni React prop'ga aylantiradi; lekin
+// shablon DOM'i brauzerda xom holda ham mavjud bo'ladi).
+const ANY_INLINE_HANDLER_ATTR = /\son([a-z]+)\s*=\s*(["'])([\s\S]*?)\2/gi;
+
+function auditInlineHandlers(label, src) {
+  const autoFiring = [];
+  let m;
+  AUTO_FIRING_MEDIA_ATTRS.lastIndex = 0;
+  while ((m = AUTO_FIRING_MEDIA_ATTRS.exec(src))) autoFiring.push(`on${m[1]}="${m[3]}"`);
+  check(
+    `${label}: avtomatik ishga tushadigan inline media atributi yo'q (on load/error/loadedmetadata/…)`,
+    autoFiring.length === 0,
+    autoFiring.length ? `topildi: ${autoFiring.slice(0, 3).join(" | ")}` : undefined,
+  );
+
+  const leaked = [];
+  ANY_INLINE_HANDLER_ATTR.lastIndex = 0;
+  while ((m = ANY_INLINE_HANDLER_ATTR.exec(src))) {
+    if (/\bax(MediaError|MediaLoaded)\b/.test(m[3])) leaked.push(`on${m[1]}="${m[3]}"`);
+  }
+  check(
+    `${label}: hech bir inline handler atributi axMediaError/axMediaLoaded'ga murojaat qilmaydi`,
+    leaked.length === 0,
+    leaked.length ? `topildi: ${leaked.slice(0, 3).join(" | ")}` : undefined,
+  );
+
+  // Global identifikator sifatida ham sizib chiqmasin (window.axMediaError = … kabi "yamoq").
+  check(
+    `${label}: axMediaError/axMediaLoaded global identifikator sifatida e'lon qilinmagan`,
+    !/\b(window|globalThis|self)\s*(\.\s*ax(MediaError|MediaLoaded)\b|\[\s*['"]ax(MediaError|MediaLoaded)['"]\s*\])/.test(src),
+  );
+}
+
+auditInlineHandlers("platform/index.html (manba)", htmlSrc);
+
+const DIST_HTML = path.join(ROOT, "packages/assetflow-studio/dist/index.html");
+if (fs.existsSync(DIST_HTML)) {
+  const distSrc = readSource(DIST_HTML);
+  auditInlineHandlers("dist/index.html (deploy shakli)", distSrc);
+  // Deploy shaklidagi har bir inline skript tanasi ham sintaksis jihatdan yaroqli bo'lsin.
+  const distScripts = scanScriptTags(distSrc);
+  distScripts.inline.forEach((body, i) => {
+    let ok = true;
+    let errMsg;
+    try { new Function(body); } catch (e) { ok = false; errMsg = e.message; }
+    check(`dist/index.html: inline <script> #${i + 1} sintaksis OK (new Function)`, ok, errMsg);
+  });
+} else {
+  console.log(
+    "NOTE  dist/index.html topilmadi — `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs`" +
+      " ishga tushirilsa deploy-shakli ham tekshiriladi.",
+  );
+}
+
+// ── 7) FF-MEDIA-DELEGATION blokini JONLI manbadan bajarib tekshirish ──
+// Bu tekshiruv nusxa-kodni emas, aynan index.html ichidagi blokni ishga tushiradi.
+console.log("\n── Media delegatsiyasi (jonli manba bajariladi) ──");
+
+const DELEG_RE = /\/\* FF-MEDIA-DELEGATION:START \*\/([\s\S]*?)\/\* FF-MEDIA-DELEGATION:END \*\//;
+const delegMatch = htmlSrc.match(DELEG_RE);
+check("FF-MEDIA-DELEGATION bloki manbada markerlar bilan ajratilgan", !!delegMatch);
+
+if (delegMatch) {
+  class FakeEl {
+    constructor(tag, classes = []) {
+      this.tag = tag;
+      this._cls = new Set(classes);
+      this._attrs = {};
+      this.children = [];
+      this.parentElement = null;
+      this.style = {};
+      this.textContent = "";
+      const self = this;
+      this.classList = {
+        contains: (c) => self._cls.has(c),
+        remove: (c) => self._cls.delete(c),
+        add: (c) => self._cls.add(c),
+      };
+    }
+    get className() { return [...this._cls].join(" "); }
+    set className(v) { this._cls = new Set(String(v).split(/\s+/).filter(Boolean)); }
+    get src() { return this._attrs.src || ""; }
+    set src(v) { this._attrs.src = v; }
+    getAttribute(n) { return n in this._attrs ? this._attrs[n] : null; }
+    setAttribute(n, v) { this._attrs[n] = v; }
+    appendChild(c) { c.parentElement = this; this.children.push(c); return c; }
+    closest(sel) {
+      const cls = sel.replace(/^\./, "");
+      let n = this;
+      while (n) { if (n._cls.has(cls)) return n; n = n.parentElement; }
+      return null;
+    }
+    querySelector(sel) {
+      const cls = sel.replace(/^\./, "");
+      for (const c of this.children) {
+        if (c._cls.has(cls)) return c;
+        const d = c.querySelector(sel);
+        if (d) return d;
+      }
+      return null;
+    }
+  }
+
+  const registered = [];
+  const fakeWindow = {
+    addEventListener: (type, fn, capture) => registered.push({ type, fn, capture }),
+    removeEventListener: () => {},
+  };
+  const fakeDocument = { createElement: (t) => new FakeEl(t) };
+  const component = {};
+  let bootErr = null;
+  try {
+    new Function("window", "document", delegMatch[1]).call(component, fakeWindow, fakeDocument);
+  } catch (e) {
+    bootErr = e.message;
+  }
+  check("delegatsiya bloki xatosiz bajariladi", !bootErr, bootErr || undefined);
+
+  const fire = (type, target) => {
+    for (const r of registered) if (r.type === type) r.fn({ target });
+  };
+  const hasCapture = (type) => registered.some((r) => r.type === type && r.capture === true);
+
+  check("error/load/loadedmetadata — uchalasi ham capture fazasida ulangan",
+    hasCapture("error") && hasCapture("load") && hasCapture("loadedmetadata"));
+
+  // (a) Workspace rasm xatosi: 1-xato = cache-bust retry, qoplama YO'Q.
+  const host = new FakeEl("div", ["va-axres", "va-skel"]);
+  host.setAttribute("data-id", "gen-1");
+  const img = new FakeEl("img", ["va-media"]);
+  img.setAttribute("src", "https://cdn.example/a.jpg");
+  host.appendChild(img);
+  fire("error", img);
+  check("1-xato: src cache-bust bilan bir marta qayta urinildi",
+    /_r=\d+/.test(img.getAttribute("src")), `src="${img.getAttribute("src")}"`);
+  check("1-xato: hali 'Media unavailable' qoplamasi qo'yilmagan", !host.querySelector(".va-mediaerr"));
+  check("1-xato: element hali yashirilmagan", img.style.display !== "none");
+
+  // (b) 2-xato: retry tugadi → halol qoplama + elementni yashirish.
+  fire("error", img);
+  const ov = host.querySelector(".va-mediaerr");
+  check("2-xato: 'Media unavailable' qoplamasi qo'yildi",
+    !!ov && ov.textContent === "Media unavailable", ov ? `matn: "${ov.textContent}"` : "qoplama yo'q");
+  check("2-xato: element yashirildi (display:none)", img.style.display === "none");
+  check("2-xato: skeleton olib tashlandi", !host.classList.contains("va-skel"));
+  check("2-xato: qoplama takrorlanmaydi (ikkinchi marta qo'shilmaydi)", host.children.filter((c) => c.classList.contains("va-mediaerr")).length === 1);
+
+  // (c) Rasm yuklandi → skeleton olinadi + _mediaLoaded belgilanadi.
+  const okHost = new FakeEl("div", ["va-axres", "va-skel"]);
+  okHost.setAttribute("data-id", "gen-2");
+  const okImg = new FakeEl("img", ["va-media"]);
+  okHost.appendChild(okImg);
+  fire("load", okImg);
+  check("load: skeleton olib tashlandi", !okHost.classList.contains("va-skel"));
+  check("load: _mediaLoaded'ga id yozildi", !!component._mediaLoaded && component._mediaLoaded.has("gen-2"));
+
+  // (d) Video: `load` bermaydi — `loadedmetadata` ayni ishni qiladi.
+  const vHost = new FakeEl("div", ["va-axres", "va-skel"]);
+  vHost.setAttribute("data-id", "gen-3");
+  const video = new FakeEl("video", ["va-media", "va-hovplay"]);
+  vHost.appendChild(video);
+  fire("loadedmetadata", video);
+  check("loadedmetadata: video skeletoni olib tashlandi", !vHost.classList.contains("va-skel"));
+  check("loadedmetadata: _mediaLoaded'ga video id yozildi", !!component._mediaLoaded && component._mediaLoaded.has("gen-3"));
+
+  // (e) Ochiq (public) sahifa media'si — .va-axres yo'q, qoplama ota elementga tushadi.
+  const pubHost = new FakeEl("div", ["ffl-shot"]);
+  const pubImg = new FakeEl("img", ["va-media"]);
+  pubImg.setAttribute("src", "https://cdn.example/hero.webp");
+  pubHost.appendChild(pubImg);
+  fire("error", pubImg);
+  fire("error", pubImg);
+  check("public media: fallback qoplamasi ota elementga qo'yildi", !!pubHost.querySelector(".va-mediaerr"));
+
+  // (f) `.va-media` bo'lmagan element umuman tegilmaydi (masalan, tashqi skript xatosi).
+  const otherHost = new FakeEl("div", ["x"]);
+  const other = new FakeEl("img", ["other"]);
+  otherHost.appendChild(other);
+  fire("error", other);
+  check("'.va-media' bo'lmagan element tegilmaydi", !otherHost.querySelector(".va-mediaerr") && other.style.display !== "none");
+}
 
 console.log(`\n${checks - fails}/${checks} tekshiruv o'tdi.`);
 if (fails > 0) {
