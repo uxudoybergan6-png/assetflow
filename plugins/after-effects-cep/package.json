@@ -4,6 +4,9 @@
   "private": true,
   "description": "After Effects CEP extension — asset marketplace panel",
   "scripts": {
-    "build": "echo \"CEP plugin: statik fayllar — scripts/install-cep.sh bilan o'rnatiladi, build kerak emas\""
+    "build": "echo \"CEP plugin: statik fayllar — paket uchun scripts/build-zxp.sh (flavor: customer|admin), lokal o'rnatma uchun scripts/install-cep.sh\"",
+    "package:customer": "bash scripts/build-zxp.sh --customer --unsigned",
+    "package:admin": "bash scripts/build-zxp.sh --admin --unsigned",
+    "test:package": "node scripts/test-package-security.mjs"
   }
 }

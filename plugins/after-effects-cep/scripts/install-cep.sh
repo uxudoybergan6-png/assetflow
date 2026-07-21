@@ -1,8 +1,35 @@
 #!/bin/bash
+# Lokal CEP o'rnatma — FLAVOR'GA BOG'LANGAN (manba: scripts/package-flavors.mjs).
+#
+#   ./install-cep.sh            → MIJOZ paneli (default). Faqat com.frameflow.panel fayllari.
+#   ./install-cep.sh --admin    → ICHKI Admin paneli. ANIQ opt-in shart, ALOHIDA papkaga
+#                                 (com.frameflow.internal.admin) tushadi — mijoz o'rnatmasi
+#                                 ustiga hech qachon tushmaydi va tasodifan o'rnatilmaydi.
 set -euo pipefail
 
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
-DEST="$HOME/Library/Application Support/Adobe/CEP/extensions/com.frameflow"
+FLAVORS="$SRC/scripts/package-flavors.mjs"
+
+FLAVOR="customer"
+for arg in "$@"; do
+  case "$arg" in
+    --admin|--flavor=admin)       FLAVOR="admin" ;;
+    --customer|--flavor=customer) FLAVOR="customer" ;;
+    -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
+    *) echo "✗ Noma'lum argument: $arg (--admin | --customer)"; exit 2 ;;
+  esac
+done
+
+INSTALL_DIR="$(node "$FLAVORS" field "$FLAVOR" installDirName)"
+MAIN_HTML="$(node "$FLAVORS" field "$FLAVOR" mainHtml)"
+MENU_LABEL="$(node "$FLAVORS" field "$FLAVOR" menuLabel)"
+DEBUG_SRC="$(node "$FLAVORS" field "$FLAVOR" debugSource)"
+DEST="$HOME/Library/Application Support/Adobe/CEP/extensions/$INSTALL_DIR"
+
+echo "→ Flavor: $FLAVOR → $DEST"
+if [ "$FLAVOR" = "admin" ]; then
+  echo "  ⚠ ICHKI Admin paneli o'rnatilmoqda (faqat jamoa mashinasi uchun)."
+fi
 
 # AF_SKIP_AE=1 → AE'ni yopmasdan/ochmasdan faqat fayl + kesh yangilanadi
 # (CI yoki "AE'ga tegma, men o'zim qayta ochaman" holati uchun).
@@ -38,7 +65,7 @@ if [ -d "$DEST/assetflow-data" ]; then
   cp -R "$DEST/assetflow-data" "$AF_DATA_BAK" 2>/dev/null || AF_DATA_BAK=""
 fi
 rm -rf "$DEST"
-mkdir -p "$DEST/CSXS" "$DEST/js" "$DEST/jsx" "$DEST/css"
+mkdir -p "$DEST"
 
 # Saqlangan user ma'lumotini tiklaymiz (token → login restart'dan keyin qoladi)
 if [ -n "$AF_DATA_BAK" ] && [ -d "$AF_DATA_BAK" ]; then
@@ -46,17 +73,15 @@ if [ -n "$AF_DATA_BAK" ] && [ -d "$AF_DATA_BAK" ]; then
   rm -rf "$(dirname "$AF_DATA_BAK")" 2>/dev/null || true
 fi
 
-cp "$SRC/CSXS/manifest.xml" "$DEST/CSXS/"
-cp "$SRC/.debug" "$DEST/" 2>/dev/null || true
-cp "$SRC/AssetFlow_Plugin.html" "$DEST/"
-cp "$SRC/AssetFlow_Admin.html" "$DEST/"
-cp "$SRC/assetflow-"*.js "$DEST/" 2>/dev/null || true
-cp "$SRC/js/CSInterface.js" "$DEST/js/"
-cp "$SRC/jsx/host.jsx" "$DEST/jsx/"
-cp "$SRC/css/"*.css "$DEST/css/" 2>/dev/null || true
-# Shriftlar (o'zini-host woff2) — CEP'da tarmoq yo'q, shuning uchun DOIM ko'chirilishi shart
-mkdir -p "$DEST/css/fonts"
-cp "$SRC/css/fonts/"*.woff2 "$DEST/css/fonts/" 2>/dev/null || true
+# Fayl ro'yxati — paket bilan BIR XIL manbadan (drift bo'lmasin). Shriftlar ham
+# shu ro'yxatda: CEP'da tarmoq yo'q, tushib qolsa panel shriftsiz ochiladi.
+while IFS=$'\t' read -r from to; do
+  [ -z "$from" ] && continue
+  if [ ! -f "$SRC/$from" ]; then echo "  ✗ Manba fayl yo'q: $from"; exit 1; fi
+  mkdir -p "$DEST/$(dirname "$to")"
+  cp "$SRC/$from" "$DEST/$to"
+done < <(node "$FLAVORS" files "$FLAVOR")
+cp "$SRC/$DEBUG_SRC" "$DEST/.debug" 2>/dev/null || true
 
 # ── 2) VERIFY: o'rnatilgan HTML manbaga BAYT-BA-BAYT mosmi? ─────────────────
 # Build stamp HALI urilmadi (placeholder __AF_BUILD__ saqlanib turibdi), shuning
@@ -73,14 +98,11 @@ verify_file() {
   fi
 }
 echo "→ O'rnatish tekshirilmoqda..."
-verify_file "AssetFlow_Plugin.html"
-verify_file "AssetFlow_Admin.html"
+verify_file "$MAIN_HTML"
 
 # ── 3) Build yorlig'i — VERIFY'dan KEYIN stamplaymiz ───────────────────────
 BUILD_STAMP="$(date '+%Y-%m-%d %H:%M') · $(git -C "$SRC" rev-parse --short HEAD 2>/dev/null || echo nogit)"
-for f in "$DEST/AssetFlow_Plugin.html" "$DEST/AssetFlow_Admin.html"; do
-  [ -f "$f" ] && sed -i '' "s|__AF_BUILD__|${BUILD_STAMP}|g" "$f" 2>/dev/null || true
-done
+sed -i '' "s|__AF_BUILD__|${BUILD_STAMP}|g" "$DEST/$MAIN_HTML" 2>/dev/null || true
 echo "  Build: $BUILD_STAMP"
 echo "✓ Fayl o'rnatildi: $DEST"
 echo "  Manba: $SRC"
@@ -116,7 +138,7 @@ if [ "$SKIP_AE" = "1" ]; then
   exit 0
 fi
 if [ -z "$AE_NAME" ]; then
-  echo "⚠ After Effects topilmadi — qo'lda: Window → Extensions → AssetFlow"
+  echo "⚠ After Effects topilmadi — qo'lda: Window → Extensions → $MENU_LABEL"
   exit 0
 fi
 if [ "$AE_OPEN" = "1" ]; then
@@ -129,13 +151,13 @@ echo "→ $AE_NAME ishga tushirilmoqda..."
 open -a "$AE_APP"
 sleep 10
 
-echo "→ AssetFlow panel ochilmoqda..."
+echo "→ $MENU_LABEL paneli ochilmoqda..."
 osascript <<APPLESCRIPT 2>/dev/null || true
 tell application "$AE_NAME" to activate
 delay 1.5
 tell application "System Events"
   tell process "After Effects"
-    click menu item "AssetFlow" of menu "Extensions" of menu item "Extensions" of menu "Window" of menu bar 1
+    click menu item "$MENU_LABEL" of menu "Extensions" of menu item "Extensions" of menu "Window" of menu bar 1
   end tell
 end tell
 APPLESCRIPT

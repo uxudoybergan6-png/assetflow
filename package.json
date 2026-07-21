@@ -15,6 +15,7 @@
     "api:only": "node scripts/run-api-only.mjs",
     "studio:ui": "node scripts/start-studio-ui.mjs",
     "verify:pipeline": "node scripts/verify-pipeline.mjs",
+    "test:plugin-package": "node plugins/after-effects-cep/scripts/test-package-security.mjs",
     "check:stack": "node scripts/check-stack.mjs",
     "studio:open": "open http://localhost:3000/studio/hub.html",
     "build": "npm run build --workspaces --if-present",

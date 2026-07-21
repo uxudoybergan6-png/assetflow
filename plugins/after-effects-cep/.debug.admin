@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ichki Admin flavor uchun debug profili (faqat lokal; paketga KIRMAYDI). -->
+<ExtensionList>
+  <Extension Id="com.frameflow.admin">
+    <HostList>
+      <Host Name="AEFT" Port="8099"/>
+    </HostList>
+  </Extension>
+</ExtensionList>

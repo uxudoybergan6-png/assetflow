@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- CUSTOMER (public) manifest — FAQAT com.frameflow.panel.
-     Ichki Admin paneli ALOHIDA manifestda: CSXS/manifest.admin.xml (mijozga chiqmaydi).
-     Flavor manbai: scripts/package-flavors.mjs · hujjat: docs/RELEASE-ARCHITECTURE.md
-     ExtensionBundleVersion AssetFlow_Plugin.html'dagi window.AF_PLUGIN_VERSION bilan SINXRON. -->
+<!-- INTERNAL manifest — FAQAT com.frameflow.admin. MIJOZ PAKETIGA HECH QACHON KIRMAYDI.
+     Alohida ExtensionBundleId (com.frameflow.internal.admin) → alohida CEP papkasi, shuning
+     uchun mijozning com.frameflow o'rnatmasi ustiga hech qachon tushmaydi.
+     Flavor manbai: scripts/package-flavors.mjs · hujjat: docs/RELEASE-ARCHITECTURE.md -->
 <ExtensionManifest Version="7.0"
-  ExtensionBundleId="com.frameflow"
+  ExtensionBundleId="com.frameflow.internal.admin"
   ExtensionBundleVersion="1.1.1"
-  ExtensionBundleName="FrameFlow">
+  ExtensionBundleName="FrameFlow Admin (Internal)">
   <ExtensionList>
-    <Extension Id="com.frameflow.panel" Version="1.1.1"/>
+    <Extension Id="com.frameflow.admin" Version="1.1.1"/>
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -22,15 +22,15 @@
     </RequiredRuntimeList>
   </ExecutionEnvironment>
   <DispatchInfoList>
-    <Extension Id="com.frameflow.panel">
+    <Extension Id="com.frameflow.admin">
       <DispatchInfo>
         <Resources>
-          <MainPath>./AssetFlow_Plugin.html</MainPath>
+          <MainPath>./AssetFlow_Admin.html</MainPath>
           <ScriptPath>./jsx/host.jsx</ScriptPath>
           <CEFCommandLine>
-            <!-- Node/local-file mijoz oqimi uchun KERAK (import, pack yuklab olish/ochish).
-                 Web-security'ni o'chiruvchi CEF bayrog'i TAQIQLANGAN (test shuni tekshiradi) —
-                 API birinchi-tomon HTTPS + CORS orqali chaqiriladi. -->
+            <!-- Web-security'ni o'chiruvchi CEF bayrog'i OLIB TASHLANDI (audit 2026-07-21).
+                 Admin ham mijoz paneli bilan bir xil birinchi-tomon HTTPS API + CORS
+                 kontraktidan foydalanadi; backend CORS/auth ZAIFLASHTIRILMAYDI. -->
             <Parameter>--allow-file-access-from-files</Parameter>
             <Parameter>--allow-file-access</Parameter>
             <Parameter>--persist-session-cookies</Parameter>
@@ -39,14 +39,14 @@
           </CEFCommandLine>
         </Resources>
         <Lifecycle>
-          <AutoVisible>true</AutoVisible>
+          <AutoVisible>false</AutoVisible>
         </Lifecycle>
         <UI>
           <Type>Panel</Type>
-          <Menu>FrameFlow</Menu>
+          <Menu>FrameFlow Admin</Menu>
           <Geometry>
-            <Size><Height>720</Height><Width>380</Width></Size>
-            <MinSize><Height>400</Height><Width>320</Width></MinSize>
+            <Size><Height>760</Height><Width>420</Width></Size>
+            <MinSize><Height>500</Height><Width>360</Width></MinSize>
           </Geometry>
         </UI>
       </DispatchInfo>

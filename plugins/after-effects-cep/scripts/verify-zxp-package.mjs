@@ -1,49 +1,26 @@
-// Task A — paket tarkib tekshiruvchisi. Avvalgi "arxiv tasdiq" faqat qo'lda fayl sonini
-// sanash edi (haqiqiy referens tekshiruvi yo'q). Bu skript unsigned arxivni RUNTIME
-// referenslariga qarshi tekshiradi: manifest MainPath/ScriptPath, HTML <link>/<script>
-// (lokal), CSS url() shrift assetlari. Yetishmagan fayl = FAIL. data:/http(s):/runtime
-// generatsiya qilingan URL'lar e'tiborga olinmaydi.
-// Yangi dependency yo'q — faqat Node builtin + tizim `unzip` (build-zxp.sh allaqachon
-// `zip`ga tayanadi).
-// Ishga tushirish: node plugins/after-effects-cep/scripts/verify-zxp-package.mjs [archive.zip]
+// Paket tarkib tekshiruvchisi — arxivni RUNTIME referenslariga qarshi tekshiradi:
+// manifest MainPath/ScriptPath, HTML <link>/<script> (lokal), CSS url() shrift assetlari.
+// Yetishmagan fayl = FAIL. data:/http(s):/runtime generatsiya qilingan URL'lar e'tiborga olinmaydi.
+//
+// Bu modul HAM CLI, HAM kutubxona: xavfsizlik testi (test-package-security.mjs) shu yerdagi
+// referens mantiqidan foydalanadi (nusxa ko'chirilmaydi).
+// Yangi dependency yo'q — faqat Node builtin + tizim `unzip`.
+//
+// Ishga tushirish:
+//   node plugins/after-effects-cep/scripts/verify-zxp-package.mjs [archive.zip]
+//   (argumentsiz → default MIJOZ flavor arxivi)
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { artifactPath, DEFAULT_FLAVOR } from "./package-flavors.mjs";
 
-const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(SCRIPTS_DIR, "../../..");
-
-const archive = process.argv[2] || defaultArchivePath();
-
-function defaultArchivePath() {
-  const manifest = readFileSync(
-    path.join(ROOT, "plugins/after-effects-cep/CSXS/manifest.xml"),
-    "utf8"
-  );
-  const m = manifest.match(/ExtensionBundleVersion="([^"]+)"/);
-  const version = m ? m[1] : "0.0.0";
-  return path.join(ROOT, "dist/zxp", `assetflow-v${version}-unsigned.zip`);
-}
-
-let fail = 0;
-const evidence = [];
-
-function ok(label) {
-  evidence.push(`✓  ${label}`);
-}
-function bad(label) {
-  fail++;
-  evidence.push(`✗ FAIL  ${label}`);
-}
-
-function listEntries(archivePath) {
+export function listEntries(archivePath) {
   const out = execFileSync("unzip", ["-Z1", archivePath], { encoding: "utf8" });
   return new Set(out.split("\n").map((l) => l.trim()).filter(Boolean));
 }
 
-function readEntry(archivePath, entry) {
+export function readEntry(archivePath, entry) {
   return execFileSync("unzip", ["-p", archivePath, entry], {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
@@ -65,58 +42,35 @@ function normalizeRef(baseDir, ref) {
   return joined.replace(/^\.\//, "").replace(/^\//, "");
 }
 
-function extractAttr(html, tagRegex) {
+export function extractAll(text, regex) {
   const found = [];
   let m;
-  while ((m = tagRegex.exec(html))) found.push(m[1]);
+  while ((m = regex.exec(text))) found.push(m[1]);
   return found;
 }
 
-function verifyHtmlRefs(archivePath, entries, htmlEntry) {
-  const html = readEntry(archivePath, htmlEntry);
-  const baseDir = path.posix.dirname(htmlEntry);
-  const hrefs = extractAttr(html, /<link[^>]+rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/gi);
-  const srcs = extractAttr(html, /<script[^>]+src=["']([^"']+)["']/gi);
-  const cssRefs = [];
-  for (const raw of [...hrefs, ...srcs]) {
-    if (isIgnorableUrl(raw)) continue;
-    const resolved = normalizeRef(baseDir, raw);
-    if (entries.has(resolved)) {
-      ok(`${htmlEntry} → ${raw} (${resolved})`);
-      if (resolved.endsWith(".css")) cssRefs.push(resolved);
-    } else {
-      bad(`${htmlEntry} → ${raw} (${resolved}) MISSING from archive`);
-    }
-  }
-  return cssRefs;
-}
+/** Arxivning barcha runtime referenslarini tekshiradi.
+ *  @returns {{ checks: {ok:boolean,label:string}[], failed:number, htmlEntries:string[] }} */
+export function verifyArchiveReferences(archivePath) {
+  const checks = [];
+  const ok = (label) => checks.push({ ok: true, label });
+  const bad = (label) => checks.push({ ok: false, label });
 
-function verifyCssRefs(archivePath, entries, cssEntry) {
-  const css = readEntry(archivePath, cssEntry);
-  const baseDir = path.posix.dirname(cssEntry);
-  const urls = extractAttr(css, /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi);
-  for (const raw of urls) {
-    if (isIgnorableUrl(raw)) continue;
-    const resolved = normalizeRef(baseDir, raw);
-    if (entries.has(resolved)) {
-      ok(`${cssEntry} → ${raw} (${resolved})`);
-    } else {
-      bad(`${cssEntry} → ${raw} (${resolved}) MISSING from archive`);
-    }
-  }
-}
+  const entries = listEntries(archivePath);
+  const htmlEntries = [];
 
-function verifyManifestPaths(archivePath, entries) {
+  // 1) manifest MainPath/ScriptPath
   const manifestEntry = "CSXS/manifest.xml";
   if (!entries.has(manifestEntry)) {
     bad(`${manifestEntry} MISSING from archive`);
-    return { htmlEntries: [] };
+    return { checks, failed: 1, htmlEntries };
   }
   const xml = readEntry(archivePath, manifestEntry);
-  const mainPaths = extractAttr(xml, /<MainPath>([^<]+)<\/MainPath>/gi);
-  const scriptPaths = extractAttr(xml, /<ScriptPath>([^<]+)<\/ScriptPath>/gi);
-  const htmlEntries = [];
-  for (const raw of [...mainPaths, ...scriptPaths]) {
+  const paths = [
+    ...extractAll(xml, /<MainPath>([^<]+)<\/MainPath>/gi),
+    ...extractAll(xml, /<ScriptPath>([^<]+)<\/ScriptPath>/gi),
+  ];
+  for (const raw of paths) {
     const resolved = normalizeRef(".", raw);
     if (entries.has(resolved)) {
       ok(`manifest → ${raw} (${resolved})`);
@@ -125,35 +79,57 @@ function verifyManifestPaths(archivePath, entries) {
       bad(`manifest → ${raw} (${resolved}) MISSING from archive`);
     }
   }
-  return { htmlEntries };
+
+  // 2) HTML <link rel=stylesheet> / <script src> → 3) CSS url()
+  const seenCss = new Set();
+  for (const htmlEntry of htmlEntries) {
+    const html = readEntry(archivePath, htmlEntry);
+    const baseDir = path.posix.dirname(htmlEntry);
+    const refs = [
+      ...extractAll(html, /<link[^>]+rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/gi),
+      ...extractAll(html, /<script[^>]+src=["']([^"']+)["']/gi),
+    ];
+    for (const raw of refs) {
+      if (isIgnorableUrl(raw)) continue;
+      const resolved = normalizeRef(baseDir, raw);
+      if (!entries.has(resolved)) {
+        bad(`${htmlEntry} → ${raw} (${resolved}) MISSING from archive`);
+        continue;
+      }
+      ok(`${htmlEntry} → ${raw} (${resolved})`);
+      if (!resolved.endsWith(".css") || seenCss.has(resolved)) continue;
+      seenCss.add(resolved);
+      const css = readEntry(archivePath, resolved);
+      const cssDir = path.posix.dirname(resolved);
+      for (const url of extractAll(css, /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi)) {
+        if (isIgnorableUrl(url)) continue;
+        const target = normalizeRef(cssDir, url);
+        if (entries.has(target)) ok(`${resolved} → ${url} (${target})`);
+        else bad(`${resolved} → ${url} (${target}) MISSING from archive`);
+      }
+    }
+  }
+
+  return { checks, failed: checks.filter((c) => !c.ok).length, htmlEntries };
 }
 
-function main() {
+// ── CLI ───────────────────────────────────────────────────────────────────────
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const archive = process.argv[2] || artifactPath(DEFAULT_FLAVOR, { signed: false });
   console.log(`→ Arxiv tekshirilmoqda: ${archive}`);
-  let entries;
+  let result;
   try {
-    entries = listEntries(archive);
+    result = verifyArchiveReferences(archive);
   } catch (e) {
     console.error(`✗ Arxivni o'qib bo'lmadi: ${e.message}`);
     process.exit(1);
   }
-  const { htmlEntries } = verifyManifestPaths(archive, entries);
-  const seenCss = new Set();
-  for (const htmlEntry of htmlEntries) {
-    const cssRefs = verifyHtmlRefs(archive, entries, htmlEntry);
-    for (const cssEntry of cssRefs) {
-      if (seenCss.has(cssEntry)) continue;
-      seenCss.add(cssEntry);
-      verifyCssRefs(archive, entries, cssEntry);
-    }
-  }
-
-  console.log(evidence.join("\n"));
-  if (fail) {
-    console.error(`\n${fail} referens(lar) topilmadi — paket to'liq emas.`);
+  console.log(result.checks.map((c) => (c.ok ? `✓  ${c.label}` : `✗ FAIL  ${c.label}`)).join("\n"));
+  if (result.failed) {
+    console.error(`\n${result.failed} referens(lar) topilmadi — paket to'liq emas.`);
     process.exit(1);
   }
-  console.log(`\nHammasi tasdiqlandi (${evidence.length} referens) — paket tarkibi runtime referenslariga mos.`);
+  console.log(
+    `\nHammasi tasdiqlandi (${result.checks.length} referens) — paket tarkibi runtime referenslariga mos.`
+  );
 }
-
-main();
