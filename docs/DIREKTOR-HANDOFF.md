@@ -156,11 +156,29 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 > 6. **Plagin reliz xatti-harakati (commit 6eb5421/b29a93d/c1c3b01):** diff'da bu fayllarga hech
 >    qanday o'zgarish YO'Q — tasdiqlandi (`git diff` bo'sh).
 > **Tekshiruv:** `npm run build -w apps/api` OK · `node scripts/verify-public-copy.mjs` → **29/29
-> o'tdi** (miqdoriy/imtiyoz/ism da'volari yo'q, fallback funksiyalari aniqlangan) · barcha 10 ta
-> inline `<script>` `node --check`-ga teng tekshiruv bilan sintaksis OK · himoyalangan zona (pul/
-> kredit/billing/auth/DB sxema/deploy) diff'da YO'Q · `test-downloads/` tegilmadi.
+> o'tdi** (miqdoriy/imtiyoz/ism da'volari yo'q, fallback funksiyalari aniqlangan) · `platform/index.html`da
+> **10 jami `<script>` tegi: 4 inline + 6 tashqi (`src=`)** — mustaqil sanoq bilan tasdiqlangan
+> (avval bu yerda noto'g'ri "10 ta inline" deyilgan edi, TUZATILDI); har 4 inline skript tanasi
+> `node --check`-ga teng tekshiruv bilan sintaksis OK · himoyalangan zona (pul/kredit/billing/auth/
+> DB sxema/deploy) diff'da YO'Q · `test-downloads/` tegilmadi.
 > 🔴 **Qolgan qadam:** haqiqiy brauzer/mobil vizual QA (desktop + narrow viewport) hali BAJARILMADI
 > — faqat statik/kod darajasidagi tekshiruv qilindi, real render ko'rilmadi.
+> ✅ **TUZATISH AUDITI (2026-07-21, push YO'Q):** mustaqil audit 2 ta faktik bloker topdi, ikkalasi
+> ham tuzatildi:
+> 1. Public marketing hali aniq **"14-day money-back guarantee"** da'vosini bergan edi
+>    (`landing-config.ts` 4 joy + client CMS-fallback nusxasi + `platform/index.html` pricing
+>    sahifasidagi 2 qattiq yozilgan joy) — `refund.html`ning o'zi 14 kunlik oyna/chegarani hali
+>    **lawyer-review** ostida deydi, shuning uchun public sayt yakunlanmagan/shartsiz kafolatni
+>    va'da qilishi MUMKIN EMAS edi. Barcha jonli marketing o'rinlar neytral haqiqiy matnga
+>    almashtirildi ("Refund eligibility is explained in the Refund Policy"); 4-statistika
+>    ("14 days / Money-back guarantee") timeless haqiqiy faktga almashtirildi (`1 connected
+>    workflow — Web and After Effects`). `refund.html`, pul/kredit/billing/webhook/checkout/ledger
+>    fayllari va tarif narxlari TEGILMADI. `scripts/verify-public-copy.mjs`ga aniq ibora regressiya
+>    tekshiruvi qo'shildi (endi 38/38).
+> 2. Yuqoridagi "barcha 10 ta inline `<script>`" yozuvi NOTO'G'RI edi — mustaqil sanoq: **10 jami
+>    script tegi = 4 inline + 6 tashqi (`src=`)**. Yozuv tuzatildi (yuqorida); `verify-public-copy.mjs`
+>    endi bu sonlarni va har bir inline skript tanasining `new Function()` sintaksisini avtomatik
+>    tekshiradi.
 
 > ✅ **Launch Task A TUGADI (2026-07-21, push YO'Q):** AE plagin reliz paketi + ommaviy download oqimi.
 > `build-zxp.sh` staging'ga `css/` (tokens/ff-components/styles + `fonts/*.woff2`) yo'qolgan edi —

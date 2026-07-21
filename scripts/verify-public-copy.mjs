@@ -6,7 +6,12 @@
 //      brand kit, shaxsiy account manager) qidiradi;
 //   2) fabrikatsiya qilingan mijoz ismlarini (avvalgi testimonial'lar) qidiradi;
 //   3) media-xato fallback handler'lari (axMediaError/axMediaLoaded + umumiy .va-media listener)
-//      manba kodida chinakam FUNKSIYA sifatida aniqlanganini tasdiqlaydi.
+//      manba kodida chinakam FUNKSIYA sifatida aniqlanganini tasdiqlaydi;
+//   4) [Correction audit, 2026-07-21] aniq "14-day money-back guarantee" da'vosi HECH QAYERDA
+//      qaytmasligini tasdiqlaydi (refund.html'da hali lawyer-review ostida — final muddat/shart
+//      tasdiqlanmagan, shuning uchun public marketing bu aniq iborani va'da qilmasligi SHART);
+//   5) platform/index.html'dagi <script> teglari sonini (4 inline + 6 tashqi = 10 jami) va har bir
+//      inline skript tanasining `new Function()` bilan sintaksis jihatdan yaroqli ekanini tekshiradi.
 // Ishlatish: node scripts/verify-public-copy.mjs
 import fs from "node:fs";
 import path from "node:path";
@@ -111,6 +116,52 @@ check(
   "'.va-mediaerr' CSS qoidasi mavjud (fallback overlay uslubi)",
   /\.va-mediaerr\s*\{/.test(htmlSrc),
 );
+
+// ── 4) Aniq "14-day money-back guarantee" da'vosi HECH QAYERDA yo'q ──
+// refund.html'ning o'zi 14 kunlik oyna/chegara/final shartlar hali lawyer-review ostida deydi —
+// shuning uchun public marketing bu aniq iborani va'da qilishi MUMKIN EMAS. Refund.html o'ziga
+// tegilmaydi/tekshirilmaydi (u yerdagi lawyer-review izohli matn — bu tekshiruv doirasidan tashqarida).
+const FOURTEEN_DAY_GUARANTEE = /14-day money-back guarantee/;
+check(
+  "apps/api/src/lib/landing-config.ts: aniq '14-day money-back guarantee' iborasi yo'q",
+  !FOURTEEN_DAY_GUARANTEE.test(readSource(LANDING_CONFIG).replace(/\/\/.*$/gm, "")),
+);
+check(
+  "packages/assetflow-studio/platform/index.html: aniq '14-day money-back guarantee' iborasi yo'q",
+  !FOURTEEN_DAY_GUARANTEE.test(htmlSrc),
+);
+
+// ── 5) platform/index.html <script> teglari: 4 inline + 6 tashqi = 10 jami; har bir inline
+//      skript tanasi `new Function()` bilan sintaksis jihatdan yaroqli ──
+function scanScriptTags(src) {
+  const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/g;
+  const inline = [];
+  let external = 0;
+  let total = 0;
+  let m;
+  while ((m = re.exec(src))) {
+    total++;
+    if (/\bsrc\s*=/.test(m[1])) external++;
+    else inline.push(m[2]);
+  }
+  return { total, external, inline };
+}
+
+const { total: scriptTotal, external: scriptExternal, inline: inlineScripts } = scanScriptTags(htmlSrc);
+check("platform/index.html: jami <script> teglari soni = 10", scriptTotal === 10, `topildi: ${scriptTotal}`);
+check("platform/index.html: tashqi (src=) <script> soni = 6", scriptExternal === 6, `topildi: ${scriptExternal}`);
+check("platform/index.html: inline <script> soni = 4", inlineScripts.length === 4, `topildi: ${inlineScripts.length}`);
+inlineScripts.forEach((body, i) => {
+  let ok = true;
+  let errMsg;
+  try {
+    new Function(body);
+  } catch (e) {
+    ok = false;
+    errMsg = e.message;
+  }
+  check(`platform/index.html: inline <script> #${i + 1} sintaksis OK (new Function)`, ok, errMsg);
+});
 
 console.log(`\n${checks - fails}/${checks} tekshiruv o'tdi.`);
 if (fails > 0) {

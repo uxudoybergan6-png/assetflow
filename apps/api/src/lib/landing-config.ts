@@ -142,11 +142,14 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
   // Launch Task B — oqib ketadigan katalog-hajm raqami olib tashlandi (haqiqiy hajmga mos emas
   // edi); Pr/DaVinci plagin yorlig'i ham olib tashlandi (plagin faqat AE'ni qo'llab-quvvatlaydi).
   // Timeless/haqiqiy qiymatlar bilan almashtirildi.
+  // Correction audit — "14-day money-back guarantee" refund.html'da hali lawyer-review ostida
+  // (final shart/muddat tasdiqlanmagan), shuning uchun 4-statistika timeless haqiqiy faktga
+  // almashtirildi (refund shartlari faqat Refund Policy sahifasida).
   stats: [
     { value: 50, suffix: "", label: "Free AI credits to start" },
     { value: 4, suffix: "", label: "AI tools — image · video · voice · SFX" },
     { value: 6, suffix: "", label: "Content categories — video, graphics, LUTs, audio" },
-    { value: 14, suffix: "days", label: "Money-back guarantee" },
+    { value: 1, suffix: "connected workflow", label: "Web and After Effects" },
   ],
   landingSections: [
     { key: "stats", visible: true },
@@ -186,7 +189,7 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
   pricingTeaser: {
     eyebrow: "04 — PRICING",
     title: "Start free, scale up when you need to",
-    sub: "Cancel anytime. All plans come with a 14-day money-back guarantee.",
+    sub: "Cancel anytime. Refund eligibility is explained in the Refund Policy.",
     note: "Full comparison —",
     noteLink: "on the Pricing page →",
   },
@@ -204,13 +207,13 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     title: "Start free today",
     sub: "Sign up — get 50 AI credits on us. No card required.",
     ctaLabel: "Start for free",
-    credline: "14-day money-back guarantee",
+    credline: "Refund eligibility is explained in the Refund Policy",
   },
   footer: {
     tagline: "Templates and an AI studio for motion designers and video creators.",
     email: "support@getframeflow.app",
     copyright: "© 2026 FrameFlow",
-    guarantee: "All plans come with a 14-day money-back guarantee",
+    guarantee: "Refund eligibility is explained in the Refund Policy",
     cols: [
       { title: "PRODUCT", links: ["Templates", "AI Studio", "Plugin", "Pricing"] },
       { title: "CATEGORIES", links: ["Video templates", "Lower Thirds", "Transitions", "LUTs & Presets", "SFX"] },
@@ -253,7 +256,7 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     sub: "Catalog, import and AI Studio — right inside After Effects. With your account and credits.",
     ctaLabel: "Download the plugin (.zxp)",
     versionNote: "Compatible ZXP installer · requires After Effects 2022 (22.0) or newer",
-    guarantee: "All plans come with a 14-day money-back guarantee",
+    guarantee: "Refund eligibility is explained in the Refund Policy",
     steps: [
       { t: "Download the .zxp file", d: "Get the latest version from the platform in one click." },
       { t: "Install with a compatible ZXP installer", d: "Install quickly with any compatible ZXP installer." },
