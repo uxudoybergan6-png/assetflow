@@ -14,7 +14,10 @@ import {
   isHttpsUrl,
   selectInstallerRow,
   buildInstallerPayload,
+  isManualDownloadRequest,
+  resolveLegacyDownloadUrl,
 } from "../dist/lib/plugin-release-contract.js";
+import { readFileSync } from "node:fs";
 
 const PUBLISHED_AT = new Date("2026-07-01T00:00:00Z");
 const release = (overrides) => ({
@@ -239,9 +242,74 @@ check(
   "not_published"
 );
 
+// ── LEGACY KLIENT KILL SWITCH — `manual=1` opt-in ──────────────────────────
+// ff10d51'gacha bo'lgan panel `platform=` yubormaydi va `downloadUrl` ni ko'rsa
+// arxivni ochib O'ZINING extension papkasi ustiga yozadi. Shu bois legacy havola
+// endi FAQAT aniq qo'lda-yuklab-olish so'rovida qaytariladi.
+const SIGNED_ZXP = "https://cdn.example/releases/frameflow-v1.1.1.zxp?sig=abc";
+
+check("no manual param → no opt-in", isManualDownloadRequest(undefined), false);
+check("empty manual param → no opt-in", isManualDownloadRequest(""), false);
+check("manual=1 → opt-in", isManualDownloadRequest("1"), true);
+check("manual=true → opt-in", isManualDownloadRequest("true"), true);
+check("manual=YES (case/space tolerant) → opt-in", isManualDownloadRequest(" YES "), true);
+check("manual=0 → no opt-in", isManualDownloadRequest("0"), false);
+check("manual=false → no opt-in", isManualDownloadRequest("false"), false);
+check("manual=please → no opt-in (strict allowlist)", isManualDownloadRequest("please"), false);
+check("repeated manual params (array) → no opt-in", isManualDownloadRequest(["1", "1"]), false);
+check("object manual param → no opt-in", isManualDownloadRequest({ toString: () => "1" }), false);
+check("numeric 1 (non-string) → no opt-in", isManualDownloadRequest(1), false);
+
+check("opt-in returns the signed legacy url", resolveLegacyDownloadUrl("1", SIGNED_ZXP), SIGNED_ZXP);
+check("no opt-in returns null even when a url exists", resolveLegacyDownloadUrl(undefined, SIGNED_ZXP), null);
+check("wrong opt-in value returns null even when a url exists", resolveLegacyDownloadUrl("maybe", SIGNED_ZXP), null);
+check("opt-in with no url stays null", resolveLegacyDownloadUrl("1", null), null);
+
+// So'rov SHAKLI bo'yicha uchta stsenariy (route AYNAN shu funksiyalarni ishlatadi):
+check(
+  "LEGACY client shape (?current=1.0.0, no platform, no manual) → downloadUrl null",
+  computePluginVersionResponse("1.0.0", release(), resolveLegacyDownloadUrl(undefined, SIGNED_ZXP)).downloadUrl,
+  null
+);
+check(
+  "NEW panel shape (?current=&platform=mac) → downloadUrl null, installer still served",
+  (() => {
+    const r = computePluginVersionResponse("1.0.0", release(), resolveLegacyDownloadUrl(undefined, SIGNED_ZXP), {
+      platform: "mac",
+      installer: buildInstallerPayload("1.1.1", macRow, "https://cdn/signed"),
+      status: "ok",
+    });
+    return [r.downloadUrl, r.installer.platform, r.installerStatus];
+  })(),
+  [null, "mac", "ok"]
+);
+check(
+  "MANUAL web shape (?manual=1) → real .zxp url for the browser download button",
+  computePluginVersionResponse("1.0.0", release(), resolveLegacyDownloadUrl("1", SIGNED_ZXP)).downloadUrl,
+  SIGNED_ZXP
+);
+check(
+  "manual opt-in still never leaks a storage key",
+  JSON.stringify(computePluginVersionResponse("1.0.0", release(), resolveLegacyDownloadUrl("1", SIGNED_ZXP))).includes("releases/frameflow-v1.1.1.zxp?sig"),
+  true
+);
+
+// ── MANBA ISBOTI — jonli route AYNAN shu darvozani ishlatadi ───────────────
+// (kontrakt to'g'ri bo'lib, route uni chetlab o'tsa — test bo'sh bo'lardi.)
+{
+  const routeSrc = readFileSync(new URL("../src/routes/plugin.ts", import.meta.url), "utf8");
+  const versionRoute = routeSrc.slice(
+    routeSrc.indexOf('pluginRouter.get("/version"'),
+    routeSrc.indexOf('pluginRouter.get("/content-config"')
+  );
+  check("route reads the manual opt-in from the query", /const manualDownload = isManualDownloadRequest\(req\.query\.manual\)/.test(versionRoute), true);
+  check("route signs the legacy .zxp url only under the opt-in", /if \(manualDownload && latest && latest\.downloadKey && isS3Configured\(\)\)/.test(versionRoute), true);
+  check("route passes the legacy url through resolveLegacyDownloadUrl", /resolveLegacyDownloadUrl\(req\.query\.manual, downloadUrl\)/.test(versionRoute), true);
+  check("route never passes a raw signed url into the response", /computePluginVersionResponse\(\s*current,\s*latest,\s*downloadUrl\b/.test(versionRoute), false);
+}
+
 if (fail) {
   console.error(`\n${fail}/${total} test(lar) yiqildi`);
   process.exit(1);
 }
 console.log(`\nHammasi o'tdi (${total} case).`);
-

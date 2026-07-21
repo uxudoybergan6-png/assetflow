@@ -56,15 +56,22 @@ Installer nima qilishi kerak (Task 3): CEP extension papkasiga
 
 ### `GET /api/plugin/version` (OMMAVIY)
 
-So'rov: `?current=<klient versiyasi>&platform=mac|win`
+So'rov: `?current=<klient versiyasi>&platform=mac|win[&manual=1]`
 `platform` berilmasa — brauzer `User-Agent`'idan aniqlanadi (plagin HAR DOIM aniq yuboradi).
+
+**`manual=1` — legacy `.zxp` kill switch (MAJBURIY opt-in).** `downloadUrl` FAQAT shu aniq
+parametr bilan qaytariladi (`1`/`true`/`yes`); param'siz yoki boshqa qiymatda havola umuman
+imzolanmaydi va javobda `null` bo'ladi. Sabab: ff10d51'gacha bo'lgan panel `platform=`
+yubormaydi va `downloadUrl`ni ko'rsa arxivni ochib O'ZINING extension papkasi ustiga yozadi —
+o'rnatilgan eski klientlarda bu yo'l endi HECH QACHON ishga tushmaydi. Veb sahifadagi qo'lda
+yuklab olish tugmasi (`FFAPI.pluginVersion(null,{manual:true})`) opt-in'ni aniq yuboradi.
 
 ```jsonc
 {
   "latest": { "version": "1.2.0", "releaseNotes": "…", "publishedAt": "…", "checksum": null },
   "updateAvailable": true,
   "mandatory": false,
-  "downloadUrl": "https://…",         // LEGACY .zxp (qo'lda) yoki null
+  "downloadUrl": "https://…",         // LEGACY .zxp — FAQAT `manual=1` bilan, aks holda null
   "platform": "mac",                   // aniqlangan allowlist platformasi yoki null
   "installer": {                       // FAQAT shu platforma uchun; storage kaliti YO'Q
     "platform": "mac", "ext": "pkg",
@@ -123,10 +130,15 @@ bo'lishi mumkin emas (fail-closed).
   ("installer AE tashqarisida ochiladi, tizim ruxsat so'rashi mumkin, tugagach AE
   qayta ishga tushirilishi kerak"), **Download & install** / **Later**.
 - **Later** shu versiya uchun qayta bezovta qilmaydi (localStorage) — mandatory relizda
-  Later/✕ YO'Q (o'zgarmagan).
-- **Download & install** → yuklab olish (progress %) → **Verifying SHA-256…** →
-  OS installeri ochiladi → "Installer opened" ekrani: tizim ruxsat so'rashi mumkin,
-  tugagach AE'ni butunlay yopib qayta oching; panel shu paytgacha eski versiyada ishlaydi.
+  Later/✕ YO'Q. **Istisno (qopqonga qarshi):** majburiy reliz uchun bu platformada
+  YAROQLI installer bo'lmasa (e'lon qilinmagan · storage tushgan · checksum yo'q · CEP
+  emas), dialog bloklanmaydi: halol xato + Later/✕/"Open download page" ko'rsatiladi.
+  Bunday holatda "Later" mandatory relizni jimlatmaydi — keyingi tekshiruvda yana eslatiladi.
+- **Download & install** → yuklab olish (HTTPS-only, har bir redirect ham https bo'lishi
+  shart; 512 MiB qattiq chegara — oshsa oqim darhol uziladi) → **Verifying SHA-256…** →
+  OS installeri ochiladi. "Installer opened" ekrani FAQAT bola jarayon haqiqatan ishga
+  tushgach ko'rsatiladi (`spawn`); ishga tushmasa — temp o'chadi va halol
+  "installer could not be opened" chiqadi.
 - **Har qanday nosozlikda** (platforma qo'llab-quvvatlanmaydi · installer e'lon qilinmagan ·
   http havola · checksum yo'q/mos emas · yuklab olish uzildi · ochib bo'lmadi) — aniq
   inglizcha xabar + **Open download page**. Extension papkasini qo'lda almashtirish

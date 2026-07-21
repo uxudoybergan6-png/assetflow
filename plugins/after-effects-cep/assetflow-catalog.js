@@ -991,10 +991,21 @@ const AssetFlowCatalog = (() => {
    * Katta packlar uchun diskka oqim bilan yuklash (xotiraga 200MB yig'masdan).
    * `headers` — faqat BIRINCHI (o'z API) so'roviga qo'shiladi; redirect boshqa
    * origin'ga (R2/CDN) ketsa Authorization TASHLANADI (token sizib chiqmasin).
+   *
+   * `opts` (ixtiyoriy, ORQAGA MOS — berilmasa bugungi xulq bayt-bayt o'zgarmaydi):
+   *   opts.httpsOnly — boshlang'ich URL ham, HAR BIR redirect ham https bo'lishi SHART;
+   *     downgrade (https→http) yoki https bo'lmagan sxema = darhol uzish + temp o'chirish.
+   *   opts.maxBytes  — qattiq hajm chegarasi: Content-Length undan katta bo'lsa umuman
+   *     yozilmaydi, oqim chegaradan oshgan zahoti uziladi va qisman fayl o'chiriladi.
+   * Updater AYNAN shu ikkisini yoqadi (installer artefakti uchun); pack/mogrt
+   * chaqiruvlari opts bermaydi va o'zgarishsiz ishlaydi.
    */
-  function downloadUrlToFile(url, destPath, onProgress, headers) {
+  function downloadUrlToFile(url, destPath, onProgress, headers, opts) {
     return new Promise((resolve, reject) => {
       const fs = require("fs");
+      const httpsOnly = !!(opts && opts.httpsOnly);
+      const maxBytes = opts && Number(opts.maxBytes) > 0 ? Number(opts.maxBytes) : 0;
+      const isHttps = (u) => /^https:\/\//i.test(String(u || ""));
       const startOrigin = urlOrigin(url);
       const holder = { req: null, ws: null, dest: destPath, cancelled: false, fail: null };
       __activeDownloads.add(holder);
@@ -1006,8 +1017,17 @@ const AssetFlowCatalog = (() => {
         reject(err);
       };
       holder.fail = failCancelled;
+      // Strict rejim uchun umumiy uzish: temp `.part` qoldirilmaydi, promise rad etiladi.
+      const abortStrict = (msg) => {
+        cleanup();
+        try { if (holder.req) holder.req.destroy(); } catch (e) {}
+        try { fs.rmSync(destPath + ".part", { force: true }); } catch (e) {}
+        reject(new Error(msg));
+      };
       const go = (u, redirectsLeft, hdrs) => {
         if (holder.cancelled) { failCancelled(); return; }
+        // Strict: boshlang'ich URL va HAR BIR redirect https bo'lishi shart (downgrade = uzish).
+        if (httpsOnly && !isHttps(u)) { abortStrict("Insecure (non-HTTPS) download URL"); return; }
         if (redirectsLeft <= 0) {
           cleanup();
           reject(new Error("Redirect limit"));
@@ -1055,6 +1075,12 @@ const AssetFlowCatalog = (() => {
             return;
           }
           const total = parseInt(res.headers["content-length"], 10) || 0;
+          // Strict: e'lon qilingan hajm chegaradan katta bo'lsa — bitta bayt ham yozilmaydi.
+          if (maxBytes && total > maxBytes) {
+            try { res.destroy(); } catch (e) {}
+            abortStrict("Download exceeds the size limit");
+            return;
+          }
           let done = 0;
           let lastTime = 0;
           // Atomik yozish: avval temp `.part` faylga oqim, tugagach rename → destPath.
@@ -1066,9 +1092,28 @@ const AssetFlowCatalog = (() => {
           holder.ws = ws;
           // Birinchi baytda darhol ko'rsatamiz, keyin har ~250ms (MB hisoblagich jonli bo'lsin)
           if (onProgress) onProgress(0, total);
+          let failed = false;
+          const onFail = (e) => {
+            if (failed) return; // birinchi xato hal qiladi (destroy ikkinchi hodisa bermasin)
+            failed = true;
+            cleanup();
+            try { fs.rmSync(partPath, { force: true }); } catch {} // qisman temp'ni tozalash
+            holder.cancelled ? failCancelled() : reject(e);
+          };
+          let overflowed = false;
           res.on("data", (chunk) => {
-            if (holder.cancelled) return;
+            if (holder.cancelled || overflowed) return;
             done += chunk.length;
+            // Strict: chegaradan OSHGAN ZAHOTI uzamiz — disk to'lguncha kutmaymiz
+            // (Content-Length yolg'on yoki umuman yo'q bo'lishi mumkin).
+            if (maxBytes && done > maxBytes) {
+              overflowed = true;
+              try { res.unpipe(ws); } catch (e) {}
+              try { res.destroy(); } catch (e) {}
+              try { ws.destroy(); } catch (e) {}
+              onFail(new Error("Download exceeds the size limit"));
+              return;
+            }
             if (onProgress) {
               const now = Date.now();
               if (now - lastTime > 250 || done === total) {
@@ -1077,11 +1122,6 @@ const AssetFlowCatalog = (() => {
               }
             }
           });
-          const onFail = (e) => {
-            cleanup();
-            try { fs.rmSync(partPath, { force: true }); } catch {} // qisman temp'ni tozalash
-            holder.cancelled ? failCancelled() : reject(e);
-          };
           res.pipe(ws);
           ws.on("finish", () => {
             if (holder.cancelled) { onFail(new Error("cancelled")); return; }
@@ -1571,6 +1611,9 @@ const AssetFlowCatalog = (() => {
     downloadPackToTemp,
     downloadSceneMogrt,
     downloadUrlToFile,
+    // downloadUrlToFile `opts` (httpsOnly/maxBytes) ni QO'LLAB-QUVVATLAYDI. Updater shu
+    // bayroqni tekshiradi: eski nusxa yonida ishga tushsa — hech narsa yuklamaydi.
+    downloadStrictSupported: true,
     cancelDownload,
     hasActiveDownload,
     mogrtCompName,

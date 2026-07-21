@@ -151,6 +151,29 @@ export function isHttpsUrl(u: unknown): boolean {
   return /^https:\/\/[^\s]+$/i.test(String(u ?? ""));
 }
 
+// ── LEGACY .zxp o'chirish kaliti (kill switch) ─────────────────────────────
+// ff10d51'gacha bo'lgan panel `platform=` YUBORMAYDI va javobdagi `downloadUrl`ni
+// ko'rsa arxivni ochib O'ZINING jonli extension papkasi ustiga yozadi. O'sha eski
+// klientlar hali o'rnatilgan bo'lishi mumkin — shu bois legacy havola endi FAQAT
+// aniq `manual=1` opt-in bilan (veb sahifadagi qo'lda yuklab olish) qaytariladi.
+// Opt-in YO'Q => `downloadUrl: null` => eski klientda xavfli yo'l umuman ishga
+// tushmaydi. Yangi panel bu maydonni baribar e'tiborsiz qoldiradi.
+
+/** Aniq (explicit) qo'lda yuklab olish opt-in'i. Allowlist QATTIQ: faqat shu
+ *  qiymatlar. Yo'q/bo'sh/massiv/boshqa har qanday qiymat = opt-in YO'Q (fail-closed). */
+export function isManualDownloadRequest(raw: unknown): boolean {
+  if (typeof raw !== "string") return false;
+  const v = raw.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
+/** Javobga tushadigan legacy havola — opt-in bo'lmasa HAR DOIM null.
+ *  Route AYNAN shu funksiyadan o'tkazadi (yagona chiqish nuqtasi). */
+export function resolveLegacyDownloadUrl(manualParam: unknown, signedUrl: string | null): string | null {
+  if (!isManualDownloadRequest(manualParam)) return null;
+  return signedUrl || null;
+}
+
 export interface PluginInstallerRow {
   platform: string;
   storageKey: string;
@@ -234,8 +257,9 @@ export interface InstallerContext {
 
 /** current = klient hozirgi versiyasi ("" = noma'lum/birinchi tekshiruv).
  *  latest = so'nggi e'lon qilingan reliz (null = HALI HECH NARSA nashr etilmagan — beta chiqmagan).
- *  downloadUrl = LEGACY .zxp presigned havolasi (veb sahifadagi qo'lda yuklab olish; panel
- *    uni o'rnatish uchun ISHLATMAYDI) yoki null.
+ *  downloadUrl = LEGACY .zxp presigned havolasi — route uni `resolveLegacyDownloadUrl`
+ *    orqali beradi, ya'ni faqat aniq `manual=1` so'rovida (veb sahifadagi qo'lda yuklab
+ *    olish). Opt-in bo'lmasa null — eski self-overwrite klientlari uchun kill switch.
  *  installerCtx = platformaga xos installer (yo'q bo'lsa halol status bilan). */
 export function computePluginVersionResponse(
   current: string,

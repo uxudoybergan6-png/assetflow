@@ -7,15 +7,21 @@
 //   B) XULQ — blok Node'da stub global'lar bilan ishga tushiriladi va uning
 //      HAQIQIY funksiyalari (window.__afUpdater) chaqiriladi (musbat + salbiy);
 //   C) MUTATSIYA ISBOTI — ataylab buzilgan nusxalarda A va B tekshiruvlari
-//      YIQILISHI shart (aks holda testlar bo'sh — hech nimani isbotlamaydi).
+//      YIQILISHI shart (aks holda testlar bo'sh — hech nimani isbotlamaydi);
+//   D) YUKLAB OLUVCHI — updater ishlatadigan HAQIQIY AssetFlowCatalog.downloadUrlToFile
+//      (assetflow-catalog.js jonli manbasi) strict rejimda: https→http redirect rad
+//      etiladi, hajm chegarasi oqim ustida ushlanadi, opts'siz eski xulq o'zgarmaydi.
 //
 // Ishga tushirish: node plugins/after-effects-cep/scripts/test-updater-security.mjs
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { createRequire } from "node:module";
+import { Readable } from "node:stream";
+import http from "node:http";
 import os from "node:os";
 
 const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -79,11 +85,30 @@ const REQUIRED = [
   ["OS-approval + restart messaging", /may ask you to approve[\s\S]*restart|approve it[\s\S]*quit After Effects/i],
   ["update polling preserved", /setInterval\s*\(function\s*\(\s*\)\s*\{\s*checkForUpdate\(true\);\s*\}\s*,\s*6\*60\*60\*1000\)/],
   ["Later / dismiss preserved", /afUpdLater[\s\S]*setDismissed/],
-  ["mandatory releases cannot be dismissed", /\(mand\?''\s*:\s*'<button type="button" class="spbtn" id="afUpdLater">Later<\/button>'\)/],
+  ["mandatory blocks dismissal only when the installer really works", /\(blocking\?''\s*:\s*'<button type="button" class="spbtn" id="afUpdLater">Later<\/button>'\)/],
+  ["dismissal gate computed by blocksDismissal()", /var blocking=blocksDismissal\(info,osPlatform\(\),IS_CEP,downloadEngineReady\(\)\)/],
   ["platform sent explicitly to the API", /platformQuery\s*\(\s*\)/],
+  // Task 2 tuzatish (audit #2) — yuklab olish STRICT rejimda chaqiriladi.
+  ["strict https-only + bounded download options at the live call site", /downloadUrlToFile\([\s\S]{0,400}?\},null,\{httpsOnly:true,maxBytes:MAX_INSTALLER_BYTES\}\)/],
+  ["download engine must advertise strict support", /AssetFlowCatalog\.downloadStrictSupported===true/],
+  // Task 2 tuzatish (audit #4) — muvaffaqiyat faqat 'spawn' dan keyin.
+  ["launch settled through settleLaunch()", /settleLaunch\(ch,supportsSpawnEvent\(nodeVersion\(\)\),/],
+  ["spawn event is the success signal", /ch\.on\('spawn',function\(\)\{ done\(onOk\); \}\)/],
 ];
 for (const [label, re] of REQUIRED) {
   ok(`updater source HAS ${label}`, re.test(SRC));
+}
+
+// launchInstaller — "ochildi" ekrani spawn() dan KEYIN darhol emas, faqat settleLaunch
+// muvaffaqiyat callback'i ichida chaqirilishi SHART (aks holda yolg'on + yetim temp fayl).
+{
+  const body = SRC.slice(SRC.indexOf("function launchInstaller("));
+  const settleAt = body.indexOf("settleLaunch(ch,");
+  const handedAt = body.indexOf("showHandedOff(");
+  const tmpAt = body.indexOf("upd.tmp=null;");
+  ok("launchInstaller shows success only after settleLaunch", settleAt > 0 && handedAt > settleAt);
+  ok("launchInstaller relinquishes the temp file only after settleLaunch", settleAt > 0 && tmpAt > settleAt);
+  ok("launchInstaller has no synchronous success path", !/spawn\([^)]*\);\s*(ch\.unref\(\);\s*)?(upd\.tmp=null;\s*)?showHandedOff/.test(body));
 }
 
 // Blok sintaktik sog'mi (CEP ES5 uslubi — node --check ES5'ni ham qabul qiladi).
@@ -113,19 +138,23 @@ function loadUpdater(src) {
     querySelectorAll: () => [],
   };
   const noop = () => 0;
+  // setTimeout navbatga yig'iladi — kechiktirilgan yo'llarni test ATAYLAB ishga tushiradi.
+  const timers = [];
   const fn = new Function(
     "window", "document", "localStorage", "setTimeout", "setInterval", "pubFetch", "console", "require", "process",
     src + "\nreturn window.__afUpdater;"
   );
-  return fn(
+  const api = fn(
     win, doc,
     { getItem: () => null, setItem() {} },
-    noop, noop,
+    (cb) => { timers.push(cb); return timers.length; }, noop,
     () => Promise.reject(new Error("no network in test")),
     { error() {}, log() {} },
     () => { throw new Error("require blocked in test"); },
     { platform: "linux" }
   );
+  api.__timers = timers;
+  return api;
 }
 const U = loadUpdater(SRC);
 ok("updater exposes its real internals for testing", !!(U && U.validateInstaller && U.launchPlan));
@@ -174,6 +203,71 @@ check("linux pkg → no launch plan", U.launchPlan("linux", "/tmp/f.pkg", "pkg")
 check("empty path → no launch plan", U.launchPlan("darwin", "", "pkg"), null);
 check("download page is https", U.isHttpsUrl(U.downloadPage), true);
 
+// ── B2) Majburiy yangilanish foydalanuvchini QOPQONGA solmaydi (audit #3) ──
+// Bloklash faqat: mandatory + CEP + strict dvigatel + YAROQLI installer. Bittasi yo'q =>
+// halol xato + Later/yopish (keyingi tekshiruvda yana eslatiladi).
+const mandInfo = { mandatory: true, latest: { version: "9.9.9" }, installer: macInstaller };
+check("mandatory + valid installer + CEP → dismissal blocked", U.blocksDismissal(mandInfo, "darwin", true, true), true);
+check("mandatory but NO installer → not blocked (no trap)", U.blocksDismissal({ ...mandInfo, installer: null }, "darwin", true, true), false);
+check("mandatory but storage unavailable (no url) → not blocked", U.blocksDismissal({ ...mandInfo, installer: { ...macInstaller, url: "" } }, "darwin", true, true), false);
+check("mandatory but installer for another OS → not blocked", U.blocksDismissal(mandInfo, "win32", true, true), false);
+check("mandatory on an unsupported OS → not blocked", U.blocksDismissal(mandInfo, "linux", true, true), false);
+check("mandatory but checksum missing → not blocked", U.blocksDismissal({ ...mandInfo, installer: { ...macInstaller, sha256: "" } }, "darwin", true, true), false);
+check("mandatory outside CEP → not blocked", U.blocksDismissal(mandInfo, "darwin", false, true), false);
+check("mandatory without a strict download engine → not blocked", U.blocksDismissal(mandInfo, "darwin", true, false), false);
+check("non-mandatory release never blocks", U.blocksDismissal({ ...mandInfo, mandatory: false }, "darwin", true, true), false);
+check("missing info never blocks", U.blocksDismissal(null, "darwin", true, true), false);
+
+// ── B3) Ishga tushirish HALOLLIGI (audit #4) — muvaffaqiyat faqat 'spawn' dan keyin ──
+function fakeChild() {
+  const h = {};
+  return {
+    on(ev, cb) { (h[ev] = h[ev] || []).push(cb); return this; },
+    emit(ev, a) { (h[ev] || []).forEach((cb) => cb(a)); },
+  };
+}
+check("node 16 supports the spawn event", U.supportsSpawnEvent("16.14.2"), true);
+check("node 15.5 (CEP 11) supports the spawn event", U.supportsSpawnEvent("15.5.0"), true);
+check("node 12 does not (deferred settle)", U.supportsSpawnEvent("12.22.0"), false);
+check("unknown node version → deferred settle", U.supportsSpawnEvent(""), false);
+{
+  const seen = [];
+  const ch = fakeChild();
+  U.settleLaunch(ch, true, () => seen.push("ok"), () => seen.push("err"));
+  check("no success before the child actually spawns", seen, []);
+  ch.emit("spawn");
+  check("success shown once the child spawns", seen, ["ok"]);
+  ch.emit("error", new Error("late"));
+  check("a late spawn error does not double-settle", seen, ["ok"]);
+}
+{
+  const seen = [];
+  const ch = fakeChild();
+  U.settleLaunch(ch, true, () => seen.push("ok"), () => seen.push("err"));
+  ch.emit("error", new Error("ENOENT"));
+  check("async spawn error settles as failure, never success", seen, ["err"]);
+  ch.emit("spawn");
+  check("spawn after an error cannot claim success", seen, ["err"]);
+}
+{
+  const seen = [];
+  const ch = fakeChild();
+  const from = U.__timers.length;
+  U.settleLaunch(ch, false, () => seen.push("ok"), () => seen.push("err"));
+  ch.emit("error", new Error("ENOENT"));
+  U.__timers.slice(from).forEach((fn) => fn());
+  check("legacy runtime: error wins over the deferred settle", seen, ["err"]);
+}
+{
+  const seen = [];
+  const ch = fakeChild();
+  const from = U.__timers.length;
+  U.settleLaunch(ch, false, () => seen.push("ok"), () => seen.push("err"));
+  check("legacy runtime: nothing claimed before the deferred tick", seen, []);
+  U.__timers.slice(from).forEach((fn) => fn());
+  check("legacy runtime: success after the deferred tick", seen, ["ok"]);
+}
+
 // ── C) MUTATSIYA ISBOTI — buzilgan nusxalarda tekshiruvlar YIQILISHI shart ──
 function scanFails(mutant, re) { return re.test(mutant); }
 
@@ -216,6 +310,193 @@ function scanFails(mutant, re) { return re.test(mutant); }
   const mutant = SRC.replace("{detached:true,stdio:'ignore'}", "{detached:true,stdio:'ignore',shell:true}");
   ok("mutation: shell:true launch IS caught by the forbidden scan", scanFails(mutant, /\bshell\s*:\s*true\b/));
 }
+// C7 — majburiylik yana so'zsiz bloklasa (qopqon), skan TUTADI.
+{
+  const mutant = SRC.replace(
+    "+(blocking?'':'<button type=\"button\" class=\"spbtn\" id=\"afUpdLater\">Later</button>')",
+    "+(mand?'':'<button type=\"button\" class=\"spbtn\" id=\"afUpdLater\">Later</button>')"
+  );
+  ok("mutation: unconditional mandatory block IS caught by the source scan",
+    !/\(blocking\?''\s*:\s*'<button type="button" class="spbtn" id="afUpdLater">Later<\/button>'\)/.test(mutant));
+}
+// C8 — blocksDismissal installer yaroqliligini tekshirmay qo'ysa, XULQ testi TUTADI.
+{
+  const mutant = SRC.replace(
+    "return validateInstaller(plat,info.installer).ok===true;",
+    "return true;"
+  );
+  const M = loadUpdater(mutant);
+  ok("mutation: blocking an impossible mandatory update IS caught",
+    U.blocksDismissal({ ...mandInfo, installer: null }, "darwin", true, true) === false &&
+    M.blocksDismissal({ ...mandInfo, installer: null }, "darwin", true, true) === true);
+}
+// C9 — strict yuklab olish parametrlari olib tashlansa, skan TUTADI.
+{
+  const mutant = SRC.replace(",null,{httpsOnly:true,maxBytes:MAX_INSTALLER_BYTES})", ")");
+  ok("mutation: dropping the strict download options IS caught",
+    !/downloadUrlToFile\([\s\S]{0,400}?\},null,\{httpsOnly:true,maxBytes:MAX_INSTALLER_BYTES\}\)/.test(mutant));
+}
+// C10 — spawn'ni kutmay "ochildi" deyilsa, tuzilma tekshiruvi TUTADI.
+{
+  const mutant = SRC.replace(
+    /settleLaunch\(ch,supportsSpawnEvent\(nodeVersion\(\)\),function\(\)\{/,
+    "upd.tmp=null; showHandedOff(v); settleLaunch(ch,supportsSpawnEvent(nodeVersion()),function(){"
+  );
+  const body = mutant.slice(mutant.indexOf("function launchInstaller("));
+  ok("mutation: claiming success before spawn IS caught",
+    body.indexOf("showHandedOff(") < body.indexOf("settleLaunch(ch,"));
+}
+// C11 — settleLaunch ikki marta hal qilsa, XULQ testi TUTADI.
+{
+  const mutant = SRC.replace("function done(fn,a){ if(settled)return; settled=true;", "function done(fn,a){ settled=true;");
+  const M = loadUpdater(mutant);
+  const seen = [];
+  const ch = fakeChild();
+  M.settleLaunch(ch, true, () => seen.push("ok"), () => seen.push("err"));
+  ch.emit("spawn");
+  ch.emit("error", new Error("late"));
+  ok("mutation: double settlement IS caught by the behaviour test", seen.length === 2);
+}
+
+// ── D) YUKLAB OLUVCHI — HAQIQIY AssetFlowCatalog.downloadUrlToFile (audit #2) ──────
+// Updater aynan shu umumiy yordamchini chaqiradi. Test uni assetflow-catalog.js JONLI
+// manbasidan yuklaydi (soxta nusxa YO'Q): transport sifatida haqiqiy localhost HTTP
+// serveri ishlatiladi; https→http downgrade uchun `require` darajasida transport
+// almashtiriladi (yordamchi mantiqning O'ZI sinaladi, qayta yozilmaydi).
+const CATALOG_SRC = readFileSync(path.join(SCRIPTS_DIR, "..", "assetflow-catalog.js"), "utf8");
+const nodeRequire = createRequire(import.meta.url);
+
+function loadCatalog(src, requireImpl) {
+  const fn = new Function("window", "require", "console",
+    (src || CATALOG_SRC) + "\nreturn AssetFlowCatalog;");
+  return fn({}, requireImpl || nodeRequire, { log() {}, error() {}, warn() {} });
+}
+const CAT = loadCatalog();
+ok("shared downloader loaded from the live assetflow-catalog.js", typeof CAT.downloadUrlToFile === "function");
+ok("shared downloader advertises strict-mode support", CAT.downloadStrictSupported === true);
+ok("updater's engine gate names the flag the shared helper actually exports",
+  /AssetFlowCatalog\.downloadStrictSupported===true/.test(SRC) && CAT.downloadStrictSupported === true);
+
+const tmpDir = mkdtempSync(path.join(os.tmpdir(), "ff-dl-test-"));
+const dest = (n) => path.join(tmpDir, n);
+const noLeftovers = (p) => !existsSync(p) && !existsSync(p + ".part");
+const settle = (p) => p.then((v) => ({ ok: true, v }), (e) => ({ ok: false, e }));
+
+function listen(handler) {
+  const srv = http.createServer(handler);
+  return new Promise((res) => srv.listen(0, "127.0.0.1", () => res({ srv, base: `http://127.0.0.1:${srv.address().port}` })));
+}
+const close = (srv) => new Promise((res) => srv.close(res));
+
+// D1 — ORQAGA MOSLIK: opts'siz chaqiruv (pack/mogrt yo'llari) o'zgarmagan — redirect
+// kuzatiladi, fayl to'liq yoziladi.
+{
+  const { srv, base } = await listen((req, res) => {
+    if (req.url === "/r") { res.writeHead(302, { location: base + "/f" }); res.end(); return; }
+    res.writeHead(200, { "content-length": "5" }); res.end("hello");
+  });
+  const out = dest("compat.bin");
+  const r = await settle(CAT.downloadUrlToFile(base + "/r", out, null));
+  ok("legacy call (no opts) still follows redirects and writes the file", r.ok && readFileSync(out, "utf8") === "hello");
+  ok("legacy call leaves no .part file", !existsSync(out + ".part"));
+  await close(srv);
+}
+
+// D2 — STRICT: boshlang'ich URL https bo'lmasa — so'rov UMUMAN yuborilmaydi.
+{
+  let hits = 0;
+  const { srv, base } = await listen((req, res) => { hits++; res.writeHead(200); res.end("x"); });
+  const out = dest("insecure-initial.bin");
+  const r = await settle(CAT.downloadUrlToFile(base + "/f", out, null, null, { httpsOnly: true, maxBytes: 1024 }));
+  ok("strict mode refuses a non-HTTPS initial URL", !r.ok && /non-HTTPS/i.test(String(r.e && r.e.message)));
+  check("strict mode never contacts the insecure host", hits, 0);
+  ok("strict refusal leaves no file behind", noLeftovers(out));
+  await close(srv);
+}
+
+// D3 — STRICT: https→http REDIRECT (downgrade) rad etiladi va http transport
+// umuman ishlatilmaydi.
+function fakeTransports(location) {
+  const httpHits = [];
+  const req = () => ({ on() { return this; }, destroy() {} });
+  const respond = (cb, status, headers, body) => {
+    const res = Readable.from(body ? [Buffer.from(body)] : []);
+    res.statusCode = status; res.headers = headers;
+    setImmediate(() => cb(res));
+    return req();
+  };
+  return {
+    httpHits,
+    https: { get: (u, a, b) => respond(typeof a === "function" ? a : b, 302, { location }, null) },
+    http: { get: (u, a, b) => { httpHits.push(u); return respond(typeof a === "function" ? a : b, 200, { "content-length": "7" }, "payload"); } },
+  };
+}
+{
+  const t = fakeTransports("http://evil.invalid/installer.pkg");
+  const C = loadCatalog(null, (id) => (id === "https" ? t.https : id === "http" ? t.http : nodeRequire(id)));
+  const out = dest("downgrade.bin");
+  const r = await settle(C.downloadUrlToFile("https://cdn.example/i.pkg", out, null, null, { httpsOnly: true, maxBytes: 1024 }));
+  ok("strict mode refuses an https→http redirect", !r.ok && /non-HTTPS/i.test(String(r.e && r.e.message)));
+  check("the http transport is never used after a downgrade", t.httpHits.length, 0);
+  ok("downgrade refusal leaves no file behind", noLeftovers(out));
+}
+// D3-mutatsiya — httpsOnly darvozasi olib tashlansa, downgrade O'TIB KETADI (test bo'sh emas).
+{
+  const t = fakeTransports("http://evil.invalid/installer.pkg");
+  const mutant = CATALOG_SRC.replace(
+    'if (httpsOnly && !isHttps(u)) { abortStrict("Insecure (non-HTTPS) download URL"); return; }',
+    ""
+  );
+  ok("mutation fixture actually removed the https gate", mutant !== CATALOG_SRC);
+  const C = loadCatalog(mutant, (id) => (id === "https" ? t.https : id === "http" ? t.http : nodeRequire(id)));
+  const out = dest("downgrade-mutant.bin");
+  const r = await settle(C.downloadUrlToFile("https://cdn.example/i.pkg", out, null, null, { httpsOnly: true, maxBytes: 1024 }));
+  ok("mutation: dropping the https gate IS caught (downgrade would succeed)", r.ok && t.httpHits.length === 1);
+}
+
+// D4 — STRICT: e'lon qilingan Content-Length chegaradan katta => bitta bayt ham yozilmaydi.
+{
+  const { srv, base } = await listen((req, res) => { res.writeHead(200, { "content-length": String(4096) }); res.end(Buffer.alloc(4096)); });
+  const out = dest("too-big-declared.bin");
+  const r = await settle(CAT.downloadUrlToFile(base + "/f", out, null, null, { maxBytes: 1024 }));
+  ok("declared Content-Length over the limit is rejected", !r.ok && /size limit/i.test(String(r.e && r.e.message)));
+  ok("oversized declaration leaves no file behind", noLeftovers(out));
+  await close(srv);
+}
+
+// D5 — STRICT: Content-Length YO'Q (yolg'on/chunked) — oqim chegaradan oshgan zahoti
+// uziladi, ya'ni server rejalashtirilgan baytlarning HAMMASINI yubora olmaydi.
+{
+  const CHUNK = 64 * 1024, CHUNKS = 256, PLANNED = CHUNK * CHUNKS; // 16 MiB
+  let sent = 0;
+  const { srv, base } = await listen((req, res) => {
+    res.writeHead(200, { "content-type": "application/octet-stream" });
+    let i = 0;
+    const pump = () => {
+      if (i >= CHUNKS || res.destroyed || res.writableEnded) { try { res.end(); } catch (e) {} return; }
+      i++; sent += CHUNK;
+      res.write(Buffer.alloc(CHUNK), () => setImmediate(pump));
+    };
+    pump();
+  });
+  const out = dest("too-big-streamed.bin");
+  const LIMIT = 256 * 1024;
+  const r = await settle(CAT.downloadUrlToFile(base + "/f", out, null, null, { maxBytes: LIMIT }));
+  ok("streamed bytes over the limit are rejected", !r.ok && /size limit/i.test(String(r.e && r.e.message)));
+  ok("the stream is cut early, not after filling the disk", sent < PLANNED);
+  ok("streamed overflow leaves no partial data", noLeftovers(out));
+  await close(srv);
+}
+
+// D6 — STRICT chegara ostidagi yuklash normal ishlaydi (chegara halol, ortiqcha emas).
+{
+  const { srv, base } = await listen((req, res) => { res.writeHead(200, { "content-length": "5" }); res.end("okok!"); });
+  const out = dest("within-limit.bin");
+  const r = await settle(CAT.downloadUrlToFile(base + "/f", out, null, null, { httpsOnly: false, maxBytes: 1024 }));
+  ok("a download within the limit still succeeds", r.ok && readFileSync(out, "utf8") === "okok!");
+  await close(srv);
+}
+rmSync(tmpDir, { recursive: true, force: true });
 
 if (fail) {
   console.error(`\n${fail}/${count} test(lar) yiqildi`);

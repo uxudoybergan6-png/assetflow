@@ -16602,8 +16602,40 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     return null;
   }
   function reasonText(r){ return REASON_TEXT[String(r==null?'':r)]||'The update could not be installed automatically.'; }
+  /** Yuklab olish dvigateli STRICT rejimni (httpsOnly+maxBytes) qo'llab-quvvatlaydimi.
+   *  Eski nusxa yonida ishga tushsa — fail-closed: hech narsa yuklanmaydi. */
+  function downloadEngineReady(){
+    return typeof AssetFlowCatalog!=='undefined'&&!!AssetFlowCatalog.downloadUrlToFile&&AssetFlowCatalog.downloadStrictSupported===true;
+  }
+  /** MAJBURIY reliz dialogni FAQAT haqiqatan o'rnatib bo'ladigan bo'lsa bloklaydi.
+   *  Installer yo'q/yaroqsiz yoki CEP emas — foydalanuvchi qopqonda qolmaydi:
+   *  halol xato + Later/yopish/yuklab olish sahifasi (keyingi tekshiruvda yana eslatiladi). */
+  function blocksDismissal(info,plat,isCep,engineReady){
+    if(!info||!info.mandatory)return false;
+    if(!isCep||!engineReady)return false;
+    return validateInstaller(plat,info.installer).ok===true;
+  }
+  /** 'spawn' hodisasi Node 15+ da bor. Eskisida hodisa umuman kelmaydi — o'shanda
+   *  qisqa kechikish bilan hal qilamiz (aks holda muvaffaqiyat hech qachon ko'rsatilmaydi). */
+  function supportsSpawnEvent(nodeVersion){
+    var m=/^(\d+)\./.exec(String(nodeVersion==null?'':nodeVersion));
+    return !!m&&parseInt(m[1],10)>=15;
+  }
+  function nodeVersion(){ try{ return String(process.versions.node||''); }catch(e){ return ''; } }
+  /** spawn natijasini BIR MARTA hal qiladi. 'spawn' = bola haqiqatan ishga tushdi
+   *  (faqat shundan keyin muvaffaqiyat ko'rsatiladi va temp egaligi OS'ga o'tadi),
+   *  'error' = tozalash + launch_failed. Ikki marta hal qilinmaydi. */
+  function settleLaunch(ch,useSpawnEvent,onOk,onErr){
+    var settled=false;
+    function done(fn,a){ if(settled)return; settled=true; try{ fn(a); }catch(e){} }
+    ch.on('error',function(err){ done(onErr,err); });
+    if(useSpawnEvent){ ch.on('spawn',function(){ done(onOk); }); }
+    else { setTimeout(function(){ done(onOk); },500); }
+    return function(){ return settled; };
+  }
   window.__afUpdater={platformInfo:platformInfo,isHttpsUrl:isHttpsUrl,isSha256Hex:isSha256Hex,
     safeInstallerName:safeInstallerName,validateInstaller:validateInstaller,launchPlan:launchPlan,
+    blocksDismissal:blocksDismissal,supportsSpawnEvent:supportsSpawnEvent,settleLaunch:settleLaunch,
     reasonText:reasonText,platforms:PLATFORMS,maxBytes:MAX_INSTALLER_BYTES,downloadPage:DOWNLOAD_PAGE};
 
   /* ── Vaqtinchalik fayllar (nosozlikda hech narsa qolmaydi) ── */
@@ -16629,26 +16661,31 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     if(!upd.ov){ upd.ov=document.createElement('div'); upd.ov.className='afspov'; document.body.appendChild(upd.ov); }
     var mand=!!info.mandatory;
     var v=validateInstaller(osPlatform(),info.installer);
-    var canInstall=v.ok&&IS_CEP;
+    var canInstall=v.ok&&IS_CEP&&downloadEngineReady();
+    // Majburiylik dialogni FAQAT o'rnatish haqiqatan mumkin bo'lganda bloklaydi —
+    // imkonsiz yangilanish foydalanuvchini qopqonga solmaydi (halol xato + Later).
+    var blocking=blocksDismissal(info,osPlatform(),IS_CEP,downloadEngineReady());
     var notes=String(info.latest.releaseNotes||'').split('\n').slice(0,10).map(function(l){ return '<div style="font-size:11px;color:var(--mut);line-height:1.5">• '+esc(l)+'</div>'; }).join('');
     // Halol kutish: installer OS tomonidan ochiladi, ruxsat so'ralishi mumkin, AE qayta ishga tushadi.
     var note=canInstall
       ? 'The installer opens outside After Effects. Your system may ask you to approve it, and After Effects must be restarted when it finishes.'
       : reasonText(v.ok?'no_download_engine':v.reason);
     upd.ov.innerHTML='<div class="spc">'
-      +'<div class="sph"><b>FrameFlow v'+esc(info.latest.version)+' available</b>'+(mand?'':'<span class="x" id="afUpdX">✕</span>')+'</div>'
+      +'<div class="sph"><b>FrameFlow v'+esc(info.latest.version)+' available</b>'+(blocking?'':'<span class="x" id="afUpdX">✕</span>')+'</div>'
       +'<div style="font-size:11px;color:var(--mut2);margin:-4px 0 8px">You have v'+esc(window.AF_PLUGIN_VERSION)+(mand?' — this update is required to continue':'')+'</div>'
       +(notes?('<div class="spl" style="margin-bottom:6px">'+notes+'</div>'):'')
       +'<div style="font-size:10.5px;color:var(--mut2);line-height:1.5;margin-bottom:6px">'+esc(note)+'</div>'
       +'<div id="afUpdStatus" style="font-size:10.5px;color:var(--mut2);min-height:14px"></div>'
       +'<div class="spb">'
-      +(mand?'':'<button type="button" class="spbtn" id="afUpdLater">Later</button>')
+      +(blocking?'':'<button type="button" class="spbtn" id="afUpdLater">Later</button>')
       +(canInstall
         ?'<button type="button" class="spbtn pri" id="afUpdGo">Download &amp; install</button>'
         :'<button type="button" class="spbtn pri" id="afUpdPage">Open download page</button>')
       +'</div></div>';
     upd.ov.classList.add('on');
-    if(!mand){
+    if(!blocking){
+      // Majburiy-lekin-imkonsiz holatda ham yopiladi; `setDismissed` mandatory relizni
+      // jimlatmaydi (checkForUpdate mandatory'da dismiss'ga qaramaydi) — keyin yana eslatiladi.
       var x=$('afUpdX'); if(x)x.addEventListener('click',function(){ upd.ov.classList.remove('on'); setDismissed(info.latest.version); });
       var lt=$('afUpdLater'); if(lt)lt.addEventListener('click',function(){ upd.ov.classList.remove('on'); setDismissed(info.latest.version); });
     }
@@ -16687,7 +16724,7 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var fs,path,os,child,crypto;
     try{ fs=require('fs'); path=require('path'); os=require('os'); child=require('child_process'); crypto=require('crypto'); }
     catch(e){ showBlocked('no_download_engine'); return; }
-    if(!(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadUrlToFile)){ showBlocked('no_download_engine'); return; }
+    if(!downloadEngineReady()){ showBlocked('no_download_engine'); return; }
     // Chegaralangan, noyob vaqtinchalik papka — extension papkasiga HECH QACHON yozilmaydi.
     var dir='';
     try{ dir=fs.mkdtempSync(path.join(os.tmpdir(),'frameflow-update-')); }catch(e2){ showBlocked('download_failed'); return; }
@@ -16697,9 +16734,11 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     if(path.dirname(file)!==dir){ cleanupTmp(); showBlocked('download_failed'); return; } // qo'shimcha traversal to'sig'i
     upd.busy=true;
     setUpdStatus('Downloading the '+v.label+' installer…');
+    // STRICT: boshlang'ich URL ham, har bir redirect ham https bo'lishi shart (downgrade
+    // = uzish) va oqim 512 MiB'dan oshsa darhol uziladi — qisman fayl o'chiriladi.
     AssetFlowCatalog.downloadUrlToFile(info.installer.url,file,function(done,total){
       if(total>0)setUpdStatus('Downloading… '+Math.floor(done/total*100)+'%');
-    }).then(function(){
+    },null,{httpsOnly:true,maxBytes:MAX_INSTALLER_BYTES}).then(function(){
       setUpdStatus('Verifying SHA-256…');
       var st=null; try{ st=fs.statSync(file); }catch(e3){ st=null; }
       if(!st||!(st.size>0)||st.size>MAX_INSTALLER_BYTES){ cleanupTmp(); showBlocked('download_failed'); return; }
@@ -16719,17 +16758,24 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     });
   }
 
-  /** Faylni OS'ga topshiradi — argument massivi, shell YO'Q, imtiyoz KO'TARILMAYDI. */
+  /** Faylni OS'ga topshiradi — argument massivi, shell YO'Q, imtiyoz KO'TARILMAYDI.
+   *  Muvaffaqiyat FAQAT bola haqiqatan ishga tushgach ('spawn') ko'rsatiladi: spawn xatosi
+   *  ASINXRON keladi, shu bois darhol "ochildi" deyish yolg'on bo'lardi va temp fayl
+   *  egasiz qolardi. 'error' → tozalash + halol launch_failed. Ikki marta hal qilinmaydi. */
   function launchInstaller(child,plat,file,v){
     var plan=launchPlan(plat,file,v.ext);
     if(!plan){ cleanupTmp(); showBlocked('bad_extension'); return; }
     setUpdStatus('Opening the installer…');
     try{
       var ch=child.spawn(plan.cmd,plan.args,{detached:true,stdio:'ignore'});
-      ch.on('error',function(err){ console.error('[update] launch',err); showBlocked('launch_failed'); });
-      ch.unref();
-      upd.tmp=null; // fayl endi OS installeriga kerak — o'chirmaymiz (OS temp tozalaydi)
-      showHandedOff(v);
+      settleLaunch(ch,supportsSpawnEvent(nodeVersion()),function(){
+        upd.tmp=null; // fayl endi OS installeriga kerak — o'chirmaymiz (OS temp tozalaydi)
+        try{ ch.unref(); }catch(e2){}
+        showHandedOff(v);
+      },function(err){
+        console.error('[update] launch',err);
+        cleanupTmp(); showBlocked('launch_failed');
+      });
     }catch(e){
       console.error('[update] launch',e);
       cleanupTmp(); showBlocked('launch_failed');

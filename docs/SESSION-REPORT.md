@@ -1,11 +1,11 @@
-# SESSION-REPORT — Task 2: panel self-updater → OS installer zanjiri (2026-07-22)
-**1 commit, push/deploy/o'rnatish YO'Q. Pul/kredit/billing/auth/AI/katalog diff'da YO'Q.**
-- **Olib tashlandi:** panel-ichi self-updater (zip → `unzip` → `cp -R` extension papkasi ustiga, `extensionDir()`, "papkani almashtiring" maslahati). Panel endi HECH NARSA o'rnatmaydi.
-- **O'rniga:** platformaga xos installer — OS allowlist (`mac`=.pkg · `win`=.exe/.msi), HTTPS'dan chegaralangan temp'ga yuklab olish (nom versiyadan quriladi), **SHA-256 (64 hex) MAJBURIY**,
-  so'ng OS'ga argument-massiv bilan topshirish (`/usr/bin/open` · `msiexec /i` · `.exe`). Imtiyoz ko'tarilmaydi, ishonch chegarasi = OS installeri.
-- Nosozlikda: fayl+temp o'chadi, halol inglizcha sabab + "Open download page" (papka almashtirish taklifi YO'Q). Poll(4s/6soat)/Later/mandatory/English UI SAQLANGAN; UI halol aytadi — OS ruxsat so'rashi mumkin, AE qayta ishga tushirilsin.
-- **API:** `GET /api/plugin/version?current=&platform=` → FAQAT so'ralgan platformaning `installer` bloki (storage kaliti YO'Q) + halol `installerStatus` (ok/unsupported_platform/not_published/storage_unavailable). Legacy `.zxp` = `downloadUrl` (faqat qo'lda; panel AVTO o'rnatmaydi).
-- **Admin publish fail-closed:** platforma+kengaytma allowlist · sha256 64 hex · HeadObject mavjud · **SHA-256 storage'dan QAYTA hisoblanadi** (`sha256OfS3Object`), mos kelmasa 400. auth/audit TEGILMAGAN.
-- **DB (additive):** `PluginInstaller` jadvali + `PluginRelease.downloadKey` nullable — migratsiya `20260722120000_plugin_installer_artifacts` (eski reliz ma'lumoti saqlanadi).
-- **Testlar:** yangi `test:plugin-updater` **64/64** (jonli HTML bloki: taqiq-skan + xulq + 6 mutatsiya isboti) · release-contract **85/85** · plugin-package **47/47** · public-copy **67/67** · download-state **10/10** · API/DB build PASS.
-- **Kutilmoqda (Task 3):** imzolangan `.pkg`/`.exe` artefaktlari — copy-paste prompt: `docs/NEXT-TASK-INSTALLER-ARTIFACTS.md`. Ega: Apple Developer ID Installer + notarizatsiya, Windows Authenticode sertifikati.
+# SESSION-REPORT — Task 2 tuzatish: direktor auditi (2026-07-22)
+
+**1 tuzatish commit'i (ff10d51 AMEND QILINMAGAN), push/deploy/o'rnatish YO'Q. Pul/kredit/billing/auth/AI/katalog/payout diff'da YO'Q.**
+
+- **#1 Legacy klient kill switch:** `GET /api/plugin/version` legacy `.zxp` `downloadUrl`ni FAQAT aniq `manual=1` opt-in bilan qaytaradi (`isManualDownloadRequest` + `resolveLegacyDownloadUrl`, route ikkalasidan o'tadi). Param'siz/eski panel so'rovi → `downloadUrl:null`, havola umuman IMZOLANMAYDI, storage kaliti chiqmaydi. Veb "Download the plugin (.zxp)" tugmasi endi `FFAPI.pluginVersion(null,{manual:true})` bilan aniq so'raydi.
+- **#2 Strict + chegaralangan yuklovchi:** umumiy `downloadUrlToFile`ga orqaga-mos 5-arg `opts` (`httpsOnly`, `maxBytes`); FAQAT updater yoqadi (512 MiB). Boshlang'ich URL va HAR BIR redirect https bo'lishi shart (downgrade = uzish), Content-Length chegaradan katta bo'lsa bitta bayt yozilmaydi, oqim oshsa darhol uziladi — `.part` o'chiriladi, hech narsa ishga tushmaydi. Pack/MOGRT chaqiruvlari (opts'siz) o'zgarmagan. Updater `downloadStrictSupported` bayrog'ini talab qiladi (eski nusxa = fail-closed).
+- **#3 Imkonsiz majburiy yangilanish qopqoni yo'q:** `blocksDismissal(info,plat,isCep,engineReady)` — bloklash faqat CEP + strict dvigatel + YAROQLI installer bo'lganda. Aks holda halol xato + Later/✕/"Open download page"; mandatory reliz dismiss bilan jimlanmaydi (6 soatda yana eslatiladi). Yaroqli installer bo'lsa bloklash SAQLANGAN.
+- **#4 Ishga tushirish halolligi:** `settleLaunch(ch,useSpawnEvent,…)` — "Installer opened" va temp egaligidan voz kechish FAQAT bola `'spawn'` bergach; `'error'` → `cleanupTmp()` + `launch_failed`. Ikki marta hal qilinmaydi; Node<15 uchun kechiktirilgan zaxira yo'l.
+- **#5 Gigiyena:** `test-plugin-release-contract.mjs` EOF bo'sh qatori olib tashlandi (`git diff --check` toza).
+- **Testlar (hammasi PASS):** `test:plugin-updater` **118/118** (jonli HTML bloki + JONLI `assetflow-catalog.js` yuklovchisi: haqiqiy localhost server, https→http rad, oqim chegarasi, 11 mutatsiya isboti) · `test:release-contract` **108/108** (23 yangi: opt-in allowlist + 3 so'rov shakli + route MANBA isboti) · `test:plugin-package` **47/47** · `verify-public-copy` **67/67** · `test:plugin-download-state` **10/10** · API build PASS. DB/schema TEGILMAGAN.
+- **Kutilmoqda (Task 3 — BOSHLANMAGAN):** imzolangan `.pkg`/`.exe` artefaktlari — `docs/NEXT-TASK-INSTALLER-ARTIFACTS.md`.

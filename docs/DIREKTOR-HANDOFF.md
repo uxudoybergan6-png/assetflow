@@ -130,10 +130,20 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 > temp papkaga tushadi, **SHA-256 (64 hex) MAJBURIY** tekshiriladi, so'ng fayl argument-massiv
 > bilan OS installeriga topshiriladi (`/usr/bin/open` · `msiexec /i`). Ishonch chegarasi = OS.
 > Nosozlikda halol xabar + "Open download page" (papka almashtirish maslahati YO'Q).
-> Poll / Later / mandatory / English UI o'zgarmagan. `GET /api/plugin/version` endi
+> Poll / Later / English UI o'zgarmagan. `GET /api/plugin/version` endi
 > `platform=` oladi va FAQAT o'sha platformaning installerini beradi (storage kaliti chiqmaydi);
 > admin publish SHA-256'ni storage'dan QAYTA hisoblab solishtiradi. Additive migratsiya:
 > `PluginInstaller` + `downloadKey` nullable. Kontrakt: **`docs/PLUGIN-UPDATE-CHAIN.md`**.
+>
+> **Direktor auditi bo'yicha tuzatildi (o'sha kun, alohida commit):**
+> (1) **Legacy kill switch** — legacy `.zxp` `downloadUrl` endi FAQAT `manual=1` opt-in bilan
+> qaytariladi; param'siz (ya'ni ESKI o'rnatilgan panelning so'rov shakli) → `null`, ya'ni eski
+> klient kelajakdagi relizda ham o'z-o'zini yoza olmaydi. Veb yuklab olish tugmasi opt-in'ni
+> aniq yuboradi. (2) **Strict yuklovchi** — umumiy `downloadUrlToFile`ga orqaga-mos `opts`
+> (`httpsOnly`+`maxBytes`); updater https→http downgrade'ni rad etadi va 512 MiB'dan oshgan
+> oqimni darhol uzadi (pack import xulqi o'zgarmagan). (3) **Imkonsiz majburiy yangilanish
+> QOPQON EMAS** — yaroqli installer bo'lmasa mandatory dialog yopiladi (yaroqli installerda
+> bloklash saqlanadi). (4) **"Installer opened" faqat `spawn` dan keyin**, xatoda temp tozalanadi.
 > 🔴 **Task 3 (keyingi):** imzolangan `.pkg`/`.exe` artefaktlarini QURISH — tayyor copy-paste
 > prompt `docs/NEXT-TASK-INSTALLER-ARTIFACTS.md`. Bloker (EGA): Apple Developer ID Installer
 > sertifikati + notarizatsiya kredensiali, Windows Authenticode (EV) sertifikati.

@@ -18741,7 +18741,9 @@ class Component extends DCLogic {
   async loadPluginRelease() {
     this.setState({ pluginDl: 'loading', pluginDlErr: '' });
     try {
-      const r = await FFAPI.pluginVersion();
+      // manual:true — bu sahifa AYNAN qo'lda yuklab olish uchun (.zxp tugmasi), shu bois
+      // legacy havolani aniq so'raydi. Opt-in'siz server downloadUrl bermaydi.
+      const r = await FFAPI.pluginVersion(null, { manual: true });
       if (r && r.latest && r.latest.version && r.downloadUrl) {
         this.setState({ pluginDl: 'ready', pluginRelease: r.latest, pluginDownloadUrl: r.downloadUrl });
       } else {

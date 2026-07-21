@@ -46,6 +46,8 @@ import {
   buildInstallerPayload,
   installerExtension,
   installerFileName,
+  isManualDownloadRequest,
+  resolveLegacyDownloadUrl,
   type InstallerContext,
 } from "../lib/plugin-release-contract.js";
 
@@ -292,9 +294,13 @@ pluginRouter.get("/version", async (req: Request, res: Response) => {
     orderBy: { publishedAt: "desc" },
     include: { installers: true },
   });
-  // LEGACY .zxp — faqat veb sahifadagi QO'LDA yuklab olish uchun (panel o'rnatmaydi).
+  // LEGACY .zxp — FAQAT aniq `manual=1` opt-in bilan (veb sahifadagi qo'lda yuklab olish).
+  // Opt-in bo'lmasa havola umuman imzolanmaydi va javobda null bo'ladi: ff10d51'gacha
+  // bo'lgan panel `downloadUrl`ni ko'rsa o'z extension papkasi ustiga yozardi — bu kanal
+  // shu bilan o'chirilgan (kill switch). Yangi panel bu maydonni ishlatmaydi.
+  const manualDownload = isManualDownloadRequest(req.query.manual);
   let downloadUrl: string | null = null;
-  if (latest && latest.downloadKey && isS3Configured()) {
+  if (manualDownload && latest && latest.downloadKey && isS3Configured()) {
     try {
       downloadUrl = await getSignedDownloadUrl(latest.downloadKey, INSTALLER_URL_TTL_SEC, `frameflow-plugin-${latest.version}.zxp`);
     } catch {
@@ -329,7 +335,14 @@ pluginRouter.get("/version", async (req: Request, res: Response) => {
         : { platform, installer: null, status: "storage_unavailable" };
     }
   }
-  res.json(computePluginVersionResponse(current, latest, downloadUrl, installerCtx));
+  res.json(
+    computePluginVersionResponse(
+      current,
+      latest,
+      resolveLegacyDownloadUrl(req.query.manual, downloadUrl),
+      installerCtx
+    )
+  );
 });
 
 // ── Plugin CMS — ommaviy o'qish (auth YO'Q: guest ekran login'dan OLDIN kerak).

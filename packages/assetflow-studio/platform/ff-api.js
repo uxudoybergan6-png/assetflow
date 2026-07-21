@@ -166,8 +166,14 @@
 
     // Plugin sahifa — nashr etilgan reliz haqiqati (PluginRelease). Auth talab qilinmaydi —
     // Plugin sahifasi login'siz ham ko'rinadi. { latest: {version,releaseNotes,checksum}|null, downloadUrl }
-    pluginVersion: function (current) {
-      var qs = current ? "?current=" + encodeURIComponent(current) : "";
+    // opts.manual=true → `manual=1`: server legacy .zxp havolasini FAQAT shu aniq
+    // opt-in bilan qaytaradi (brauzerdagi qo'lda yuklab olish). Opt-in'siz downloadUrl
+    // null bo'ladi — eski o'z-o'zini-yozuvchi plagin klientlari uchun kill switch.
+    pluginVersion: function (current, opts) {
+      var p = [];
+      if (current) p.push("current=" + encodeURIComponent(current));
+      if (opts && opts.manual) p.push("manual=1");
+      var qs = p.length ? "?" + p.join("&") : "";
       return req("/api/plugin/version" + qs, { auth: false, idempotent: true });
     },
 
