@@ -179,8 +179,12 @@ node plugins/after-effects-cep/scripts/build-installer-win.mjs --unsigned
 ```
 
 > Nomi ataylab `-unsigned`: mijozga tarqatilmaydi. Imzosiz payload'da CEP imzo konverti
-> bo'lmaydi, shuning uchun paketning `postinstall` skripti FAQAT shu holatda va FAQAT shu
-> foydalanuvchi uchun `PlayerDebugMode` yoqadi (imzolangan relizda — YO'Q).
+> bo'lmaydi, shuning uchun **AE bu panelni faqat operator o'sha mashinada CEP dasturchi
+> rejimini (`PlayerDebugMode`) O'ZI QO'LDA yoqgan bo'lsa yuklaydi** (lokal QA sozlamasi —
+> masalan `scripts/install-cep.sh` dev oqimi bilan). **Installer bu sozlamani hech qachon
+> o'zgartirmaydi** — na imzosiz, na imzolangan yo'lda hech qanday `defaults write` yoki
+> `com.adobe.CSXS.*` yozuvi yo'q. Ya'ni imzosiz QA paketi mijoz mashinasida Adobe
+> xavfsizlik sozlamasini pasaytirmaydi.
 
 ### 3A.2 Imzolangan reliz (fail-closed — kredensiallar FAQAT env'dan)
 
@@ -206,10 +210,23 @@ Timestamp: `FF_WIN_TIMESTAMP_URL` (default DigiCert).
 
 - Kredensial YO'Q yoki **QISMAN** bo'lsa — build aniq xato bilan to'xtaydi, artefakt
   yaratilmaydi. O'z-o'zidan imzolangan sertifikat YARATILMAYDI, standart parol YO'Q.
-- **Reliz payload'i `FF_SIGNED_ZXP` SIZ qurilmaydi.** `.zxp` ichidagi `META-INF/**` +
-  `mimetype` payload'ga qo'shiladi — CEP imzoni o'zi tekshiradi va mijoz mashinasida
-  `PlayerDebugMode` yoqish kerak bo'lmaydi. `.zxp`ning qolgan tarkibi flavor ro'yxatiga
-  AYNAN mos bo'lishi shart (aks holda imzo yot fayllarni qamragan bo'lardi → rad).
+- **Reliz payload'i `FF_SIGNED_ZXP` SIZ qurilmaydi.** `.zxp` dan payload'ga FAQAT imzo
+  konverti — aniq ikki yo'l: `META-INF/signatures.xml` va `mimetype` (yopiq ro'yxat;
+  `META-INF/` ostidagi boshqa har qanday yo'l → rad). Konvert QABUL QILINISHIDAN OLDIN
+  arxivning qolgan HAR BIR fayli allaqachon yig'ilgan lokal payload bilan **bayt-ba-bayt
+  (SHA-256)** solishtiriladi — nom ro'yxati mos, bayt boshqa bo'lsa ham build to'xtaydi
+  (aks holda imzo o'rnatilayotgan baytlarni qamramagan bo'lardi).
+- **Arxiv `unzip -d` bilan YOYILMAYDI.** ZIP markaziy katalogi xom, tartiblangan ro'yxat
+  sifatida o'qiladi va har yozuv tekshiriladi: takrorlangan nom · `..`/absolyut/buzuq yo'l ·
+  symlink yoki qurilma yozuvi · shifrlash · noma'lum siqish · CRC-32 — hammasi rad sababi.
+  Faqat tasdiqlangan konvert fayllari oddiy fayl sifatida yoziladi.
+- **Windows chiqishi haqiqatan MSI ekani tekshiriladi** — WiX'dan keyin ham, `signtool`dan
+  keyin ham: eng kam mazmunli hajm + OLE compound sarlavhasi (`d0 cf 11 e0 a1 b1 1a e1`).
+  "Bo'sh emas" yetarli emas; ixtiyoriy baytlar rad etiladi.
+- **macOS paketida `preinstall` YO'Q.** Ishlayotgan panel yangi payload muvaffaqiyatli
+  joylashishidan OLDIN hech qachon o'chirilmaydi. `postinstall` — o'rnatma tugagach FAQAT
+  aniq nomli eski fayllarni (ichki Admin sirti + `.debug*`) olib tashlaydi; `find`/`rm -rf`/
+  joker belgi YO'Q, `assetflow-data` va qolgan hamma narsa tegilmaydi.
 - Eski yakuniy artefakt tekshiruvlardan OLDIN o'chiriladi; imzo/notarizatsiya chegaralangan
   `dist/installers/_build.<platform>.XXXXXX/` ichida bajariladi va faqat HAMMASI muvaffaqiyatli
   tugagach atomik `mv` bilan yakuniy nomga o'tadi. Nosozlikda na artefakt, na temp qoladi;
@@ -226,10 +243,15 @@ Timestamp: `FF_WIN_TIMESTAMP_URL` (default DigiCert).
 npm run test:plugin-installers
 ```
 
-**160/160 PASS.** Haqiqiy skriptlar va haqiqiy payload (mock YO'Q): macOS'da HAQIQIY
+**202/202 PASS.** Haqiqiy skriptlar va haqiqiy payload (mock YO'Q): macOS'da HAQIQIY
 `pkgbuild`/`productbuild` bilan `.pkg` quriladi va ichi ochib tekshiriladi (per-user
 install-location · `auth="none"` · faqat currentUserHome domeni · payload cpio ro'yxati
-flavor ro'yxatiga teng · AppleDouble `._` yozuvi yo'q · Admin sirti yo'q); fail-closed uch
+flavor ro'yxatiga teng · AppleDouble `._` yozuvi yo'q · Admin sirti yo'q · `preinstall`
+YO'Q · `postinstall`da `defaults`/`PlayerDebugMode`/`rm -rf`/`find` YO'Q); imzo bog'lash
+uchun buzg'unchi arxiv fiksturalari (nom bir xil–bayt boshqa · takrorlangan nom ·
+`..`/absolyut yo'l · symlink yozuvi · yot `META-INF` yo'li) va MSI tuzilma tekshiruvi
+(ixtiyoriy baytlar rad, imzodan keyin ham qayta tekshiriladi) · WiX Id to'qnashuvi
+(`css/fonts` ↔ `js/fonts`); fail-closed uch
 holatda (kredensialsiz · qisman notarizatsiya kredensiali · imzolash buyrug'i yiqilganda)
 haqiqiy build ishga tushiriladi va yakuniy artefakt YO'Qligi, temp QOLMAGANI, parol/identika
 chop etilmagani tasdiqlanadi. "Boshqa artefakt tegilmadi" — ichki Admin arxivi va boshqa

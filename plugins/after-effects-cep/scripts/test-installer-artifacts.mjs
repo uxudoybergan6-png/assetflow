@@ -43,6 +43,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { crc32 } from "node:zlib";
 import {
   ADMIN_SURFACE,
   DIST_DIR,
@@ -55,14 +56,21 @@ import {
   resolveFlavorFiles,
 } from "./package-flavors.mjs";
 import {
+  MSI_MIN_BYTES,
+  MSI_OLE_HEADER,
+  SIGNATURE_ENVELOPE_ALLOWED,
+  assertMsiArtifact,
   expectedPayloadFiles,
   installerArtifactName,
   listPayloadFiles,
+  obsoleteInstallFiles,
+  postinstallScript,
   sha256File,
   stageCustomerPayload,
   verifyPayload,
   writeChecksumSidecar,
 } from "./installer-payload.mjs";
+import { buildWxsSource } from "./installer-wix.mjs";
 
 const MAC_SCRIPT = path.join(PLUGIN_SRC, "scripts/build-installer-mac.sh");
 const WIN_SCRIPT = path.join(PLUGIN_SRC, "scripts/build-installer-win.mjs");
@@ -249,7 +257,7 @@ console.log("\n── B) CEP imzo konverti (META-INF) ────────�
 
 /** Sun'iy "imzolangan" .zxp — imzoning O'ZI tekshirilmaydi (uni ZXPSignCmd qo'yadi);
  *  tekshirilayotgani: konvert AJRATILADI va imzo qamrovi flavor ro'yxatiga mos bo'lishi SHART. */
-function makeZxp(name, { extraFile = null, withSignature = true } = {}) {
+function makeZxp(name, { extraFile = null, withSignature = true, mutate = null } = {}) {
   const src = path.join(WORK, `zxpsrc-${name}`);
   stageCustomerPayload(src);
   if (withSignature) {
@@ -257,11 +265,65 @@ function makeZxp(name, { extraFile = null, withSignature = true } = {}) {
     writeFileSync(path.join(src, "META-INF/signatures.xml"), "<signatures/>\n");
     writeFileSync(path.join(src, "mimetype"), "application/vnd.adobe.air-ucf-package+zip");
   }
-  if (extraFile) writeFileSync(path.join(src, extraFile), "// yot fayl");
+  if (extraFile) {
+    mkdirSync(path.dirname(path.join(src, extraFile)), { recursive: true });
+    writeFileSync(path.join(src, extraFile), "// yot fayl");
+  }
+  // Nom O'ZGARMAYDI, faqat BAYTLAR — "ro'yxat mos" tekshiruvi bunday hujumni ko'rmaydi.
+  if (mutate) writeFileSync(path.join(src, mutate), "// IMZODAN KEYIN ALMASHTIRILGAN BAYTLAR\n");
   const out = path.join(WORK, `${name}.zxp`);
   execFileSync("zip", ["-qr", out, "."], { cwd: src });
   return out;
 }
+
+/** XOM ZIP quruvchi (faqat test) — `zip` CLI qura olmaydigan buzg'unchi fiksturalar uchun:
+ *  takrorlangan nom, `..`/absolyut yo'l, symlink yozuvi. Faqat "store" (method 0). */
+function makeRawZip(outPath, entries) {
+  const locals = [];
+  const central = [];
+  let offset = 0;
+  let cdSize = 0;
+  for (const e of entries) {
+    const name = Buffer.from(e.name, "latin1");
+    const data = Buffer.from(e.data === undefined ? "" : e.data);
+    const crc = crc32(data) >>> 0;
+    const lh = Buffer.alloc(30);
+    lh.writeUInt32LE(0x04034b50, 0);
+    lh.writeUInt16LE(20, 4);
+    lh.writeUInt32LE(crc, 14);
+    lh.writeUInt32LE(data.length, 18);
+    lh.writeUInt32LE(data.length, 22);
+    lh.writeUInt16LE(name.length, 26);
+    locals.push(lh, name, data);
+
+    const ch = Buffer.alloc(46);
+    ch.writeUInt32LE(0x02014b50, 0);
+    ch.writeUInt16LE(e.unixMode ? 0x0314 : 0x0014, 4); // yuqori bayt 3 = Unix host
+    ch.writeUInt16LE(20, 6);
+    ch.writeUInt32LE(crc, 16);
+    ch.writeUInt32LE(data.length, 20);
+    ch.writeUInt32LE(data.length, 24);
+    ch.writeUInt16LE(name.length, 28);
+    ch.writeUInt32LE(((e.unixMode || 0) >>> 0) * 0x10000, 38);
+    ch.writeUInt32LE(offset, 42);
+    central.push(ch, name);
+    cdSize += 46 + name.length;
+    offset += 30 + name.length + data.length;
+  }
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(entries.length, 8);
+  eocd.writeUInt16LE(entries.length, 10);
+  eocd.writeUInt32LE(cdSize, 12);
+  eocd.writeUInt32LE(offset, 16);
+  writeFileSync(outPath, Buffer.concat([...locals, ...central, eocd]));
+  return outPath;
+}
+
+const ENVELOPE_FIXTURE = [
+  { name: "mimetype", data: "application/vnd.adobe.air-ucf-package+zip" },
+  { name: "META-INF/signatures.xml", data: "<signatures/>\n" },
+];
 
 const goodZxp = makeZxp("good");
 const envDir = path.join(WORK, "payload-env");
@@ -288,6 +350,126 @@ throws(
   "negativ: mavjud bo'lmagan `.zxp` yo'li RAD ETILADI",
   () => stageCustomerPayload(path.join(WORK, "payload-env-none"), { signedZxp: path.join(WORK, "yoq.zxp") }),
   /topilmadi/i
+);
+
+// ── B2) Imzo AYNAN shu BAYTLARni qamraganining isboti ──────────────────────
+// Fayl ro'yxati bir xil, faqat tarkib boshqa: "ro'yxat mos" tekshiruvi buni KO'RMAYDI.
+throws(
+  "negativ: `.zxp` ichida NOM bir xil, BAYT boshqa → RAD ETILADI (imzo bu baytlarni qamramagan)",
+  () =>
+    stageCustomerPayload(path.join(WORK, "payload-env-mut"), {
+      signedZxp: makeZxp("mutated", { mutate: "assetflow-log.js" }),
+    }),
+  /FARQ qiladi|bayt/i
+);
+throws(
+  "negativ: `.zxp` ichida manifest baytlari almashtirilgan → RAD ETILADI",
+  () =>
+    stageCustomerPayload(path.join(WORK, "payload-env-mut2"), {
+      signedZxp: makeZxp("mutated-manifest", { mutate: "CSXS/manifest.xml" }),
+    }),
+  /FARQ qiladi|bayt/i
+);
+throws(
+  "negativ: konvertda ruxsat etilmagan META-INF yo'li → RAD ETILADI (yopiq ro'yxat)",
+  () =>
+    stageCustomerPayload(path.join(WORK, "payload-env-meta"), {
+      signedZxp: makeZxp("meta-extra", { extraFile: "META-INF/evil.xml" }),
+    }),
+  /kutilmagan yo'l|ruxsat etilgan/i
+);
+check(
+  `konvert ruxsat ro'yxati YOPIQ va aniq (${SIGNATURE_ENVELOPE_ALLOWED.join(", ")})`,
+  SIGNATURE_ENVELOPE_ALLOWED.length === 2 &&
+    SIGNATURE_ENVELOPE_ALLOWED.includes("META-INF/signatures.xml") &&
+    SIGNATURE_ENVELOPE_ALLOWED.includes("mimetype")
+);
+
+// ── B3) XOM arxiv yozuvlari (unzip -d YO'Q, ro'yxat Set'ga yig'ilmaydi) ─────
+const rawPayload = expected.map((rel) => ({ name: rel, data: readFileSync(path.join(stageDir, rel)) }));
+const rawGood = makeRawZip(path.join(WORK, "raw-good.zxp"), [...rawPayload, ...ENVELOPE_FIXTURE]);
+const rawGoodDir = path.join(WORK, "payload-raw-good");
+const rawGoodRes = stageCustomerPayload(rawGoodDir, { signedZxp: rawGood });
+check(
+  "pozitiv nazorat: xom (store) ZIP to'g'ri baytlar bilan QABUL QILINADI",
+  rawGoodRes.envelope.includes("META-INF/signatures.xml") && verifyPayload(rawGoodDir).signed === true
+);
+check(
+  "konvert fayllari ODDIY fayl sifatida yozildi (papka/symlink emas)",
+  SIGNATURE_ENVELOPE_ALLOWED.every((f) => statSync(path.join(rawGoodDir, f)).isFile())
+);
+
+throws(
+  "negativ: TAKRORLANGAN arxiv yozuvi nomi RAD ETILADI (Set'ga yig'ish xavfsizlik qarori EMAS)",
+  () =>
+    stageCustomerPayload(path.join(WORK, "payload-raw-dup"), {
+      signedZxp: makeRawZip(path.join(WORK, "raw-dup.zxp"), [
+        ...ENVELOPE_FIXTURE,
+        { name: "assetflow-log.js", data: "// birinchi" },
+        { name: "assetflow-log.js", data: "// ikkinchi (soya nusxa)" },
+      ]),
+    }),
+  /takrorlangan/i
+);
+throws(
+  "negativ: `..` bilan chiqib ketuvchi arxiv yo'li RAD ETILADI",
+  () =>
+    stageCustomerPayload(path.join(WORK, "payload-raw-trav"), {
+      signedZxp: makeRawZip(path.join(WORK, "raw-trav.zxp"), [
+        ...ENVELOPE_FIXTURE,
+        { name: "../../evil.js", data: "// traversal" },
+      ]),
+    }),
+  /traversal|Xavfsiz bo'lmagan/i
+);
+throws(
+  "negativ: ABSOLYUT arxiv yo'li RAD ETILADI",
+  () =>
+    stageCustomerPayload(path.join(WORK, "payload-raw-abs"), {
+      signedZxp: makeRawZip(path.join(WORK, "raw-abs.zxp"), [
+        ...ENVELOPE_FIXTURE,
+        { name: "/tmp/evil.js", data: "// absolyut" },
+      ]),
+    }),
+  /absolyut|Xavfsiz bo'lmagan/i
+);
+throws(
+  "negativ: buzuq (boshqaruv belgili) arxiv yo'li RAD ETILADI",
+  () =>
+    stageCustomerPayload(path.join(WORK, "payload-raw-ctrl"), {
+      signedZxp: makeRawZip(path.join(WORK, "raw-ctrl.zxp"), [
+        ...ENVELOPE_FIXTURE,
+        { name: "assetflow\u0000log.js", data: "// NUL" },
+      ]),
+    }),
+  /ASCII bo'lmagan|boshqaruv|Xavfsiz bo'lmagan/i
+);
+throws(
+  "negativ: SYMLINK arxiv yozuvi RAD ETILADI (o'rnatma papkasidan tashqariga ko'rsatardi)",
+  () =>
+    stageCustomerPayload(path.join(WORK, "payload-raw-link"), {
+      signedZxp: makeRawZip(path.join(WORK, "raw-link.zxp"), [
+        ...ENVELOPE_FIXTURE,
+        { name: "assetflow-log.js", data: "/etc/passwd", unixMode: 0xa1ff },
+      ]),
+    }),
+  /symlink|qurilma|yozuv turi/i
+);
+throws(
+  "negativ: shifrlangan arxiv yozuvi RAD ETILADI",
+  () => {
+    const p = makeRawZip(path.join(WORK, "raw-enc.zxp"), [
+      ...ENVELOPE_FIXTURE,
+      { name: "assetflow-log.js", data: "x" },
+    ]);
+    const b = readFileSync(p);
+    // Markaziy katalogdagi umumiy bayroqqa "shifrlangan" bitini qo'yamiz.
+    const cd = b.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+    b.writeUInt16LE(0x0001, cd + 8);
+    writeFileSync(p, b);
+    stageCustomerPayload(path.join(WORK, "payload-raw-enc"), { signedZxp: p });
+  },
+  /shifrlangan/i
 );
 
 // ══ F) SHA-256 chiqishi ═════════════════════════════════════════════════════
@@ -399,15 +581,43 @@ if (macBuilt) {
   check("pkg payload fayllari soni flavor ro'yxatiga teng", pkgFileOnly.length === expected.length, `${pkgFileOnly.length}/${expected.length}`);
 
   const scriptsDir = path.join(expandDir, "frameflow-component.pkg/Scripts");
-  const pre = existsSync(path.join(scriptsDir, "preinstall")) ? readFileSync(path.join(scriptsDir, "preinstall"), "utf8") : "";
+  const preFile = path.join(scriptsDir, "preinstall");
   const post = existsSync(path.join(scriptsDir, "postinstall")) ? readFileSync(path.join(scriptsDir, "postinstall"), "utf8") : "";
-  check("preinstall/postinstall paketda bor", !!pre && !!post);
-  check("skriptlar `sudo`/imtiyoz ko'tarishni ishlatmaydi", !/\bsudo\b|osascript .*administrator/i.test(pre + post));
-  check("skriptlar `/Library` (tizim) ga yozmaydi", !/(^|[^~$])\/Library\//m.test((pre + post).replace(/\$HOME\/Library\//g, "~HOME~/")));
-  check("preinstall FAQAT com.frameflow papkasida ishlaydi", /extensions\/com\.frameflow/.test(pre) && /case "\$DEST"/.test(pre));
-  check("preinstall foydalanuvchi ma'lumotini (assetflow-data) saqlaydi", /! -name 'assetflow-data'/.test(pre));
-  check("postinstall PlayerDebugMode'ni FAQAT imzo konverti yo'q bo'lsa yoqadi", /META-INF\/signatures\.xml/.test(post) && /PlayerDebugMode/.test(post));
-  check("postinstall boshqa Adobe sozlamasiga tegmaydi", (post.match(/defaults write/g) || []).length === 1 && /com\.adobe\.CSXS\.\$v/.test(post));
+  check(
+    "paketda `preinstall` YO'Q — ishlayotgan plagin yangi payload'dan OLDIN o'chirilmaydi",
+    !existsSync(preFile),
+    existsSync(preFile) ? readFileSync(preFile, "utf8").slice(0, 200) : ""
+  );
+  check("paketda `postinstall` bor (o'rnatmadan KEYIN ishlaydigan yagona skript)", !!post);
+  check("postinstall generatordan bayt-ba-bayt bir xil chiqdi", post === postinstallScript());
+  check("skriptlar `sudo`/imtiyoz ko'tarishni ishlatmaydi", !/\bsudo\b|osascript .*administrator/i.test(post));
+  check("skriptlar `/Library` (tizim) ga yozmaydi", !/(^|[^~$])\/Library\//m.test(post.replace(/\$HOME\/Library\//g, "~HOME~/")));
+  check("postinstall FAQAT com.frameflow papkasida ishlaydi", /extensions\/com\.frameflow/.test(post) && /case "\$DEST"/.test(post));
+  check(
+    "postinstall AVVAL yangi payload joylashganini tekshiradi (aks holda hech narsa qilmaydi)",
+    /\[ -f "\$DEST\/CSXS\/manifest\.xml" \] \|\| exit 0/.test(post) &&
+      /\[ -f "\$DEST\/AssetFlow_Plugin\.html" \] \|\| exit 0/.test(post)
+  );
+  const postCode = codeOnly(post);
+  check("postinstall'da KENG o'chirish YO'Q (`rm -rf` · `find` · joker belgi)", !/rm\s+-rf|\bfind\b|\*\s*"?\$DEST|\$DEST[^"\n]*\*/.test(postCode));
+  check(
+    "postinstall FAQAT aniq nomli eski fayllarni o'chiradi (ro'yxat = obsoleteInstallFiles)",
+    obsoleteInstallFiles().every((f) => post.includes(`"${f}"`)) &&
+      (post.match(/rm -f/g) || []).length === 1 &&
+      /rm -f "\$DEST\/\$stale"/.test(post)
+  );
+  check(
+    "postinstall foydalanuvchi ma'lumotini (assetflow-data) o'chirmaydi — umuman tilga olmaydi",
+    !post.includes("assetflow-data")
+  );
+  check(
+    "postinstall Adobe debug sozlamasiga TEGMAYDI (`defaults` YO'Q · PlayerDebugMode YO'Q)",
+    !/\bdefaults\b/.test(post) && !/PlayerDebugMode/.test(post) && !/com\.adobe\.CSXS/.test(post)
+  );
+  check(
+    "eski fayllar ro'yxati joriy payload bilan kesishmaydi (ishlaydigan fayl o'chmaydi)",
+    obsoleteInstallFiles().every((f) => !expected.includes(f))
+  );
 }
 check("macOS build boshqa flavor (ichki Admin) artefaktiga TEGMADI — SHA-256 o'zgarmadi", adminUntouched());
 
@@ -509,7 +719,11 @@ const isoWinUnsigned = path.join(ISO, installerArtifactName("win", "msi", { sign
 const fakeWinBin = track(mkdtempSync(path.join(tmpdir(), "ff-fakebin-win-")));
 const wxsCapture = path.join(WORK, "captured.wxs");
 
-function writeFakeWix({ fail = false } = {}) {
+/** Soxta `wix` chiqishi TUZILMA JIHATDAN yetarli MSI bo'lishi kerak: OLE compound
+ *  sarlavhasi (d0cf11e0a1b11ae1) + eng kam mazmunli hajm. `garbage: true` — aynan shu
+ *  tekshiruv ishlayotganini isbotlash uchun ixtiyoriy baytlar yozadi. */
+const OLE_HEADER_PRINTF = "\\320\\317\\021\\340\\241\\261\\032\\341";
+function writeFakeWix({ fail = false, garbage = false } = {}) {
   writeFileSync(
     path.join(fakeWinBin, "wix"),
     [
@@ -519,13 +733,22 @@ function writeFakeWix({ fail = false } = {}) {
       'out=""; wxs=""',
       'while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift 2;; *.wxs) wxs="$1"; shift;; *) shift;; esac; done',
       '[ -n "$wxs" ] && cp "$wxs" "$FF_TEST_WXS_CAPTURE"',
-      ...(fail ? ['echo "fake wix: forced failure" >&2', "exit 4"] : ['printf "FAKE-MSI-BYTES-%s" "$(date +%s)" > "$out"']),
+      ...(fail
+        ? ['echo "fake wix: forced failure" >&2', "exit 4"]
+        : garbage
+          ? ['printf "FAKE-MSI-BYTES-NOT-AN-OLE-FILE" > "$out"']
+          : [
+              `printf '${OLE_HEADER_PRINTF}' > "$out"`,
+              `head -c ${MSI_MIN_BYTES} /dev/zero >> "$out"`,
+            ]),
       "",
     ].join("\n")
   );
   chmodSync(path.join(fakeWinBin, "wix"), 0o755);
 }
-function writeFakeSigntool({ fail = false, verifyFail = false } = {}) {
+/** `corrupt: true` — signtool "muvaffaqiyatli" tugaydi, lekin faylni MSI bo'lmagan
+ *  baytlar bilan qoldiradi (imzolashdan KEYINGI tuzilma tekshiruvini isbotlaydi). */
+function writeFakeSigntool({ fail = false, verifyFail = false, corrupt = false } = {}) {
   writeFileSync(
     path.join(fakeWinBin, "signtool"),
     [
@@ -533,11 +756,13 @@ function writeFakeSigntool({ fail = false, verifyFail = false } = {}) {
       "# Soxta signtool (faqat test). Parol argv'da bo'lishi mumkin — HECH QAYERGA yozilmaydi.",
       'mode="$1"',
       'if [ "$mode" = "verify" ]; then',
-      ...(verifyFail ? ['  exit 5'] : ['  exit 0']),
+      ...(verifyFail ? ["  exit 5"] : ["  exit 0"]),
       "fi",
       ...(fail
         ? ['target="${@: -1}"', 'printf "PARTIAL" > "$target"', 'echo "fake signtool: forced failure" >&2', "exit 6"]
-        : ["exit 0"]),
+        : corrupt
+          ? ['target="${@: -1}"', 'printf "SIGNED-BUT-NOT-AN-MSI-ANYMORE" > "$target"', "exit 0"]
+          : ["exit 0"]),
       "",
     ].join("\n")
   );
@@ -605,6 +830,60 @@ for (const id of ADMIN_SURFACE.identifiers) {
   check(`WiX manbasida Admin identifikatori "${id}" YO'Q`, !wxs.includes(id));
 }
 check("WiX manbasida qattiq yozilgan sir/parol YO'Q", !/-----BEGIN|password\s*=\s*["'][^"']{8,}/i.test(wxs));
+
+// E3b — ichma-ich TAKRORLANGAN papka nomlari to'qnashmasligi (Id to'liq yo'ldan)
+const collisionWxs = buildWxsSource({
+  version: "9.9.9",
+  payloadFiles: ["css/fonts/a.woff2", "js/fonts/a.woff2", "css/tokens.css", "js/CSInterface.js"],
+});
+const dirIds = [...collisionWxs.matchAll(/<Directory Id="([^"]+)"/g)].map((m) => m[1]);
+const genDirIds = dirIds.filter((id) => id.startsWith("D_"));
+check(
+  `takrorlangan papka nomlari (css/fonts ↔ js/fonts) NOYOB Directory Id beradi (${genDirIds.length})`,
+  genDirIds.length === 4 && new Set(genDirIds).size === 4,
+  genDirIds.join(", ")
+);
+check(
+  "har bir e'lon qilingan Id (Directory · Component · File) butun manbada NOYOB",
+  (() => {
+    const ids = [...collisionWxs.matchAll(/<(?:Directory|Component|File) Id="([^"]+)"/g)].map((m) => m[1]);
+    return ids.length > 0 && new Set(ids).size === ids.length;
+  })()
+);
+check(
+  "bir xil basename'li ikki fayl ham noyob Component/File Id oladi",
+  new Set([...collisionWxs.matchAll(/<File Id="([^"]+)"/g)].map((m) => m[1])).size === 4
+);
+
+// E3c — MSI tuzilma tekshiruvi (ixtiyoriy baytlar `.msi` DEB QABUL QILINMAYDI)
+const oleSample = path.join(WORK, "ole-sample.msi");
+writeFileSync(oleSample, Buffer.concat([Buffer.from(MSI_OLE_HEADER), Buffer.alloc(MSI_MIN_BYTES)]));
+check("assertMsiArtifact: OLE sarlavhali yetarli hajmli fayl QABUL qilinadi", assertMsiArtifact(oleSample).sizeBytes >= MSI_MIN_BYTES);
+const garbageSample = path.join(WORK, "garbage.msi");
+writeFileSync(garbageSample, Buffer.alloc(MSI_MIN_BYTES + 8, 0x41));
+throws("assertMsiArtifact: ixtiyoriy (OLE bo'lmagan) baytlar RAD ETILADI", () => assertMsiArtifact(garbageSample), /OLE compound/);
+const shortSample = path.join(WORK, "short.msi");
+writeFileSync(shortSample, Buffer.from(MSI_OLE_HEADER));
+throws("assertMsiArtifact: juda kichik fayl RAD ETILADI", () => assertMsiArtifact(shortSample), /juda kichik/);
+throws("assertMsiArtifact: mavjud bo'lmagan fayl RAD ETILADI", () => assertMsiArtifact(path.join(WORK, "yoq.msi")), /MSI yo'q/);
+
+// E3d — soxta `wix` ixtiyoriy baytlar yozsa, HAQIQIY skript build'ni to'xtatadi
+writeFakeWix({ garbage: true });
+rmSync(isoWinUnsigned, { force: true });
+rmSync(`${isoWinUnsigned}.sha256`, { force: true });
+const garbageBuild = winRun(["--unsigned"], { PATH: winPathEnv });
+check("`wix` MSI bo'lmagan baytlar bersa build FAIL-CLOSED (exit≠0)", garbageBuild.code !== 0, `exit=${garbageBuild.code}`);
+check("xato MSI tuzilmasini aniq aytadi (OLE compound)", /OLE compound|juda kichik/.test(garbageBuild.out), garbageBuild.out.slice(-200));
+check("soxta MSI: artefakt YARATILMADI", !existsSync(isoWinUnsigned));
+check("soxta MSI: sidecar ham YARATILMADI", !existsSync(`${isoWinUnsigned}.sha256`));
+check("soxta MSI: vaqtinchalik papka QOLMADI", strayTemps().length === 0, strayTemps().join(", "));
+writeFakeWix();
+winRun(["--unsigned"], { PATH: winPathEnv });
+check("to'g'ri OLE fiksturasi bilan build yana o'tadi", existsSync(isoWinUnsigned));
+check(
+  "qurilgan artefakt haqiqatan OLE compound sarlavhasi bilan boshlanadi",
+  existsSync(isoWinUnsigned) && readFileSync(isoWinUnsigned).subarray(0, 8).equals(Buffer.from(MSI_OLE_HEADER))
+);
 
 // E4 — GUID'lar barqaror (qayta build → aynan bir xil GUID; upgrade zanjiri buzilmaydi)
 const wxsFirst = wxs;
@@ -674,6 +953,20 @@ const verifyFail = winRun([], {
 check("signtool verify o'tmasa FAIL-CLOSED (exit≠0)", verifyFail.code !== 0, `exit=${verifyFail.code}`);
 check("verify o'tmasa: yakuniy .msi YARATILMAYDI", !existsSync(isoWinSigned));
 
+// E10b — signtool "muvaffaqiyatli" tugadi, LEKIN fayl endi MSI emas
+writeFakeSigntool({ corrupt: true });
+plantWinSentinel();
+const corruptSigned = winRun([], {
+  PATH: winPathEnv,
+  FF_WIN_CERT: fakePfx,
+  FF_WIN_CERT_PASS: FAKE_PASS,
+  FF_SIGNED_ZXP: goodZxp,
+});
+check("imzolashdan KEYIN fayl MSI bo'lmasa FAIL-CLOSED (exit≠0)", corruptSigned.code !== 0, `exit=${corruptSigned.code}`);
+check("imzodan keyingi tuzilma xatosi aniq aytiladi", /OLE compound|juda kichik/.test(corruptSigned.out), corruptSigned.out.slice(-200));
+check("buzilgan imzo: yakuniy .msi YARATILMAYDI", !existsSync(isoWinSigned));
+check("buzilgan imzo: parol qiymati chiqishda YO'Q", !corruptSigned.out.includes(FAKE_PASS));
+
 // E11 — to'liq muvaffaqiyatli imzolangan yo'l (soxta toolchain bilan)
 writeFakeSigntool({ fail: false, verifyFail: false });
 rmSync(isoWinSigned, { force: true });
@@ -699,7 +992,62 @@ console.log("\n── G) Statik kafolatlar va versiya drift ──────�
 const macSrc = readFileSync(MAC_SCRIPT, "utf8");
 const winSrc = readFileSync(WIN_SCRIPT, "utf8");
 const helperSrc = readFileSync(HELPER, "utf8");
-const allSrc = `${macSrc}\n${winSrc}\n${helperSrc}`;
+const wixSrc = readFileSync(path.join(PLUGIN_SRC, "scripts/installer-wix.mjs"), "utf8");
+const allSrc = `${macSrc}\n${winSrc}\n${helperSrc}\n${wixSrc}`;
+const genPost = postinstallScript();
+
+/** Skanerlar KOD ustida ishlashi uchun izohlarni olib tashlaydi — izohda "rm -rf YO'Q"
+ *  deb yozilgani buyruq emas (aks holda halol hujjat testni yiqitardi). */
+function codeOnly(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("\n")
+    .filter((l) => !/^\s*(#|\/\/)/.test(l))
+    .join("\n");
+}
+const macCode = codeOnly(macSrc);
+const helperCode = codeOnly(helperSrc);
+const winCode = codeOnly(winSrc);
+const genPostCode = codeOnly(genPost);
+
+// ── Adobe xavfsizlik sozlamalari: installer HECH QACHON o'zgartirmaydi ──────
+check(
+  "installer skriptlarida `defaults write/delete` (Adobe sozlamasini o'zgartirish) YO'Q",
+  !/\bdefaults\s+(write|delete|import)\b/.test(allSrc) && !/\bdefaults\s+(write|delete|import)\b/.test(genPost)
+);
+check(
+  "installer PlayerDebugMode/CSXS domenini O'ZGARTIRMAYDI (imzolangan ham, imzosiz ham)",
+  !/PlayerDebugMode\s*(1|-bool|true|YES)/i.test(allSrc) &&
+    !/com\.adobe\.CSXS/.test(allSrc) &&
+    !/PlayerDebugMode/.test(genPost)
+);
+check(
+  "imzosiz QA yo'li dasturchi rejimini QO'LDA yoqish kerakligini HALOL aytadi",
+  /QO'LDA yoq/i.test(macSrc) && /o'zgartirmaydi/i.test(macSrc)
+);
+// ── Buzg'unchi preinstall: umuman YO'Q ─────────────────────────────────────
+check(
+  "macOS quruvchisida `preinstall` YO'Q — almashtirishdan OLDIN hech narsa o'chirilmaydi",
+  !/preinstall/i.test(macCode)
+);
+check(
+  "macOS quruvchisida keng o'chirish naqshi YO'Q (`find … -exec rm` · `rm -rf $DEST/$HOME`)",
+  !/find\s+"\$DEST"/.test(macCode) &&
+    !/-exec\s+rm/.test(macCode) &&
+    !/rm\s+-rf\s+"?\$(HOME|DEST)/.test(macCode) &&
+    !/rm\s+-rf/.test(genPostCode)
+);
+check(
+  "generatsiya qilingan postinstall tarkibi o'zgarmas (aniq ro'yxat + qorovullar)",
+  genPost.startsWith("#!/bin/bash") &&
+    genPost.includes("set -eu") &&
+    obsoleteInstallFiles().length > 0 &&
+    obsoleteInstallFiles().every((f) => genPost.includes(`"${f}"`))
+);
+check(
+  "arxiv `unzip -d` bilan YOYILMAYDI (ishonchsiz daraxt tashqi asbobga berilmaydi)",
+  !/unzip/.test(helperCode) && !/unzip/.test(macCode) && !/unzip/.test(winCode)
+);
 
 check(
   "installer skriptlarida o'z-o'zidan imzolangan sertifikat yaratish YO'Q",

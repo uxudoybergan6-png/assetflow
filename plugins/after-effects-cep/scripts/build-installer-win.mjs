@@ -30,11 +30,12 @@
 // papka QOLMAYDI. O'z-o'zidan imzolangan sertifikat YARATILMAYDI, standart parol YO'Q.
 
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   INSTALLERS_DIR,
+  INSTALL_DIR_NAME,
+  assertMsiArtifact,
   installerArtifactPath,
   installerVersion,
   recordArtifact,
@@ -42,11 +43,9 @@ import {
   verifyPayload,
   writeChecksumSidecar,
 } from "./installer-payload.mjs";
+import { buildWxsSource } from "./installer-wix.mjs";
 
 const DEFAULT_TIMESTAMP_URL = "http://timestamp.digicert.com";
-// Barqaror identifikatorlar — SIR EMAS, faqat MSI upgrade zanjirining langari.
-const UPGRADE_CODE = "{8F2B6C34-1D57-4E2A-9C10-7F3A5E6B41D9}";
-const GUID_NAMESPACE = "6f6a3f5e-9b41-4d2c-8a77-1c0d5e2f4b83";
 
 const args = process.argv.slice(2);
 if (args.includes("-h") || args.includes("--help")) {
@@ -137,8 +136,8 @@ if (!unsigned) {
   if (!signedZxp) {
     fail([
       "✗ FF_SIGNED_ZXP berilmagan — imzolangan build BEKOR QILINDI.",
-      "  Reliz payload'i Adobe imzo konverti (META-INF) bilan kelishi SHART, aks holda AE panelni",
-      "  yuklamaydi yoki mijoz mashinasida CEP PlayerDebugMode yoqish kerak bo'lardi.",
+      "  Reliz payload'i Adobe imzo konverti (META-INF) bilan kelishi SHART — aks holda CEP",
+      "  o'rnatilgan papkani imzosiz deb hisoblaydi va AE panelni yuklamaydi.",
       "  Avval: bash plugins/after-effects-cep/scripts/build-zxp.sh  (ZXP_CERT/ZXP_CERT_PASS bilan)",
     ]);
   }
@@ -157,113 +156,10 @@ try {
   fail(`✗ Payload tayyorlanmadi: ${(e && e.message) || e}`);
 }
 
-// ── WiX manbasini generatsiya qilish ───────────────────────────────────────
-
-/** UUIDv5 — bir xil yo'l DOIM bir xil GUID beradi (MSI upgrade'i buzilmasin). */
-function stableGuid(name) {
-  const ns = Buffer.from(GUID_NAMESPACE.replace(/-/g, ""), "hex");
-  const h = createHash("sha1").update(Buffer.concat([ns, Buffer.from(name, "utf8")])).digest();
-  const b = Buffer.from(h.subarray(0, 16));
-  b[6] = (b[6] & 0x0f) | 0x50;
-  b[8] = (b[8] & 0x3f) | 0x80;
-  const hex = b.toString("hex").toUpperCase();
-  return `{${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}}`;
-}
-
-/** WiX Id — harf bilan boshlanadi, faqat [A-Za-z0-9_.]; noyoblik uchun hash qo'shiladi. */
-function wixId(prefix, name) {
-  const slug = name.replace(/[^A-Za-z0-9_.]/g, "_").slice(-40);
-  const h = createHash("sha1").update(name).digest("hex").slice(0, 8);
-  return `${prefix}_${slug}_${h}`;
-}
-
-function xmlAttr(s) {
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-/** Payload yo'llaridan ichma-ich Directory daraxti + har fayl uchun bitta Component. */
-function buildWxs() {
-  const components = [];
-  const tree = { dirs: new Map(), files: [] };
-  for (const rel of payloadFiles) {
-    const parts = rel.split("/");
-    const fileName = parts.pop();
-    let node = tree;
-    for (const part of parts) {
-      if (!node.dirs.has(part)) node.dirs.set(part, { dirs: new Map(), files: [] });
-      node = node.dirs.get(part);
-    }
-    node.files.push({ rel, fileName });
-  }
-
-  const lines = [];
-  const emit = (depth, text) => lines.push(`${" ".repeat(depth * 2)}${text}`);
-
-  function emitNode(node, depth) {
-    for (const f of node.files) {
-      const cid = wixId("C", f.rel);
-      components.push(cid);
-      emit(depth, `<Component Id="${cid}" Guid="${stableGuid(f.rel)}">`);
-      emit(
-        depth + 1,
-        `<RegistryValue Root="HKCU" Key="Software\\FrameFlow\\Plugin\\Components" ` +
-          `Name="${xmlAttr(f.rel)}" Type="integer" Value="1" KeyPath="yes"/>`
-      );
-      emit(
-        depth + 1,
-        `<File Id="${wixId("F", f.rel)}" Name="${xmlAttr(f.fileName)}" ` +
-          `Source="payload\\${xmlAttr(f.rel.replace(/\//g, "\\"))}"/>`
-      );
-      emit(depth, "</Component>");
-    }
-    for (const [name, child] of [...node.dirs.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-      emit(depth, `<Directory Id="${wixId("D", name)}" Name="${xmlAttr(name)}">`);
-      emitNode(child, depth + 1);
-      emit(depth, "</Directory>");
-    }
-  }
-
-  emit(7, "<!-- generatsiya: build-installer-win.mjs — qo'lda tahrirlanmaydi -->");
-  emitNode(tree, 7);
-  const body = lines.join("\n");
-
-  const featureRefs = components.map((c) => `        <ComponentRef Id="${c}"/>`).join("\n");
-  return `<?xml version="1.0" encoding="utf-8"?>
-<!-- FrameFlow mijoz paneli — PER-USER MSI. Manba ro'yxati: scripts/package-flavors.mjs -->
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="FrameFlow for After Effects"
-           Manufacturer="FrameFlow"
-           Version="${version}"
-           UpgradeCode="${UPGRADE_CODE}"
-           Scope="perUser"
-           Compressed="yes"
-           InstallerVersion="500">
-    <SummaryInformation Description="FrameFlow panel for Adobe After Effects"/>
-    <MajorUpgrade DowngradeErrorMessage="A newer version of FrameFlow is already installed."/>
-    <MediaTemplate EmbedCab="yes"/>
-    <Property Id="ARPNOMODIFY" Value="1"/>
-    <Property Id="ARPNOREPAIR" Value="1"/>
-    <StandardDirectory Id="AppDataFolder">
-      <Directory Id="FF_Adobe" Name="Adobe">
-        <Directory Id="FF_CEP" Name="CEP">
-          <Directory Id="FF_extensions" Name="extensions">
-            <Directory Id="INSTALLFOLDER" Name="com.frameflow">
-${body}
-            </Directory>
-          </Directory>
-        </Directory>
-      </Directory>
-    </StandardDirectory>
-    <Feature Id="FrameFlowPanel" Title="FrameFlow panel" Level="1">
-${featureRefs}
-    </Feature>
-  </Package>
-</Wix>
-`;
-}
+// ── WiX manbasini generatsiya qilish (generator: scripts/installer-wix.mjs) ─
 
 const wxsPath = path.join(work, "frameflow.wxs");
-writeFileSync(wxsPath, buildWxs());
+writeFileSync(wxsPath, buildWxsSource({ version, payloadFiles, installDirName: INSTALL_DIR_NAME }));
 
 // `--wxs-only` yo'q: WiX manbasi har doim ish papkasida qoladi va build bilan birga o'chadi.
 // Uni ko'rish kerak bo'lsa test (test-installer-artifacts.mjs) generatsiyani alohida tekshiradi.
@@ -299,8 +195,12 @@ try {
   const detail = `${(e && e.stdout) || ""}${(e && e.stderr) || ""}`.trim();
   fail(["✗ `wix build` muvaffaqiyatsiz — yakuniy artefakt YARATILMADI.", detail.slice(0, 2000)]);
 }
-if (!existsSync(msiTmp) || statSync(msiTmp).size === 0) {
-  fail("✗ MSI yo'q yoki bo'sh — yakuniy artefakt YARATILMADI.");
+// Chiqish HAQIQATAN MSI (OLE2 compound) ekanini tekshiramiz — "bo'sh emas" YETARLI EMAS.
+try {
+  const { sizeBytes } = assertMsiArtifact(msiTmp, { stage: "wix build" });
+  console.log(`  MSI tuzilmasi tasdiqlandi (OLE compound, ${sizeBytes} bayt)`);
+} catch (e) {
+  fail([`✗ ${(e && e.message) || e}`, "  Yakuniy artefakt YARATILMADI."]);
 }
 
 // ── Imzolash ───────────────────────────────────────────────────────────────
@@ -332,8 +232,11 @@ if (!unsigned) {
   } catch {
     fail("✗ signtool verify o'tmadi — yakuniy artefakt YARATILMADI.");
   }
-  if (!existsSync(msiTmp) || statSync(msiTmp).size === 0) {
-    fail("✗ Imzolangan MSI yo'q yoki bo'sh — yakuniy artefakt YARATILMADI.");
+  // Imzolashdan KEYIN ham tuzilma tekshiriladi (signtool faylni joyida qayta yozadi).
+  try {
+    assertMsiArtifact(msiTmp, { stage: "signtool" });
+  } catch (e) {
+    fail([`✗ ${(e && e.message) || e}`, "  Imzolangan fayl MSI emas — yakuniy artefakt YARATILMADI."]);
   }
 }
 

@@ -92,8 +92,8 @@ if [ "$DO_UNSIGNED" != "1" ]; then
   fi
   if [ -z "${FF_SIGNED_ZXP:-}" ]; then
     echo "✗ FF_SIGNED_ZXP berilmagan — imzolangan build BEKOR QILINDI."
-    echo "  Reliz payload'i Adobe imzo konverti (META-INF) bilan kelishi SHART, aks holda AE"
-    echo "  panelni yuklamaydi yoki mijoz mashinasida CEP PlayerDebugMode yoqish kerak bo'lardi."
+    echo "  Reliz payload'i Adobe imzo konverti (META-INF) bilan kelishi SHART — aks holda CEP"
+    echo "  o'rnatilgan papkani imzosiz deb hisoblaydi va AE panelni yuklamaydi."
     echo "  Avval: bash $SRC/scripts/build-zxp.sh   (ZXP_CERT/ZXP_CERT_PASS bilan)"
     exit 1
   fi
@@ -149,42 +149,22 @@ PAYLOAD_KIND="$(node "$HELPER" verify "$PAYLOAD")"
 echo "  Payload: $STAGED fayl ($PAYLOAD_KIND)"
 
 # ── Skriptlar: per-user, chegaralangan, boshqa Adobe holatiga tegmaydi ──────
+# `preinstall` YO'Q — ATAYLAB. Ishlayotgan panel yangi payload muvaffaqiyatli joylashishidan
+# OLDIN hech qachon o'chirilmaydi (o'rnatma yarim yo'lda to'xtasa, eskisi joyida qoladi).
+# `postinstall` — GENERATSIYA (installer-payload.mjs): o'rnatma MUVAFFAQIYATLI tugagach
+# FAQAT aniq nomli eski fayllarni olib tashlaydi. Adobe sozlamalari (CSXS debug bayroqlari)
+# HECH QACHON o'zgartirilmaydi — na imzolangan, na imzosiz yo'lda.
 SCRIPTS="$WORK/scripts"
 mkdir -p "$SCRIPTS"
 
-cat > "$SCRIPTS/preinstall" <<'PREINSTALL'
-#!/bin/bash
-# Eski versiyadan qolgan fayllarni tozalaydi (aks holda o'chirilgan fayl panelni buzadi).
-# FAQAT o'z extension papkamiz ichida ishlaydi; foydalanuvchi ma'lumoti (assetflow-data —
-# token/favorites) SAQLANADI. root talab qilinmaydi, /Library ga tegilmaydi.
-set -eu
-DEST="$HOME/Library/Application Support/Adobe/CEP/extensions/com.frameflow"
-case "$DEST" in
-  */Adobe/CEP/extensions/com.frameflow) : ;;
-  *) exit 0 ;;
-esac
-[ -d "$DEST" ] || exit 0
-find "$DEST" -mindepth 1 -maxdepth 1 ! -name 'assetflow-data' -exec rm -rf {} + 2>/dev/null || true
-exit 0
-PREINSTALL
+node "$HELPER" postinstall-script > "$SCRIPTS/postinstall"
+if [ ! -s "$SCRIPTS/postinstall" ] || ! head -1 "$SCRIPTS/postinstall" | grep -q '^#!/bin/bash'; then
+  echo "✗ postinstall skripti generatsiya qilinmadi — build to'xtadi."
+  exit 1
+fi
+bash -n "$SCRIPTS/postinstall"
 
-cat > "$SCRIPTS/postinstall" <<'POSTINSTALL'
-#!/bin/bash
-# Payload Adobe imzo konverti bilan kelgan bo'lsa (META-INF/signatures.xml) — CEP imzoni
-# o'zi tekshiradi va HECH QANDAY debug bayrog'i kerak emas (reliz yo'li).
-# Imzosiz QA build'da esa CEP imzosiz extension'ni yuklamaydi, shuning uchun FAQAT shu
-# holatda va FAQAT shu foydalanuvchi uchun PlayerDebugMode yoqiladi.
-set -eu
-DEST="$HOME/Library/Application Support/Adobe/CEP/extensions/com.frameflow"
-[ -d "$DEST" ] || exit 0
-if [ -f "$DEST/META-INF/signatures.xml" ]; then exit 0; fi
-for v in 9 10 11 12 13 14; do
-  defaults write "com.adobe.CSXS.$v" PlayerDebugMode 1 2>/dev/null || true
-done
-exit 0
-POSTINSTALL
-
-chmod 755 "$SCRIPTS/preinstall" "$SCRIPTS/postinstall"
+chmod 755 "$SCRIPTS/postinstall"
 
 # ── Komponent paketi ────────────────────────────────────────────────────────
 pkgbuild \
@@ -261,6 +241,9 @@ if [ "$DO_UNSIGNED" = "1" ]; then
   echo "✓ Imzolanmagan QA installer: $OUT"
   echo "  SHA-256: $SHA"
   echo "  ⚠ FAQAT lokal QA uchun — imzo/notarizatsiya yo'q, mijozga tarqatilmaydi."
+  echo "  ⚠ Payload'da Adobe imzo konverti YO'Q: AE bu panelni FAQAT operator o'sha mashinada"
+  echo "    CEP dasturchi rejimini (PlayerDebugMode) O'ZI QO'LDA yoqgan bo'lsa yuklaydi."
+  echo "    Installer bu sozlamani hech qachon o'zgartirmaydi."
   exit 0
 fi
 

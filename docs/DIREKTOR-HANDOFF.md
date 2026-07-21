@@ -151,8 +151,22 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 > ichki Admin paneli kod darajasida rad etiladi. Imzolash FAIL-CLOSED: kredensiallar faqat
 > env'dan, qisman bo'lsa ham to'xtaydi, self-signed/standart parol yo'q, nosozlikda na artefakt
 > na temp qoladi. Har artefakt yoniga `.sha256` + reliz manifesti chiqadi (admin publish server
-> tomonda qayta hisoblab solishtiradi). `npm run test:plugin-installers` **160/160**.
-> Buyruqlar: **`docs/RELEASE-ARCHITECTURE.md` §3A**.
+> tomonda qayta hisoblab solishtiradi). Buyruqlar: **`docs/RELEASE-ARCHITECTURE.md` §3A**.
+>
+> **Direktor auditi bo'yicha tuzatildi (Task 3, alohida commit):** (1) **Imzo endi BAYTGA
+> bog'langan** — `.zxp` ichidagi har bir fayl lokal payload bilan bayt-ba-bayt (SHA-256)
+> solishtiriladi (avval faqat NOM ro'yxati tekshirilardi: nom bir xil–bayt boshqa arxiv
+> o'tib ketardi). Arxiv `unzip -d` bilan yoyilmaydi — ZIP xom, tartiblangan ro'yxat sifatida
+> o'qiladi; takror nom · `..`/absolyut/buzuq yo'l · **symlink** · shifrlash · CRC xatosi rad
+> etiladi; konvert yo'llari yopiq ro'yxat (`META-INF/signatures.xml` + `mimetype`).
+> (2) **Windows** — chiqish haqiqatan MSI ekani (OLE `d0cf11e0a1b11ae1` + minimal hajm)
+> WiX'dan keyin ham, `signtool`dan keyin ham tekshiriladi; WiX Directory Id endi to'liq
+> yo'ldan (ichma-ich bir xil papka nomlari to'qnashmaydi). (3) **macOS xavfsizligi** —
+> **`preinstall` butunlay olib tashlandi** (ishlayotgan plagin almashtirishdan oldin
+> o'chirilmaydi) va **PlayerDebugMode'ga har qanday avtomatik yozuv olib tashlandi**;
+> `postinstall` faqat o'rnatma muvaffaqiyatli tugagach aniq nomli eski fayllarni olib
+> tashlaydi. Imzosiz QA paketi uchun dasturchi rejimini operator O'ZI qo'lda yoqadi.
+> `npm run test:plugin-installers` **202/202** (yangi regressiya testlari eski kodda yiqiladi).
 > 🔴 **Bloker (EGA, kod EMAS):** Apple Developer ID Installer sertifikati + notarizatsiya
 > kredensiali, Windows Authenticode (EV) sertifikati/token, Windows mashinasi yoki
 > `windows-latest` CI (`dotnet tool install --global wix`).
