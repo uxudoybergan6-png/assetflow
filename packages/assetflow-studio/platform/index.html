@@ -16239,21 +16239,21 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       <!-- CINEMA — haftalik billboard (kino-ramka; statik kuratsiya · BATCH7: CMS) -->
       <section class="ffl-sect" style="order:15">
         <div class="ffl-shead" data-rv="">
-          <div><div class="ffm-eyebrow">THE WEEKLY BILLBOARD</div><div class="ffm-d44" style="margin-top:10px">One idea. Full-screen impact.</div></div>
+          <div><div class="ffm-eyebrow">MADE WITH AI STUDIO</div><div class="ffm-d44" style="margin-top:10px">One idea. Full-screen impact.</div></div>
           <span style="flex:1"></span>
           <a class="ffl-lnk" onclick="{{ goAistudio }}">Build a scene<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
         </div>
         <div class="ffl-cinema" data-rv="" data-rv-delay="120">
-          <div class="ffl-cinema-bar"><span>FRAMEFLOW PREMIERE · 07/12</span><i></i><span>SEEDANCE 2.0 · 4K</span></div>
+          <div class="ffl-cinema-bar"><span>CONCEPT PREVIEW</span><i></i><span>SEEDANCE 2.0 · 4K</span></div>
           <div class="ffl-cinema-media ffl-art ffl-art-sunset"><span class="sun"></span><span class="horizon"></span><div class="ffl-cinema-word">AFTER<br>LIGHT</div><button class="ffl-cplay" aria-label="Play billboard preview"><i class="ph-fill ph-play"></i></button></div>
           <div class="ffl-cinema-foot"><div><b>After Light — product film study</b><span>Start/end frames · native audio · 8 seconds</span></div><strong>✦ 480</strong></div>
         </div>
       </section>
 
-      <!-- SHOWCASE FEED — «Made with FrameFlow» masonry (REAL shablon manbasi) -->
+      <!-- SHOWCASE FEED — «Made with FrameFlow» masonry (konsept namuna kartalari, real katalog EMAS) -->
       <section class="ffl-sect" style="{{ lsShowcase }}">
         <div class="ffl-shead" data-rv="">
-          <div><div class="ffm-eyebrow">{{ lcShowEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcShowTitle }}</div></div>
+          <div><div class="ffm-eyebrow">{{ lcShowEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcShowTitle }}</div><div style="margin-top:6px;font-size:11px;color:var(--muted)">Concept previews — styles you can create, not live catalog listings</div></div>
           <span style="flex:1"></span>
           <div class="ffl-cattabs">
             <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.clsL }}">{{ c.label }}</span></sc-for>
@@ -16715,7 +16715,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           </div>
           <div class="va-qa">
             <button class="qc" data-screen="templates" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-grid"></use></svg></span>
-              <div class="qt">Find a template</div><div class="qd">10,000+ AE, Premiere &amp; Resolve packs</div></button>
+              <div class="qt">Find a template</div><div class="qd">Browse the template library</div></button>
             <button class="qc" data-screen="aistudio" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-spark"></use></svg></span>
               <div class="qt">Create with AI</div><div class="qd">Image · Video · Voiceover · SFX</div></button>
             <button class="qc" data-screen="plugin" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-puzzle"></use></svg></span>
@@ -18295,25 +18295,25 @@ class Component extends DCLogic {
 
   templates = [
     { id: 1, n: 'Neon Pulse Intro', c: 'Video Templates', a: 'Ae', ac: '#b794f6', pro: true, h: 262, d: '0:12' },
-    { id: 2, n: 'Minimal Lower Third', c: 'Lower Thirds', a: 'Pr', ac: '#7aa2f7', pro: false, h: 200, d: '0:08' },
+    { id: 2, n: 'Minimal Lower Third', c: 'Lower Thirds', a: 'Ae', ac: '#7aa2f7', pro: false, h: 200, d: '0:08' },
     { id: 3, n: 'Glitch Transitions', c: 'Video Templates', a: 'Ae', ac: '#b794f6', pro: true, h: 330, d: '0:05' },
     { id: 4, n: 'AI Portrait Lookbook', c: 'AI Templates', a: 'Ae', ac: '#b794f6', pro: true, h: 24, d: '0:20' },
-    { id: 5, n: 'Cinematic LUT — Dune', c: 'LUT', a: 'Dr', ac: '#f0907f', pro: false, h: 34, d: '—' },
+    { id: 5, n: 'Cinematic LUT — Dune', c: 'LUT', a: 'Ae', ac: '#f0907f', pro: false, h: 34, d: '—' },
     { id: 6, n: 'Kinetic Typography', c: 'Graphics', a: 'Ae', ac: '#b794f6', pro: true, h: 280, d: '0:15' },
     { id: 7, n: 'Soft Glass Titles', c: 'Lower Thirds', a: 'Ae', ac: '#b794f6', pro: false, h: 210, d: '0:10' },
-    { id: 8, n: 'Vlog Starter Kit', c: 'Video Templates', a: 'Pr', ac: '#7aa2f7', pro: false, h: 150, d: '1:00' },
-    { id: 9, n: 'Impact SFX Pack', c: 'SFX', a: 'Pr', ac: '#7aa2f7', pro: true, h: 300, d: '—' },
+    { id: 8, n: 'Vlog Starter Kit', c: 'Video Templates', a: 'Ae', ac: '#7aa2f7', pro: false, h: 150, d: '1:00' },
+    { id: 9, n: 'Impact SFX Pack', c: 'SFX', a: 'Ae', ac: '#7aa2f7', pro: true, h: 300, d: '—' },
     { id: 10, n: 'Retro VHS Pack', c: 'Video Templates', a: 'Ae', ac: '#b794f6', pro: true, h: 12, d: '0:07' },
     { id: 11, n: 'Corporate Slideshow', c: 'Video Templates', a: 'Ae', ac: '#b794f6', pro: false, h: 222, d: '0:45' },
-    { id: 12, n: 'Neon Grid AI', c: 'AI Templates', a: 'Dr', ac: '#f0907f', pro: true, h: 172, d: '0:18' },
-    { id: 13, n: 'Whoosh SFX Bundle', c: 'SFX', a: 'Pr', ac: '#7aa2f7', pro: false, h: 190, d: '—' },
+    { id: 12, n: 'Neon Grid AI', c: 'AI Templates', a: 'Ae', ac: '#f0907f', pro: true, h: 172, d: '0:18' },
+    { id: 13, n: 'Whoosh SFX Bundle', c: 'SFX', a: 'Ae', ac: '#7aa2f7', pro: false, h: 190, d: '—' },
     { id: 14, n: 'Glass HUD Graphics', c: 'Graphics', a: 'Ae', ac: '#b794f6', pro: true, h: 250, d: '0:14' },
     { id: 15, n: 'Bold Title Sequence', c: 'Lower Thirds', a: 'Ae', ac: '#b794f6', pro: true, h: 310, d: '0:11' },
-    { id: 16, n: 'Teal Gradient LUT', c: 'LUT', a: 'Dr', ac: '#f0907f', pro: true, h: 180, d: '—' },
-    { id: 17, n: 'Warm Film LUT', c: 'LUT', a: 'Dr', ac: '#f0907f', pro: false, h: 28, d: '—' },
+    { id: 16, n: 'Teal Gradient LUT', c: 'LUT', a: 'Ae', ac: '#f0907f', pro: true, h: 180, d: '—' },
+    { id: 17, n: 'Warm Film LUT', c: 'LUT', a: 'Ae', ac: '#f0907f', pro: false, h: 28, d: '—' },
     { id: 18, n: 'AI Style Transfer', c: 'AI Templates', a: 'Ae', ac: '#b794f6', pro: true, h: 295, d: '0:16' },
     { id: 19, n: 'Particle Logo Reveal', c: 'Graphics', a: 'Ae', ac: '#b794f6', pro: true, h: 265, d: '0:09' },
-    { id: 20, n: 'Clean Promo Pack', c: 'Video Templates', a: 'Pr', ac: '#7aa2f7', pro: false, h: 205, d: '0:30' },
+    { id: 20, n: 'Clean Promo Pack', c: 'Video Templates', a: 'Ae', ac: '#7aa2f7', pro: false, h: 205, d: '0:30' },
   ];
 
   categories = ['Video Templates', 'Lower Thirds', 'AI Templates', 'Graphics', 'LUT', 'SFX'];
@@ -18416,17 +18416,6 @@ class Component extends DCLogic {
 
   brands = ['NOVA', 'PixelHaus', 'Lumen', 'ORBIT', 'Kadr', 'Vizor'];
 
-  authors = ['NOVA Studio', 'Kadr Lab', 'Vizor', 'PixelHaus', 'Lumen Co', 'Orbit FX', 'Sardor A.', 'Dilnoza K.'];
-
-  categoryTiles = [
-    { label: 'Video Templates', count: '4,200+', icon: 'film-strip', h: 210 },
-    { label: 'Lower Thirds', count: '1,150+', icon: 'text-aa', h: 24 },
-    { label: 'Transitions', count: '880+', icon: 'shuffle', h: 280 },
-    { label: 'LUTs & Presets', count: '640+', icon: 'swatches', h: 34 },
-    { label: 'Graphics', count: '2,300+', icon: 'shapes', h: 172 },
-    { label: 'SFX', count: '720+', icon: 'waveform', h: 300 },
-  ];
-
   studioCards = [
     { t: 'Image generation', d: 'High-quality visuals from text. In seconds.', icon: 'image', cost: '5 credits', tool: 'Rasm yaratish', h: 262 },
     { t: 'Video generation', d: 'Moving scenes and clips from a prompt.', icon: 'video-camera', cost: '40 credits', tool: 'Video yaratish', h: 200 },
@@ -18436,14 +18425,8 @@ class Component extends DCLogic {
 
   plans = [
     { key: 'free', name: 'Free', pm: 0, cr: '50 credits/mo', pop: false, cta: 'Get started', sub: 'For trying it out', feats: ['50 AI credits per month', 'Full template library, any resolution', '15 downloads per month', '1 active project', 'Community support'], tf: ['Full template library, any resolution', '15 downloads per month', '1 active project'] },
-    { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'All 10,000+ templates', 'Unlimited downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Email support'], tf: ['All 10,000+ templates', 'Unlimited downloads', 'AE / Premiere plugin'] },
-    { key: 'studio', name: 'Studio', pm: 59, cr: '3,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For teams', feats: ['3,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'Dedicated account manager'], tf: ['Team workspace (5 seats)', 'Dedicated account manager'] },
-  ];
-
-  testimonials = [
-    { q: 'FrameFlow cut our render time by a third. AI generation happens right inside our workflow.', n: 'Dilnoza Karimova', r: 'Motion designer, NOVA Studio', h: 262 },
-    { q: 'The template quality is fantastic. We used over 40 of them for reels in a single month — clients were amazed.', n: 'Sardor Aliyev', r: 'Content producer', h: 195 },
-    { q: 'The plugin runs flawlessly inside AE. The credit system is simple and easy to understand.', n: 'Madina Yusupova', r: 'Freelance editor', h: 330 },
+    { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin', 'Email support'], tf: ['Full template library, any resolution', 'Unlimited downloads', 'After Effects plugin'] },
+    { key: 'studio', name: 'Studio', pm: 59, cr: '3,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For teams', feats: ['3,000 AI credits per month', 'Everything in Pro'], tf: ['Everything in Pro'] },
   ];
 
   faqs = [
@@ -18452,19 +18435,6 @@ class Component extends DCLogic {
     { q: 'What\'s included in the Free plan?', a: '50 monthly credits, the full template library at any resolution, core AI tools, and 15 downloads per month. Pro raises your monthly credits and gives unlimited downloads.' },
     { q: 'How do I install the plugin?', a: 'Download the .zxp file from the Plugin page, install it with the installer, and connect it to your account on the platform. Ready in minutes.' },
     { q: 'Can I cancel my subscription anytime?', a: 'Yes, you can cancel your subscription anytime. Access remains until the end of the current billing period.' },
-  ];
-
-  footerCols = [
-    { h: 'Product', items: ['Stock Catalog', 'AI Studio', 'Plugin', 'Pricing', 'Changelog'] },
-    { h: 'Categories', items: ['Video Templates', 'Lower Thirds', 'Transitions', 'LUT & Presets', 'SFX'] },
-    { h: 'Plugins', items: ['After Effects', 'Premiere Pro', 'DaVinci Resolve', 'Final Cut', 'Installation'] },
-    { h: 'Company', items: ['About us', 'Careers', 'Blog', 'Contact', 'Partnerships'] },
-  ];
-
-  pluginSteps = [
-    { n: '1', t: 'Download the .zxp file', d: 'Get the latest version from the platform in one click.' },
-    { n: '2', t: 'Install with the installer', d: 'Install quickly via ZXP Installer or Creative Cloud.' },
-    { n: '3', t: 'Connect your account', d: 'Enter your platform key — templates and credits are ready.' },
   ];
 
   // Real Studio Gen rejimlari (API: /api/studio/gen). cost model katalogidan olinadi.
@@ -18504,9 +18474,9 @@ class Component extends DCLogic {
       ],
     },
     stats: [
-      { value: 10000, suffix: '+', label: 'Ready-made templates' },
+      { value: 50, suffix: '', label: 'Free AI credits to start' },
       { value: 4, suffix: '', label: 'AI tools — image · video · voice · SFX' },
-      { value: 6, suffix: '', label: 'Categories — Ae · Pr · DaVinci' },
+      { value: 6, suffix: '', label: 'Content categories — video, graphics, LUTs, audio' },
       { value: 14, suffix: 'days', label: 'Money-back guarantee' },
     ],
     // ── To'liq sayt CMS — pastki bo'limlar + pricing/plugin sahifalar (server defaultlari bilan AYNI) ──
@@ -18577,11 +18547,11 @@ class Component extends DCLogic {
         feats: ['50 AI credits per month', 'Full template library, any resolution', '15 downloads per month', '1 active project', 'Community support'],
         teaserFeats: ['Full template library, any resolution', '15 downloads per month', '1 active project'] },
       { name: 'Pro', price: 19, credits: '1,000 credits/mo', sub: 'For professionals', cta: 'Upgrade to Pro',
-        feats: ['1,000 AI credits per month', 'All 10,000+ templates', 'Unlimited downloads', 'Unlimited projects', 'AE / Premiere plugin', 'Email support'],
-        teaserFeats: ['All 10,000+ templates', 'Unlimited downloads', 'AE / Premiere plugin'] },
+        feats: ['1,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin', 'Email support'],
+        teaserFeats: ['Full template library, any resolution', 'Unlimited downloads', 'After Effects plugin'] },
       { name: 'Studio', price: 59, credits: '3,000 credits/mo', sub: 'For teams', cta: 'Choose Studio',
-        feats: ['3,000 AI credits per month', 'Everything in Pro', 'Team workspace (5 seats)', 'Brand kit and templates', 'Dedicated account manager'],
-        teaserFeats: ['Team workspace (5 seats)', 'Dedicated account manager'] },
+        feats: ['3,000 AI credits per month', 'Everything in Pro'],
+        teaserFeats: ['Everything in Pro'] },
     ],
     pluginPage: {
       badge: 'After Effects 2022+', title: 'Install the FrameFlow plugin in one click',
@@ -18705,11 +18675,6 @@ class Component extends DCLogic {
     { label: 'Plugin', icon: 'puzzle-piece', screen: 'plugin' },
   ];
   accountTabs = ['Profile', 'Subscription & credits', 'Downloads'];
-  quickActions = [
-    { t: 'Find a template', d: '10,000+ video templates', icon: 'magnifying-glass', screen: 'templates', g: 'var(--grad)' },
-    { t: 'Create with AI', d: 'Image, video, voice', icon: 'sparkle', screen: 'aistudio', g: 'var(--grad)' },
-    { t: 'Install plugin', d: 'For AE / Premiere', icon: 'plugs-connected', screen: 'plugin', g: 'var(--grad)' },
-  ];
   // creditHistory/downloadHistory endi real ma'lumotdan hisoblanadi (renderVals):
   // kredit tarixi — gen tarixidagi cost'lardan; yuklamalar — Faza C'da (endpoint hali yo'q).
   // QA-FIX #13: projects endi state'da (real API — /api/studio/projects).
@@ -18915,6 +18880,28 @@ class Component extends DCLogic {
         if (ev.target && ev.target.closest && ev.target.closest('[data-pop-root]')) return;
         this._closePops();
       }, true);
+      // Launch Task B — ochiq (public) sahifalardagi .va-media rasm/video xatolari uchun umumiy
+      // fallback: bir marta cache-bust bilan qayta urinadi, keyin "Media unavailable" overlay
+      // ko'rsatadi. onerror="" bilan alohida ulangan elementlar (masalan, workspace galereyasidagi
+      // axMediaError) tegilmaydi — ular o'z handler'ini saqlaydi.
+      window.addEventListener('error', this._onMediaError = (ev) => {
+        const el = ev.target;
+        if (!el || !el.classList || !el.classList.contains('va-media')) return;
+        if (el.getAttribute && el.getAttribute('onerror')) return;
+        if (!el.__ffRetried) {
+          el.__ffRetried = 1;
+          const src = el.getAttribute('src') || '';
+          if (src && src.indexOf('data:') !== 0) { el.src = src + (src.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now(); return; }
+        }
+        const host = el.parentElement;
+        if (host && !host.querySelector('.va-mediaerr')) {
+          const ov = document.createElement('div');
+          ov.className = 'va-mediaerr';
+          ov.textContent = 'Media unavailable';
+          host.appendChild(ov);
+        }
+        el.style.display = 'none';
+      }, true);
       // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y); P11 — lightbox ochiq bo'lsa ←/→ nav
       window.addEventListener('keydown', this._onEsc = (ev) => {
         // SC_37 — ⌘K / Ctrl+K: Stock Catalog qidiruviga fokus (login bo'lgandagina).
@@ -19046,7 +19033,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._onMediaError) window.removeEventListener('error', this._onMediaError, true); if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); this._syncModalFx(); }
@@ -21249,8 +21236,6 @@ class Component extends DCLogic {
       return { label: c, col: active ? '#fff' : 'var(--txt2)', bg: active ? 'var(--grad)' : 'var(--card)', bd: active ? 'transparent' : 'var(--bd)', cls: active ? 'ffm-tag on' : 'ffm-tag', clsL: active ? 'ffl-cattab on' : 'ffl-cattab' };
     });
 
-    const carousel = this.templates.filter(t => t.c === this.state.activeCat).map(t => ({ ...t, g: this.grad(t.h), author: this.authors[t.id % this.authors.length], price: t.pro ? 'Pro' : 'Free', badge: t.pro ? 'PRO' : 'FREE', badgeCls: t.pro ? 'ffm-bgpro' : 'ffm-bgfree' }));
-    const categoryTiles = this.categoryTiles.map(c => ({ ...c, g: this.grad(c.h) }));
     // Boy landing marquee qatorlari: 1-qator faol kategoriya (onCat filtri ISHLAYDI),
     // 2-qator qolgan shablonlar. Uzluksiz -50% aylanish uchun ro'yxat >=8 ga to'ldirilib 2x lanadi.
     const tcardL = (t) => ({ ...t, g: this.grad(t.h), badge: t.pro ? 'PRO' : 'FREE', badgeClsL: t.pro ? 'ffl-bpro' : 'ffl-bfree' });
@@ -21313,8 +21298,6 @@ class Component extends DCLogic {
         crCol: p.pop ? 'var(--lime)' : 'var(--muted)',
       };
     });
-
-    const testimonials = this.testimonials.map(t => ({ ...t, g: this.grad(t.h) }));
 
     // Sayt CMS: FAQ savol-javoblari config'dan (landing + pricing sahifada bitta manba)
     const faqsView = lc.faqSection.items.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'color-mix(in srgb,var(--lime) 25%,transparent)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
@@ -22149,11 +22132,6 @@ class Component extends DCLogic {
     const dashGens = genView.slice(0, 5);
     const hasDashGens = dashGens.length > 0;
     const dashGensView = dashGens.map(g => ({ ...g, isVideo: g.type === 'video' }));
-    const dashQuick = [
-      { t: 'Find a template', d: '10,000+ video templates', icon: 'magnifying-glass', screen: 'templates', cls: 'ffa-qa hl', icBg: 'var(--limedim)', icCol: 'var(--lime)' },
-      { t: 'Create with AI', d: 'Image, video, voice', icon: 'sparkle', screen: 'aistudio', cls: 'ffa-qa', icBg: 'var(--seldim)', icCol: 'var(--select)' },
-      { t: "Install plugin", d: 'For AE / Premiere', icon: 'puzzle-piece', screen: 'plugin', cls: 'ffa-qa', icBg: 'var(--amberdim)', icCol: 'var(--amber)' },
-    ];
     // Foydalanuvchi ma'lumoti (sidebar/topbar/account)
     const u = this.state.user || {};
     const userName = u.name || (u.email ? u.email.split('@')[0] : 'User');
@@ -22301,23 +22279,6 @@ class Component extends DCLogic {
       : pgDl === 'error' ? (this.state.pluginDlErr || "Couldn't check for updates — click the button to retry")
       : pgDl === 'loading' ? 'Checking the latest release…'
       : lc.pluginPage.versionNote;
-    const statsView = [
-      { v: Math.round(10 * sp) + 'K+', l: 'Ready-made templates' },
-      { v: (sp * 5).toFixed(1).replace(/\.0$/, '') + 'M+', l: 'Active creators' },
-      { v: Math.round(12 * sp) + 'M+', l: 'AI generations' },
-      { v: (4.9 * sp).toFixed(1), l: 'Average rating' },
-    ];
-    // \u00a7F (P33) \u2014 SOXTA jonli hodisalar olib tashlandi ("Just now: Sardor upgraded\u2026",
-    // "\u00abNeon Pulse\u00bb downloaded", "1.2M images this week" \u2014 hech biri real emas edi).
-    // O'rniga halol imkoniyat bayonotlari (fabrikatsiya qilingan hodisa/statistika yo'q).
-    const tips = [
-      "10,000+ ready-made templates",
-      "Generate image, video, voice & SFX with AI",
-      "New AI models added regularly",
-      "Import straight into After Effects & Premiere",
-    ];
-    const tipText = tips[this.state.tipIdx % tips.length];
-    const tipAnim = 'none';
     const pageAnim = 'none';
     // P10 — Marketing nav frost'i endi CSS klass bilan (scroll'da html.ffscrolled almashadi, setState EMAS).
     //       landing = tepada tekis, scroll'da muzli; pricing/plugin = doim muzli (.nf klass).
@@ -22333,10 +22294,8 @@ class Component extends DCLogic {
       { n: '02', t: 'AI generates it', d: 'A 4K result in seconds \u2014 image, video, voice or SFX.', icon: 'sparkle' },
       { n: '03', t: 'Download or open in the plugin', d: 'Export from the browser or continue right inside After Effects.', icon: 'rocket-launch' },
     ];
-    const catTilesRv = categoryTiles.map((c, i) => ({ ...c, rd: (i % 6) * 70 }));
     const studioRv = studioCards.map((c, i) => ({ ...c, rd: (i % 4) * 90 }));
     const plansRv = plansView.map((p, i) => ({ ...p, rd: i * 110 }));
-    const testsRv = testimonials.map((t, i) => ({ ...t, rd: i * 110 }));
     return {
       navCls, navPricingCls, navPluginCls,
       marqRow1, marqRow2, feedCards,
@@ -22377,8 +22336,8 @@ class Component extends DCLogic {
       lcPgBadge: lc.pluginPage.badge, lcPgTitle: lc.pluginPage.title, lcPgSub: lc.pluginPage.sub,
       lcPgCta: pgCtaLabel, lcPgVersion: pgVersionNote, lcPgGuarantee: lc.pluginPage.guarantee,
       pluginStepsView,
-      statsView, tipText, tipAnim, pageAnim, marqA, marqB, heroWords, howSteps,
-      catTilesRv, studioRv, plansRv, testsRv,
+      pageAnim, marqA, marqB, heroWords, howSteps,
+      studioRv, plansRv,
       accentKey, animKey,
       showMarketing: marketing, showApp: app,
       isLanding: s === 'landing', isPricing: s === 'pricing', isPlugin: s === 'plugin',
@@ -22391,7 +22350,7 @@ class Component extends DCLogic {
       verifyEmailAddr: (this.state.user && this.state.user.email) || '',
       navOpen: this.state.navOpen,
       brands: this.brands,
-      catTabs, carousel, categoryTiles, studioCards, plansView, testimonials, faqsView, footerCols: this.footerCols, pluginSteps: this.pluginSteps, creditPacks,
+      catTabs, studioCards, plansView, faqsView, creditPacks,
       showCredits: this.state.showCredits,
       toast: this.state.toast,
       toastRetry: !!this.state.toastRetry, // P17 — tarmoq xatosida Retry tugmasi
@@ -22487,7 +22446,7 @@ class Component extends DCLogic {
       },
       // §H — niyatni bajarish (login'dan keyin chaqiriladi): saqlangan tarif/kreditga to'g'ridan checkout.
       resumePayIntent: () => this._resumePayIntent(),
-      sidebarMainView, sidebarAccountView, dashQuick, dashGensView, hasDashGens, noDashGens: this.state.gensLoaded && !hasDashGens, recTemplates, hasRec, noRec: !hasRec,
+      sidebarMainView, sidebarAccountView, dashGensView, hasDashGens, noDashGens: this.state.gensLoaded && !hasDashGens, recTemplates, hasRec, noRec: !hasRec,
       // ── FAZA C · Home enrichment (featured models + tokchalar) ──
       featHero, featRail, featAll, hasFeatured, featLoading,
       shelfTrend, hasTrend, shelfCat, hasShelfCat, shelfCatTitle, shelfNew, hasShelfNew, shelvesLoading,

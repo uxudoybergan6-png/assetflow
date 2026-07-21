@@ -121,7 +121,46 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ---
 
-## 5. JORIY HOLAT (2026-07-14)
+## 5. JORIY HOLAT (2026-07-21)
+
+> ✅ **Launch Task B TUGADI (2026-07-21, push YO'Q, dizayn/layout O'ZGARMADI):** ochiq landing/
+> pricing/plugin sahifalarni haqiqiy imkoniyat va dalilga mos qildik. Fayllar: `apps/api/src/lib/
+> landing-config.ts`, `packages/assetflow-studio/platform/index.html`, yangi
+> `scripts/verify-public-copy.mjs`.
+> 1. **Media xato fallback:** yangi capture-phase `window.addEventListener('error', ...)`
+>    (`platform/index.html` mount) — public `.va-media` rasm/video xatosida 1 marta cache-bust
+>    bilan qayta urinadi, so'ng "Media unavailable" overlay (`.va-mediaerr`, allaqachon mavjud CSS)
+>    ko'rsatib elementni yashiradi; `componentWillUnmount`da tozalanadi. Workspace galereyasidagi
+>    mavjud `axMediaError`/`axMediaLoaded` (allaqachon to'g'ri ishlagan, ishonchli) TEGILMADI —
+>    `onerror` atributi bor elementlar yangi listener'dan chetlab o'tiladi. Checked-in yopiq/xato
+>    GCS media URL topilmadi (allaqachon bo'sh string default edi) — o'ylab chiqarilmadi.
+> 2. **Miqdoriy da'volar:** server (`landing-config.ts`) va klient CMS-nusxa (`platform/index.html`)
+>    default'laridagi **"10,000+ templates"** va **"Ae · Pr · DaVinci"** yorlig'i olib tashlandi →
+>    timeless/haqiqiy qiymatlar ("Free AI credits to start", "Content categories — video, graphics,
+>    LUTs, audio"). Dashboard quick-action va AI Studio quick-action'lardagi 3 xil qayta-qaytariq
+>    **"10,000+ video templates" / "10,000+ AE, Premiere & Resolve packs"** ham tuzatildi (1 tasi
+>    jonli statik HTML, qolgan 2 tasi — `quickActions`/`dashQuick` — o'lik kod edi, o'chirildi).
+> 3. **Qo'llab-quvvatlanmagan va'dalar:** Pro/Studio tarif matnlaridan **"AE / Premiere plugin"**,
+>    **"Team workspace (5 seats)"**, **"Brand kit and templates"**, **"Dedicated account manager"**
+>    olib tashlandi (kodda/DB'da amalga oshirilmagan — grep tasdiqladi). 14 kunlik pul qaytarish
+>    kafolati **SAQLANDI** (`refund.html` + `lemonsqueezy.ts` webhook — real, ishlaydigan siyosat).
+> 4. **Demo shablon kartalari:** SHOWCASE FEED (landing masonry) — real katalog EMASLIGI aniq
+>    yozildi ("Concept previews — styles you can create, not live catalog listings" + izoh
+>    tuzatildi); fake `a:'Pr'/'Dr'` (Premiere/DaVinci) yorliqlari **`Ae`**ga to'g'rilandi (20 ta
+>    yozuv — plagin faqat AE). CINEMA blokidagi soxta sana "FRAMEFLOW PREMIERE · 07/12" →
+>    "CONCEPT PREVIEW"ga almashtirildi.
+> 5. **Soxta testimonial'lar:** 3 ta fabrikatsiya qilingan mijoz sharhi (Dilnoza Karimova/Sardor
+>    Aliyev/Madina Yusupova) — DOM'da hech qayerda bind qilinmagan **o'lik kod** ekani tasdiqlandi,
+>    to'liq o'chirildi (`testimonials`/`testsRv` + bog'liq `authors`/`categoryTiles`/`footerCols`/
+>    `pluginSteps`/`statsView`/`tips`/`carousel` — hammasi shu audit bilan aniqlangan o'lik kod).
+> 6. **Plagin reliz xatti-harakati (commit 6eb5421/b29a93d/c1c3b01):** diff'da bu fayllarga hech
+>    qanday o'zgarish YO'Q — tasdiqlandi (`git diff` bo'sh).
+> **Tekshiruv:** `npm run build -w apps/api` OK · `node scripts/verify-public-copy.mjs` → **29/29
+> o'tdi** (miqdoriy/imtiyoz/ism da'volari yo'q, fallback funksiyalari aniqlangan) · barcha 10 ta
+> inline `<script>` `node --check`-ga teng tekshiruv bilan sintaksis OK · himoyalangan zona (pul/
+> kredit/billing/auth/DB sxema/deploy) diff'da YO'Q · `test-downloads/` tegilmadi.
+> 🔴 **Qolgan qadam:** haqiqiy brauzer/mobil vizual QA (desktop + narrow viewport) hali BAJARILMADI
+> — faqat statik/kod darajasidagi tekshiruv qilindi, real render ko'rilmadi.
 
 > ✅ **Launch Task A TUGADI (2026-07-21, push YO'Q):** AE plagin reliz paketi + ommaviy download oqimi.
 > `build-zxp.sh` staging'ga `css/` (tokens/ff-components/styles + `fonts/*.woff2`) yo'qolgan edi —

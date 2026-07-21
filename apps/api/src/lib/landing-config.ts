@@ -139,10 +139,13 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
       { label: "TEMPLATE", dur: "0:05", mediaUrl: "", mediaType: "" },
     ],
   },
+  // Launch Task B — oqib ketadigan katalog-hajm raqami olib tashlandi (haqiqiy hajmga mos emas
+  // edi); Pr/DaVinci plagin yorlig'i ham olib tashlandi (plagin faqat AE'ni qo'llab-quvvatlaydi).
+  // Timeless/haqiqiy qiymatlar bilan almashtirildi.
   stats: [
-    { value: 10000, suffix: "+", label: "Ready-made templates" },
+    { value: 50, suffix: "", label: "Free AI credits to start" },
     { value: 4, suffix: "", label: "AI tools — image · video · voice · SFX" },
-    { value: 6, suffix: "", label: "Categories — Ae · Pr · DaVinci" },
+    { value: 6, suffix: "", label: "Content categories — video, graphics, LUTs, audio" },
     { value: 14, suffix: "days", label: "Money-back guarantee" },
   ],
   landingSections: [
@@ -231,15 +234,17 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
       // Free↔Pro yagona farqi endi: oylik yuklab olishlar (Free 15 → Pro cheksiz) + kreditlar.
       // "4K, watermark-free downloads" yolg'on reklama edi → "Unlimited downloads" bilan almashtirildi.
       name: "Pro", price: 19, credits: "1,000 credits/mo", sub: "For professionals", cta: "Upgrade to Pro",
-      feats: ["1,000 AI credits per month", "All 10,000+ templates", "Unlimited downloads", "Unlimited projects", "AE / Premiere plugin", "Email support"],
-      teaserFeats: ["All 10,000+ templates", "Unlimited downloads", "AE / Premiere plugin"],
+      feats: ["1,000 AI credits per month", "Full template library, any resolution", "Unlimited downloads", "Unlimited projects", "After Effects plugin", "Email support"],
+      teaserFeats: ["Full template library, any resolution", "Unlimited downloads", "After Effects plugin"],
     },
     {
       // P27 D2 — Studio 6,000 → 3,000 kredit (og'ir tarifda ~2× marja tiklandi). D4 — "API access"
       // (public API YO'Q) va "Priority render queue" (priority queue YO'Q) olib tashlandi.
+      // Launch Task B — jamoa/brendkit/shaxsiy menejer imtiyozlari olib tashlandi: bularning
+      // hech biri kodda/DB'da amalga oshirilmagan (grep tasdiqladi).
       name: "Studio", price: 59, credits: "3,000 credits/mo", sub: "For teams", cta: "Choose Studio",
-      feats: ["3,000 AI credits per month", "Everything in Pro", "Team workspace (5 seats)", "Brand kit and templates", "Dedicated account manager"],
-      teaserFeats: ["Team workspace (5 seats)", "Brand kit and templates", "Dedicated account manager"],
+      feats: ["3,000 AI credits per month", "Everything in Pro"],
+      teaserFeats: ["Everything in Pro"],
     },
   ],
   pluginPage: {
