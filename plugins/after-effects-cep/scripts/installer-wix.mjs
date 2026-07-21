@@ -10,6 +10,8 @@
 // qilinadi (pastdagi "MSI'dan OLDINGI o'rnatma qoldiqlari" bo'limiga qara).
 
 import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { obsoleteInstallFiles } from "./installer-payload.mjs";
 
 /** Barqaror identifikatorlar — SIR EMAS, faqat MSI upgrade zanjirining langari. */
@@ -57,7 +59,10 @@ export function xmlAttr(s) {
  *  (komponent keypath'i o'zgarmaydi → MSI komponent qoidasi buzilmaydi). */
 export const CLEANUP_COMPONENT_ID = "FF_LegacyCleanup";
 const CLEANUP_COMPONENT_GUID_NAME = "component:legacy-cleanup";
-const CLEANUP_REGISTRY_NAME = "obsolete-internal-files";
+/** Migratsiya komponentining HKCU keypath'i — Windows CI isboti shu YAGONA manbadan o'qiydi
+ *  (`node installer-wix.mjs cleanup-registry`), PowerShell'da takror yozilmaydi. */
+export const CLEANUP_REGISTRY_KEY = "Software\\FrameFlow\\Plugin\\Migration";
+export const CLEANUP_REGISTRY_NAME = "obsolete-internal-files";
 
 /** `obsoleteInstallFiles()` → WiX `RemoveFile` qatorlari uchun ma'lumot.
  *  Id TO'LIQ nisbiy yo'ldan (deterministik va noyob), ichma-ich yo'l `Subdirectory` orqali. */
@@ -129,7 +134,7 @@ export function buildWxsSource({ version, payloadFiles, installDirName = "com.fr
     emit(7, `<Component Id="${CLEANUP_COMPONENT_ID}" Guid="${stableGuid(CLEANUP_COMPONENT_GUID_NAME)}">`);
     emit(
       8,
-      `<RegistryValue Root="HKCU" Key="Software\\FrameFlow\\Plugin\\Migration" ` +
+      `<RegistryValue Root="HKCU" Key="${xmlAttr(CLEANUP_REGISTRY_KEY)}" ` +
         `Name="${CLEANUP_REGISTRY_NAME}" Type="integer" Value="1" KeyPath="yes"/>`
     );
     for (const s of stale) {
@@ -179,4 +184,16 @@ ${featureRefs}
   </Package>
 </Wix>
 `;
+}
+
+// ── CLI ───────────────────────────────────────────────────────────────────────
+// Faqat MASHINA O'QIYDIGAN kontrakt (Windows CI PowerShell isboti shundan oladi — nusxa YO'Q).
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const [cmd] = process.argv.slice(2);
+  if (cmd === "cleanup-registry") {
+    console.log(`${CLEANUP_REGISTRY_KEY}\t${CLEANUP_REGISTRY_NAME}`);
+  } else {
+    console.error("Foydalanish: installer-wix.mjs cleanup-registry");
+    process.exit(2);
+  }
 }

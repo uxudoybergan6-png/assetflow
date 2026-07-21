@@ -17,6 +17,7 @@
     "verify:pipeline": "node scripts/verify-pipeline.mjs",
     "test:plugin-package": "node plugins/after-effects-cep/scripts/test-package-security.mjs",
     "test:plugin-installers": "node plugins/after-effects-cep/scripts/test-installer-artifacts.mjs",
+    "test:ci-windows-installer": "node plugins/after-effects-cep/scripts/test-ci-windows-installer.mjs",
     "test:plugin-updater": "node plugins/after-effects-cep/scripts/test-updater-security.mjs",
     "test:release-contract": "node apps/api/scripts/test-plugin-release-contract.mjs",
     "test:plugin-download-state": "node packages/assetflow-studio/scripts/test-plugin-download-state.mjs",

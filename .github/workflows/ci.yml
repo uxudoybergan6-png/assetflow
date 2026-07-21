@@ -7,12 +7,20 @@ name: CI
 #     DATABASE_URL kerak qiladi; migratsiya faqat Render deploy bosqichida bajariladi.
 #   - `verify:pipeline` / `check:stack` skriptlari ISHLAB TURGAN API talab qiladi —
 #     shuning uchun CI'da ishlatilmaydi (ularni faqat live env'ga qarshi qo'lda ishlating).
+#
+# `windows-installer` job'i — Windows'da FAQAT tekshirib bo'ladigan bo'shliqni yopadi:
+# haqiqiy WiX build · MSI ICE validatsiyasi · MSI'dan OLDINGI o'rnatma qoldiqlari ustidan
+# haqiqiy per-user o'rnatish/o'chirish. Imzolash/sertifikat/sir bu yerda YO'Q.
 
 on:
   pull_request:
   push:
     branches:
       - main
+
+# CI faqat kodni o'qiydi — hech qayerga yozmaydi/publish qilmaydi.
+permissions:
+  contents: read
 
 # Bir branch uchun bir vaqtda bitta run — eskilari bekor qilinadi
 concurrency:
@@ -44,3 +52,83 @@ jobs:
 
       - name: Build API
         run: npm run build -w apps/api
+
+      # Windows job'i o'z kafolatlarini yo'qotib qo'ymasin (qadalgan WiX · haqiqiy build ·
+      # validator · jimgina o'rnatish/o'chirish · eski ro'yxat · sentinel · artefakt yuklanmasligi).
+      - name: Windows installer CI shartnomasi (statik regressiya)
+        run: npm run test:ci-windows-installer
+
+  windows-installer:
+    name: Windows installer (real MSI build + per-user install/uninstall)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      # WiX QADALGAN versiya — "latest" ATAYLAB ishlatilmaydi (build takrorlanuvchi bo'lsin).
+      WIX_VERSION: "5.0.2"
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      # WiX v5 net6.0'ga yig'ilgan — .NET 8 runtime'da ishlashi uchun roll-forward.
+      DOTNET_ROLL_FORWARD: "LatestMajor"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup .NET (WiX global tool runtime'i)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install pinned WiX Toolset
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          dotnet tool install --global wix --version $env:WIX_VERSION
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
+
+      - name: Verify pinned WiX version (fail-closed)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $v = "$(wix --version)".Trim()
+          Write-Host "wix --version → $v"
+          if (-not $v.StartsWith($env:WIX_VERSION)) {
+            throw "WiX versiyasi qadalgan qiymatga mos emas: '$v' ≠ '$env:WIX_VERSION'"
+          }
+
+      - name: Build UNSIGNED QA MSI (haqiqiy build-installer-win.mjs)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          node plugins/after-effects-cep/scripts/build-installer-win.mjs --unsigned
+
+      # Rasmiy WiX/Windows Installer ICE validatsiyasi. Hech qanday ICE bostirilmaydi
+      # (`-sval` / `-sw` YO'Q) — validator xatosi = job yiqiladi.
+      - name: Validate MSI (WiX ICE — xatolar bostirilmaydi)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $msi = "$(node plugins/after-effects-cep/scripts/installer-payload.mjs artifact win msi unsigned)".Trim()
+          if (-not (Test-Path -LiteralPath $msi -PathType Leaf)) { throw "MSI topilmadi: $msi" }
+          Write-Host "wix msi validate $msi"
+          wix msi validate $msi
+
+      # Ephemeral runner'da HAQIQIY per-user o'rnatish: MSI'dan OLDINGI qoldiqlar ekiladi,
+      # o'rnatiladi, tarkib bayt-ba-bayt tekshiriladi, so'ng o'chiriladi. Tozalash `finally`da.
+      - name: Per-user install → migration → uninstall proof
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $msi = "$(node plugins/after-effects-cep/scripts/installer-payload.mjs artifact win msi unsigned)".Trim()
+          & ./plugins/after-effects-cep/scripts/ci-verify-win-install.ps1 `
+              -MsiPath $msi -WorkDir "$env:RUNNER_TEMP\ff-msi-ci"
+
+      # ⚠ ATAYLAB: imzolanmagan `.msi` HECH QACHON artefakt sifatida yuklanmaydi
+      # (upload-artifact YO'Q) — u faqat shu runner ichida yashaydi va runner bilan yo'q bo'ladi.

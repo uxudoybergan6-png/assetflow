@@ -2,7 +2,7 @@
 
 > Amal qiladi: `plugins/after-effects-cep/`. Yagona haqiqat manbai —
 > `plugins/after-effects-cep/scripts/package-flavors.mjs` (build, o'rnatma va testlar shundan o'qiydi).
-> Oxirgi yangilanish: 2026-07-22 (Task 3 — macOS `.pkg` / Windows `.msi` installer quvuri).
+> Oxirgi yangilanish: 2026-07-22 (Task 3 + `windows-latest` CI job'i — §3A.4).
 
 ---
 
@@ -241,10 +241,10 @@ Timestamp: `FF_WIN_TIMESTAMP_URL` (default DigiCert).
   kesishsa generator fail-closed to'xtaydi. MSI `RemoveFiles` amali `InstallFiles` dan
   oldin ishlaydi, ya'ni qoldiq yangi payload joylashishidan avval ketadi (macOS'dagi
   `postinstall` siyosatining aynan ekvivalenti).
-  ⚠️ **Cheklov:** kafolat generatsiya darajasida (`.wxs` `xmllint` bilan to'g'ri, tarkibi
-  testda qulflangan). **Haqiqiy imzolangan `.msi` hali qurilmagan** — `wix build`
-  (`Subdirectory` atributi), ICE validatsiyasi va eski o'rnatma ustidan upgrade Windows
-  mashinasida tasdiqlanishi SHART.
+  ⚠️ **Cheklov:** lokal (macOS) kafolat generatsiya darajasida qoladi — `.wxs` `xmllint`
+  bilan to'g'ri va tarkibi testda qulflangan. Haqiqiy `wix build`, ICE validatsiyasi va
+  eski o'rnatma ustidan haqiqiy o'rnatish endi **`windows-latest` CI job'ida** bajariladi
+  (quyida §3A.4) — lekin u **push qilinmaguncha va yashil bo'lmaguncha isbotlanmagan**.
 - Eski yakuniy artefakt tekshiruvlardan OLDIN o'chiriladi; imzo/notarizatsiya chegaralangan
   `dist/installers/_build.<platform>.XXXXXX/` ichida bajariladi va faqat HAMMASI muvaffaqiyatli
   tugagach atomik `mv` bilan yakuniy nomga o'tadi. Nosozlikda na artefakt, na temp qoladi;
@@ -280,6 +280,73 @@ platforma nishonining **SHA-256'i o'zgarmaganligi** bilan isbotlanadi. Windows t
 (`wix`, `signtool`) macOS'da yo'q — testda PATH orqali soxta buyruq qo'yiladi (build-zxp.sh
 testidagi soxta `ZXPSignCmd` naqshining aynan o'zi), skriptning qolgan hamma qismi haqiqiy.
 
+### 3A.4 Windows CI job'i — HAQIQIY MSI (`.github/workflows/ci.yml` → `windows-installer`)
+
+Yuqoridagi soxta-toolchain testi macOS'da tekshirib **bo'lmaydigan** narsalarni qoplamaydi:
+`wix build` haqiqatan ishlaydimi, MSI ICE validatsiyasidan o'tadimi va MSI'dan OLDINGI
+o'rnatma ustidan migratsiya **haqiqatan** ishlaydimi. Shu bo'shliq uchun har `pull_request`
+va `main` push'ida **`windows-latest`** job'i ishlaydi:
+
+| Qadam | Nima bo'ladi |
+|---|---|
+| 1 | `actions/checkout@v4` · `actions/setup-node@v4` (Node 20) · `actions/setup-dotnet@v4` (8.0.x) — hammasi birinchi tomon |
+| 2 | **QADALGAN** WiX: `dotnet tool install --global wix --version $env:WIX_VERSION` (`WIX_VERSION: "5.0.2"`) — `latest`/`--prerelease` ATAYLAB ishlatilmaydi; keyin `wix --version` qadalgan qiymatga solishtiriladi (mos kelmasa job yiqiladi) |
+| 3 | **Haqiqiy** imzolanmagan QA MSI: `node build-installer-win.mjs --unsigned` (soxta `wix` YO'Q, MSI baytlari qo'lda yasalmaydi) |
+| 4 | **Rasmiy validatsiya:** `wix msi validate <msi>` — hech qanday ICE bostirilmaydi (`-sval`/`-sw` na workflow'da, na build skriptida) |
+| 5 | `ci-verify-win-install.ps1` — ephemeral runner'da haqiqiy per-user o'rnatish/o'chirish (pastda) |
+
+**Migratsiya isboti (5-qadam).** O'rnatishdan OLDIN nishon papkaga AYNAN
+`obsoleteInstallFiles()` qaytargan MSI'dan-oldingi qoldiqlar (`.debug`, `.debug.admin`,
+Admin HTML, `CSXS/manifest.admin.xml`) + ALOHIDA `assetflow-data/…` sentinel ekiladi. So'ng:
+
+- `msiexec /i … /qn /norestart` — chiqish kodi **AYNAN 0** bo'lishi shart (`Start-Process -Wait`);
+- o'rnatilgan fayl ro'yxati manbadan yig'ilgan mijoz payload'iga **AYNAN teng** va har fayl
+  **SHA-256 bo'yicha bayt-ba-bayt** bir xil (ortiqcha fayl ham, kam fayl ham = yiqilish);
+- to'rtala eski qoldiq **O'CHGAN**; `assetflow-data` sentinel **BAYT-BA-BAYT saqlangan**;
+- migratsiya komponentining HKCU keypath'i haqiqatan yozilgan; `Program Files`ga hech narsa
+  yozilmagan (per-user isboti);
+- `msiexec /x … /qn` — chiqish kodi AYNAN 0; MSI o'z payload'ini olib tashlaydi,
+  `assetflow-data` sentinel **YANA saqlanadi**, HKCU keypath yo'qoladi.
+
+**Xavfsizlik chegaralari (kod darajasida majburlangan):**
+
+- Ro'yxatlar CI'da **takrorlanmaydi** — PowerShell ularni mavjud yagona manbadan CLI orqali
+  o'qiydi: `installer-payload.mjs payload-files|stale-files|stage`,
+  `package-flavors.mjs field customer installDirName`, `installer-wix.mjs cleanup-registry`.
+- Skript `GITHUB_ACTIONS=true` bo'lmasa **umuman ishlamaydi**; nishon yo'l qattiq tekshiriladi
+  (`%APPDATA%\Adobe\CEP\extensions\<installDirName>`, foydalanuvchi profili ichida, mavjud
+  o'rnatma ustida ishlash RAD ETILADI); ish papkasi `RUNNER_TEMP` ichida bo'lishi SHART.
+- Tozalash `finally`da: MSI ro'yxatdan olinadi va **FAQAT** o'sha tekshirilgan per-user papka
+  (`Remove-Item -LiteralPath $target`) o'chiriladi. Joker YO'Q · `$env:APPDATA`/profil ildizi
+  YO'Q · `Program Files` YO'Q · registr/`PlayerDebugMode`/`com.adobe.CSXS` TEGILMAYDI.
+- **Sir, sertifikat va imzolash YO'Q:** job `secrets.*` ishlatmaydi, sertifikat o'rnatmaydi/
+  yaratmaydi, `signtool` chaqirmaydi. **Imzolanmagan `.msi` artefakt sifatida YUKLANMAYDI**
+  (`upload-artifact` YO'Q) — u runner bilan birga yo'q bo'ladi.
+- Workflow ruxsati minimal (`permissions: contents: read`), concurrency + `timeout-minutes` bor,
+  har action birinchi tomon (`actions/*@vN`) — uchinchi tomon action ishlatilsa to'liq SHA shart.
+- **Fail-closed:** asbob yo'qligi · versiya mos emasligi · build xatosi · validator xatosi ·
+  nolga teng bo'lmagan `msiexec` kodi · kutilmagan/yetishmayotgan fayl · hash nomuvofiqligi ·
+  qolib ketgan eski fayl · sentinel yo'qolishi — hammasi job'ni YIQITADI.
+  ⚠️ Agar qadalgan WiX'da `wix msi validate` bo'lmasa job **ataylab** yiqiladi — yechim
+  validatsiyani o'chirish EMAS, uni beradigan WiX versiyasini qadash.
+
+Linux job (`build`) o'zgarmadi; unga faqat bitta statik regressiya qadami qo'shildi:
+
+```bash
+npm run test:ci-windows-installer     # 112 case — Windows job shartnomasi
+```
+
+Bu test JONLI `ci.yml` + `ci-verify-win-install.ps1` + `build-installer-win.mjs` fayllarini
+o'qiydi va CLI kontraktlarini HAQIQATAN bajaradi — ya'ni Windows job qadalgan WiX'ni, haqiqiy
+build'ni, validatorni, jimgina o'rnatish/o'chirishni, aniq eski ro'yxatni, sentinel
+tekshiruvini, artefakt yuklamaslikni yoki xavfsiz tozalashni yo'qotsa — **macOS/Linux'da ham**
+darhol yiqiladi (6 mutatsiya bilan isbotlangan).
+
+> ⚠️ **HALOL CHEKLOV:** bu job **hali masofada ishlamagan** — u faqat push qilingandan keyin
+> ishga tushadi. macOS'da PowerShell (`pwsh`), `msiexec`, `wix` va Windows registri YO'Q,
+> shuning uchun lokal tekshiruvlar faqat **statik shartnomani** va mavjud testlarni isbotlaydi.
+> `wix build` / ICE / haqiqiy o'rnatish natijasi **birinchi yashil run'gacha tasdiqlanmagan**.
+
 ---
 
 ## 4. Yangilanish (updater) — Task 2 (2026-07-22): SELF-UPDATER OLIB TASHLANDI
@@ -308,9 +375,10 @@ Kontrakt, API shakli, admin publish qoidalari va foydalanuvchi oqimi:
 yuqoridagi **3A-bo'lim** (Task 3, 2026-07-22).
 
 ```bash
-npm run test:plugin-updater      # jonli AF-UPDATER bloki — 118 case (mutatsiya isboti bilan)
-npm run test:release-contract    # server kontrakti — 108 case
-npm run test:plugin-installers   # installer quvuri — 229 case
+npm run test:plugin-updater         # jonli AF-UPDATER bloki — 118 case (mutatsiya isboti bilan)
+npm run test:release-contract       # server kontrakti — 108 case
+npm run test:plugin-installers      # installer quvuri — 229 case
+npm run test:ci-windows-installer   # Windows CI job shartnomasi — 112 case (§3A.4)
 ```
 
 ⚠️ Reliz hali ham CHIQMAGAN: installer quvuri TAYYOR, lekin **imzolangan** artefaktlar
