@@ -14,6 +14,13 @@ export function semverLt(a: string, b: string): boolean {
   return false;
 }
 
+/** Reliz paketi kaliti (`releases/...`) haqiqiy .zxp fayl bo'lishi SHART — zip yoki
+ *  boshqa arbitrar fayl plagin relizi sifatida e'lon qilinmasin. Kengaytma tekshiruvi
+ *  registrga sezgir emas (`.ZXP` ham qabul qilinadi). */
+export function isZxpReleaseKey(key: string): boolean {
+  return /\.zxp$/i.test(String(key || "").trim());
+}
+
 export interface PluginReleaseRow {
   version: string;
   releaseNotes: string | null;

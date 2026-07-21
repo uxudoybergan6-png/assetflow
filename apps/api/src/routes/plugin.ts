@@ -277,7 +277,7 @@ pluginRouter.get("/version", async (req: Request, res: Response) => {
   let downloadUrl: string | null = null;
   if (latest && latest.downloadKey && isS3Configured()) {
     try {
-      downloadUrl = await getSignedDownloadUrl(latest.downloadKey, 3600, `frameflow-plugin-${latest.version}.zip`);
+      downloadUrl = await getSignedDownloadUrl(latest.downloadKey, 3600, `frameflow-plugin-${latest.version}.zxp`);
     } catch {
       downloadUrl = null;
     }

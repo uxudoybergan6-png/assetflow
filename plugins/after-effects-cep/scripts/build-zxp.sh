@@ -2,7 +2,7 @@
 # AssetFlow/FrameFlow CEP extensionni paketlash.
 # Signed (.zxp): talab ZXPSignCmd (Adobe Extension Manager yoki cc-extension-sign dan).
 #   Ko'chirish: https://github.com/Adobe-CEP/CEP-Resources/tree/master/ZXPSignCMD
-# Unsigned (--unsigned yoki UNSIGNED=1): sertifikat/ZXPSignCmd shart emas — faqat
+# Unsigned (--unsigned yoki UNSIGNED_ZXP=1): sertifikat/ZXPSignCmd shart emas — faqat
 #   stage papkasini oddiy .zip qiladi, tarkibni tekshirish uchun (AE'ga o'rnatilmaydi).
 set -euo pipefail
 
@@ -12,13 +12,13 @@ DIST="$ROOT/dist/zxp"
 VERSION="$(grep -m1 'ExtensionBundleVersion' "$SRC/CSXS/manifest.xml" | sed 's/.*Version="\([^"]*\)".*/\1/')"
 STAGE="$DIST/_stage"
 
-UNSIGNED=0
+DO_UNSIGNED=0
 for arg in "$@"; do
   case "$arg" in
-    --unsigned) UNSIGNED=1 ;;
+    --unsigned) DO_UNSIGNED=1 ;;
   esac
 done
-if [ "${UNSIGNED_ZXP:-0}" = "1" ]; then UNSIGNED=1; fi
+if [ "${UNSIGNED_ZXP:-0}" = "1" ]; then DO_UNSIGNED=1; fi
 
 # ── Stage papka tayyorlash — CEP kengaytma RUNTIME'da o'qiydigan HAMMA fayl ──
 # (manifest, ikkala panel HTML, panel JS'lari, host JSX, CEP bridge, CSS + o'z-hostli
@@ -38,7 +38,7 @@ cp "$SRC/css/fonts/"*.woff2     "$STAGE/css/fonts/"
 
 mkdir -p "$DIST"
 
-if [ "$UNSIGNED" = "1" ]; then
+if [ "$DO_UNSIGNED" = "1" ]; then
   # Sertifikatsiz tekshiruv paketi — AE'ga o'rnatib bo'lmaydi, faqat tarkib tasdig'i uchun.
   UNSIGNED_OUT="$DIST/assetflow-v${VERSION}-unsigned.zip"
   rm -f "$UNSIGNED_OUT"

@@ -5,7 +5,7 @@
 // Ishga tushirish: node packages/assetflow-studio/scripts/test-plugin-download-state.mjs
 
 const DEFAULT_CTA = "Download the plugin (.zxp)";
-const DEFAULT_VERSION_NOTE = "ZXP Installer or Creative Cloud · requires After Effects 2022 (22.0) or newer";
+const DEFAULT_VERSION_NOTE = "Compatible ZXP installer · requires After Effects 2022 (22.0) or newer";
 
 function computePluginPageCopy(pluginDl, pluginRelease, pluginDlErr) {
   const pgCtaLabel =
@@ -14,7 +14,7 @@ function computePluginPageCopy(pluginDl, pluginRelease, pluginDlErr) {
     : pluginDl === "error" ? "Retry check"
     : DEFAULT_CTA;
   const pgVersionNote =
-    pluginDl === "ready" && pluginRelease ? ("v" + pluginRelease.version + " · ZXP Installer or Creative Cloud · After Effects 2022+")
+    pluginDl === "ready" && pluginRelease ? ("v" + pluginRelease.version + " · Compatible ZXP installer · After Effects 2022+")
     : pluginDl === "unavailable" ? "The beta download isn’t published yet — check back soon"
     : pluginDl === "error" ? (pluginDlErr || "Couldn't check for updates — click the button to retry")
     : pluginDl === "loading" ? "Checking the latest release…"
@@ -44,7 +44,7 @@ function check(label, actual, expected) {
 
 check("idle → default CMS copy", computePluginPageCopy("idle", null, ""), { pgCtaLabel: DEFAULT_CTA, pgVersionNote: DEFAULT_VERSION_NOTE });
 check("loading → checking copy", computePluginPageCopy("loading", null, ""), { pgCtaLabel: "Checking latest version…", pgVersionNote: "Checking the latest release…" });
-check("ready → real version shown", computePluginPageCopy("ready", { version: "1.1.1" }, ""), { pgCtaLabel: DEFAULT_CTA, pgVersionNote: "v1.1.1 · ZXP Installer or Creative Cloud · After Effects 2022+" });
+check("ready → real version shown", computePluginPageCopy("ready", { version: "1.1.1" }, ""), { pgCtaLabel: DEFAULT_CTA, pgVersionNote: "v1.1.1 · Compatible ZXP installer · After Effects 2022+" });
 check("unavailable → honest not-published copy", computePluginPageCopy("unavailable", null, ""), { pgCtaLabel: "Beta download not published yet", pgVersionNote: "The beta download isn’t published yet — check back soon" });
 check("error → retry copy with message", computePluginPageCopy("error", null, "Can't reach the server"), { pgCtaLabel: "Retry check", pgVersionNote: "Can't reach the server" });
 

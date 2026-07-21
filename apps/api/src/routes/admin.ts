@@ -69,6 +69,7 @@ import {
   savePluginContentConfig,
   resetPluginContentConfig,
 } from "../lib/plugin-content-config.js";
+import { isZxpReleaseKey } from "../lib/plugin-release-contract.js";
 
 export const adminRouter = Router();
 
@@ -1314,7 +1315,11 @@ adminRouter.get("/metrics", async (req, res) => {
 // so'nggisini qaytaradi — plagin banneri shu bilan ishlaydi.
 const releaseSchema = z.object({
   version: z.string().regex(/^\d+\.\d+\.\d+$/, "Version must be semver: 1.2.3"),
-  key: z.string().min(1).refine((k) => k.startsWith("releases/"), "Key must be under releases/"),
+  key: z
+    .string()
+    .min(1)
+    .refine((k) => k.startsWith("releases/"), "Key must be under releases/")
+    .refine(isZxpReleaseKey, "Key must point to a signed .zxp package"),
   releaseNotes: z.string().max(4000).optional(),
   mandatory: z.boolean().optional(),
   minSupportedVersion: z.string().regex(/^\d+\.\d+\.\d+$/).optional().or(z.literal("").transform(() => undefined)),

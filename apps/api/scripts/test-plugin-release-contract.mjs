@@ -1,6 +1,6 @@
 // Task A — GET /api/plugin/version kontrakti regressiya testi (test infra yo'q — standalone).
 // Ishga tushirish: npm run build -w apps/api && node apps/api/scripts/test-plugin-release-contract.mjs
-import { computePluginVersionResponse } from "../dist/lib/plugin-release-contract.js";
+import { computePluginVersionResponse, isZxpReleaseKey } from "../dist/lib/plugin-release-contract.js";
 
 const PUBLISHED_AT = new Date("2026-07-01T00:00:00Z");
 const release = (overrides) => ({
@@ -86,8 +86,16 @@ check(
   false
 );
 
+// 9) Reliz kaliti — faqat .zxp qabul qilinadi (admin reliz e'lon qilish kontrakti).
+check("accepts releases/frameflow-v1.1.1.zxp", isZxpReleaseKey("releases/frameflow-v1.1.1.zxp"), true);
+check("accepts uppercase extension .ZXP", isZxpReleaseKey("releases/frameflow-v1.1.1.ZXP"), true);
+check("rejects .zip package", isZxpReleaseKey("releases/frameflow-v1.1.1.zip"), false);
+check("rejects extensionless key", isZxpReleaseKey("releases/frameflow-v1.1.1"), false);
+check("rejects .zxp hidden inside a different extension", isZxpReleaseKey("releases/frameflow.zxp.exe"), false);
+check("rejects empty key", isZxpReleaseKey(""), false);
+
 if (fail) {
   console.error(`\n${fail} test(lar) yiqildi`);
   process.exit(1);
 }
-console.log(`\nHammasi o'tdi (8 case).`);
+console.log(`\nHammasi o'tdi (14 case).`);

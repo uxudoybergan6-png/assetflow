@@ -140,6 +140,34 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 > `.zxp`ni Admin → Plugin releases orqali R2/GCS'ga yuklab, versiya qatorini yaratish SHART (yoki
 > `build-zxp.sh` bilan imzolangan paket + admin API). Bu — ega/operatsion qadam, kod bloker emas.
 
+> ✅ **Launch Task A — TUZATISH AUDITI (2026-07-21, push YO'Q):** mustaqil audit 6 ta blokerni topdi,
+> hammasi tuzatildi:
+> 1. `manifest.xml` — ikkala `ExtensionList` versiyasi `1.1.0` qolib ketgan edi (bundle `1.1.1`);
+>    endi ikkalasi ham **`1.1.1`** (bundle bilan bir xil).
+> 2. `/api/plugin/version` presigned havola nomi `frameflow-plugin-<v>.zip` yozardi — mahsulot artefakti
+>    imzolangan **`.zxp`**; endi `frameflow-plugin-<v>.zxp`. Admin reliz kontrakti (`POST
+>    /admin/plugin-releases`) endi kalitning kengaytmasini ham tekshiradi — faqat `.zxp` (registrga
+>    sezgir emas) qabul qilinadi, `.zip`/kengaytmasiz kalit rad etiladi. Pure funksiya
+>    `isZxpReleaseKey()` → `plugin-release-contract.ts`, DB'siz test qo'shildi (6 ta yangi case).
+> 3. "Creative Cloud" orqali o'rnatish da'vosi (qo'llab-quvvatlanmaydi) — plugin sahifa default
+>    matnlari va dinamik "ready" holat matnidan olib tashlandi → **"Compatible ZXP installer"**
+>    (3 o'rnatish qadami ham mos yangilandi). Faqat live `landing-config.ts` + `platform/index.html`;
+>    arxiv mockuplarga tegilmadi.
+> 4. Plugin promo 3 chip — "Premiere Pro / DaVinci — coming soon" (qo'llab-quvvatlanmagan kelajak va'da)
+>    → haqiqiy joriy imkoniyatlarga almashtirildi: **"After Effects 2022+" · "In-panel catalog" ·
+>    "AI Studio"**. Vizual joylashuv (3 chip) o'zgarmadi.
+> 5. `build-zxp.sh` izohi `UNSIGNED=1` derdi, kod `UNSIGNED_ZXP` tekshirardi — izoh `UNSIGNED_ZXP=1`ga
+>    to'g'rilandi; ichki bayroq o'zgaruvchisi `DO_UNSIGNED`ga qayta nomlandi (endi hujjatlashtirilgan
+>    `UNSIGNED_ZXP` env bilan aralashmaydi), `--unsigned` va env ikkalasi ham ishlaydi.
+> 6. Yangi `plugins/after-effects-cep/scripts/verify-zxp-package.mjs` — unsigned arxivni RUNTIME
+>    referenslariga (manifest `MainPath`/`ScriptPath`, HTML lokal `<link>`/`<script>`, CSS `url()`
+>    shriftlar) qarshi tekshiradi; yetishmagan fayl = FAIL (manfiy holat qo'lda tasdiqlandi — shrift
+>    olib tashlanganda skript FAIL berdi). Yangi dependency yo'q (Node builtin + tizim `unzip`).
+>    `--unsigned` arxivga qarshi ishga tushirildi: **34/34 referens tasdiqlandi, 0 FAIL**.
+> Tekshiruv: DB+API build OK · `test-plugin-release-contract.mjs` 14/14 · `test-plugin-download-state.mjs`
+> 10/10 · har ikkala plagin HTML'dagi barcha inline `<script>` (7+8) `node --check` bilan sintaksis
+> tasdiqlandi · himoyalangan zona (pul/kredit/billing/auth/DB sxema/deploy) diff'da YO'Q.
+
 > 🚧 **AKTIV — MUAMMOLAR V2 (jonli test muammolari).** 24 muammo (P1–P24) tahlil qilindi,
 > har biri uchun self-contained Code prompt yozildi: `docs/MUAMMOLAR V2-2026-07-13.md`.
 > Bajarish rejasi 3 faylga tartiblandi: `docs/V2-BAJARISH-HIGH-2026-07-14.md` (13 ta, Fable 5,
