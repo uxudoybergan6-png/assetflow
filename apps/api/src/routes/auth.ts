@@ -17,6 +17,7 @@ import {
 } from "../lib/s3.js";
 import { verifyTurnstile } from "../lib/turnstile.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
+import { AVATAR_UPLOAD_LIMITS } from "../lib/upload-limits.js";
 import { sendWelcomeEmail, notifyAdminNewUser } from "../lib/notify.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import {
@@ -721,9 +722,10 @@ const AVATAR_TYPES: Record<string, string> = {
   "image/webp": "webp",
 };
 
+// Cheklovlar `lib/upload-limits.ts`da (yagona manba + test) — GHSA-72gw-mp4g-v24j izohiga qara.
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: AVATAR_UPLOAD_LIMITS,
 });
 
 /** P32 #5 — HAQIQIY tur (magic-byte). Client `Content-Type` (file.mimetype) SOXTA bo'lishi

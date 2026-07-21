@@ -260,6 +260,18 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     });
     return;
   }
+  // Multer (multipart) xatolari — bu KLIYENT xatosi, server buzilishi EMAS. Avval 500 qaytardi
+  // (+ Sentry shovqini). Marshrutlarning o'z ishlovchisi bo'lsa (upload-assets, ref-upload) bu
+  // yergача yetib kelmaydi; bu — qolgan multer middleware'lari uchun zaxira ("name" bo'yicha
+  // tekshiramiz — multer nusxasidan qat'i nazar ishlaydi).
+  if ((err as { name?: string })?.name === "MulterError") {
+    const tooBig = code === "LIMIT_FILE_SIZE";
+    res.status(tooBig ? 413 : 400).json({
+      error: tooBig ? "File is too large" : "Upload rejected — invalid multipart form data",
+      code: code || "UPLOAD_REJECTED",
+    });
+    return;
+  }
   console.error("[api] Kutilmagan xato:", err);
   captureException(err); // Sentry (sozlanmagan → no-op)
   res.status(500).json({ error: "Server error" });

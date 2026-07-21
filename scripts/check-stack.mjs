@@ -4,6 +4,7 @@
  * npm run check:stack
  */
 import { execSync, spawnSync } from "child_process";
+import { parsePm2Jlist } from "./pm2-jlist.mjs";
 
 const API = (process.env.API_URL || "http://localhost:4000").replace(/\/$/, "");
 const issues = [];
@@ -32,11 +33,7 @@ function pm2List() {
     cwd: process.cwd(),
   });
   if (r.status !== 0) return null;
-  try {
-    return JSON.parse(r.stdout);
-  } catch {
-    return null;
-  }
+  return parsePm2Jlist(r.stdout);
 }
 
 console.log("\n=== AssetFlow stack tekshiruvi ===\n");

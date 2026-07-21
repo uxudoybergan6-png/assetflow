@@ -2,6 +2,7 @@
 import { execSync, spawnSync } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
+import { parsePm2Jlist } from "./pm2-jlist.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const pm2 = path.join(root, "node_modules", ".bin", "pm2");
@@ -48,8 +49,14 @@ function printStatusSafe() {
     console.warn("     npm run pm2:reset — keyin qayta npm run pm2:start\n");
     return;
   }
+  // PM2 CLI eski xotira-daemon ustida "In-memory PM2 is out-of-date" bannerini JSON oldiga
+  // qo'shadi (pm2 6 → 7 dan keyin, `pm2 kill` qilinmaguncha) — parsePm2Jlist buni hisobga oladi.
+  const list = parsePm2Jlist(r.stdout);
+  if (!list) {
+    console.warn("  ⚠ pm2 jlist parse xato — npm run pm2:reset sinab ko'ring\n");
+    return;
+  }
   try {
-    const list = JSON.parse(r.stdout);
     const ours = list.filter((p) => APP_NAMES.includes(p.name));
     if (!ours.length) {
       console.warn("  ⚠ AssetFlow jarayonlari PM2 da ko'rinmadi\n");

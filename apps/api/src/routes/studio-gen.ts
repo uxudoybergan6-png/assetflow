@@ -18,6 +18,7 @@ import { consumeAiCredits, refundAiCredits, ensurePluginProfile, isPaidPlan } fr
 import { isStorageOverQuota, getUserUsedBytes, storageQuotaBytes } from "../lib/storage-quota.js";
 import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
+import { GEN_REF_UPLOAD_LIMITS, MAX_REF_UPLOAD_BYTES } from "../lib/upload-limits.js";
 import { isFalConfigured } from "../lib/ai/fal.js";
 import { isByteplusConfigured } from "../lib/ai/byteplus.js";
 import { isKlingConfigured } from "../lib/ai/kling.js";
@@ -950,12 +951,12 @@ const refUploadSrcSchema = z.object({
   srcKey: z.string().min(8).max(512).optional(),
   srcUrl: z.string().min(8).max(4096).optional(),
 });
-const MAX_REF_UPLOAD_BYTES = 100 * 1024 * 1024;
 const MAX_VIDEO_REF_TARGET_BYTES = 50 * 1024 * 1024;
 const MAX_AUDIO_REF_TARGET_BYTES = 15 * 1024 * 1024;
+// Cheklovlar `lib/upload-limits.ts`da (yagona manba + test) — GHSA-72gw-mp4g-v24j izohiga qara.
 const refUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_REF_UPLOAD_BYTES },
+  limits: GEN_REF_UPLOAD_LIMITS,
 });
 studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   if (!isS3Configured()) {

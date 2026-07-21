@@ -23,6 +23,10 @@ function asMetaJson(meta: Record<string, unknown>): Prisma.InputJsonValue {
 }
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { requireContributorOrAdmin } from "../middleware/contributor.js";
+import {
+  TEMPLATE_ASSET_UPLOAD_LIMITS,
+  SCENE_PREVIEW_UPLOAD_LIMITS,
+} from "../lib/upload-limits.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import {
   ensureTemplateDir,
@@ -611,8 +615,9 @@ const uploadAssets = multer({
       cb(null, `${kind}${ext}`);
     },
   }),
-  // UI limiti 3 GB + texnik zaxira (multipart overhead)
-  limits: { fileSize: 3300 * 1024 * 1024 },
+  // Cheklovlar `lib/upload-limits.ts`da (yagona manba + test) — GHSA-72gw-mp4g-v24j izohiga qara.
+  // UI limiti 3 GB + texnik zaxira (multipart overhead) O'ZGARMAGAN.
+  limits: TEMPLATE_ASSET_UPLOAD_LIMITS,
   fileFilter: (_req, file, cb) => {
     const allowed = ASSET_UPLOAD_EXTS[file.fieldname];
     const ext = path.extname(file.originalname).toLowerCase();
@@ -2937,7 +2942,9 @@ const uploadScenePreviews = multer({
       cb(null, `${key}${ext}`);
     },
   }),
-  limits: { fileSize: 512 * 1024 * 1024, files: 160 }, // video uchun katta limit
+  // Cheklovlar `lib/upload-limits.ts`da (yagona manba + test) — video uchun katta limit
+  // (512MB × 160 fayl) O'ZGARMAGAN.
+  limits: SCENE_PREVIEW_UPLOAD_LIMITS,
 });
 
 contributorRouter.post(

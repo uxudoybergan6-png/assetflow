@@ -123,6 +123,52 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ## 5. JORIY HOLAT (2026-07-21)
 
+> ✅ **SECURITY TASK 1 TUGADI (2026-07-21, push/deploy YO'Q):** bog'liqlik xavfsizligi +
+> multipart (upload) qattiqlashtirish. Mahsulot xatti-harakati va pul-zona TEGILMAGAN.
+> **Audit (mustaqil qayta o'lchandi):** OLDIN `9 = 3 high · 4 moderate · 2 low · 0 critical`
+> (HEAD lock'ini vaqtinchalik nusxada `npm audit --package-lock-only` bilan takrorlab tasdiqlandi) →
+> **KEYIN `0` (426 bog'liqlik; `--omit=dev` ham 0)**. `npm ls --all` toza.
+> **Versiyalar:** multer `2.1.1→2.2.0` · http-proxy-middleware `3.0.5→3.0.7` · PM2 `6.0.14→7.0.3` ·
+> google-auth-library apps/api'da `9.15.1→10.9.0` (root'da 10.9.0 allaqachon bor edi — nested nusxa
+> yo'qoldi) · `@types/multer 1.4.13→2.2.0` · tranzitiv: body-parser `2.2.2→2.3.0`, esbuild
+> `0.28.0→0.28.1`, protobufjs `7.6.4→7.6.5`, js-yaml `4.1.1→4.3.0`; zaif `uuid@9.0.1` daraxtdan
+> butunlay chiqdi (gtoken/gaxios6 zanjiri bilan). Lock 491→427 yozuv — **7 workspace'ning hammasi
+> joyida**, kamayish faqat pm2 6 va google-auth 9 tranzitivlaridan (yo'qolgan paket yo'q).
+> **Upload qattiqlashtirish:** yangi yagona manba `apps/api/src/lib/upload-limits.ts` — 4 ta multer
+> nusxasiga `fieldNestingDepth:1` (GHSA-72gw-mp4g-v24j himoyasi 2.2.0'da **opt-in**, versiyaning
+> o'zi yetarli emas) + chekli `files/fields/parts` (busboy default = Infinity edi). **Imkoniyat
+> SAQLANGAN va test bilan isbotlangan:** avatar 5MB/1 fayl · gen ref 100MB/1 fayl · contributor
+> assets 3300MB + thumb+preview+pack · sahna preview 512MB × 160 fayl. `index.ts` global xato
+> ishlovchisiga MulterError → 400/413 (avval 500 + Sentry shovqini); o'z ishlovchisi bor marshrutlar
+> (upload-assets, ref-upload) unga YETIB BORMAYDI, auth semantikasi o'zgarmagan (requireAuth multer'dan
+> oldin).
+> **Testlar:** yangi `apps/api/scripts/test-upload-limits.mjs` (production `dist/lib/upload-limits.js`ni
+> AYNAN import qilib haqiqiy multer+HTTP bilan yuguradi; kontrol holat `fieldNestingDepth`siz o'tib
+> ketishini ko'rsatadi) — **hammasi PASS** (160 fayl OK; 3000-darajali nested nom LIMIT_FIELD_NESTING
+> bilan 2ms'da rad; parts/fields/6MB rad; diskStorage qism fayllari tozalandi). Yangi
+> `scripts/test-dependency-security-floors.mjs` (manifest + lock + `node_modules` HAQIQIY o'qiladi,
+> ko'chirilgan konstanta emas) — **hammasi PASS**. Regressiya: DB build PASS · API build PASS
+> (51 model / 24 enabled) · root build PASS · verify-public-copy **67/67** · plugin release contract
+> **14/14** · plugin download state **10/10**.
+> **PM2 7 / proxy dalillari:** yangi `scripts/pm2-jlist.mjs` — sof parse funksiyasi (destruktiv amal
+> YO'Q; `pm2 kill` faqat eski `--reset` yo'lida qolgan). ⚠️ Bu sessiyada TOPILDI va TUZATILDI:
+> "birinchi `[` dan o'qish" **sovuq daemon**da (`npm run pm2:reset`dan keyin) `[PM2] Spawning PM2
+> daemon…` qatoriga tushib null qaytarardi — endi nomzod `[` o'rinlari navbat bilan sinaladi
+> (izolyatsiyalangan `PM2_HOME`da haqiqiy chiqish bilan tasdiqlandi). Foydalanuvchining JONLI
+> daemon chiqishida ham tasdiqlandi: `JSON.parse(stdout)` → NULL, yangi parser → OK. PM2 7.0.3
+> izolyatsiyalangan `PM2_HOME`da start/jlist/delete/kill davrasi PASS; `ecosystem.config.cjs` aynan
+> `assetflow-api/assetflow-web/assetflow-admin` beradi; **foydalanuvchi daemon'i/jarayonlari
+> TEGILMADI** (uning xotira-daemon'i hamon 6.0.14 — `npm run pm2:reset` bilan o'zi yangilaydi).
+> http-proxy-middleware 3.0.7 — 3100/3101 izolyatsiyalangan portlarda stub API bilan **8/8 PASS**
+> (health proxy, `/api` funksiya-`pathRewrite` query bilan, `changeOrigin`, statik HTML).
+> **Qoldiq (xavfsizlik EMAS):** Node 25'da dev proxy `DEP0060 util._extend` ogohlantirishi chiqadi —
+> manba `node_modules/http-proxy@1.18.1` (hpm 3.x ichki bog'liqligi), bizning kod emas; funksionallik
+> buzilmaydi. hpm 4.x uni `httpxy`ga almashtiradi, LEKIN 4.x `engines` Node 25'ni QO'LLAMAYDI
+> (`^22.15 || ^24 || >=26`) → ataylab QILINMADI. Faqat lokal dev skriptlari (prod'da ishlatilmaydi).
+> **Chegara:** bu — bog'liqlik xavfsizligi + upload qattiqlashtirish. To'liq ilova-xavfsizlik auditi
+> yoki penetratsiya testi EMAS. Hech narsa push/deploy qilinmadi, production o'zgarmadi;
+> `test-downloads/` repo'da yo'q, DB sxema/pul-zona/auth semantikasi diff'da YO'Q.
+
 > ✅ **Launch Task B TUGADI (2026-07-21, push YO'Q, dizayn/layout O'ZGARMADI):** ochiq landing/
 > pricing/plugin sahifalarni haqiqiy imkoniyat va dalilga mos qildik. Fayllar: `apps/api/src/lib/
 > landing-config.ts`, `packages/assetflow-studio/platform/index.html`, yangi
