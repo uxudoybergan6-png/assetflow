@@ -18170,6 +18170,11 @@ class Component extends DCLogic {
     lightbox: null,
     audioPlayingId: null, // QA-FIX #3 — audio row real playback holati
     detail: null,
+    // Plugin sahifa — haqiqiy PluginRelease holati: 'idle'|'loading'|'ready'|'unavailable'|'error'
+    pluginDl: 'idle',
+    pluginRelease: null, // { version, releaseNotes, checksum }
+    pluginDownloadUrl: null,
+    pluginDlErr: '',
     fApps: [], // #3 — Applications Supported multi-select (bo'sh = hammasi)
     fCats: [], // #3 — granular Categories multi-select (bo'sh = hammasi)
     // P1 #15 — server-driven browse gridi holati (filtr/qidiruv/sort server tomonda,
@@ -18532,7 +18537,7 @@ class Component extends DCLogic {
       eyebrow: '03 — PLUGIN', title: 'The FrameFlow plugin — right inside After Effects',
       desc: 'Catalog, import and AI Studio — in the panel. Works with your platform account and credits.',
       ctaLabel: 'Download the plugin (.zxp)',
-      chips: ['After Effects', 'Premiere Pro', 'DaVinci — coming soon'],
+      chips: ['After Effects 2022+', 'Premiere Pro — coming soon', 'DaVinci — coming soon'],
     },
     pricingTeaser: {
       eyebrow: '04 — PRICING', title: 'Start free, scale up when you need to',
@@ -18579,9 +18584,9 @@ class Component extends DCLogic {
         teaserFeats: ['Team workspace (5 seats)', 'Dedicated account manager'] },
     ],
     pluginPage: {
-      badge: 'After Effects · Premiere Pro', title: 'Install the FrameFlow plugin in one click',
-      sub: 'Catalog, import and AI Studio — right inside your NLE. With your account and credits.',
-      ctaLabel: 'Download the plugin (.zxp)', versionNote: 'v2.4.1 · ~18 MB · ZXP Installer or Creative Cloud',
+      badge: 'After Effects 2022+', title: 'Install the FrameFlow plugin in one click',
+      sub: 'Catalog, import and AI Studio — right inside After Effects. With your account and credits.',
+      ctaLabel: 'Download the plugin (.zxp)', versionNote: 'ZXP Installer or Creative Cloud · requires After Effects 2022 (22.0) or newer',
       guarantee: 'All plans come with a 14-day money-back guarantee',
       steps: [
         { t: 'Download the .zxp file', d: 'Get the latest version from the platform in one click.' },
@@ -18736,6 +18741,7 @@ class Component extends DCLogic {
     // (kerak bo'lsa) yuklanadi. setTimeout(0) — setState o'rnashib bo'lgach o'qish
     // (openShelfCat/openShelfNew filtrni endigina o'zgartirgan bo'lishi mumkin).
     if (screen === 'templates') setTimeout(() => this.ensureBrowse(), 0);
+    if (screen === 'plugin' && this.state.pluginDl === 'idle') this.loadPluginRelease();
     // Tarix boshqaruvi — brauzer Orqaga/Oldinga tugmalari ilova ichida yursin (#4/#6):
     // popstate'dan kelganda faqat URL'ni yechim bilan sinxronlaymiz (yangi yozuv yo'q);
     // aks holda ekran o'zgargan bo'lsa pushState (yangi yozuv), aks holda replaceState.
@@ -18763,6 +18769,30 @@ class Component extends DCLogic {
         if (el) { el.focus(); el.select(); }
       } catch (e) {}
     }, 0);
+  }
+
+  // Plugin sahifa — haqiqiy reliz holatini serverdan so'raydi (PluginRelease → GET /api/plugin/version).
+  // Reliz e'lon qilinmagan bo'lsa `latest: null` — "beta hali chiqmagan" halol holat, hech narsa o'ylab topilmaydi.
+  async loadPluginRelease() {
+    this.setState({ pluginDl: 'loading', pluginDlErr: '' });
+    try {
+      const r = await FFAPI.pluginVersion();
+      if (r && r.latest && r.latest.version && r.downloadUrl) {
+        this.setState({ pluginDl: 'ready', pluginRelease: r.latest, pluginDownloadUrl: r.downloadUrl });
+      } else {
+        this.setState({ pluginDl: 'unavailable', pluginRelease: r && r.latest ? r.latest : null, pluginDownloadUrl: null });
+      }
+    } catch (e) {
+      this.setState({ pluginDl: 'error', pluginDlErr: this.errMsg(e) });
+    }
+  }
+  downloadPlugin() {
+    const st = this.state;
+    if (st.pluginDl === 'loading') return;
+    if (st.pluginDl === 'ready' && st.pluginDownloadUrl) { window.location.href = st.pluginDownloadUrl; return; }
+    if (st.pluginDl === 'error') { this.toast(st.pluginDlErr || "Couldn't check the plugin release", 'error'); this.loadPluginRelease(); return; }
+    if (st.pluginDl === 'idle') { this.loadPluginRelease(); return; }
+    this.toast('The beta download isn’t published yet — check back soon', 'info');
   }
 
   // P30 (29c) — toast endi TIPGA ega (ikonka/rang shundan): success=✓ · error=✕ · warning · info.
@@ -22258,6 +22288,19 @@ class Component extends DCLogic {
     const lcPpChips = lc.pluginPromo.chips.slice(0, 3).map((label, i) => ({ label, dot: ppChipDots[i], extra: i === 2 ? 'color:var(--muted2)' : '' }));
     // Plugin sahifa qadamlari (raqam kodda)
     const pluginStepsView = lc.pluginPage.steps.map((st, i) => ({ n: String(i + 1), t: st.t, d: st.d }));
+    // Plugin sahifa — CTA/versiya matni haqiqiy reliz holatiga qarab (loadPluginRelease/downloadPlugin);
+    // CMS matni FAQAT 'idle' fallback (hali so'ralmagan holat).
+    const pgDl = this.state.pluginDl;
+    const pgCtaLabel = pgDl === 'loading' ? 'Checking latest version…'
+      : pgDl === 'unavailable' ? 'Beta download not published yet'
+      : pgDl === 'error' ? 'Retry check'
+      : lc.pluginPage.ctaLabel;
+    const pgVersionNote = pgDl === 'ready' && this.state.pluginRelease
+      ? ('v' + this.state.pluginRelease.version + ' · ZXP Installer or Creative Cloud · After Effects 2022+')
+      : pgDl === 'unavailable' ? 'The beta download isn’t published yet — check back soon'
+      : pgDl === 'error' ? (this.state.pluginDlErr || "Couldn't check for updates — click the button to retry")
+      : pgDl === 'loading' ? 'Checking the latest release…'
+      : lc.pluginPage.versionNote;
     const statsView = [
       { v: Math.round(10 * sp) + 'K+', l: 'Ready-made templates' },
       { v: (sp * 5).toFixed(1).replace(/\.0$/, '') + 'M+', l: 'Active creators' },
@@ -22332,7 +22375,7 @@ class Component extends DCLogic {
       lcPrEyebrow: lc.pricingPage.eyebrow, lcPrTitle: lc.pricingPage.title, lcPrSub: lc.pricingPage.sub,
       lcPrFaqTitle: lc.pricingPage.faqTitle,
       lcPgBadge: lc.pluginPage.badge, lcPgTitle: lc.pluginPage.title, lcPgSub: lc.pluginPage.sub,
-      lcPgCta: lc.pluginPage.ctaLabel, lcPgVersion: lc.pluginPage.versionNote, lcPgGuarantee: lc.pluginPage.guarantee,
+      lcPgCta: pgCtaLabel, lcPgVersion: pgVersionNote, lcPgGuarantee: lc.pluginPage.guarantee,
       pluginStepsView,
       statsView, tipText, tipAnim, pageAnim, marqA, marqB, heroWords, howSteps,
       catTilesRv, studioRv, plansRv, testsRv,
@@ -22401,7 +22444,7 @@ class Component extends DCLogic {
       onCat: (e) => this.setState({ activeCat: e.currentTarget.dataset.cat }),
       onFaq: (e) => { const i = +e.currentTarget.dataset.idx; this.setState(st => ({ openFaq: st.openFaq === i ? -1 : i })); },
       onTryTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k }, refClearIfModeChanged(k))); this.go('aistudio'); },
-      download: () => this.toast('Plugin file (.zxp) coming soon — Phase G'),
+      download: () => this.downloadPlugin(),
       downloadTpl: () => this.downloadTemplate(),
       downloadGen: () => { const g = this.state.lightbox || activeGenRaw; if (g) this.downloadGenAsset(g.id); },
       closeCredits: () => this.setState({ showCredits: false }),

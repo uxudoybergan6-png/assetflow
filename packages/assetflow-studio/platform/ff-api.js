@@ -164,6 +164,13 @@
     // Landing CMS — ommaviy konfiguratsiya (admin "Website" tab'da tahrirlanadi)
     landingConfig: function () { return req("/api/landing/config", { auth: false }); },
 
+    // Plugin sahifa — nashr etilgan reliz haqiqati (PluginRelease). Auth talab qilinmaydi —
+    // Plugin sahifasi login'siz ham ko'rinadi. { latest: {version,releaseNotes,checksum}|null, downloadUrl }
+    pluginVersion: function (current) {
+      var qs = current ? "?current=" + encodeURIComponent(current) : "";
+      return req("/api/plugin/version" + qs, { auth: false, idempotent: true });
+    },
+
     // Katalog / plugin profil
     // P1 #15: server-side katalog — filtr/qidiruv/saralash/sahifalash. opts obyekti:
     // { cursor, take, app, templateType, cat, pro, orient, res, q, sort }. Eski

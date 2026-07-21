@@ -178,7 +178,7 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     title: "The FrameFlow plugin — right inside After Effects",
     desc: "Catalog, import and AI Studio — in the panel. Works with your platform account and credits.",
     ctaLabel: "Download the plugin (.zxp)",
-    chips: ["After Effects", "Premiere Pro", "DaVinci — coming soon"],
+    chips: ["After Effects 2022+", "Premiere Pro — coming soon", "DaVinci — coming soon"],
   },
   pricingTeaser: {
     eyebrow: "04 — PRICING",
@@ -243,11 +243,11 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     },
   ],
   pluginPage: {
-    badge: "After Effects · Premiere Pro",
+    badge: "After Effects 2022+",
     title: "Install the FrameFlow plugin in one click",
-    sub: "Catalog, import and AI Studio — right inside your NLE. With your account and credits.",
+    sub: "Catalog, import and AI Studio — right inside After Effects. With your account and credits.",
     ctaLabel: "Download the plugin (.zxp)",
-    versionNote: "v2.4.1 · ~18 MB · ZXP Installer or Creative Cloud",
+    versionNote: "ZXP Installer or Creative Cloud · requires After Effects 2022 (22.0) or newer",
     guarantee: "All plans come with a 14-day money-back guarantee",
     steps: [
       { t: "Download the .zxp file", d: "Get the latest version from the platform in one click." },

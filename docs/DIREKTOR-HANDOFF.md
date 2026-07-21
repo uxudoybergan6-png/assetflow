@@ -123,6 +123,23 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ## 5. JORIY HOLAT (2026-07-14)
 
+> ✅ **Launch Task A TUGADI (2026-07-21, push YO'Q):** AE plagin reliz paketi + ommaviy download oqimi.
+> `build-zxp.sh` staging'ga `css/` (tokens/ff-components/styles + `fonts/*.woff2`) yo'qolgan edi —
+> imzolangan ZXP shriftsiz/uslubsiz ochilardi; endi to'liq. Qo'shildi `--unsigned` rejim (sertifikatsiz
+> `.zip` tekshiruv paketi). Manifest host `[18.0,99.9]` → **`[22.0,99.9]`** (AE 2022+, so'rovnoma
+> qarori bilan mos). Landing/Plugin sahifa "Premiere Pro" joriy-qo'llab-quvvatlash da'vosi
+> "coming soon"ga almashtirildi (badge/versionNote AE 2022+ ga to'g'rilandi, server+klient default
+> AYNI). Web "Download the plugin" tugmasi endi haqiqiy `GET /api/plugin/version` kontraktiga ulandi
+> (`FFAPI.pluginVersion`, `platform/index.html` `loadPluginRelease`/`downloadPlugin`): loading/ready
+> (haqiqiy artefakt URL'ga o'tadi)/unavailable ("beta hali chiqmagan")/error (retry) — hech qachon jim
+> qolmaydi. Reliz hisob-kitobi `apps/api/src/lib/plugin-release-contract.ts`ga izolyatsiya qilindi +
+> 2 standalone test (`apps/api/scripts/test-plugin-release-contract.mjs`,
+> `packages/assetflow-studio/scripts/test-plugin-download-state.mjs`) — ikkalasi ham o'tdi.
+> 🔴 **Productionга chiqarish uchun ega ishi (kod EMAS):** hozircha `PluginRelease` jadvalida HECH
+> QANDAY reliz yo'q → prod'da tugma halol "Beta download not published yet" ko'rsatadi. Haqiqiy
+> `.zxp`ni Admin → Plugin releases orqali R2/GCS'ga yuklab, versiya qatorini yaratish SHART (yoki
+> `build-zxp.sh` bilan imzolangan paket + admin API). Bu — ega/operatsion qadam, kod bloker emas.
+
 > 🚧 **AKTIV — MUAMMOLAR V2 (jonli test muammolari).** 24 muammo (P1–P24) tahlil qilindi,
 > har biri uchun self-contained Code prompt yozildi: `docs/MUAMMOLAR V2-2026-07-13.md`.
 > Bajarish rejasi 3 faylga tartiblandi: `docs/V2-BAJARISH-HIGH-2026-07-14.md` (13 ta, Fable 5,
