@@ -1,6 +1,6 @@
 # SESSION-REPORT — Windows migratsiyasi (1cc01ad auditi, 2026-07-22)
 
-**1 commit, push/deploy/imzolash YO'Q. Diff FAQAT `plugins/after-effects-cep/scripts/installer-wix.mjs` + `test-installer-artifacts.mjs` + 3 hujjat. Backend/DB/auth/billing/landing/panel updater runtime/admin-mijoz UI/payload fayllari TEGILMAGAN.**
+**2 commits, push/deploy/imzolash YO'Q (ikkinchi commit faqat hujjatdagi eskirgan 160→229 sonini tuzatdi). Diff FAQAT `plugins/after-effects-cep/scripts/installer-wix.mjs` + `test-installer-artifacts.mjs` + 3 hujjat. Backend/DB/auth/billing/landing/panel updater runtime/admin-mijoz UI/payload fayllari TEGILMAGAN.**
 
 - **Topilgan bo'shliq:** mavjud foydalanuvchilarda MSI'dan OLDINGI (qo'lda nusxa yoki `.zxp`) o'rnatma bo'lishi mumkin; unda endi ICHKI hisoblangan `.debug`, `.debug.admin`, `AssetFlow_Admin.html`, `CSXS/manifest.admin.xml` qoladi. `MajorUpgrade` faqat MSI O'ZI o'rnatgan komponentni olib tashlaydi → Windows installeri bu qoldiqlarni qoldirib ketardi (macOS'da `postinstall` allaqachon tozalardi).
 - **Tuzatish (`installer-wix.mjs`):** `obsoleteInstallFiles()` **yagona manba** sifatida import qilinadi; har bir yo'l uchun AYNAN bitta standart `<RemoveFile Directory="INSTALLFOLDER" [Subdirectory="CSXS"] Name="…" On="install"/>`. Qatorlar bitta per-user komponentda (`FF_LegacyCleanup`, HKCU keypath, `ComponentRef` bilan o'rnatiladi). Id — to'liq nisbiy yo'l hash'idan (deterministik, noyob).

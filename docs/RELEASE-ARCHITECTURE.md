@@ -310,7 +310,7 @@ yuqoridagi **3A-bo'lim** (Task 3, 2026-07-22).
 ```bash
 npm run test:plugin-updater      # jonli AF-UPDATER bloki — 118 case (mutatsiya isboti bilan)
 npm run test:release-contract    # server kontrakti — 108 case
-npm run test:plugin-installers   # installer quvuri — 160 case
+npm run test:plugin-installers   # installer quvuri — 229 case
 ```
 
 ⚠️ Reliz hali ham CHIQMAGAN: installer quvuri TAYYOR, lekin **imzolangan** artefaktlar
