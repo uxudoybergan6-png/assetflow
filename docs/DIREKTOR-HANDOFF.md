@@ -161,8 +161,7 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 > (avval bu yerda noto'g'ri "10 ta inline" deyilgan edi, TUZATILDI); har 4 inline skript tanasi
 > `node --check`-ga teng tekshiruv bilan sintaksis OK · himoyalangan zona (pul/kredit/billing/auth/
 > DB sxema/deploy) diff'da YO'Q · `test-downloads/` tegilmadi.
-> 🔴 **Qolgan qadam:** haqiqiy brauzer/mobil vizual QA (desktop + narrow viewport) hali BAJARILMADI
-> — faqat statik/kod darajasidagi tekshiruv qilindi, real render ko'rilmadi.
+> ✅ Brauzer/mobil vizual QA keyinroq BAJARILDI — pastdagi "YAKUNIY BRAUZER QA" blokiga qara.
 > ✅ **TUZATISH AUDITI (2026-07-21, push YO'Q):** mustaqil audit 2 ta faktik bloker topdi, ikkalasi
 > ham tuzatildi:
 > 1. Public marketing hali aniq **"14-day money-back guarantee"** da'vosini bergan edi
@@ -206,8 +205,28 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 > `test-plugin-release-contract.mjs` 14/14, `test-plugin-download-state.mjs` 10/10 · DB/API build
 > KERAK EMAS (diff'da `apps/api`/`packages/database` fayli yo'q) · `dist/` commit QILINMADI
 > (gitignore) · `test-downloads/` tegilmadi.
-> 🔴 **Qolgan qadam (Codex bajaradi):** haqiqiy brauzer desktop + mobil vizual/konsol QA — bu
-> tuzatishdan keyin hali BAJARILMAGAN.
+> ✅ **YAKUNIY BRAUZER QA — TUGADI (2026-07-21, Codex mustaqil bajardi, push YO'Q):** Launch Task B
+> real-brauzer desktop/mobil vizual+konsol QA endi BAJARILDI (outstanding EMAS). Deploy-shakldagi
+> `packages/assetflow-studio/dist` HEAD'dan qayta qurilib, SPA fallback bilan lokal `localhost:4174`da
+> serv qilindi.
+> - **Desktop 1440×900:** landing, pricing, plugin ekranlari vizual mutanosib; gorizontal overflow
+>   YO'Q (document scrollWidth 1429 vs innerWidth 1440); hal qilinmagan `{{ }}` kontent YO'Q; bitta
+>   ko'rinadigan asosiy ekran; fresh-tab brauzer error/warning logi BO'Sh.
+> - **Mobil 390×844:** o'sha 3 ekran vizual mutanosib; responsiv header/menyu va kartalar sig'adi;
+>   gorizontal overflow YO'Q (scrollWidth 379 vs innerWidth 390); fresh error/warning logi BO'Sh.
+> - Avvalgi `ReferenceError: axMediaError/axMediaLoaded` QAYTALANMADI.
+> - **Landing:** ko'rinadigan "CONCEPT PREVIEW" haqiqat yorlig'i saqlangan; fabrikatsiya mijoz ismlari
+>   YO'Q; taqiqlangan Premiere Pro / DaVinci Resolve / 14-day money-back / 10,000+ / 5,000+ da'volari YO'Q.
+> - **Pricing:** haqiqiy "Refund Policy" matni ko'rsatildi, 14 kunlik kafolat da'vosi YO'Q.
+> - **Plugin:** "After Effects 2022+" ko'rsatildi, Premiere/DaVinci da'vosi YO'Q; ataylab o'chirilgan
+>   lokal API ostida "Checking latest version…" → halol "Retry check / Can't reach the server" holatiga
+>   o'tdi — konsol xatosisiz, jim/o'lik tugma YO'Q.
+> - **5e06074'dan keyin mustaqil qayta yugurtirilgan tekshiruvlar:** database build PASS · API build
+>   PASS (51 model / 24 enabled) · `verify-public-copy` **67/67** (dist regeneratsiyadan OLDIN ham,
+>   KEYIN ham) · plugin release contract 14/14 · plugin download state 10/10 · `prepare-cf-pages` PASS.
+> - **Operatsion haqiqat O'ZGARMADI:** hech narsa push/deploy qilinmadi, production o'zgarmagan;
+>   imzolangan `.zxp` artefakt va real `PluginRelease` yozuvi hali YO'Q → public production plugin
+>   download hali operatsion EMAS. Bu QA — lokal deploy-shakl brauzer QA, production QA EMAS.
 
 > ✅ **Launch Task A TUGADI (2026-07-21, push YO'Q):** AE plagin reliz paketi + ommaviy download oqimi.
 > `build-zxp.sh` staging'ga `css/` (tokens/ff-components/styles + `fonts/*.woff2`) yo'qolgan edi —
