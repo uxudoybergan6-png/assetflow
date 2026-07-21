@@ -45,10 +45,13 @@
 Har artefakt uchun **SHA-256 (aynan 64 hex)** SHART. Storage kaliti `releases/` ostida,
 `..`/`\`/`//` bo'lmaydi. Kalit hech qachon ommaviy javobga chiqmaydi.
 
-Installer nima qilishi kerak (Task 3): CEP extension papkasiga
+Installer nima qiladi (Task 3 — QURILDI): CEP extension papkasiga
 (`~/Library/Application Support/Adobe/CEP/extensions/com.frameflow` /
 `%APPDATA%\Adobe\CEP\extensions\com.frameflow`) mijoz flavor fayllarini yozadi —
-`plugins/after-effects-cep/scripts/package-flavors.mjs` ro'yxati bo'yicha.
+`plugins/after-effects-cep/scripts/package-flavors.mjs` ro'yxati bo'yicha, FAQAT
+foydalanuvchi domenida (macOS `auth="none"` + `enable_currentUserHome`, Windows
+`Scope="perUser"`) — administrator/UAC so'ralmaydi. Quruvchilar va aniq buyruqlar:
+`docs/RELEASE-ARCHITECTURE.md` §3A.
 
 ---
 
@@ -113,8 +116,14 @@ bo'lishi mumkin emas (fail-closed).
 1. Versiyani bumping (IKKI joyda sinxron):
    `plugins/after-effects-cep/CSXS/manifest.xml` → `ExtensionBundleVersion` va
    `AssetFlow_Plugin.html` → `window.AF_PLUGIN_VERSION`.
-2. Imzolangan installerlarni yig'ish (Task 3 skriptlari): macOS `.pkg` (Developer ID +
-   notarize), Windows `.exe`/`.msi` (Authenticode).
+2. Imzolangan installerlarni yig'ish (`docs/RELEASE-ARCHITECTURE.md` §3A.2) — avval imzolangan
+   `.zxp` (CEP imzo konverti undan olinadi), so'ng:
+   `bash plugins/after-effects-cep/scripts/build-installer-mac.sh` (Developer ID Installer →
+   `notarytool submit --wait` → `stapler`) va Windows mashinasida
+   `node plugins/after-effects-cep/scripts/build-installer-win.mjs` (WiX v5 per-user MSI →
+   `signtool /fd sha256` + timestamp). Kredensiallar FAQAT env'dan; yo'q/qisman bo'lsa build
+   artefakt yaratmasdan to'xtaydi. Har artefakt yoniga `<fayl>.sha256` va
+   `frameflow-plugin-v<ver>-installers.json` (platform/ext/hajm/sha) chiqadi.
 3. **Admin → Releases**: versiya, release notes, kerak bo'lsa Mandatory / Min supported →
    **Upload macOS installer (.pkg)** va/yoki **Upload Windows installer (.exe/.msi)**.
    SHA-256 brauzerda hisoblanadi va serverda qayta tekshiriladi.
@@ -159,10 +168,11 @@ bo'lishi mumkin emas (fail-closed).
 ## 7. Testlar
 
 ```bash
-npm run test:release-contract        # server kontrakti (85 case)
-npm run test:plugin-updater          # jonli AF-UPDATER bloki (64 case)
+npm run test:release-contract        # server kontrakti (108 case)
+npm run test:plugin-updater          # jonli AF-UPDATER bloki (118 case)
 npm run test:plugin-download-state   # veb yuklab olish holat mashinasi (10 case)
 npm run test:plugin-package          # paket/flavor xavfsizligi (47 case)
+npm run test:plugin-installers       # .pkg/.msi installer quvuri (160 case)
 ```
 
 `test-updater-security.mjs` jonli HTML'dan updater blokini ajratib oladi va:

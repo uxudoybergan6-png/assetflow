@@ -1,5 +1,10 @@
 # NEXT TASK (Task 3) — imzolangan macOS/Windows installer artefaktlarini qurish
 
+> ✅ **KOD QISMI BAJARILDI (2026-07-22).** Quvur tayyor: `scripts/installer-payload.mjs`,
+> `scripts/build-installer-mac.sh`, `scripts/build-installer-win.mjs`,
+> `npm run test:plugin-installers` (160/160). Buyruqlar: `docs/RELEASE-ARCHITECTURE.md` §3A.
+> Qolgani — pastdagi jadvaldagi **operator kredensiallari** va reliz e'loni.
+
 > Task 2 (2026-07-22) panel tomonini TUGATDI: panel endi o'zini o'zi yozmaydi, platformaga
 > xos installerni yuklab oladi, SHA-256'ni majburiy tekshiradi va OS installeriga topshiradi.
 > **Qolgani — artefaktning O'ZI.** Quyidagi prompt Claude Code'ga TO'G'RIDAN nusxa-joylashtiriladi.

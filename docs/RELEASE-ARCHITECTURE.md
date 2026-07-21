@@ -2,7 +2,7 @@
 
 > Amal qiladi: `plugins/after-effects-cep/`. Yagona haqiqat manbai —
 > `plugins/after-effects-cep/scripts/package-flavors.mjs` (build, o'rnatma va testlar shundan o'qiydi).
-> Oxirgi yangilanish: 2026-07-21 (Admin sirtini mijoz paketidan ajratish).
+> Oxirgi yangilanish: 2026-07-22 (Task 3 — macOS `.pkg` / Windows `.msi` installer quvuri).
 
 ---
 
@@ -151,6 +151,94 @@ node plugins/after-effects-cep/scripts/verify-zxp-package.mjs [archive.zip]
 
 ---
 
+## 3A. Installer artefaktlari (Task 3) — mijozga tarqatiladigan `.pkg` / `.msi`
+
+`.zxp` — qo'lda o'rnatish formati. Panel yangilanishi esa **OS installeri** orqali boradi
+(`docs/PLUGIN-UPDATE-CHAIN.md` §2). Installerlar `dist/installers/` ga tushadi (git'da yo'q).
+
+Payload — **FAQAT mijoz flavor'i**, ro'yxat yana `package-flavors.mjs` dan
+(`scripts/installer-payload.mjs` yagona kirish nuqtasi). Ichki Admin flavor'ini installer
+qilishga urinish **rad etiladi** (kod darajasida, bayroq bilan ham ochilmaydi).
+
+| | macOS | Windows |
+|---|---|---|
+| Format | `.pkg` (productbuild distribution) | `.msi` (WiX Toolset v5, `Scope="perUser"`) |
+| Nishon | `~/Library/Application Support/Adobe/CEP/extensions/com.frameflow` | `%APPDATA%\Adobe\CEP\extensions\com.frameflow` |
+| Imtiyoz | `auth="none"` + `enable_currentUserHome` — **administrator paroli so'ralmaydi** | per-user — **UAC so'ralmaydi** |
+| O'chirish | `pkgutil --forget com.frameflow.plugin` + papkani o'chirish | "Apps & features" (MSI o'zi olib tashlaydi) |
+| Imzo | `productsign` (Developer ID Installer) → `notarytool submit --wait` → `stapler staple` | `signtool sign /fd sha256 /tr <ts> /td sha256` |
+
+### 3A.1 Imzolanmagan QA installerlar
+
+```bash
+bash plugins/after-effects-cep/scripts/build-installer-mac.sh --unsigned
+# → dist/installers/frameflow-plugin-<ver>-mac-unsigned.pkg (+ .sha256)
+
+node plugins/after-effects-cep/scripts/build-installer-win.mjs --unsigned
+# → dist/installers/frameflow-plugin-<ver>-win-unsigned.msi (+ .sha256)   [Windows/CI]
+```
+
+> Nomi ataylab `-unsigned`: mijozga tarqatilmaydi. Imzosiz payload'da CEP imzo konverti
+> bo'lmaydi, shuning uchun paketning `postinstall` skripti FAQAT shu holatda va FAQAT shu
+> foydalanuvchi uchun `PlayerDebugMode` yoqadi (imzolangan relizda — YO'Q).
+
+### 3A.2 Imzolangan reliz (fail-closed — kredensiallar FAQAT env'dan)
+
+```bash
+# 0) avval imzolangan .zxp (CEP imzo konverti shundan olinadi)
+ZXP_CERT=/secure/ff.p12 ZXP_CERT_PASS='…' bash plugins/after-effects-cep/scripts/build-zxp.sh
+
+# 1) macOS
+FF_MAC_INSTALLER_IDENTITY='Developer ID Installer: … (TEAMID)' \
+FF_SIGNED_ZXP=dist/zxp/frameflow-plugin-v<ver>.zxp \
+FF_NOTARY_KEY_ID=… FF_NOTARY_ISSUER_ID=… FF_NOTARY_KEY_PATH=/secure/AuthKey.p8 \
+  bash plugins/after-effects-cep/scripts/build-installer-mac.sh
+
+# 2) Windows (Windows mashinasi / windows-latest CI)
+FF_WIN_CERT_SHA1=<thumbprint>  FF_SIGNED_ZXP=…\frameflow-plugin-v<ver>.zxp \
+  node plugins/after-effects-cep/scripts/build-installer-win.mjs
+```
+
+Muqobil kredensiallar: notarizatsiya uchun `FF_NOTARY_APPLE_ID` + `FF_NOTARY_TEAM_ID` +
+`FF_NOTARY_PASSWORD`; Windows uchun `FF_WIN_CERT` (.pfx) + `FF_WIN_CERT_PASS`
+(EV token/HSM bo'lsa `FF_WIN_CERT_SHA1` afzal — parol argv'ga tushmaydi).
+Timestamp: `FF_WIN_TIMESTAMP_URL` (default DigiCert).
+
+- Kredensial YO'Q yoki **QISMAN** bo'lsa — build aniq xato bilan to'xtaydi, artefakt
+  yaratilmaydi. O'z-o'zidan imzolangan sertifikat YARATILMAYDI, standart parol YO'Q.
+- **Reliz payload'i `FF_SIGNED_ZXP` SIZ qurilmaydi.** `.zxp` ichidagi `META-INF/**` +
+  `mimetype` payload'ga qo'shiladi — CEP imzoni o'zi tekshiradi va mijoz mashinasida
+  `PlayerDebugMode` yoqish kerak bo'lmaydi. `.zxp`ning qolgan tarkibi flavor ro'yxatiga
+  AYNAN mos bo'lishi shart (aks holda imzo yot fayllarni qamragan bo'lardi → rad).
+- Eski yakuniy artefakt tekshiruvlardan OLDIN o'chiriladi; imzo/notarizatsiya chegaralangan
+  `dist/installers/_build.<platform>.XXXXXX/` ichida bajariladi va faqat HAMMASI muvaffaqiyatli
+  tugagach atomik `mv` bilan yakuniy nomga o'tadi. Nosozlikda na artefakt, na temp qoladi;
+  boshqa platforma/flavor artefakti tegilmaydi.
+- Har artefakt yoniga **`<fayl>.sha256`** (64 kichik hex, `shasum -a 256 -c` formatida) va
+  versiya bo'yicha `frameflow-plugin-v<ver>-installers.json` yoziladi — admin Releases
+  formasiga tayyor qiymatlar (server SHA-256'ni storage'dan qayta hisoblab solishtiradi).
+- `FF_INSTALLERS_DIR` — faqat chiqish papkasini ko'chiradi (test/CI izolyatsiyasi), siyosatga
+  ta'siri yo'q.
+
+### 3A.3 Installer testi
+
+```bash
+npm run test:plugin-installers
+```
+
+**160/160 PASS.** Haqiqiy skriptlar va haqiqiy payload (mock YO'Q): macOS'da HAQIQIY
+`pkgbuild`/`productbuild` bilan `.pkg` quriladi va ichi ochib tekshiriladi (per-user
+install-location · `auth="none"` · faqat currentUserHome domeni · payload cpio ro'yxati
+flavor ro'yxatiga teng · AppleDouble `._` yozuvi yo'q · Admin sirti yo'q); fail-closed uch
+holatda (kredensialsiz · qisman notarizatsiya kredensiali · imzolash buyrug'i yiqilganda)
+haqiqiy build ishga tushiriladi va yakuniy artefakt YO'Qligi, temp QOLMAGANI, parol/identika
+chop etilmagani tasdiqlanadi. "Boshqa artefakt tegilmadi" — ichki Admin arxivi va boshqa
+platforma nishonining **SHA-256'i o'zgarmaganligi** bilan isbotlanadi. Windows toolchain
+(`wix`, `signtool`) macOS'da yo'q — testda PATH orqali soxta buyruq qo'yiladi (build-zxp.sh
+testidagi soxta `ZXPSignCmd` naqshining aynan o'zi), skriptning qolgan hamma qismi haqiqiy.
+
+---
+
 ## 4. Yangilanish (updater) — Task 2 (2026-07-22): SELF-UPDATER OLIB TASHLANDI
 
 Panel-ichi **o'z-o'zini yozadigan** updater (zip yuklab olish → arxivni ochish → extension
@@ -173,16 +261,18 @@ Legacy `.zxp` — faqat **qo'lda** yuklab olish uchun (veb sahifa). Panel `.zxp`
 avtomatik o'rnatmaydi (test buni majburlaydi).
 
 Kontrakt, API shakli, admin publish qoidalari va foydalanuvchi oqimi:
-**`docs/PLUGIN-UPDATE-CHAIN.md`**. Keyingi task (imzolangan `.pkg`/`.exe` artefaktlarini
-qurish): **`docs/NEXT-TASK-INSTALLER-ARTIFACTS.md`**.
+**`docs/PLUGIN-UPDATE-CHAIN.md`**. Panel kutayotgan artefaktlarni qurish quvuri —
+yuqoridagi **3A-bo'lim** (Task 3, 2026-07-22).
 
 ```bash
-npm run test:plugin-updater      # jonli AF-UPDATER bloki — 64 case (mutatsiya isboti bilan)
-npm run test:release-contract    # server kontrakti — 85 case
+npm run test:plugin-updater      # jonli AF-UPDATER bloki — 118 case (mutatsiya isboti bilan)
+npm run test:release-contract    # server kontrakti — 108 case
+npm run test:plugin-installers   # installer quvuri — 160 case
 ```
 
-⚠️ Reliz hali ham CHIQMAGAN: imzolangan installer artefaktlari (Task 3) va `PluginRelease`
-yozuvi yo'q — bu ega/operator ishi.
+⚠️ Reliz hali ham CHIQMAGAN: installer quvuri TAYYOR, lekin **imzolangan** artefaktlar
+(Developer ID Installer + notarizatsiya · Authenticode) va `PluginRelease` yozuvi yo'q —
+bu ega/operator ishi (sertifikatlar repo'da hech qachon bo'lmaydi).
 
 ---
 
@@ -196,4 +286,8 @@ yozuvi yo'q — bu ega/operator ishi.
    yozilmaydi.
 4. Yangi runtime fayl qo'shilsa — `package-flavors.mjs` dagi flavor ro'yxatiga qo'shiladi
    (aks holda test "arxiv fayl ro'yxati flavor manbasiga mos" tekshiruvida yiqiladi).
-5. Versiya o'zgarsa — uchala joy birga o'zgaradi (2-bo'lim).
+   Installer payload'i ham AYNAN shu ro'yxatdan quriladi — alohida ro'yxat yozilmaydi.
+5. Versiya o'zgarsa — uchala joy birga o'zgaradi (2-bo'lim). Installer paketi versiyani
+   manifestdan oladi; skriptlarga versiya qattiq yozilmaydi (test buni majburlaydi).
+6. Installer FAQAT per-user CEP papkasiga yozadi. `/Library`, `Program Files`, boshqa Adobe
+   sozlamalari yoki root/UAC imtiyozi — TAQIQ (mac `auth="none"`, win `Scope="perUser"`).

@@ -144,9 +144,18 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 > oqimni darhol uzadi (pack import xulqi o'zgarmagan). (3) **Imkonsiz majburiy yangilanish
 > QOPQON EMAS** — yaroqli installer bo'lmasa mandatory dialog yopiladi (yaroqli installerda
 > bloklash saqlanadi). (4) **"Installer opened" faqat `spawn` dan keyin**, xatoda temp tozalanadi.
-> 🔴 **Task 3 (keyingi):** imzolangan `.pkg`/`.exe` artefaktlarini QURISH — tayyor copy-paste
-> prompt `docs/NEXT-TASK-INSTALLER-ARTIFACTS.md`. Bloker (EGA): Apple Developer ID Installer
-> sertifikati + notarizatsiya kredensiali, Windows Authenticode (EV) sertifikati.
+> ✅ **TASK 3 (KOD) BAJARILDI — installer artefakt quvuri.** Panel kutayotgan artefaktlar endi
+> haqiqatan quriladi: macOS `.pkg` (`pkgbuild`+`productbuild`) va Windows `.msi` (WiX v5),
+> ikkalasi ham FAQAT foydalanuvchi papkasiga yozadi (`auth="none"` / `Scope="perUser"` —
+> administrator/UAC so'ralmaydi) va payload AYNAN mijoz flavor ro'yxati (`package-flavors.mjs`);
+> ichki Admin paneli kod darajasida rad etiladi. Imzolash FAIL-CLOSED: kredensiallar faqat
+> env'dan, qisman bo'lsa ham to'xtaydi, self-signed/standart parol yo'q, nosozlikda na artefakt
+> na temp qoladi. Har artefakt yoniga `.sha256` + reliz manifesti chiqadi (admin publish server
+> tomonda qayta hisoblab solishtiradi). `npm run test:plugin-installers` **160/160**.
+> Buyruqlar: **`docs/RELEASE-ARCHITECTURE.md` §3A**.
+> 🔴 **Bloker (EGA, kod EMAS):** Apple Developer ID Installer sertifikati + notarizatsiya
+> kredensiali, Windows Authenticode (EV) sertifikati/token, Windows mashinasi yoki
+> `windows-latest` CI (`dotnet tool install --global wix`).
 > 🔴 **Ega ishi (o'zgarmadi):** `PluginRelease` jadvalida hali reliz yo'q → prod'da download
 > tugmasi halol "beta hali chiqmagan" deydi.
 
