@@ -5,8 +5,12 @@
 //
 // QOIDA: Directory Id TO'LIQ nisbiy yo'ldan quriladi (faqat basename'dan EMAS) — aks holda
 // `css/fonts` va `js/fonts` bir xil Id olib, WiX daraxti to'qnashardi.
+//
+// Bu yerda MSI'dan OLDINGI o'rnatma qoldiqlari uchun `RemoveFile` qatorlari ham generatsiya
+// qilinadi (pastdagi "MSI'dan OLDINGI o'rnatma qoldiqlari" bo'limiga qara).
 
 import { createHash } from "node:crypto";
+import { obsoleteInstallFiles } from "./installer-payload.mjs";
 
 /** Barqaror identifikatorlar — SIR EMAS, faqat MSI upgrade zanjirining langari. */
 export const UPGRADE_CODE = "{8F2B6C34-1D57-4E2A-9C10-7F3A5E6B41D9}";
@@ -33,6 +37,42 @@ export function wixId(prefix, name) {
 
 export function xmlAttr(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// ── MSI'dan OLDINGI o'rnatma qoldiqlari (Windows migratsiyasi) ──────────────
+//
+// `MajorUpgrade` FAQAT MSI o'zi o'rnatgan komponentlarni olib tashlaydi. Qo'lda nusxalangan
+// yoki `.zxp` orqali o'rnatilgan eski papkada MSI hech qachon ko'rmagan ICHKI fayllar
+// (`.debug`, Admin sirti) qolib ketardi — birinchi MSI o'rnatmasidan keyin ham. Shuning uchun
+// standart `RemoveFile` (On="install") qatorlari generatsiya qilinadi: MSI `RemoveFiles`
+// amali `InstallFiles` dan OLDIN ishlaydi, ya'ni qoldiq yangi payload joylashdan avval ketadi.
+//
+// QAT'IY chegara (macOS postinstall bilan bir xil siyosat):
+//   • ro'yxat FAQAT `obsoleteInstallFiles()` dan — installerda qattiq yozilgan nom YO'Q;
+//   • har yo'l uchun AYNAN bitta `RemoveFile`, aniq `Name` — wildcard (`*`/`?`) YO'Q;
+//   • `RemoveFolder` YO'Q, CustomAction YO'Q — papka hech qachon o'chirilmaydi;
+//   • joriy payload va foydalanuvchi ma'lumoti (`assetflow-data`) TEGILMAYDI (quyida tekshiriladi).
+
+/** Migratsiya komponenti — HKCU keypath (per-user, ICE-mos), GUID ro'yxatdan MUSTAQIL
+ *  (komponent keypath'i o'zgarmaydi → MSI komponent qoidasi buzilmaydi). */
+export const CLEANUP_COMPONENT_ID = "FF_LegacyCleanup";
+const CLEANUP_COMPONENT_GUID_NAME = "component:legacy-cleanup";
+const CLEANUP_REGISTRY_NAME = "obsolete-internal-files";
+
+/** `obsoleteInstallFiles()` → WiX `RemoveFile` qatorlari uchun ma'lumot.
+ *  Id TO'LIQ nisbiy yo'ldan (deterministik va noyob), ichma-ich yo'l `Subdirectory` orqali. */
+export function obsoleteRemoveRows(payloadFiles = []) {
+  const shipped = new Set(payloadFiles);
+  return obsoleteInstallFiles().map((rel) => {
+    if (shipped.has(rel)) throw new Error(`Eski fayllar ro'yxati joriy payload bilan kesishdi: ${rel}`);
+    if (/[*?]/.test(rel)) throw new Error(`Eski fayl yo'lida wildcard: ${rel}`);
+    const parts = rel.split("/");
+    const fileName = parts.pop();
+    if (!fileName || parts.some((p) => !p || p === "." || p === "..")) {
+      throw new Error(`Eski fayl yo'li noto'g'ri: ${rel}`);
+    }
+    return { rel, fileName, subdirectory: parts.join("\\"), id: wixId("R", rel) };
+  });
 }
 
 /** Payload yo'llaridan ichma-ich Directory daraxti + har fayl uchun bitta Component.
@@ -81,6 +121,28 @@ export function buildWxsSource({ version, payloadFiles, installDirName = "com.fr
   }
 
   emit(7, "<!-- generatsiya: build-installer-win.mjs — qo'lda tahrirlanmaydi -->");
+
+  // MSI'dan oldingi (qo'lda/ZXP) o'rnatma qoldiqlari — aniq nomlar, faqat fayl.
+  const stale = obsoleteRemoveRows(payloadFiles);
+  if (stale.length) {
+    components.push(CLEANUP_COMPONENT_ID);
+    emit(7, `<Component Id="${CLEANUP_COMPONENT_ID}" Guid="${stableGuid(CLEANUP_COMPONENT_GUID_NAME)}">`);
+    emit(
+      8,
+      `<RegistryValue Root="HKCU" Key="Software\\FrameFlow\\Plugin\\Migration" ` +
+        `Name="${CLEANUP_REGISTRY_NAME}" Type="integer" Value="1" KeyPath="yes"/>`
+    );
+    for (const s of stale) {
+      emit(
+        8,
+        `<RemoveFile Id="${s.id}" Directory="INSTALLFOLDER"` +
+          (s.subdirectory ? ` Subdirectory="${xmlAttr(s.subdirectory)}"` : "") +
+          ` Name="${xmlAttr(s.fileName)}" On="install"/>`
+      );
+    }
+    emit(7, "</Component>");
+  }
+
   emitNode(tree, 7, "");
   const body = lines.join("\n");
 

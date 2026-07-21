@@ -70,7 +70,10 @@ import {
   verifyPayload,
   writeChecksumSidecar,
 } from "./installer-payload.mjs";
-import { buildWxsSource } from "./installer-wix.mjs";
+import { buildWxsSource, wixId } from "./installer-wix.mjs";
+// Migratsiya (RemoveFile) eksportlari NOM FAZOSI orqali olinadi: ular yo'q generator bilan ham
+// bu fayl yuklanadi va tekshiruvlar HALOL "failed" bo'lib chiqadi (import SyntaxError'i emas).
+import * as wixGen from "./installer-wix.mjs";
 
 const MAC_SCRIPT = path.join(PLUGIN_SRC, "scripts/build-installer-mac.sh");
 const WIN_SCRIPT = path.join(PLUGIN_SRC, "scripts/build-installer-win.mjs");
@@ -819,15 +822,25 @@ check(
   JSON.stringify(wxsFiles) === JSON.stringify(expected),
   `wxs=${wxsFiles.length} expected=${expected.length}`
 );
+// Payload komponentlari + AYNAN bitta migratsiya (RemoveFile) komponenti.
+const WXS_COMPONENTS = expected.length + 1;
 check(
-  "WiX komponent soni = fayl soni (har fayl mustaqil komponent)",
-  (wxs.match(/<Component /g) || []).length === expected.length &&
-    (wxs.match(/<ComponentRef /g) || []).length === expected.length
+  "WiX komponent soni = fayl soni + 1 migratsiya komponenti (har fayl mustaqil komponent)",
+  (wxs.match(/<Component /g) || []).length === WXS_COMPONENTS &&
+    (wxs.match(/<ComponentRef /g) || []).length === WXS_COMPONENTS,
+  `component=${(wxs.match(/<Component /g) || []).length} ref=${(wxs.match(/<ComponentRef /g) || []).length} kutilgan=${WXS_COMPONENTS}`
 );
-check("WiX komponentlari HKCU keypath ishlatadi (per-user, ICE-mos)", (wxs.match(/Root="HKCU"/g) || []).length === expected.length);
-check("WiX GUID'lari noyob", new Set([...wxs.matchAll(/Guid="([^"]+)"/g)].map((m) => m[1])).size === expected.length);
+check("WiX komponentlari HKCU keypath ishlatadi (per-user, ICE-mos)", (wxs.match(/Root="HKCU"/g) || []).length === WXS_COMPONENTS);
+check("WiX GUID'lari noyob", new Set([...wxs.matchAll(/Guid="([^"]+)"/g)].map((m) => m[1])).size === WXS_COMPONENTS);
+// Admin sirti YUBORILMAYDI. Nomi FAQAT `RemoveFile` (eski qoldiqni tozalash) qatorida uchraydi —
+// shuning uchun tekshiruv o'sha qatorlarsiz manbada bajariladi (asl niyat: hech qachon o'rnatilmaydi).
+const wxsShipped = wxs
+  .split("\n")
+  .filter((l) => !/<RemoveFile\b/.test(l))
+  .join("\n");
 for (const id of ADMIN_SURFACE.identifiers) {
-  check(`WiX manbasida Admin identifikatori "${id}" YO'Q`, !wxs.includes(id));
+  check(`WiX manbasi Admin identifikatorini "${id}" O'RNATMAYDI`, !wxsShipped.includes(id));
+  check(`WiX <File>/<Source> ichida Admin identifikatori "${id}" YO'Q`, ![...wxs.matchAll(/<File [^>]*>/g)].some((m) => m[0].includes(id)));
 }
 check("WiX manbasida qattiq yozilgan sir/parol YO'Q", !/-----BEGIN|password\s*=\s*["'][^"']{8,}/i.test(wxs));
 
@@ -853,6 +866,121 @@ check(
 check(
   "bir xil basename'li ikki fayl ham noyob Component/File Id oladi",
   new Set([...collisionWxs.matchAll(/<File Id="([^"]+)"/g)].map((m) => m[1])).size === 4
+);
+
+// ── E3e — WINDOWS MIGRATSIYASI: MSI'dan OLDINGI o'rnatma qoldiqlari ─────────
+// `MajorUpgrade` MSI o'zi o'rnatmagan faylni olib tashlay OLMAYDI. Qo'lda nusxalangan yoki
+// `.zxp` orqali o'rnatilgan eski papkada ichki fayllar (`.debug`, Admin sirti) qolib ketardi.
+// Bu blok butunlay YANGI: 1cc01ad da generatsiya qilingan .wxs da bitta ham <RemoveFile> yo'q edi.
+check(
+  "migratsiya API'si eksport qilingan (CLEANUP_COMPONENT_ID + obsoleteRemoveRows)",
+  typeof wixGen.CLEANUP_COMPONENT_ID === "string" && typeof wixGen.obsoleteRemoveRows === "function"
+);
+const CLEANUP_ID = typeof wixGen.CLEANUP_COMPONENT_ID === "string" ? wixGen.CLEANUP_COMPONENT_ID : "FF_LegacyCleanup";
+const obsoleteRemoveRows =
+  wixGen.obsoleteRemoveRows ||
+  (() => {
+    throw new Error("installer-wix.mjs `obsoleteRemoveRows` eksport qilmaydi");
+  });
+const staleList = obsoleteInstallFiles();
+const removeRows = [...wxs.matchAll(/<RemoveFile\b([^>]*?)\/>/g)].map((m) => {
+  const attrs = {};
+  for (const a of m[1].matchAll(/([A-Za-z]+)="([^"]*)"/g)) attrs[a[1]] = a[2];
+  return attrs;
+});
+const rowPath = (r) => `${r.Subdirectory ? `${r.Subdirectory.replace(/\\/g, "/")}/` : ""}${r.Name}`;
+const rowPaths = removeRows.map(rowPath).sort();
+
+check(
+  "MIGRATSIYA REGRESSIYASI: MSI eski ichki fayllarni tozalaydi (1cc01ad da <RemoveFile> YO'Q edi)",
+  removeRows.length > 0 && ADMIN_SURFACE.files.every((f) => rowPaths.includes(f)) && rowPaths.includes(".debug"),
+  `rows=${removeRows.length} paths=${rowPaths.join(",")}`
+);
+check(
+  `migratsiya: eski har bir fayl uchun AYNAN bitta <RemoveFile> (${staleList.length})`,
+  staleList.length > 0 && removeRows.length === staleList.length,
+  `rows=${removeRows.length} stale=${staleList.length}`
+);
+check(
+  "migratsiya: <RemoveFile> yo'llari obsoleteInstallFiles() bilan AYNAN mos (ortiqcha/kam YO'Q)",
+  JSON.stringify(rowPaths) === JSON.stringify([...staleList].sort()),
+  `wxs=[${rowPaths.join(",")}] kutilgan=[${[...staleList].sort().join(",")}]`
+);
+for (const rel of staleList) {
+  const parts = rel.split("/");
+  const name = parts.pop();
+  const sub = parts.join("\\");
+  const row = removeRows.find((r) => r.Name === name && (r.Subdirectory || "") === sub);
+  check(
+    `migratsiya: "${rel}" → Name="${name}"${sub ? ` Subdirectory="${sub}"` : " (INSTALLFOLDER ildizi)"}`,
+    !!row,
+    JSON.stringify(removeRows)
+  );
+  check(`migratsiya: "${rel}" Id to'liq nisbiy yo'ldan (deterministik)`, !!row && row.Id === wixId("R", rel), row && row.Id);
+}
+check(
+  'migratsiya: har bir <RemoveFile> On="install" (o\'chirishda EMAS, o\'rnatishda)',
+  removeRows.length > 0 && removeRows.every((r) => r.On === "install"),
+  removeRows.map((r) => r.On).join(",")
+);
+check(
+  'migratsiya: har bir <RemoveFile> Directory="INSTALLFOLDER" (nishon papkadan tashqariga chiqmaydi)',
+  removeRows.length > 0 && removeRows.every((r) => r.Directory === "INSTALLFOLDER")
+);
+check(
+  "migratsiya: <RemoveFile> Id'lari noyob",
+  new Set(removeRows.map((r) => r.Id)).size === removeRows.length
+);
+check(
+  "migratsiya: WILDCARD YO'Q (`*` yoki `?` na Name'da, na Subdirectory'da)",
+  removeRows.every((r) => !/[*?]/.test(r.Name || "") && !/[*?]/.test(r.Subdirectory || "")) &&
+    !/<RemoveFile[^>]*Name="[^"]*[*?]/.test(wxs)
+);
+check(
+  "migratsiya: <RemoveFolder> YO'Q — birorta PAPKA o'chirilmaydi",
+  !/<RemoveFolder\b/.test(wxs) && !/RemoveExistingProducts|RemoveFolderEx/.test(wxs)
+);
+check(
+  "migratsiya: CustomAction/skript YO'Q (faqat standart RemoveFile amali)",
+  !/<CustomAction\b/.test(wxs) && !/<Custom\b/.test(wxs) && !/<Binary\b/.test(wxs) && !/<SetProperty\b/.test(wxs)
+);
+check(
+  "migratsiya: joriy payload fayllaridan BIRORTASI o'chirilmaydi",
+  rowPaths.every((p) => !expected.includes(p)),
+  rowPaths.filter((p) => expected.includes(p)).join(",")
+);
+check(
+  "migratsiya: foydalanuvchi ma'lumoti `assetflow-data` manbada UMUMAN yo'q",
+  !/assetflow-data/.test(wxs) && rowPaths.every((p) => !p.startsWith("assetflow-data"))
+);
+check(
+  "migratsiya komponenti O'RNATILADI va per-user (HKCU keypath + ComponentRef)",
+  new RegExp(`<Component Id="${CLEANUP_ID}" Guid="\\{[0-9A-F-]{36}\\}">`).test(wxs) &&
+    new RegExp(`<ComponentRef Id="${CLEANUP_ID}"/>`).test(wxs) &&
+    /<Component Id="FF_LegacyCleanup"[^>]*>\s*\n\s*<RegistryValue Root="HKCU"[^>]*KeyPath="yes"\/>/.test(wxs)
+);
+check(
+  "migratsiya: barcha <RemoveFile> AYNAN shu bitta komponent ichida",
+  (() => {
+    const block = wxs.slice(wxs.indexOf(`<Component Id="${CLEANUP_ID}"`));
+    const inner = block.slice(0, block.indexOf("</Component>"));
+    return (inner.match(/<RemoveFile\b/g) || []).length === removeRows.length;
+  })()
+);
+throws(
+  "generator: eski ro'yxat joriy payload bilan kesishsa RAD ETADI (fail-closed)",
+  () => obsoleteRemoveRows([...expected, staleList[0]]),
+  /joriy payload bilan kesishdi/
+);
+check(
+  "generator: RemoveFile ma'lumoti FAQAT obsoleteInstallFiles() dan (yagona manba)",
+  (() => {
+    try {
+      return JSON.stringify(obsoleteRemoveRows().map((r) => r.rel)) === JSON.stringify(staleList);
+    } catch {
+      return false;
+    }
+  })()
 );
 
 // E3c — MSI tuzilma tekshiruvi (ixtiyoriy baytlar `.msi` DEB QABUL QILINMAYDI)

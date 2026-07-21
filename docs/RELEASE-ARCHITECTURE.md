@@ -227,6 +227,24 @@ Timestamp: `FF_WIN_TIMESTAMP_URL` (default DigiCert).
   joylashishidan OLDIN hech qachon o'chirilmaydi. `postinstall` — o'rnatma tugagach FAQAT
   aniq nomli eski fayllarni (ichki Admin sirti + `.debug*`) olib tashlaydi; `find`/`rm -rf`/
   joker belgi YO'Q, `assetflow-data` va qolgan hamma narsa tegilmaydi.
+- **Windows migratsiyasi — MSI'dan OLDINGI qoldiqlar (`RemoveFile`).** `MajorUpgrade` FAQAT
+  MSI o'zi o'rnatgan komponentlarni olib tashlaydi, shuning uchun qo'lda nusxalangan yoki
+  `.zxp` orqali o'rnatilgan eski papkadagi ICHKI fayllar (`.debug`, `.debug.admin`,
+  `AssetFlow_Admin.html`, `CSXS/manifest.admin.xml`) MSI'dan keyin ham qolardi. Endi
+  `installer-wix.mjs` **`obsoleteInstallFiles()` (yagona manba)** ro'yxatidagi har bir yo'l
+  uchun AYNAN bitta standart `<RemoveFile ... On="install"/>` qatorini generatsiya qiladi:
+  `Directory="INSTALLFOLDER"`, ichma-ich yo'l uchun `Subdirectory="CSXS"`, Id to'liq nisbiy
+  yo'l hash'idan (deterministik + noyob). Qatorlar bitta per-user komponentda
+  (`FF_LegacyCleanup`, HKCU keypath, `ComponentRef` bilan har o'rnatmada bajariladi).
+  **Joker (`*`/`?`) YO'Q · `RemoveFolder` YO'Q · CustomAction/skript YO'Q · papka
+  o'chirilmaydi.** Joriy payload va `assetflow-data` TEGILMAYDI — ro'yxat payload bilan
+  kesishsa generator fail-closed to'xtaydi. MSI `RemoveFiles` amali `InstallFiles` dan
+  oldin ishlaydi, ya'ni qoldiq yangi payload joylashishidan avval ketadi (macOS'dagi
+  `postinstall` siyosatining aynan ekvivalenti).
+  ⚠️ **Cheklov:** kafolat generatsiya darajasida (`.wxs` `xmllint` bilan to'g'ri, tarkibi
+  testda qulflangan). **Haqiqiy imzolangan `.msi` hali qurilmagan** — `wix build`
+  (`Subdirectory` atributi), ICE validatsiyasi va eski o'rnatma ustidan upgrade Windows
+  mashinasida tasdiqlanishi SHART.
 - Eski yakuniy artefakt tekshiruvlardan OLDIN o'chiriladi; imzo/notarizatsiya chegaralangan
   `dist/installers/_build.<platform>.XXXXXX/` ichida bajariladi va faqat HAMMASI muvaffaqiyatli
   tugagach atomik `mv` bilan yakuniy nomga o'tadi. Nosozlikda na artefakt, na temp qoladi;
@@ -243,7 +261,7 @@ Timestamp: `FF_WIN_TIMESTAMP_URL` (default DigiCert).
 npm run test:plugin-installers
 ```
 
-**202/202 PASS.** Haqiqiy skriptlar va haqiqiy payload (mock YO'Q): macOS'da HAQIQIY
+**229/229 PASS.** Haqiqiy skriptlar va haqiqiy payload (mock YO'Q): macOS'da HAQIQIY
 `pkgbuild`/`productbuild` bilan `.pkg` quriladi va ichi ochib tekshiriladi (per-user
 install-location · `auth="none"` · faqat currentUserHome domeni · payload cpio ro'yxati
 flavor ro'yxatiga teng · AppleDouble `._` yozuvi yo'q · Admin sirti yo'q · `preinstall`
@@ -251,7 +269,10 @@ YO'Q · `postinstall`da `defaults`/`PlayerDebugMode`/`rm -rf`/`find` YO'Q); imzo
 uchun buzg'unchi arxiv fiksturalari (nom bir xil–bayt boshqa · takrorlangan nom ·
 `..`/absolyut yo'l · symlink yozuvi · yot `META-INF` yo'li) va MSI tuzilma tekshiruvi
 (ixtiyoriy baytlar rad, imzodan keyin ham qayta tekshiriladi) · WiX Id to'qnashuvi
-(`css/fonts` ↔ `js/fonts`); fail-closed uch
+(`css/fonts` ↔ `js/fonts`) · **Windows migratsiyasi** (har eski yo'l uchun AYNAN bitta
+`RemoveFile`, aniq `Name`/`Subdirectory`, `On="install"`, joker/`RemoveFolder`/CustomAction
+YO'Q, joriy payload va `assetflow-data` tozalanmaydi — bu blok 1cc01ad generatorida
+20 tekshiruv bilan yiqiladi); fail-closed uch
 holatda (kredensialsiz · qisman notarizatsiya kredensiali · imzolash buyrug'i yiqilganda)
 haqiqiy build ishga tushiriladi va yakuniy artefakt YO'Qligi, temp QOLMAGANI, parol/identika
 chop etilmagani tasdiqlanadi. "Boshqa artefakt tegilmadi" — ichki Admin arxivi va boshqa

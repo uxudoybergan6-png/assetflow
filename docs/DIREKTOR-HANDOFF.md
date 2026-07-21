@@ -167,6 +167,26 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 > `postinstall` faqat o'rnatma muvaffaqiyatli tugagach aniq nomli eski fayllarni olib
 > tashlaydi. Imzosiz QA paketi uchun dasturchi rejimini operator O'ZI qo'lda yoqadi.
 > `npm run test:plugin-installers` **202/202** (yangi regressiya testlari eski kodda yiqiladi).
+>
+> **Direktor auditi bo'yicha tuzatildi (1cc01ad ustiga, alohida commit) — WINDOWS MIGRATSIYASI:**
+> Mavjud foydalanuvchilarda MSI'dan OLDINGI (qo'lda nusxa yoki `.zxp`) o'rnatma bo'lishi mumkin,
+> unda endi ICHKI hisoblangan fayllar qoladi: `.debug`, `.debug.admin`, `AssetFlow_Admin.html`,
+> `CSXS/manifest.admin.xml`. `MajorUpgrade` FAQAT MSI o'zi o'rnatgan komponentni olib tashlaydi —
+> ya'ni bu qoldiqlar MSI'dan keyin ham joyida qolardi (macOS'da `postinstall` allaqachon tozalaydi,
+> Windows'da hech narsa yo'q edi). Endi `installer-wix.mjs` **`obsoleteInstallFiles()` ni yagona
+> manba sifatida** ishlatib har bir yo'l uchun AYNAN bitta standart **`<RemoveFile On="install">`**
+> qatorini generatsiya qiladi (`Directory="INSTALLFOLDER"`, ichma-ich yo'l uchun
+> `Subdirectory="CSXS"`). Qatorlar bitta per-user komponentda (`FF_LegacyCleanup`, HKCU keypath,
+> `ComponentRef` bilan o'rnatiladi); Id'lar to'liq nisbiy yo'l hash'idan — deterministik va noyob.
+> **Chegara:** joker (`*`/`?`) YO'Q · `RemoveFolder` YO'Q · CustomAction/skript YO'Q · papka
+> o'chirilmaydi · `assetflow-data` va joriy payload TEGILMAYDI (generator kesishuvda fail-closed).
+> MSI `RemoveFiles` amali `InstallFiles` dan oldin ishlaydi, ya'ni qoldiq yangi payload
+> joylashishidan avval ketadi. `npm run test:plugin-installers` **229/229**; migratsiya bloki
+> 1cc01ad generatorida **20 ta tekshiruv bilan yiqiladi** (alohida isbotlandi).
+> ⚠️ **Qolgan cheklov:** bu generatsiya darajasidagi kafolat — `.wxs` XML sifatida to'g'ri
+> (`xmllint`) va tarkibi testda qulflangan, ammo **HAQIQIY imzolangan `.msi` hali qurilmagan
+> va Windows'da sinalmagan**: `wix build` (WiX v4/v5 `Subdirectory` atributi), ICE validatsiyasi
+> va eski o'rnatma ustidan haqiqiy upgrade Windows mashinasida tasdiqlanishi SHART.
 > 🔴 **Bloker (EGA, kod EMAS):** Apple Developer ID Installer sertifikati + notarizatsiya
 > kredensiali, Windows Authenticode (EV) sertifikati/token, Windows mashinasi yoki
 > `windows-latest` CI (`dotnet tool install --global wix`).
