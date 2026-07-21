@@ -165,7 +165,7 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 >    olib tashlanganda skript FAIL berdi). Yangi dependency yo'q (Node builtin + tizim `unzip`).
 >    `--unsigned` arxivga qarshi ishga tushirildi: **34/34 referens tasdiqlandi, 0 FAIL**.
 > Tekshiruv: DB+API build OK · `test-plugin-release-contract.mjs` 14/14 · `test-plugin-download-state.mjs`
-> 10/10 · har ikkala plagin HTML'dagi barcha inline `<script>` (7+8) `node --check` bilan sintaksis
+> 10/10 · har ikkala plagin HTML'dagi barcha inline `<script>` (7+1, total 8) `node --check` bilan sintaksis
 > tasdiqlandi · himoyalangan zona (pul/kredit/billing/auth/DB sxema/deploy) diff'da YO'Q.
 
 > 🚧 **AKTIV — MUAMMOLAR V2 (jonli test muammolari).** 24 muammo (P1–P24) tahlil qilindi,
