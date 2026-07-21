@@ -982,6 +982,254 @@ chosen min column width and resulting column counts.
 
 ---
 
+## SC_54 — Composer controls must stay ONE row at EVERY panel width (no wrapping, no
+## broken labels/icons)
+
+**Problem (owner report + screenshot).** The composer's controls currently split across
+two rows (mode/model/output/audio on one line, Enhance/Clear/Generate on the next) and
+the arrangement changes as the panel is resized. Owner requirement: **regardless of how
+large or small the plugin panel is, the settings and actions stay on ONE single row**,
+and the labels/icons must never break, clip or distort.
+
+### Prompt for Claude Code
+
+```
+Repo ~/Projects/creative-tools-saas. Targets: plugins/after-effects-cep/
+AssetFlow_Plugin.html (all three tools: image, video, audio — the composer control row;
+node --check; keep ids/handlers bound; after edits run
+`bash plugins/after-effects-cep/scripts/install-cep.sh`) and
+packages/assetflow-studio/platform/index.html (same rule where its composer has the
+same row). 3 themes via var(--…) tokens. 🔴 Money guard: the Generate cost tag and
+Enhance ✦1 keep their exact values and stay fully visible at EVERY width — they are
+never truncated, never hidden, never moved off-row.
+
+REQUIREMENT: the composer's control row is ALWAYS exactly ONE row, at every panel width
+from 320px to 2500px and while the AE panel is being dragged/resized live. It must never
+wrap to a second line, never overflow horizontally, and no label or icon may clip,
+break mid-word, squash or distort.
+
+IMPLEMENT a deterministic compaction ladder (CSS-first; JS only for measuring if
+unavoidable). The row contains, in order: mode · model · output · audio · Enhance ·
+Clear · Generate(+cost). As available width shrinks, degrade in THIS priority order —
+each step applies only when the previous is not enough:
+  step 0 (wide): all chips with full labels.
+  step 1: drop secondary label words (e.g. "480p · Auto" stays, "AUDIO Off" → toggle +
+          short label).
+  step 2: model chip truncates its NAME with ellipsis (min ~8 visible chars) — the
+          chevron and icon never clip; full value in the title tooltip.
+  step 3: Clear → icon-only (tooltip keeps the word).
+  step 4: mode chip → icon-only; audio → toggle only.
+  step 5: Enhance → icon + ✦1 (word dropped, credit stays).
+  step 6 (narrowest): output chip → icon + value only.
+NEVER degraded: Generate — it always shows its label + cost tag in full.
+Rules: `flex-wrap: nowrap` on the row; each chip `min-width:0` with its own
+`text-overflow: ellipsis` on the LABEL span only (icons/badges/chevrons are
+`flex-shrink:0`); no horizontal scrollbar; hit areas stay ≥24px at every step; no
+layout jump when a step triggers (transition only per the motion tokens).
+Implement the steps with container-driven CSS (container queries if supported in this
+CEF build — verify; otherwise width breakpoints on the composer wrapper, or a single
+ResizeObserver that sets a `data-compact="0..6"` attribute on the row). If you use
+ResizeObserver, debounce ~100ms and hook it into the existing live-resize handler
+rather than adding a second listener.
+
+QA (must be continuous, not just at breakpoints): drag-resize the panel from 320 →
+2500px and back on EACH tool × 3 themes, with a LONG model name selected (e.g. "Gemini
+Omni Flash (Google Cloud)") and audio ON: the control row is always exactly one row
+(assert `offsetHeight` stays within one row's height and `scrollWidth <= clientWidth`
+at ~30 sampled widths — automate this check and paste the results); no clipped icons,
+no broken words, Generate + cost always fully visible; tooltips carry the full values;
+node --check; install-cep.sh; web spot-check (~390px → desktop); console clean.
+
+Finish: commit (clear message, no Co-Authored-By), do NOT push, short summary with the
+sampled-width assertion output and the compaction ladder as implemented.
+```
+
+**Model:** Fable 5 (Medium). Deterministic responsive rule with automated verification.
+
+---
+
+## SC_56 — Plugin finishing + full self-audit before live AE testing
+
+**Purpose.** Close the remaining PLUGIN-side gaps from earlier tasks and do a systematic
+self-audit of every plugin surface, so the owner's live After Effects test starts from a
+known-clean state. Three parts: (A) finish the deferred plugin pieces, (B) audit +
+fix every surface/handler, (C) produce a live-AE test checklist.
+
+### Prompt for Claude Code
+
+```
+Repo ~/Projects/creative-tools-saas. Primary target: plugins/after-effects-cep/
+AssetFlow_Plugin.html (~1.15MB, 7 inline scripts). Rules: validate every edited inline
+script with node --check; keep all ids/handlers bound; after edits run
+`bash plugins/after-effects-cep/scripts/install-cep.sh`. 3 themes (noir/neon/cold) via
+var(--…) tokens. Local stack for QA: `npm run studio` (API :4000) + a signed-in seed
+user (user@assetflow.uz / user123). Backend read-only unless a part explicitly needs an
+additive field. 🔴 MONEY GUARD: no changes to credit/cost/quote/HMAC/webhook logic or
+any price VALUE. UI CONSTITUTION binding: one chrome · card face = media, actions on
+hover/focus · ≤5 always-visible controls per zone (rest behind ⋯) · progressive
+disclosure (nothing removed, only relocated) · theme tokens only · prices always
+visible.
+
+Work the three PARTS in order. Commit after EACH part (3 commits), no push. If a part
+is blocked, record it and continue.
+
+PART A — finish the deferred plugin pieces (from SC_50 / SC_52 / the ⋯ overflow idea):
+1. Home "Explore" zone: add the curated AI-Stock row on the plugin Home between
+   Continue-a-session and Browse-by-category (find the endpoint the Stock Catalog's
+   "AI Stock" section already uses; reuse it — no new route). Card face = media, hover
+   action "Use as reference" only if that handler exists for the current tool; hide the
+   whole zone if the source is empty. Fits the full-height/masonry Home rules.
+2. Home category counts: the "Browse by category" tiles show REAL counts from the
+   existing catalog facets/counts; if counts are not exposed, omit the number (do NOT
+   invent) and do NOT add 6 requests — reuse one call.
+3. CMS-editable Home section headings: the new plugin Home sections (continue-sessions,
+   explore, categories) read their titles from the plugin content-config if present
+   (the schema was extended earlier — verify; if a heading field is missing, add it
+   ADDITIVELY to apps/api/src/lib/plugin-content-config.ts + the admin editor, ROOT
+   source + `npm run studio:sync`). Empty → ship default string.
+4. Composer overflow ⋯ (finishing SC_54/SC_55): at the narrowest widths, any control
+   that no longer fits the single row must NOT be clipped/hidden — it collapses into a
+   single "⋯" settings button placed just left of Enhance, opening a popover (reuse the
+   existing popover mechanism) that holds the SAME live controls (same handlers/state,
+   not copies), with full labels/values. Collapse priority: output & audio first, then
+   mode, then model; Generate(+cost) and Enhance ✦1 never collapse, never clip. Every
+   control reachable at every width — either in the row or in the ⋯ popover.
+
+PART B — full plugin self-audit (fix what you find; this is the core value):
+Walk EVERY logged-in surface and verify each interactive element's handler is bound and
+fires, at plugin widths 320/420/900 × 3 themes. Surfaces: top bar (seg Home/AI/Stock,
+credit chip → top-up, avatar → Account), Home (all zones + rails + hero prompt),
+AI Tools launcher, session picker (+ New session, open, rename), each gen workspace
+(image/video/audio: [+] menu, attachment strip, all composer chips + pickers, Enhance,
+Clear, Generate, collapse), gen cards (open = no black flash, Use ▾ menu = all 7
+actions), My Library (filters, masonry, Use-inside), Stock Catalog (search, category
+pills, filters, card → detail, Import), template detail (Import, Add to project),
+Projects (select + bulk delete), Account sheet (plan, theme switch, download folder,
+Sessions/Projects entries, Sign out), guest/login.
+For EACH surface produce a row in an audit table: surface → controls checked → PASS /
+FIXED(root cause) / BLOCKED(needs live AE or backend). Fix every dead click, console
+error, broken layout, off-token color, clipped/overflowing text you find. Confirm:
+node --check clean on all 7 scripts; browser console clean on every surface; no
+duplicate chrome; no favorites remnants; no upscale remnants; no "History" remnants.
+
+PART C — deliver a LIVE-AE test checklist (docs, no code):
+Write docs/PLUGIN-LIVE-AE-CHECKLIST.md — a concrete, ordered checklist the owner runs
+inside real After Effects after Cmd+Q relaunch: install, sign in, each nav tab, resize
+the panel small↔large (one-row composer + full-panel fill), create a session, generate
+one cheap item per mode (image/video/audio) and confirm it appears + the completion
+toast, open a gen and Import to AE (the ONLY step that truly needs AE — confirm the
+comp/footage lands), Use ▾ each action, import one Stock template into AE, theme
+switch, sign out/in. For each step: what to click, what "pass" looks like, and what to
+screenshot if it fails. Mark which steps were already verified in browser cep-mode vs
+which are AE-only.
+
+DELIVERABLE (summary): PART A per-item result, PART B audit table, PART C file path,
+and a single "plugin readiness" verdict line (what is green, what still needs live AE
+or deploy).
+```
+
+**Model:** Fable 5 (High). Finishing pass + systematic audit across the whole plugin.
+
+---
+
+## SC_57 — Seedance/BytePlus: diagnose the generation FAILURE + add the remaining
+## BytePlus models (backend + both clients + plugin)
+
+**Problem (owner report + 2 screenshots).**
+1. Generating through Seedance (BytePlus) FAILS: the history shows a Seedance 2.0 job
+   "Failed · 50 cr · Refunded" for the same prompt where Gemini Omni succeeded — so
+   Seedance specifically is broken. Diagnose and fix the real cause.
+2. The BytePlus/ModelArk console has more ACTIVATED models than the app exposes
+   (screenshot: Dola-Seedream-5.0-pro, Dreamina-Seedance-2.0, Dreamina-Seedance-2.0-fast,
+   Dola-Seedream-5.0-lite, ByteDance-Seedream-4.5, …). Read the BytePlus docs fully,
+   analyze every BytePlus model, and add the missing ones — correctly wired end to end,
+   visible in web AND plugin.
+
+**⚠️ This task is MONEY-ZONE ADJACENT.** Adding a new model introduces NEW price values
+(allowed) but must NOT touch the FROZEN logic (existing consume/refund, cost-quote HMAC,
+computeGenCost/imageUnitCost bodies, webhook idempotency, or any EXISTING model's price).
+New prices follow the project's margin rule and the boot cost-assertion.
+
+### Prompt for Claude Code
+
+```
+Repo ~/Projects/creative-tools-saas. Scope: apps/api (BytePlus adapter + model catalog
++ studio-gen route), plugins/after-effects-cep/AssetFlow_Plugin.html (node --check;
+install-cep.sh after edits), packages/assetflow-studio/platform/index.html (web).
+Local stack: `npm run studio` (API :4000). 🔴 MONEY GUARD: do NOT modify credit
+consume/refund, the signed cost-quote/HMAC (lib/gen-quote.ts), the bodies of
+computeGenCost/imageUnitCost, webhook idempotency, or any EXISTING model's price value.
+Adding NEW models with NEW prices is allowed but each new price MUST follow the repo's
+margin rule and pass the boot cost-assertion (a channel sold below cost must refuse to
+boot — verify it still holds).
+
+TRUTH SOURCES (read fully; do NOT guess BytePlus behavior):
+- docs/BYTEPLUS-DOCS-MODELS.md (per-model exact schema: param names, input format,
+  output shape, pricing)
+- docs/BYTEPLUS-ANALYSIS.md
+- docs/FAL-AI-CATALOG.md / docs/GEN-MODEL-MATRIX.md (KEEP/REPLACE/ADD verdicts + matrix)
+- apps/api/src/lib/ai/byteplus.ts (the adapter — how requests/responses are built)
+- apps/api/src/lib/gen-models.ts (existing Seedance/Seedream entries: seedream-5-0-260128,
+  dola-seedream-5-0-pro-260628, dreamina-seedance-2-0-*)
+- apps/api/src/routes/studio-gen.ts (POST /gen + /gen/cost-quote validation + how jobs
+  run and how failures/refunds are recorded)
+- apps/api/src/lib/gen-processor.ts (job processing)
+If the repo docs lack a specific field for a NEW model, you MAY fetch the official
+BytePlus/ModelArk docs for THAT field only — but the repo docs remain authoritative
+where they exist.
+
+PART 1 — DIAGNOSE THE SEEDANCE FAILURE FIRST (highest priority; a real refund is
+happening):
+Reproduce a Seedance 2.0 video generation against the local API (or trace the code path
+end to end) and find why it FAILS while other providers succeed. Check, in order: the
+byteplus.ts request payload built for Seedance (param names/format vs
+BYTEPLUS-DOCS-MODELS.md — e.g. duration string vs number, aspect/resolution keys, i2v
+frame keys), the ModelArk model ID/region/endpoint, auth header (`Authorization: Key`),
+the queue/submit + poll handling, the response parsing (CDN URL → GCS), and any timeout.
+Fix the ROOT cause so Seedance completes. Confirm the refund path still fires correctly
+ONLY on genuine failure (do not break refund). Do NOT alter credit math — only the
+request/response correctness. State the exact root cause in the summary.
+
+PART 2 — ADD THE REMAINING BYTEPLUS MODELS:
+1. Enumerate every BytePlus model that is ACTIVATED in the console/docs but NOT yet in
+   gen-models.ts (from the screenshot at least: Dreamina-Seedance-2.0-fast,
+   Dola-Seedream-5.0-lite, ByteDance-Seedream-4.5; plus any others the docs list).
+   Produce a table: model → mode(image/video) → docs schema ref → activation/prepay
+   requirement → verdict (ADD now / needs prepay-pack / skip + reason).
+2. For each ADD: create the gen-models.ts entry using the EXACT schema from
+   BYTEPLUS-DOCS-MODELS.md (byteplusModel ID, mode, referenceMode, supported aspects/
+   resolutions/durations, frame support, param mapping) and the adapter path in
+   byteplus.ts (extend the adapter only if a new model needs a param the adapter
+   doesn't build — additive, no change to existing model handling). Price each new
+   model from its official BytePlus cost via the repo's margin rule; set enabled:true
+   ONLY for models whose price is confirmed and whose activation needs no missing
+   prepay pack — otherwise enabled:false with a clear comment (a disabled catalog entry
+   must not be sellable). Never sell a channel below cost (boot-assertion).
+3. Wire visibility: the new models appear in the model picker in BOTH web and plugin
+   (same catalog source — no client hardcoding), with correct per-model composer
+   controls (SC_42 capability map picks them up automatically if the entry is complete;
+   verify).
+4. Verification: extend and run the per-model payload script
+   (verify-gen-payloads.mjs) so EVERY enabled model — old and new — builds a valid
+   payload that passes /gen/cost-quote against the local API. Then do ONE real cheap
+   generation per newly-enabled model if activation allows (image models are cheap);
+   for video, at minimum confirm Seedance 2.0 now SUCCEEDS end to end. Paste the
+   per-model PASS/FAIL table.
+
+RULES: additive only; `npm run build -w apps/api` passes; if a model needs a prepay
+pack the owner hasn't bought, leave it enabled:false and list it as an owner action —
+do NOT hack the client. node --check the plugin; install-cep.sh; web console clean.
+
+DELIVERABLE (summary): the Seedance root cause + fix; the added-models table with prices
+and enabled state; the per-model verification table; and any owner actions (prepay
+packs, region/keys).
+```
+
+**Model:** Fable 5 (High / Extra). Provider-integration debugging + catalog extension
+next to the money zone — maximum care, docs-grounded.
+
+---
+
 # MASTER EXECUTION ORDER — ROUND 3 (Director's ordering, 2026-07-17)
 
 One prompt per fresh Code session (`/clear`). In-group order is binding.

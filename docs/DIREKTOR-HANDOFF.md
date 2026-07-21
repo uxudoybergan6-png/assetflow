@@ -374,11 +374,44 @@ Qidiruv **indekssiz ILIKE** — 5000'da 5 ms, lekin chiziqli. ~15-20k'dan keyin 
   ✅ **YANGI #H1 BAJARILDI (9448382, PUSH BO'LDI — origin/main=9448382):** Home tab clean-room
   `.fhome` (Direktor spec 1:1) — jonli model narxlari (`/gen/models`), real-katalog javoni
   (fallback yo'q), QA: 3 tema × 320/420/600 × 820/620/500 PASS, install-cep.sh bajarilgan.
-  🚧 **SC-3 DAVRA TAYYOR (2026-07-17): SC_41–SC_53 (13 prompt)** —
-  `docs/FIX-PROMPTS-SC3-2026-07-17.md`. Raqamlar GLOBAL ketma-ketlikda (to'qnashuv yo'q).
-  Tartib fayl oxirida: A struktura (41-B→49→48→47) → B composer (42→43) → C holat
-  (46→44) → D Home/katalog (50→52→45→53) → E motion (51). Muhim: 42 → 41/A ni bekor
-  qiladi · 52 → 50 zona tartibini yangilaydi · 51 eng oxirida.
+  🆕 **R4 DAVRA (2026-07-20):** `docs/FIX-PROMPTS-R4-2026-07-20.md`.
+  ✅ **R4_01 (f74c7ee):** Seedance 2.0 Mini (3103) — aktiv, e2e tasdiqlangan.
+  ✅ **R4_02 (a7dd487):** Kling 3.0 to'g'ridan-API — YANGI provayder `kling.ts`; 5 model
+  (3004 t2v/3005 Turbo/3008 Omni-video/1030 Image/1031 Image-Omni), 5/5 e2e tasdiqlangan,
+  R2'ga tushdi. Eski fal placeholder 3004/3005 haqiqiy Kling bilan almashtirildi.
+  ✅ **R4_03 (10f2d07):** Topaz POYDEVOR — `topaz.ts` adapter + dormant provayder yo'llari,
+  0 model / 0 UI / pul-zona daxlsiz. Probe: auth PASS · 46 supportedModels · video-create
+  PASS · 🔴 rasm 412 "No valid subscription" (EGA: Topaz obuna kerak). Manba:
+  `docs/TOPAZ-API-NOTES.md` + `docs/topaz/*.yaml`.
+  ✅ **R4_07 (5e4197d):** Topaz OPERATSIYA katalogi (composer modeli EMAS, opType-filtrli) —
+  5001 Upscale Video (Proteus) ✅ · 5002 Upscale Image (Gigapixel) ✅ · 5003 RemoveBG ❌
+  (Topaz'da 3/3 Failed — EGA: Topaz planда Matting/BG yoqilsin, kod tayyor). Narx marja
+  qoidasi + `TOPAZ_USD_PER_CREDIT` env. Pul-zona daxlsiz, boot floor PASS.
+  ✅ **R4_05 (d5a5eb6):** o'lchangan xarajat marja/panelga ulandi — Seedream Lite/4.5
+  narx $0.50→$0.0705, marja **−229%→+54%**. Xavfsizlik: BytePlus rasm token→USD invoys
+  bilan tasdiqlanmagan → o'lchov faqat video + jadvalsiz rasm(Lite/4.5)da ishlatiladi,
+  tasdiqlangan jadvalni pasaytirmaydi. Control (Nano Banana) o'zgarmagan, floor PASS.
+  ✅ **R4_06 (fd4a7ef):** Pricing panelда measured/table/estimate belgilar + "Measure cost"
+  tugma (jonli probe) + "Measure all missing" + "cost rose" tasdiq-gate.
+  ✅ **R4_08 (65331b5):** gen/library kartada bir-klik **Use ▸ Upscale** (plagin+web) —
+  yangi `GET /gen/ops`. Gigapixel rasm E2E ishladi (✦11→done→R2). Topaz nihoyat userда.
+  ✅ **R4_04 (4520fcb):** Google real-yuz rad etilishi → toza xabar (xom JSON yo'q) +
+  real-yuz modeli taklifi (Omni→Seedance Fast); bad-params 400 over-match yo'q.
+  🟢 **R4 DAVRA TUGADI — hammasi origin/main'da (e1aa2f5).** Topaz bir-klik: Gigapixel rasm
+  + Proteus video 2×/4× yoqilgan; RemoveBG entitlement kutmoqda.
+  🔑 EGA: (1) Topaz Matting/BG yoqilsin → 5003 enabled · (2) Seedream rasm narxini haqiqiy
+  invoysga solishtir · (3) "Measure cost" faqat BytePlus (token); boshqalar jadvaldan.
+  🔑 EGA: Topaz obuna aktivlashtirish · narxlarni 1-invoysdan keyin admin Apply-margin ·
+  probe skriptlar qayta ishlatiladi (probe-kling/topaz/byteplus, e2e-gen-once).
+  ✅ **SC-3 DAVRA TUGADI (2026-07-17): 13/13 (SC_41B–SC_53), 13 commit, PUSH YO'Q** —
+  `docs/FIX-PROMPTS-SC3-2026-07-17.md` + `docs/SESSION-REPORT.md` (13-model PASS jadvali).
+  Bo'sh-ekranlar o'chdi · Favorites olib tashlandi (backend jadval tegilmagan) · yagona
+  chrome · ovoz pikeri · composer 3-qatorli anatomiya + ikonkali sig'im · sessiya/karta
+  ochilishida chaqnash yo'q · Home 3→6 zona + admin New/Top rail (`home.rails` sxema) ·
+  My Library masonry + Use ichida · web katalog fluid · motion tizimi.
+  👉 QOLDIQ (EGA/keyingi davra): SC_50 Explore zonasi + CMS sarlavhalar + kategoriya
+  sonlari · SC_52 web rail pariteti + admin drag-tartiblash · SC_49 prod favorites
+  ma'lumot qarori · deploy (push → API → wrangler → CF Pages → migratsiya) → AE E2E.
   ✅ **SC-2 DAVRA TUGADI (2026-07-17): 16/16 (SC_25–SC_40), har biriga commit, PUSH
   qisman** — `docs/FIX-PROMPTS-SC2-2026-07-17.md` + jamlama `docs/SESSION-REPORT.md`
   (SC_30 amal-matritsasi + SC_27 13-model PASS jadvali shu yerda). Asosiylari: sessiya
