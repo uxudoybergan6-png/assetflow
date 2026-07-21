@@ -121,27 +121,34 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ---
 
-## 5. JORIY HOLAT (2026-07-21)
+## 5. JORIY HOLAT (2026-07-22)
 
-> ✅ **RELIZ XAVFSIZLIGI: mijoz plagini ↔ ichki Admin AJRATILDI (push/deploy YO'Q).**
-> Avval bitta ommaviy arxivda `AssetFlow_Plugin.html` HAM `AssetFlow_Admin.html` HAM ketardi,
-> `manifest.xml` ikkala extension ID'ni ochardi va Admin dispatch `--disable-web-security`
-> bilan ishlardi. Endi 2 alohida flavor: **customer** (`com.frameflow.panel`, default) va
-> **admin** (`com.frameflow.admin`, ICHKI, alohida bundle/papka/nom). Yagona manba —
-> `plugins/after-effects-cep/scripts/package-flavors.mjs`. `--disable-web-security` **ikkala**
-> manifestdan olib tashlandi; backend CORS/auth (`requireAuth`+`requireAdmin`) TEGILMAGAN.
-> Imzolash endi **fail-closed**: `ZXP_CERT` + `ZXP_CERT_PASS` shart; self-signed sertifikat
-> yaratish va qattiq yozilgan parol O'CHIRILDI; build boshida eski yakuniy `.zxp` bekor qilinadi,
-> imzo chegaralangan temp'ga tushib faqat muvaffaqiyatda atomik `mv` bo'ladi (nosozlikda na temp,
-> na yakuniy artefakt qoladi). `install-cep.sh` default = faqat mijoz;
-> Admin uchun aniq `--admin` opt-in. Yangi test `test-package-security.mjs` **haqiqiy qurilgan
-> arxivlarni va haqiqiy build'ni** tekshiradi (47/47 PASS, negativ fiksturalar bilan); test
-> mavjud IMZOLANGAN relizga tegmaydi — u yerda fayl bo'lsa hech narsa qilmasdan to'xtaydi.
-> Buyruqlar/qoidalar: **`docs/RELEASE-ARCHITECTURE.md`**.
-> 🔴 **Panel-ichi self-updater RELIZGA TASDIQLANMAGAN** — keyingi task uni tashqi, imzo
-> tekshiradigan installer/updater bilan almashtiradi. Kod bu taskda O'ZGARTIRILMADI.
+> ✅ **TASK 2: PANEL SELF-UPDATER O'CHIRILDI → OS INSTALLER ZANJIRI (push/deploy YO'Q).**
+> Avval panel yangilanishni o'zi o'rnatardi (zip → `unzip` → extension papkasi ustiga `cp -R`) —
+> bu CEP'da ishonchsiz va butunlik majburiy tekshirilmasdi. Endi panel HECH NARSA o'rnatmaydi:
+> OS aniqlanadi (**faqat** mac=`.pkg` · win=`.exe`/`.msi`), artefakt HTTPS'dan chegaralangan
+> temp papkaga tushadi, **SHA-256 (64 hex) MAJBURIY** tekshiriladi, so'ng fayl argument-massiv
+> bilan OS installeriga topshiriladi (`/usr/bin/open` · `msiexec /i`). Ishonch chegarasi = OS.
+> Nosozlikda halol xabar + "Open download page" (papka almashtirish maslahati YO'Q).
+> Poll / Later / mandatory / English UI o'zgarmagan. `GET /api/plugin/version` endi
+> `platform=` oladi va FAQAT o'sha platformaning installerini beradi (storage kaliti chiqmaydi);
+> admin publish SHA-256'ni storage'dan QAYTA hisoblab solishtiradi. Additive migratsiya:
+> `PluginInstaller` + `downloadKey` nullable. Kontrakt: **`docs/PLUGIN-UPDATE-CHAIN.md`**.
+> 🔴 **Task 3 (keyingi):** imzolangan `.pkg`/`.exe` artefaktlarini QURISH — tayyor copy-paste
+> prompt `docs/NEXT-TASK-INSTALLER-ARTIFACTS.md`. Bloker (EGA): Apple Developer ID Installer
+> sertifikati + notarizatsiya kredensiali, Windows Authenticode (EV) sertifikati.
 > 🔴 **Ega ishi (o'zgarmadi):** `PluginRelease` jadvalida hali reliz yo'q → prod'da download
-> tugmasi halol "beta hali chiqmagan" deydi. Imzolangan `.zxp` + reliz yozuvi SHART.
+> tugmasi halol "beta hali chiqmagan" deydi.
+
+## 5a. OLDINGI HOLAT (2026-07-21) — qisqacha
+
+> ✅ **Reliz xavfsizligi:** mijoz plagini ↔ ichki Admin AJRATILDI — 2 flavor (**customer**
+> `com.frameflow.panel` default · **admin** `com.frameflow.admin` ICHKI), yagona manba
+> `scripts/package-flavors.mjs`; `--disable-web-security` ikkala manifestdan olib tashlandi
+> (backend CORS/auth TEGILMAGAN); ZXP imzolash **fail-closed** (`ZXP_CERT`+`ZXP_CERT_PASS` shart,
+> self-signed/qattiq parol o'chirilgan, nosozlikda artefakt qolmaydi); `install-cep.sh` default =
+> faqat mijoz. Test `test-package-security.mjs` 47/47 (haqiqiy build + negativ fiksturalar).
+> Batafsil: **`docs/RELEASE-ARCHITECTURE.md`**.
 
 > Oldingi tugagan ishlar (dependency security, Launch Task A/B, R4, BATCH oqimi, MUAMMOLAR 1/2)
 > shu daftarda TAKRORLANMAYDI — tafsilot: `docs/SESSION-REPORT.md`, `docs/FIX-PROMPTS-*.md`,

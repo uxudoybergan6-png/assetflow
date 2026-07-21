@@ -20,6 +20,7 @@ import {
   getPublicUrl,
   isS3Configured,
   getS3ObjectMeta,
+  sha256OfS3Object,
 } from "../lib/s3.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
@@ -69,7 +70,12 @@ import {
   savePluginContentConfig,
   resetPluginContentConfig,
 } from "../lib/plugin-content-config.js";
-import { isZxpReleaseKey } from "../lib/plugin-release-contract.js";
+import {
+  isZxpReleaseKey,
+  validateInstallerInput,
+  installerExtension,
+  INSTALLER_PLATFORMS,
+} from "../lib/plugin-release-contract.js";
 
 export const adminRouter = Router();
 
@@ -1315,19 +1321,58 @@ adminRouter.get("/metrics", async (req, res) => {
 // so'nggisini qaytaradi — plagin banneri shu bilan ishlaydi.
 const releaseSchema = z.object({
   version: z.string().regex(/^\d+\.\d+\.\d+$/, "Version must be semver: 1.2.3"),
+  // LEGACY .zxp — endi IXTIYORIY (qo'lda yuklab olish sahifasi uchun). Panel uni
+  // hech qachon avtomatik o'rnatmaydi; avtomatik yangilanish faqat `installers` bilan.
   key: z
     .string()
     .min(1)
     .refine((k) => k.startsWith("releases/"), "Key must be under releases/")
-    .refine(isZxpReleaseKey, "Key must point to a signed .zxp package"),
+    .refine(isZxpReleaseKey, "Key must point to a signed .zxp package")
+    .optional(),
   releaseNotes: z.string().max(4000).optional(),
   mandatory: z.boolean().optional(),
   minSupportedVersion: z.string().regex(/^\d+\.\d+\.\d+$/).optional().or(z.literal("").transform(() => undefined)),
   checksum: z.string().max(128).optional(),
+  // Task 2 — platformaga xos installerlar (mac .pkg / win .exe|.msi). Har biri uchun
+  // SHA-256 MAJBURIY va serverda storage'dan qayta hisoblanadi.
+  installers: z
+    .array(
+      z.object({
+        platform: z.string().min(1),
+        key: z.string().min(1),
+        sha256: z.string().min(1),
+      })
+    )
+    .max(INSTALLER_PLATFORMS.length)
+    .optional(),
 });
 
+/** Installer artefakti uchun tekshiruv chegarasi (server SHA-256'ni oqim bilan qayta
+ *  hisoblaydi — cheklanmagan ish bo'lmasin). */
+const MAX_INSTALLER_VERIFY_BYTES = 512 * 1024 * 1024;
+
 adminRouter.get("/plugin-releases", async (_req, res) => {
-  const items = await prisma.pluginRelease.findMany({ orderBy: { publishedAt: "desc" }, take: 50 });
+  const rows = await prisma.pluginRelease.findMany({
+    orderBy: { publishedAt: "desc" },
+    take: 50,
+    include: { installers: { orderBy: { platform: "asc" } } },
+  });
+  // storageKey admin javobida ham ochilmaydi (kalitlar UI'ga tushmasin).
+  const items = rows.map((r) => ({
+    id: r.id,
+    version: r.version,
+    releaseNotes: r.releaseNotes,
+    mandatory: r.mandatory,
+    minSupportedVersion: r.minSupportedVersion,
+    publishedAt: r.publishedAt,
+    hasLegacyZxp: !!r.downloadKey,
+    installers: r.installers.map((i) => ({
+      platform: i.platform,
+      ext: installerExtension(i.storageKey),
+      sha256: i.sha256,
+      sizeBytes: i.sizeBytes,
+    })),
+  }));
   res.json({ items });
 });
 
@@ -1337,11 +1382,61 @@ adminRouter.post("/plugin-releases", async (req, res) => {
     res.status(400).json({ error: p.error.issues[0]?.message || "Invalid release" });
     return;
   }
-  // Paket haqiqatan yuklanganini tasdiqlaymiz (HeadObject) — bo'sh reliz e'lon qilinmasin.
-  const meta = await getS3ObjectMeta(p.data.key);
-  if (meta.sizeBytes == null) {
-    res.status(400).json({ error: "Package not found in storage — upload it first" });
+  const rawInstallers = p.data.installers ?? [];
+  if (!p.data.key && rawInstallers.length === 0) {
+    res.status(400).json({ error: "Upload at least one platform installer (.pkg / .exe / .msi)" });
     return;
+  }
+  // 1) Installer kontrakti — platforma allowlist, kengaytma, SHA-256 shakli (fail-closed).
+  const validated: { platform: string; key: string; sha256: string }[] = [];
+  const seenPlatforms = new Set<string>();
+  for (const raw of rawInstallers) {
+    const v = validateInstallerInput(raw);
+    if (!v.ok) {
+      res.status(400).json({ error: v.error });
+      return;
+    }
+    if (seenPlatforms.has(v.platform)) {
+      res.status(400).json({ error: `Duplicate installer for ${v.platform}` });
+      return;
+    }
+    seenPlatforms.add(v.platform);
+    validated.push({ platform: v.platform, key: v.key, sha256: v.sha256 });
+  }
+  // 2) LEGACY .zxp berilgan bo'lsa — storage'da bor bo'lishi shart.
+  let legacySize: number | null = null;
+  if (p.data.key) {
+    const meta = await getS3ObjectMeta(p.data.key);
+    if (meta.sizeBytes == null) {
+      res.status(400).json({ error: "Package not found in storage — upload it first" });
+      return;
+    }
+    legacySize = meta.sizeBytes;
+  }
+  // 3) Har installer: storage'da mavjud + SHA-256 SERVERDA qayta hisoblanadi va mos kelishi shart.
+  const installerRows: { platform: string; storageKey: string; sha256: string; sizeBytes: number }[] = [];
+  for (const inst of validated) {
+    const meta = await getS3ObjectMeta(inst.key);
+    if (meta.sizeBytes == null || meta.sizeBytes <= 0) {
+      res.status(400).json({ error: `Installer for ${inst.platform} not found in storage — upload it first` });
+      return;
+    }
+    if (meta.sizeBytes > MAX_INSTALLER_VERIFY_BYTES) {
+      res.status(400).json({ error: `Installer for ${inst.platform} is too large to verify` });
+      return;
+    }
+    let actual: string;
+    try {
+      actual = await sha256OfS3Object(inst.key, MAX_INSTALLER_VERIFY_BYTES);
+    } catch {
+      res.status(400).json({ error: `Could not verify the ${inst.platform} installer in storage` });
+      return;
+    }
+    if (actual.toLowerCase() !== inst.sha256) {
+      res.status(400).json({ error: `SHA-256 mismatch for the ${inst.platform} installer — re-upload and try again` });
+      return;
+    }
+    installerRows.push({ platform: inst.platform, storageKey: inst.key, sha256: actual.toLowerCase(), sizeBytes: meta.sizeBytes });
   }
   const exists = await prisma.pluginRelease.findUnique({ where: { version: p.data.version } });
   if (exists) {
@@ -1351,22 +1446,35 @@ adminRouter.post("/plugin-releases", async (req, res) => {
   const row = await prisma.pluginRelease.create({
     data: {
       version: p.data.version,
-      downloadKey: p.data.key,
+      downloadKey: p.data.key ?? null,
       releaseNotes: p.data.releaseNotes ?? null,
       mandatory: !!p.data.mandatory,
       minSupportedVersion: p.data.minSupportedVersion ?? null,
       checksum: p.data.checksum ?? null,
       createdById: req.user?.userId ?? null,
+      installers: { create: installerRows },
     },
+    include: { installers: true },
   });
   await writeAuditLog({
     actorId: req.user?.userId ?? null,
     action: "plugin_release.publish",
     targetType: "pluginRelease",
     targetId: row.version,
-    meta: { sizeBytes: meta.sizeBytes, mandatory: row.mandatory },
+    meta: {
+      sizeBytes: legacySize,
+      mandatory: row.mandatory,
+      installers: row.installers.map((i) => ({ platform: i.platform, sizeBytes: i.sizeBytes, sha256: i.sha256 })),
+    },
   });
-  res.status(201).json(row);
+  res.status(201).json({
+    id: row.id,
+    version: row.version,
+    mandatory: row.mandatory,
+    minSupportedVersion: row.minSupportedVersion,
+    publishedAt: row.publishedAt,
+    installers: row.installers.map((i) => ({ platform: i.platform, sha256: i.sha256, sizeBytes: i.sizeBytes })),
+  });
 });
 
 adminRouter.delete("/plugin-releases/:id", async (req, res) => {

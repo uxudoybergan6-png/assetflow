@@ -151,20 +151,38 @@ node plugins/after-effects-cep/scripts/verify-zxp-package.mjs [archive.zip]
 
 ---
 
-## 4. Yangilanish (updater) — HOZIRCHA RELIZGA TASDIQLANMAGAN
+## 4. Yangilanish (updater) — Task 2 (2026-07-22): SELF-UPDATER OLIB TASHLANDI
 
-`AssetFlow_Plugin.html` ichidagi panel-ichi self-updater (`/api/plugin/version` → yuklab olish →
-o'rnatish taklifi) **reliz uchun TASDIQLANMAGAN**:
+Panel-ichi **o'z-o'zini yozadigan** updater (zip yuklab olish → arxivni ochish → extension
+papkasi ustiga nusxalash) **butunlay o'chirildi**. Sabab: CEP'da ishonchsiz (AE fayllarni band
+qiladi, papka huquqi, qisman yozilish) va paket butunligi klientda majburiy tekshirilmasdi.
 
-- panel o'zini o'zi yangilashi CEP'da ishonchli emas (AE fayllarni band qiladi, papka huquqi,
-  qisman yozilish);
-- yuklab olingan paketning imzosi/butunligi klientda mustaqil tasdiqlanmaydi.
+O'rniga — **platformaga xos installer + majburiy SHA-256 + OS'ga topshirish**:
 
-**Rejalashtirilgan yechim (keyingi task):** tashqi, tasdiqlangan installer/updater — imzolangan
-`.zxp` ni oladi, imzo/checksum'ni tekshiradi, AE tashqarisida o'rnatadi. Bu task uni **loyihalamaydi
-va o'zgartirmaydi**; joriy implementatsiya faqat "tasdiqlanmagan" deb belgilangan.
+- panel `GET /api/plugin/version?current=…&platform=mac|win` chaqiradi va FAQAT o'z
+  platformasining artefaktini oladi (storage kaliti ochilmaydi);
+- artefakt HTTPS'dan chegaralangan vaqtinchalik papkaga tushadi (nom versiyadan quriladi),
+  **SHA-256 mos kelmasa yoki yo'q bo'lsa — o'chiriladi va hech narsa ishga tushmaydi**;
+- fayl **argument-massiv** bilan OS'ga topshiriladi: mac `.pkg` → `/usr/bin/open`,
+  win `.msi` → `msiexec /i`, win `.exe` → to'g'ridan. Panel imtiyoz ko'tarmaydi va
+  AE ichida hech narsa o'rnatmaydi. **Ishonch chegarasi — OS installeri.**
+- nosozlikda faqat tasdiqlangan installer / yuklab olish sahifasi taklif qilinadi;
+  extension papkasini qo'lda almashtirish maslahati BERILMAYDI.
 
-Shu sababli hozircha reliz kanali = qo'lda tarqatilgan imzolangan `.zxp`.
+Legacy `.zxp` — faqat **qo'lda** yuklab olish uchun (veb sahifa). Panel `.zxp`ni hech qachon
+avtomatik o'rnatmaydi (test buni majburlaydi).
+
+Kontrakt, API shakli, admin publish qoidalari va foydalanuvchi oqimi:
+**`docs/PLUGIN-UPDATE-CHAIN.md`**. Keyingi task (imzolangan `.pkg`/`.exe` artefaktlarini
+qurish): **`docs/NEXT-TASK-INSTALLER-ARTIFACTS.md`**.
+
+```bash
+npm run test:plugin-updater      # jonli AF-UPDATER bloki — 64 case (mutatsiya isboti bilan)
+npm run test:release-contract    # server kontrakti — 85 case
+```
+
+⚠️ Reliz hali ham CHIQMAGAN: imzolangan installer artefaktlari (Task 3) va `PluginRelease`
+yozuvi yo'q — bu ega/operator ishi.
 
 ---
 

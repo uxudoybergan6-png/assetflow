@@ -920,20 +920,42 @@ model PluginContentConfig {
 }
 
 // ── P11 — Plagin relizlari (in-panel update kanali). ADDITIVE: mavjud modellarga
-// tegilmaydi. downloadKey = storage'dagi paket (releases/<v>.zip); mandatory yoki
-// minSupportedVersion ostidagi klient bloklanadi (update majburiy).
+// tegilmaydi. mandatory yoki minSupportedVersion ostidagi klient bloklanadi (update majburiy).
+// downloadKey = LEGACY .zxp (faqat qo'lda yuklab olish sahifasi uchun; Task 2'dan keyin
+// ixtiyoriy — panel .zxp'ni HECH QACHON avtomatik o'rnatmaydi).
 model PluginRelease {
   id                  String   @id @default(cuid())
   version             String   @unique // semver: "1.2.0"
-  downloadKey         String   // storage kaliti (releases/...)
+  downloadKey         String?  // LEGACY .zxp storage kaliti (releases/...) — ixtiyoriy
   releaseNotes        String?  @db.Text
   mandatory           Boolean  @default(false)
   minSupportedVersion String?  // bundan past klientlar bloklanadi
-  checksum            String?  // sha256 (ixtiyoriy, updater tekshiradi)
+  checksum            String?  // legacy .zxp sha256 (ixtiyoriy)
   publishedAt         DateTime @default(now())
   createdById         String?
 
+  installers PluginInstaller[]
+
   @@index([publishedAt])
+}
+
+// ── Task 2 (2026-07-22) — PLATFORMAGA XOS INSTALLER artefakti.
+// Panel endi o'zini o'zi ustiga yozmaydi: shu artefaktni yuklab oladi, SHA-256'ni
+// MAJBURIY tekshiradi va OS installeriga topshiradi (mac .pkg → Installer.app,
+// win .exe/.msi → OS/UAC). sha256 — 64 hex, publish paytida serverda qayta hisoblanadi.
+model PluginInstaller {
+  id         String   @id @default(cuid())
+  releaseId  String
+  platform   String   // "mac" | "win" (allowlist — lib/plugin-release-contract.ts)
+  storageKey String   // releases/... (.pkg | .exe | .msi)
+  sha256     String   // 64 hex, kichik harf
+  sizeBytes  Int
+  createdAt  DateTime @default(now())
+
+  release PluginRelease @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+
+  @@unique([releaseId, platform])
+  @@index([releaseId])
 }
 
 // ── P1 #19 (P6 §4 / P7 §8) — QAYTA TIKLANADIGAN BULK-INGEST NAVBATI ──────────

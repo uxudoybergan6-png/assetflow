@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { pipeline } from "stream/promises";
@@ -615,6 +616,33 @@ export async function uploadStreamToS3(
     throw err;
   }
   return getPublicUrl(s3Key);
+}
+
+/**
+ * Task 2 — obyektning SHA-256'ini STORAGE'DAN oqim bilan hisoblaydi (xotiraga to'liq
+ * olinmaydi: doimiy ~64KB). Admin plagin installerini e'lon qilganda serverda qayta
+ * hisoblanadi — e'lon qilingan digest saqlangan baytlarga MOS bo'lishi shart.
+ * maxBytes'dan katta obyekt — xato (cheklanmagan ish yo'q).
+ */
+export async function sha256OfS3Object(key: string, maxBytes: number): Promise<string> {
+  const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  if (!res.Body) throw new Error(`Object is empty or not found: ${key}`);
+  if (typeof res.ContentLength === "number" && res.ContentLength > maxBytes) {
+    throw new Error(`Object too large to verify: ${res.ContentLength} > ${maxBytes}`);
+  }
+  const body = res.Body as Readable;
+  const hash = crypto.createHash("sha256");
+  let seen = 0;
+  for await (const chunk of body) {
+    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
+    seen += buf.length;
+    if (seen > maxBytes) {
+      body.destroy();
+      throw new Error(`Object too large to verify: > ${maxBytes} bytes`);
+    }
+    hash.update(buf);
+  }
+  return hash.digest("hex");
 }
 
 /** R2/S3 obyektni to'g'ridan-to'g'ri xotiraga (Buffer) yuklab oladi — kichik fayllar uchun. */

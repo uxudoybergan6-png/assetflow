@@ -16508,116 +16508,238 @@ window.afGallery=(function(){
   var snb=$('spickNew'); if(snb)snb.addEventListener('click',function(){ if(spickMode)spickEnter(spickMode,null); });
 })();
 
-/* ===== P11 — PLAGIN UPDATE TIZIMI (in-panel bildirishnoma + o'rnatish) =====
+/* AF-UPDATER-BEGIN — plagin yangilanish bildirishnomasi (test-updater-security.mjs shu chegaralarni o'qiydi) */
+/* ===== P11 / Task 2 — PLAGIN YANGILANISH BILDIRISHNOMASI =====
    Ikki kanal: (1) model/tool/narx = server-driven (reliz kerak emas);
-   (2) plagin KODI = GET /api/plugin/version → markaziy modal → Update.
-   O'rnatish: FAQAT bizning API'ning imzolangan URL'i (first-party), foydalanuvchi
-   tugmani bosgandagina; checksum bo'lsa tekshiriladi. Muvaffaqiyatsizlikda
-   graceful fallback: paketni brauzerda ochish + qo'lda o'rnatish yo'riqnomasi. */
+   (2) plagin KODI = GET /api/plugin/version → markaziy modal → installer.
+
+   ⚠️ PANEL O'ZINI O'ZI YANGILAMAYDI. Eski oqim (arxivni ochib, extension papkasi
+   ustiga nusxalash) BUTUNLAY OLIB TASHLANDI: AE fayllarni band qiladi, papka huquqi yo'q
+   bo'lishi mumkin va qisman yozilish panelni buzadi. Yangi oqim:
+     1) OS aniqlanadi (faqat mac/win allowlist) va serverdan SHU platformaning
+        installeri so'raladi;
+     2) artefakt HTTPS'dan chegaralangan vaqtinchalik papkaga yuklab olinadi
+        (nom versiyadan quriladi — traversal imkonsiz);
+     3) SHA-256 MAJBURIY tekshiriladi (yo'q/mos emas → fayl o'chiriladi, hech narsa
+        ishga tushmaydi);
+     4) fayl OS installeriga ARGUMENT-MASSIV bilan topshiriladi (shell yo'q):
+        mac .pkg → /usr/bin/open (Installer.app), win .msi → msiexec /i, win .exe → o'zi.
+   ISHONCH CHEGARASI — OS installeri: u imzoni tekshiradi va kerak bo'lsa ruxsat so'raydi.
+   Panel imtiyoz KO'TARMAYDI va AE ichida hech narsa o'rnatmaydi.
+   Nosozlikda faqat tasdiqlangan installer/yuklab olish sahifasi taklif qilinadi —
+   extension papkasini qo'lda almashtirish maslahati BERILMAYDI. */
 window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
 (function(){
   function $(id){return document.getElementById(id);}
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
   function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
-  var upd={info:null,busy:false,ov:null};
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  var DOWNLOAD_PAGE='https://getframeflow.app/plugin';
+  var MAX_INSTALLER_BYTES=512*1024*1024;   // yuklab olish/tekshirish chegarasi
+  // Allowlist — server kontrakti bilan bir xil (apps/api/src/lib/plugin-release-contract.ts).
+  var PLATFORMS={
+    darwin:{id:'mac',label:'macOS',exts:['pkg']},
+    win32:{id:'win',label:'Windows',exts:['exe','msi']}
+  };
+  var REASON_TEXT={
+    unsupported_platform:'Automatic install is supported on macOS and Windows only. Open the download page to get the installer for your system.',
+    no_installer:'No installer has been published for your system yet. Open the download page to check for one.',
+    platform_mismatch:'The server returned an installer for a different operating system — the download was blocked.',
+    bad_extension:'The published file is not a valid installer for your system — the download was blocked.',
+    insecure_url:'The update link was not a secure HTTPS link — the download was blocked.',
+    missing_checksum:'This update has no SHA-256 checksum, so it cannot be verified — the download was blocked.',
+    bad_size:'The published installer size is not valid — the download was blocked.',
+    checksum_mismatch:'The downloaded file did not match its SHA-256 checksum. It was deleted and nothing was installed.',
+    download_failed:'The download did not finish. Nothing was installed.',
+    launch_failed:'The installer could not be opened automatically. Open the download page and run the installer yourself.',
+    no_download_engine:'This panel cannot download the installer here. Open the download page and run the installer yourself.'
+  };
+  var upd={info:null,busy:false,ov:null,tmp:null};
 
   function dismissKey(v){ return 'af_update_dismissed_'+v; }
   function isDismissed(v){ try{ return localStorage.getItem(dismissKey(v))==='1'; }catch(e){ return false; } }
   function setDismissed(v){ try{ localStorage.setItem(dismissKey(v),'1'); }catch(e){} }
 
-  function extensionDir(){
-    try{ if(typeof CSInterface!=='undefined'&&typeof SystemPath!=='undefined'){ var pth=new CSInterface().getSystemPath(SystemPath.EXTENSION); if(pth)return pth; } }catch(e){}
-    try{ if(window.__adobe_cep__&&window.__adobe_cep__.getSystemPath){ var p2=window.__adobe_cep__.getSystemPath('extension'); if(p2)return p2; } }catch(e){}
+  /* ── Pure yordamchilar (testlar AYNAN shularni chaqiradi — window.__afUpdater) ── */
+  function osPlatform(){
+    try{ if(typeof require==='function')return String(require('os').platform()||''); }catch(e){}
+    try{ if(typeof process!=='undefined'&&process&&process.platform)return String(process.platform); }catch(e2){}
     return '';
+  }
+  function platformInfo(plat){ var k=String(plat==null?'':plat); return Object.prototype.hasOwnProperty.call(PLATFORMS,k)?PLATFORMS[k]:null; }
+  function isHttpsUrl(u){ return /^https:\/\/[^\s]+$/i.test(String(u==null?'':u)); }
+  function isSha256Hex(s){ return /^[0-9a-fA-F]{64}$/.test(String(s==null?'':s)); }
+  /** Diskdagi nom SERVER matnidan EMAS — versiya+kengaytmadan quriladi (traversal/`..` imkonsiz). */
+  function safeInstallerName(version,ext){
+    var v=String(version==null?'':version).replace(/[^0-9A-Za-z.\-]/g,'');
+    var e=String(ext==null?'':ext).replace(/[^A-Za-z0-9]/g,'').toLowerCase();
+    return 'frameflow-plugin-'+(v||'update')+'.'+(e||'bin');
+  }
+  /** Fail-closed: platforma → kengaytma → HTTPS → SHA-256 → hajm. Bittasi yiqilsa hech narsa yuklanmaydi. */
+  function validateInstaller(plat,installer){
+    var pi=platformInfo(plat);
+    if(!pi)return {ok:false,reason:'unsupported_platform'};
+    if(!installer)return {ok:false,reason:'no_installer'};
+    if(String(installer.platform==null?'':installer.platform)!==pi.id)return {ok:false,reason:'platform_mismatch'};
+    var ext=String(installer.ext==null?'':installer.ext).toLowerCase().replace(/^\./,'');
+    var okExt=false; for(var i=0;i<pi.exts.length;i++){ if(pi.exts[i]===ext)okExt=true; }
+    if(!okExt)return {ok:false,reason:'bad_extension'};
+    if(!isHttpsUrl(installer.url))return {ok:false,reason:'insecure_url'};
+    if(!isSha256Hex(installer.sha256))return {ok:false,reason:'missing_checksum'};
+    var sz=Number(installer.sizeBytes);
+    if(!(sz>0)||sz>MAX_INSTALLER_BYTES)return {ok:false,reason:'bad_size'};
+    return {ok:true,platform:pi.id,label:pi.label,ext:ext,sizeBytes:sz,sha256:String(installer.sha256).toLowerCase()};
+  }
+  /** OS'ga topshirish rejasi — FAQAT argument massivi (shell/string interpolatsiya YO'Q). */
+  function launchPlan(plat,filePath,ext){
+    var p=String(filePath==null?'':filePath);
+    var e=String(ext==null?'':ext).toLowerCase().replace(/^\./,'');
+    if(!p)return null;
+    if(plat==='darwin'&&e==='pkg')return {cmd:'/usr/bin/open',args:[p]};
+    if(plat==='win32'&&e==='msi')return {cmd:'msiexec.exe',args:['/i',p]};
+    if(plat==='win32'&&e==='exe')return {cmd:p,args:[]};
+    return null;
+  }
+  function reasonText(r){ return REASON_TEXT[String(r==null?'':r)]||'The update could not be installed automatically.'; }
+  window.__afUpdater={platformInfo:platformInfo,isHttpsUrl:isHttpsUrl,isSha256Hex:isSha256Hex,
+    safeInstallerName:safeInstallerName,validateInstaller:validateInstaller,launchPlan:launchPlan,
+    reasonText:reasonText,platforms:PLATFORMS,maxBytes:MAX_INSTALLER_BYTES,downloadPage:DOWNLOAD_PAGE};
+
+  /* ── Vaqtinchalik fayllar (nosozlikda hech narsa qolmaydi) ── */
+  function cleanupTmp(){
+    var t=upd.tmp; upd.tmp=null; if(!t)return;
+    try{
+      var fs=require('fs');
+      try{ fs.unlinkSync(t.file); }catch(e){}
+      try{ fs.unlinkSync(t.file+'.part'); }catch(e2){}
+      try{ fs.rmdirSync(t.dir); }catch(e3){}
+    }catch(e4){}
+  }
+
+  function openDownloadPage(){
+    try{
+      if(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.openExternal){ AssetFlowAccount.openExternal(DOWNLOAD_PAGE); return; }
+      window.open(DOWNLOAD_PAGE,'_blank');
+    }catch(e){}
   }
 
   function showUpdateModal(){
     var info=upd.info; if(!info||!info.latest)return;
-    if(!upd.ov){
-      upd.ov=document.createElement('div'); upd.ov.className='afspov';
-      document.body.appendChild(upd.ov);
-    }
+    if(!upd.ov){ upd.ov=document.createElement('div'); upd.ov.className='afspov'; document.body.appendChild(upd.ov); }
     var mand=!!info.mandatory;
-    var notes=String(info.latest.releaseNotes||'').split('\n').slice(0,10).map(function(l){ return '<div style="font-size:11px;color:var(--mut);line-height:1.5">• '+String(l).replace(/[<>&]/g,'')+'</div>'; }).join('');
+    var v=validateInstaller(osPlatform(),info.installer);
+    var canInstall=v.ok&&IS_CEP;
+    var notes=String(info.latest.releaseNotes||'').split('\n').slice(0,10).map(function(l){ return '<div style="font-size:11px;color:var(--mut);line-height:1.5">• '+esc(l)+'</div>'; }).join('');
+    // Halol kutish: installer OS tomonidan ochiladi, ruxsat so'ralishi mumkin, AE qayta ishga tushadi.
+    var note=canInstall
+      ? 'The installer opens outside After Effects. Your system may ask you to approve it, and After Effects must be restarted when it finishes.'
+      : reasonText(v.ok?'no_download_engine':v.reason);
     upd.ov.innerHTML='<div class="spc">'
-      +'<div class="sph"><b>FrameFlow v'+String(info.latest.version).replace(/[<>&]/g,'')+' available</b>'+(mand?'':'<span class="x" id="afUpdX">✕</span>')+'</div>'
-      +'<div style="font-size:11px;color:var(--mut2);margin:-4px 0 8px">You have v'+window.AF_PLUGIN_VERSION+(mand?' — this update is required to continue':'')+'</div>'
+      +'<div class="sph"><b>FrameFlow v'+esc(info.latest.version)+' available</b>'+(mand?'':'<span class="x" id="afUpdX">✕</span>')+'</div>'
+      +'<div style="font-size:11px;color:var(--mut2);margin:-4px 0 8px">You have v'+esc(window.AF_PLUGIN_VERSION)+(mand?' — this update is required to continue':'')+'</div>'
       +(notes?('<div class="spl" style="margin-bottom:6px">'+notes+'</div>'):'')
+      +'<div style="font-size:10.5px;color:var(--mut2);line-height:1.5;margin-bottom:6px">'+esc(note)+'</div>'
       +'<div id="afUpdStatus" style="font-size:10.5px;color:var(--mut2);min-height:14px"></div>'
       +'<div class="spb">'
       +(mand?'':'<button type="button" class="spbtn" id="afUpdLater">Later</button>')
-      +'<button type="button" class="spbtn pri" id="afUpdGo">Update now</button></div></div>';
+      +(canInstall
+        ?'<button type="button" class="spbtn pri" id="afUpdGo">Download &amp; install</button>'
+        :'<button type="button" class="spbtn pri" id="afUpdPage">Open download page</button>')
+      +'</div></div>';
     upd.ov.classList.add('on');
     if(!mand){
       var x=$('afUpdX'); if(x)x.addEventListener('click',function(){ upd.ov.classList.remove('on'); setDismissed(info.latest.version); });
       var lt=$('afUpdLater'); if(lt)lt.addEventListener('click',function(){ upd.ov.classList.remove('on'); setDismissed(info.latest.version); });
     }
     var go=$('afUpdGo'); if(go)go.addEventListener('click',doUpdate);
+    var pg=$('afUpdPage'); if(pg)pg.addEventListener('click',openDownloadPage);
   }
   function setUpdStatus(t){ var el=$('afUpdStatus'); if(el)el.textContent=t; }
 
-  function fallbackManual(){
-    // Graceful fallback: paketni brauzerda ochamiz + qo'lda o'rnatish yo'li.
-    try{ if(upd.info&&upd.info.downloadUrl){ if(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.openExternal)AssetFlowAccount.openExternal(upd.info.downloadUrl); else window.open(upd.info.downloadUrl,'_blank'); } }catch(e){}
-    setUpdStatus('Automatic install failed — the package opened in your browser. Unzip it and replace the extension folder, then restart After Effects.');
-    toast('Could not self-update — manual install steps shown','warning');
+  /** Yakuniy ekranlar — extension papkasini qo'lda almashtirish HECH QACHON taklif qilinmaydi. */
+  function showBlocked(reason){
+    upd.busy=false;
+    setUpdStatus(reasonText(reason));
+    var go=$('afUpdGo');
+    if(go){ go.textContent='Open download page'; go.removeAttribute('id'); go.id='afUpdPage2'; go.addEventListener('click',openDownloadPage); }
+    toast('Update not installed — download page available','warning');
+  }
+  function showHandedOff(v){
+    upd.busy=false;
+    if(!upd.ov)return;
+    upd.ov.innerHTML='<div class="spc"><div class="sph"><b>Installer opened</b></div>'
+      +'<div style="font-size:11.5px;color:var(--mut);line-height:1.6">The FrameFlow '+esc(v.label)+' installer is now running outside After Effects. '
+      +'Your system may ask you to approve it. When it finishes, quit After Effects completely and open it again — this panel keeps running v'+esc(window.AF_PLUGIN_VERSION)+' until you do.</div>'
+      +'<div class="spb"><button type="button" class="spbtn" id="afUpdPage3">Download page</button>'
+      +'<button type="button" class="spbtn pri" id="afUpdDone">Got it</button></div></div>';
+    var dn=$('afUpdDone'); if(dn)dn.addEventListener('click',function(){ upd.ov.classList.remove('on'); });
+    var pg=$('afUpdPage3'); if(pg)pg.addEventListener('click',openDownloadPage);
+    toast('Installer opened — restart After Effects when it finishes','info');
   }
 
   function doUpdate(){
     var info=upd.info; if(!info||upd.busy)return;
-    if(!info.downloadUrl){ toast('Download link unavailable — try again later','error'); return; }
-    if(!IS_CEP){ try{ window.open(info.downloadUrl,'_blank'); }catch(e){} setUpdStatus('Package downloading in the browser.'); return; }
-    upd.busy=true; setUpdStatus('Downloading update…');
-    try{
-      var fs=require('fs'), path=require('path'), os=require('os'), child=require('child_process'), crypto=require('crypto');
-      var tmp=fs.mkdtempSync(path.join(os.tmpdir(),'af-update-'));
-      var zipPath=path.join(tmp,'update.zip');
-      var doInstall=function(){
-        try{
-          // Checksum (bo'lsa) — first-party paket buzilmaganini tasdiqlaydi
-          if(info.latest.checksum){
-            var h=crypto.createHash('sha256').update(fs.readFileSync(zipPath)).digest('hex');
-            if(h.toLowerCase()!==String(info.latest.checksum).toLowerCase()){ upd.busy=false; setUpdStatus('Checksum mismatch — install aborted.'); fallbackManual(); return; }
-          }
-          setUpdStatus('Extracting…');
-          var stage=path.join(tmp,'stage');
-          fs.mkdirSync(stage,{recursive:true});
-          child.execFileSync('unzip',['-o',zipPath,'-d',stage],{timeout:300000});
-          // Paket ildizi: CSXS/manifest.xml turgan papka (to'g'ridan yoki bitta ichki papka)
-          var root=stage;
-          if(!fs.existsSync(path.join(root,'CSXS','manifest.xml'))){
-            var kids=fs.readdirSync(stage).filter(function(k){ return k!=='__MACOSX'&&fs.statSync(path.join(stage,k)).isDirectory(); });
-            var hit=kids.filter(function(k){ return fs.existsSync(path.join(stage,k,'CSXS','manifest.xml')); })[0];
-            if(hit)root=path.join(stage,hit);
-          }
-          if(!fs.existsSync(path.join(root,'CSXS','manifest.xml')))throw new Error('Package has no CSXS/manifest.xml');
-          var dest=extensionDir();
-          if(!dest||!fs.existsSync(dest))throw new Error('Extension folder not found');
-          setUpdStatus('Installing…');
-          // cp -R root/. dest — papka strukturasi saqlanadi, ishlayotgan fayllarni almashtirish macOS'da xavfsiz
-          child.execFileSync('cp',['-R',root+'/.',dest],{timeout:120000});
-          upd.busy=false;
-          setUpdStatus('');
-          upd.ov.innerHTML='<div class="spc"><div class="sph"><b>✅ Updated to v'+String(info.latest.version).replace(/[<>&]/g,'')+'</b></div>'
-            +'<div style="font-size:11.5px;color:var(--mut);line-height:1.6">Restart After Effects (or close and reopen this panel) to finish the update.</div>'
-            +'<div class="spb"><button type="button" class="spbtn pri" id="afUpdDone">Got it</button></div></div>';
-          var dn=$('afUpdDone'); if(dn)dn.addEventListener('click',function(){ upd.ov.classList.remove('on'); });
-          toast('Plugin updated — restart After Effects','success');
-        }catch(e){
-          console.error('[update] install',e);
-          upd.busy=false; fallbackManual();
-        }
-      };
-      if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadUrlToFile){
-        AssetFlowCatalog.downloadUrlToFile(info.downloadUrl,zipPath,function(done,total){ if(total>0)setUpdStatus('Downloading… '+Math.floor(done/total*100)+'%'); }).then(doInstall).catch(function(e){ console.error('[update] download',e); upd.busy=false; fallbackManual(); });
-      }else{
-        fetch(info.downloadUrl).then(function(r){ return r.arrayBuffer(); }).then(function(buf){ fs.writeFileSync(zipPath,Buffer.from(buf)); doInstall(); }).catch(function(e){ console.error('[update] download',e); upd.busy=false; fallbackManual(); });
-      }
-    }catch(e){ console.error('[update]',e); upd.busy=false; fallbackManual(); }
+    var plat=osPlatform();
+    var v=validateInstaller(plat,info.installer);
+    if(!v.ok){ showBlocked(v.reason); return; }
+    if(!IS_CEP){ showBlocked('no_download_engine'); return; }
+    var fs,path,os,child,crypto;
+    try{ fs=require('fs'); path=require('path'); os=require('os'); child=require('child_process'); crypto=require('crypto'); }
+    catch(e){ showBlocked('no_download_engine'); return; }
+    if(!(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadUrlToFile)){ showBlocked('no_download_engine'); return; }
+    // Chegaralangan, noyob vaqtinchalik papka — extension papkasiga HECH QACHON yozilmaydi.
+    var dir='';
+    try{ dir=fs.mkdtempSync(path.join(os.tmpdir(),'frameflow-update-')); }catch(e2){ showBlocked('download_failed'); return; }
+    var name=safeInstallerName(info.latest?info.latest.version:'',v.ext);
+    var file=path.join(dir,name);
+    upd.tmp={dir:dir,file:file};
+    if(path.dirname(file)!==dir){ cleanupTmp(); showBlocked('download_failed'); return; } // qo'shimcha traversal to'sig'i
+    upd.busy=true;
+    setUpdStatus('Downloading the '+v.label+' installer…');
+    AssetFlowCatalog.downloadUrlToFile(info.installer.url,file,function(done,total){
+      if(total>0)setUpdStatus('Downloading… '+Math.floor(done/total*100)+'%');
+    }).then(function(){
+      setUpdStatus('Verifying SHA-256…');
+      var st=null; try{ st=fs.statSync(file); }catch(e3){ st=null; }
+      if(!st||!(st.size>0)||st.size>MAX_INSTALLER_BYTES){ cleanupTmp(); showBlocked('download_failed'); return; }
+      // Oqim bilan hash — 500MB fayl xotiraga olinmaydi.
+      var h=crypto.createHash('sha256');
+      var rs=fs.createReadStream(file);
+      rs.on('error',function(){ cleanupTmp(); showBlocked('download_failed'); });
+      rs.on('data',function(c){ h.update(c); });
+      rs.on('end',function(){
+        var got=String(h.digest('hex')).toLowerCase();
+        if(got!==v.sha256){ cleanupTmp(); showBlocked('checksum_mismatch'); return; }
+        launchInstaller(child,plat,file,v);
+      });
+    }).catch(function(e4){
+      console.error('[update] download',e4);
+      cleanupTmp(); showBlocked('download_failed');
+    });
   }
 
+  /** Faylni OS'ga topshiradi — argument massivi, shell YO'Q, imtiyoz KO'TARILMAYDI. */
+  function launchInstaller(child,plat,file,v){
+    var plan=launchPlan(plat,file,v.ext);
+    if(!plan){ cleanupTmp(); showBlocked('bad_extension'); return; }
+    setUpdStatus('Opening the installer…');
+    try{
+      var ch=child.spawn(plan.cmd,plan.args,{detached:true,stdio:'ignore'});
+      ch.on('error',function(err){ console.error('[update] launch',err); showBlocked('launch_failed'); });
+      ch.unref();
+      upd.tmp=null; // fayl endi OS installeriga kerak — o'chirmaymiz (OS temp tozalaydi)
+      showHandedOff(v);
+    }catch(e){
+      console.error('[update] launch',e);
+      cleanupTmp(); showBlocked('launch_failed');
+    }
+  }
+
+  function platformQuery(){ var pi=platformInfo(osPlatform()); return pi?('&platform='+encodeURIComponent(pi.id)):''; }
+
   function checkForUpdate(silent){
-    pubFetch('/api/plugin/version?current='+encodeURIComponent(window.AF_PLUGIN_VERSION),{headers:{Accept:'application/json'}},15000)
+    pubFetch('/api/plugin/version?current='+encodeURIComponent(window.AF_PLUGIN_VERSION)+platformQuery(),{headers:{Accept:'application/json'}},15000)
       .then(function(r){ return r.json(); })
       .then(function(d){
         if(!d||!d.updateAvailable)return;
@@ -16633,6 +16755,7 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
   setTimeout(function(){ checkForUpdate(true); },4000);           // panel ochilgach
   setInterval(function(){ checkForUpdate(true); },6*60*60*1000);  // har 6 soatda
 })();
+/* AF-UPDATER-END */
 
 /* ============================================================
    #R1 — AI Studio workspace chrome (session-strip / viewbar / stage empty-hero / mode popover).

@@ -39,7 +39,15 @@ import {
   sceneFileIsVideo,
 } from "../lib/template-files.js";
 import { serveTemplateAsset } from "../lib/serve-asset.js";
-import { computePluginVersionResponse } from "../lib/plugin-release-contract.js";
+import {
+  computePluginVersionResponse,
+  resolveInstallerPlatform,
+  selectInstallerRow,
+  buildInstallerPayload,
+  installerExtension,
+  installerFileName,
+  type InstallerContext,
+} from "../lib/plugin-release-contract.js";
 
 export const pluginRouter = Router();
 
@@ -269,20 +277,59 @@ function parseTake(raw: unknown): number {
  *  sahifa, javobga additive `nextCursor` qo'shiladi; null = oxirgi sahifa). */
 // ── P11 — plagin versiya tekshiruvi (OMMAVIY; panel yuklanganda chaqiriladi) ──
 // Ikki kanalli yangilanish: (1) model/tool/narx = server-driven (/gen/models, katalog)
-// — reliz KERAK EMAS; (2) plagin KODI = shu kanal (PluginRelease → in-panel updater).
+// — reliz KERAK EMAS; (2) plagin KODI = shu kanal (PluginRelease → in-panel bildirishnoma).
+//
+// Task 2: javob SO'RALGAN (yoki UA'dan aniqlangan) BITTA allowlist platformasining
+// installerini qaytaradi — boshqa platformalar va storage kalitlari ochilmaydi.
+// Artefakt yo'q bo'lsa — halol `installerStatus` (jim qolish yo'q).
 // Hisob-kitob lib/plugin-release-contract.ts'da (izolyatsiya — scripts/test-plugin-release-contract.mjs).
+const INSTALLER_URL_TTL_SEC = 3600;
+
 pluginRouter.get("/version", async (req: Request, res: Response) => {
   const current = typeof req.query.current === "string" ? req.query.current : "";
-  const latest = await prisma.pluginRelease.findFirst({ orderBy: { publishedAt: "desc" } });
+  const { platform } = resolveInstallerPlatform(req.query.platform, req.headers["user-agent"]);
+  const latest = await prisma.pluginRelease.findFirst({
+    orderBy: { publishedAt: "desc" },
+    include: { installers: true },
+  });
+  // LEGACY .zxp — faqat veb sahifadagi QO'LDA yuklab olish uchun (panel o'rnatmaydi).
   let downloadUrl: string | null = null;
   if (latest && latest.downloadKey && isS3Configured()) {
     try {
-      downloadUrl = await getSignedDownloadUrl(latest.downloadKey, 3600, `frameflow-plugin-${latest.version}.zxp`);
+      downloadUrl = await getSignedDownloadUrl(latest.downloadKey, INSTALLER_URL_TTL_SEC, `frameflow-plugin-${latest.version}.zxp`);
     } catch {
       downloadUrl = null;
     }
   }
-  res.json(computePluginVersionResponse(current, latest, downloadUrl));
+  // Platformaga xos installer (fail-closed: har bosqichda aniq status).
+  let installerCtx: InstallerContext = { platform, installer: null, status: "not_published" };
+  if (!platform) {
+    installerCtx = { platform: null, installer: null, status: "unsupported_platform" };
+  } else if (latest) {
+    const row = selectInstallerRow(latest.installers, platform);
+    if (!row) {
+      installerCtx = { platform, installer: null, status: "not_published" };
+    } else if (!isS3Configured()) {
+      installerCtx = { platform, installer: null, status: "storage_unavailable" };
+    } else {
+      let payload = null;
+      try {
+        const ext = installerExtension(row.storageKey) || "bin";
+        const url = await getSignedDownloadUrl(
+          row.storageKey,
+          INSTALLER_URL_TTL_SEC,
+          installerFileName(latest.version, platform, ext)
+        );
+        payload = buildInstallerPayload(latest.version, row, url);
+      } catch {
+        payload = null;
+      }
+      installerCtx = payload
+        ? { platform, installer: payload, status: "ok" }
+        : { platform, installer: null, status: "storage_unavailable" };
+    }
+  }
+  res.json(computePluginVersionResponse(current, latest, downloadUrl, installerCtx));
 });
 
 // ── Plugin CMS — ommaviy o'qish (auth YO'Q: guest ekran login'dan OLDIN kerak).
