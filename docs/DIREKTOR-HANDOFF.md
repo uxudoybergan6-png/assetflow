@@ -123,19 +123,19 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ## 5. JORIY HOLAT (2026-07-22)
 
-> ✅ **Task 2/3 TAYYOR:** self-updater o'chirilgan (artefakt + MAJBURIY SHA-256 → OS installeri);
-> `.pkg`/`.msi` FAQAT per-user (UAC yo'q), imzolash fail-closed, MSI'dan oldingi qoldiqlar
-> `RemoveFile` bilan ketadi, `assetflow-data` tegilmaydi.
-> 🔴 **MASOFAVIY QIZIL (birinchi haqiqiy run 29878659236, `d1e44e8`):** Linux/CF Pages/deploy
-> YASHIL, lekin `windows-installer` — MSI qurildi, `wix msi validate` **10× ICE64** (exit 204)
-> bilan yiqildi → haqiqiy o'rnatish qadami umuman ishlamadi.
-> 🛠 **TUZATILDI (bostirilmadi):** profil ostidagi HAR papkaga `<RemoveFolder On="uninstall"/>`
-> (`FF_ProfileFolders`) + `Subdirectory=` olib tashlandi. MSI faqat **BO'SH** papkani o'chiradi →
-> ma'lumot va umumiy Adobe papkalari saqlanadi; ICE91 (muqarrar ogohlantirish) TEGILMADI.
-> 🧪 **Lokal PASS:** 244 · 117 · 47 · 118 · 108 · 10 case + `apps/api` build; eski generatorда
-> yangi tekshiruvlar 5/5 yiqiladi. ⚠️ Tuzatma **masofada hali isbotlanmagan**.
-> 🔴 **EGA blokerlari:** (1) push → birinchi YASHIL `windows-installer` run; (2) imzolash
-> kredensiallari (Apple Developer ID + notarizatsiya · Windows Authenticode) + `PluginRelease`.
+> ✅ **Task 2/3 TAYYOR:** self-updater o'chirilgan; `.pkg`/`.msi` FAQAT per-user (UAC yo'q),
+> imzolash fail-closed, MSI'dan oldingi qoldiqlar `RemoveFile` bilan ketadi, `assetflow-data` tegilmaydi.
+> ✅ **ICE64 MASOFADA YOPILDI** (`a99edb7` → run 29901585416): `wix msi validate` endi faqat
+> ICE91 **ogohlantirishlari** bilan o'tadi va 5-qadamga yetadi. Bostirish qo'shilmadi.
+> 🔴 **YANGI QIZIL, ENDI TUZATILDI:** 5-qadam `ci-verify-win-install.ps1` 111-qatorda yiqildi
+> (`kontrakti kutilmagan shaklda: S`). MSI nuqsoni EMAS — PowerShell bir elementli massivni
+> skalyarga unroll qiladi, `(Invoke-NodeLines …)[0]` birinchi HARFNI berardi. Yechim: fail-closed
+> `Invoke-NodeLine` o'qigichi + har ikkala single-line iste'molchi (`installDirName`, `cleanupReg`).
+> 🧪 **Lokal PASS:** 244 · **135** (edi 117, +18 regressiya) · 47 · 118 · 108 · 10; eski ps1'da
+> yangi tekshiruvlardan 9/9 yiqiladi. macOS'da `pwsh` YO'Q → ps1 lokal bajarilmadi.
+> ⚠️ **HALOL:** haqiqiy `msiexec` HALI BIR MARTA HAM ISHLAMAGAN (o'rnatish/migratsiya/o'chirish
+> isboti yo'q). 🔴 **EGA blokerlari:** (1) push → birinchi YASHIL `windows-installer` run;
+> (2) imzolash kredensiallari (Apple Developer ID + notarizatsiya · Authenticode) + `PluginRelease`.
 > Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.2/§3A.4.
 
 ---

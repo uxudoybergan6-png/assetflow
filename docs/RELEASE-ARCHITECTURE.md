@@ -351,7 +351,7 @@ Admin HTML, `CSXS/manifest.admin.xml`) + ALOHIDA `assetflow-data/…` sentinel e
 Linux job (`build`) o'zgarmadi; unga faqat bitta statik regressiya qadami qo'shildi:
 
 ```bash
-npm run test:ci-windows-installer     # 117 case — Windows job shartnomasi
+npm run test:ci-windows-installer     # 135 case — Windows job shartnomasi
 ```
 
 Bu test JONLI `ci.yml` + `ci-verify-win-install.ps1` + `build-installer-win.mjs` fayllarini
@@ -360,18 +360,24 @@ build'ni, validatorni, jimgina o'rnatish/o'chirishni, aniq eski ro'yxatni, senti
 tekshiruvini, artefakt yuklamaslikni yoki xavfsiz tozalashni yo'qotsa — **macOS/Linux'da ham**
 darhol yiqiladi (6 mutatsiya bilan isbotlangan).
 
-> ⚠️ **JORIY MASOFAVIY HOLAT (halol).** `d1e44e8` push qilindi → run **29878659236**: Linux
-> `build`, CF Pages va deploy YASHIL, **`windows-installer` QIZIL**. WiX 5.0.2 o'rnatildi va
-> haqiqiy imzosiz MSI MUVAFFAQIYATLI qurildi, lekin **4-qadam** (`wix msi validate`) **10 marta**
-> `error WIX0204: ICE64: The directory <X> is in the user profile but is not listed in the
-> RemoveFile table` bilan yiqildi (`wix.exe` exit **204**) — ya'ni **5-qadam (haqiqiy o'rnatish/
-> migratsiya/o'chirish) UMUMAN ISHLAMADI**. Yonidagi 36 ta `warning WIX1076: ICE91` — **ogohlantirish**,
-> u ataylab per-user paket uchun MUQARRAR (`AppDataFolder` `ALLUSERS`ga qarab o'zgarmaydi) va
-> chiqish kodiga TA'SIR QILMAYDI; **bostirilmaydi**. Ildiz sabab: generator 9 ta profil papkasini
-> e'lon qilib, birortasiga ham `RemoveFolder` bermas edi + `Subdirectory="CSXS"` 10-chi, avto-Id'li
-> papka qatorini yasardi. Tuzatildi (yuqorida §3A.2 "Profil papkalari"). **Bu tuzatma hozircha
-> FAQAT lokal isbotlangan** — `wix build` / ICE / haqiqiy o'rnatish natijasi **keyingi push va
-> birinchi yashil run'gacha tasdiqlanmagan**.
+> ⚠️ **JORIY MASOFAVIY HOLAT (halol).** Ikki masofaviy iteratsiya bo'ldi:
+>
+> 1. `d1e44e8` → run **29878659236**: MSI qurildi, lekin **4-qadam** (`wix msi validate`)
+>    **10 marta** `error WIX0204: ICE64: … is in the user profile but is not listed in the
+>    RemoveFile table` bilan yiqildi (exit **204**). Sabab: generator 9 ta profil papkasini
+>    `RemoveFolder`siz e'lon qilar + `Subdirectory="CSXS"` avto-Id'li 10-chi qator yasardi.
+>    `a99edb7` bilan tuzatildi (§3A.2 "Profil papkalari").
+> 2. `a99edb7` → run **29901585416** (job **88863312477**): **ICE64 MASOFAVIY YOPILDI** —
+>    `wix msi validate` faqat `warning WIX1076: ICE91` bilan davom etdi va **5-qadamga yetdi**.
+>    Lekin `ci-verify-win-install.ps1` **111-qatorda** `cleanup-registry kontrakti kutilmagan
+>    shaklda: S` bilan yiqildi. Bu MSI nuqsoni EMAS — PowerShell skalyar-unroll xatosi:
+>    `(Invoke-NodeLines …)[0]` bir qatorlik chiqishda BIRINCHI HARFNI qaytarardi. Tuzatildi
+>    (`Invoke-NodeLine` fail-closed o'qigichi + 18 regressiya tekshiruvi).
+>
+> ICE91 (36 ta) — **ogohlantirish**, per-user paket uchun MUQARRAR (`AppDataFolder` `ALLUSERS`ga
+> qarab o'zgarmaydi), chiqish kodiga ta'sir qilmaydi va **bostirilmaydi**.
+> **HALOL HOLAT: haqiqiy `msiexec` HALI BIR MARTA HAM ISHLAMAGAN** — o'rnatish/migratsiya/
+> o'chirish isboti keyingi push va birinchi yashil run'gacha **tasdiqlanmagan**.
 
 ---
 
@@ -404,7 +410,7 @@ yuqoridagi **3A-bo'lim** (Task 3, 2026-07-22).
 npm run test:plugin-updater         # jonli AF-UPDATER bloki — 118 case (mutatsiya isboti bilan)
 npm run test:release-contract       # server kontrakti — 108 case
 npm run test:plugin-installers      # installer quvuri — 244 case
-npm run test:ci-windows-installer   # Windows CI job shartnomasi — 117 case (§3A.4)
+npm run test:ci-windows-installer   # Windows CI job shartnomasi — 135 case (§3A.4)
 ```
 
 ⚠️ Reliz hali ham CHIQMAGAN: installer quvuri TAYYOR, lekin **imzolangan** artefaktlar

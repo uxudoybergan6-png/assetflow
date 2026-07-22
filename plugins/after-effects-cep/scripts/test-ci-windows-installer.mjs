@@ -339,6 +339,96 @@ check(
   !!regLine && sampleWxs.includes(`Key="${regLine.split("\t")[0]}"`) && sampleWxs.includes(`Name="${regLine.split("\t")[1]}"`)
 );
 
+// ══ G2) Bitta qatorlik CLI kontrakti — PowerShell skalyar-unroll qorovuli ═══
+console.log("\n── G2) Single-line CLI o'qigich (skalyar-unroll) ─────────────");
+
+// 2026-07-22 masofaviy run 29901585416 (windows-installer): ICE64 tuzatilgandan keyin
+// `wix msi validate` o'tdi, lekin ps1 111-qatorda `cleanup-registry kontrakti kutilmagan
+// shaklda: S` bilan yiqildi — msiexec UMUMAN ishga tushmadi. Sabab: PowerShell funksiyadan
+// qaytgan BIR elementli massivni chaqiruvchida skalyar [string]ga "unroll" qiladi, shuning
+// uchun `(Invoke-NodeLines …)[0]` qatorni emas, BIRINCHI HARFNI qaytardi ("Software\…" → "S").
+// Quyidagi tekshiruvlar jonli ps1 manbasini VA haqiqiy CLI chiqishini o'qiydi.
+
+/** PowerShell skalyar-unroll semantikasining modeli: 1 qatorlik chiqishda `(…)[0]` = 1-harf. */
+const psScalarIndexZero = (lines) => (lines.length === 1 ? lines[0].charAt(0) : lines[0] ?? "");
+
+const regLines = cliLines(WIX_CLI, ["cleanup-registry"]);
+const dirLines = cliLines(FLAVORS_CLI, ["field", "customer", "installDirName"]);
+
+check("CLI `cleanup-registry` AYNAN 1 qator beradi (ps1 kontrakti shuni talab qiladi)", regLines.length === 1, `${regLines.length} qator`);
+check("CLI `field customer installDirName` AYNAN 1 qator beradi", dirLines.length === 1, `${dirLines.length} qator`);
+
+// ps1'ning O'Z shakl kontrakti jonli manbadan o'qiladi (test o'z nusxasini yasamaydi).
+const installDirRe = (ps1.match(/\$installDirName -notmatch '(\^[^']+\$)'/) || [])[1] || "";
+check("ps1'dagi installDirName shakl regex'i jonli manbadan o'qildi", installDirRe.length > 0, installDirRe);
+
+// (a) TO'LIQ qiymatlar ps1 kontraktlarini qanoatlantiradi.
+check(
+  "to'liq `cleanup-registry` qatori ps1 kutgan AYNAN 2 maydonga bo'linadi (key<TAB>name)",
+  (regLines[0] || "").split("\t").length === 2,
+  JSON.stringify(regLines[0] || "")
+);
+check(
+  "to'liq installDirName ps1'dagi shakl regex'iga mos",
+  !!installDirRe && new RegExp(installDirRe).test(dirLines[0] || ""),
+  dirLines[0] || ""
+);
+
+// (b) REGRESSIYA QOROVULI: eski `(…)[0]` naqshi haqiqiy CLI chiqishida buzuq bo'lardi.
+const oldReg = psScalarIndexZero(regLines);
+const oldDir = psScalarIndexZero(dirLines);
+check(
+  "eski `(Invoke-NodeLines …)[0]` naqshi cleanup-registry'ni buzardi (1 harf → 2 maydon emas)",
+  oldReg.length === 1 && oldReg.split("\t").length !== 2,
+  JSON.stringify(oldReg)
+);
+check(
+  "eski naqsh installDirName'ni ham buzardi (1 harf ps1 shakl regex'idan O'TMAYDI)",
+  !!installDirRe && oldDir.length === 1 && !new RegExp(installDirRe).test(oldDir),
+  JSON.stringify(oldDir)
+);
+
+// (c) Jonli ps1 manbasi: xavfli naqsh YO'Q, fail-closed o'qigich BOR.
+check(
+  "ps1'da `(Invoke-NodeLines …)[0]` xavfli naqshi QOLMAGAN",
+  !/\(\s*Invoke-NodeLines\b[^\n]*\)\s*\[\s*0\s*\]/.test(ps1Code)
+);
+check("ps1'da bitta qatorlik o'qigich `Invoke-NodeLine` e'lon qilingan", /function Invoke-NodeLine\b\s*\{/.test(ps1Code));
+const singleFn = (ps1Code.match(/function Invoke-NodeLine\b[\s\S]*?\n\}/) || [""])[0];
+check(
+  "`Invoke-NodeLine` natijani @() bilan qayta massivga o'raydi (unroll'ga qarshi)",
+  /@\(\s*Invoke-NodeLines\b/.test(singleFn),
+  singleFn ? "funksiya topildi" : "funksiya topilmadi"
+);
+check(
+  "`Invoke-NodeLine` 0 yoki 2+ qatorda fail-closed (throw)",
+  /\$lines\.Count -ne 1/.test(singleFn) && /\bthrow\b/.test(singleFn)
+);
+check("`Invoke-NodeLine` TO'LIQ qatorni qaytaradi (harf indekslash YO'Q)", /return \[string\] \$lines\[0\]/.test(singleFn));
+
+// (d) HAR IKKALA bitta-qatorlik iste'molchi yangi o'qigichdan foydalanadi.
+check(
+  "ps1: `installDirName` bitta qatorlik o'qigich orqali olinadi",
+  /\$installDirName\s*=\s*Invoke-NodeLine\s+@\(/.test(ps1Code)
+);
+check(
+  "ps1: `cleanupReg` bitta qatorlik o'qigich orqali olinadi va tab bo'yicha bo'linadi",
+  /\$cleanupReg\s*=\s*@\(\(Invoke-NodeLine\s+@\([^\n]*\)\)\s*-split/.test(ps1Code)
+);
+check("ps1: cleanup-registry kontrakti hamon AYNAN 2 maydon talab qiladi (fail-closed)", /\$cleanupReg\.Count -ne 2/.test(ps1Code));
+
+// (e) KO'P qatorlik iste'molchilar SAQLANGAN (o'qigich noto'g'ri joyga tarqalmagan).
+for (const [name, cmd] of [
+  ["legacyFiles", "stale-files"],
+  ["contractFiles", "payload-files"],
+]) {
+  check(
+    `ps1: ko'p qatorlik "${cmd}" iste'molchisi Invoke-NodeLines'da saqlangan`,
+    new RegExp(`\\$${name}\\s*=\\s*@\\(Invoke-NodeLines\\s`).test(ps1Code) && ps1Code.includes(`'${cmd}'`)
+  );
+}
+check("ps1: `stage` chaqiruvi ham ko'p qatorlik Invoke-NodeLines'da qolgan", /Invoke-NodeLines @\(\$PayloadCli, 'stage'/.test(ps1Code));
+
 // ══ H) Xavfsiz tozalash (keng o'chirish YO'Q) ═══════════════════════════════
 console.log("\n── H) Tozalash: `finally` + AYNAN per-user nishon ────────────");
 

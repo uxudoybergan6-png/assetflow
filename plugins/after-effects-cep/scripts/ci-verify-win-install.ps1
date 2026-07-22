@@ -59,6 +59,21 @@ function Invoke-NodeLines {
     return @($out | ForEach-Object { "$_".Trim() } | Where-Object { $_ -ne '' })
 }
 
+# Bitta qatorlik CLI kontrakti uchun YAGONA to'g'ri o'qigich.
+# NEGA: PowerShell funksiya natijasini pipeline'ga "unroll" qiladi — bir elementli massiv
+# CHAQIRUVCHIDA oddiy [string] bo'lib qoladi. Shuning uchun `(Invoke-NodeLines …)[0]`
+# qatorning emas, BIRINCHI HARFNING o'zini beradi ("Software\…" → "S"). Bu quyidagi
+# `-split "`t"` kontraktini soxta yiqitgan edi. Bu yerda avval @() bilan qayta massivga
+# o'raymiz, so'ng 0 yoki 2+ qatorga fail-closed bo'lamiz va TO'LIQ qatorni qaytaramiz.
+function Invoke-NodeLine {
+    param([Parameter(Mandatory = $true)][string[]] $NodeArgs)
+    $lines = @(Invoke-NodeLines -NodeArgs $NodeArgs)
+    if ($lines.Count -ne 1) {
+        throw "node $($NodeArgs -join ' ') → aynan 1 qator kutilgan edi, $($lines.Count) keldi: [$($lines -join ' | ')]"
+    }
+    return [string] $lines[0]
+}
+
 function Get-RelativeFiles {
     param([Parameter(Mandatory = $true)][string] $Root)
     $full = [IO.Path]::GetFullPath($Root)
@@ -104,10 +119,10 @@ function Assert-SetsEqual {
 }
 
 # ── Kontrakt (yagona manba) ─────────────────────────────────────────────────
-$installDirName = (Invoke-NodeLines @($FlavorsCli, 'field', 'customer', 'installDirName'))[0]
-$legacyFiles    = Invoke-NodeLines @($PayloadCli, 'stale-files')
-$contractFiles  = Invoke-NodeLines @($PayloadCli, 'payload-files')
-$cleanupReg     = (Invoke-NodeLines @($WixCli, 'cleanup-registry'))[0] -split "`t"
+$installDirName = Invoke-NodeLine  @($FlavorsCli, 'field', 'customer', 'installDirName')
+$legacyFiles    = @(Invoke-NodeLines @($PayloadCli, 'stale-files'))
+$contractFiles  = @(Invoke-NodeLines @($PayloadCli, 'payload-files'))
+$cleanupReg     = @((Invoke-NodeLine @($WixCli, 'cleanup-registry')) -split "`t")
 if ($cleanupReg.Count -ne 2) { throw "cleanup-registry kontrakti kutilmagan shaklda: $($cleanupReg -join '|')" }
 $cleanupRegKey  = "HKCU:\$($cleanupReg[0])"
 $cleanupRegName = $cleanupReg[1]
