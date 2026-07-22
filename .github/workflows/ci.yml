@@ -33,10 +33,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -74,12 +74,15 @@ jobs:
       DOTNET_ROLL_FORWARD: "LatestMajor"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20
+          # setup-node v7 keshni avtomatik yoqishi mumkin — bu job'da ATAYLAB kerak emas
+          # (Windows npm ci hozircha keshsiz; xatti-harakatni o'zgartirmaslik uchun aniq o'chirilgan).
+          package-manager-cache: false
 
       - name: Setup .NET (WiX global tool runtime'i)
         uses: actions/setup-dotnet@v4

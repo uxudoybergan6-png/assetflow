@@ -123,18 +123,17 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ## 5. JORIY HOLAT (2026-07-22)
 
-> ✅ **Task 2/3 (installer/updater zanjiri) MASOFADA ISBOTLANGAN:** `4293a6c` `origin/main`'da,
-> CI run **29902381702** to'liq YASHIL — haqiqiy `msiexec` o'rnatish → migratsiya → o'chirish.
 > ✅ **Task 4 (Marketplace preflight) KOD TOMONI TUGADI:** `npm run preflight:marketplace`
-> (QA, kredensialsiz — `ZXPSignCmd` chaqirilmaydi) + `-- --release` (imzolangan `.zxp` +
-> **Adobe `ZXPSignCmd -verify` kriptografik tekshiruvi** + to'liq ega metadata SHART) +
-> `marketplace-submission.json` + `docs/MARKETPLACE-SUBMISSION.md`. Adobe'ga HECH NARSA
-> topshirilmadi; lokal tekshiruv paketni tasdiqlaydi, YAKUNIY qabul — Adobe portali.
-> 🧪 **Lokal testlar:** 100(yangi) · 135 · 244 · 47 · 118 · 108 · 10 — barchasi PASS, regressiya yo'q.
-> 🔴 **YAGONA KOD-YONDOSH TASHQI BLOKER — EGA:** imzolash yo'q. Marketplace uchun ZXP sertifikati
-> **va `ZXPSignCmd` vositasi** (bu mashinada yo'q → `-- --release` fail-closed, exit 1); to'g'ridan
-> `.pkg`/`.msi` zaxira kanali uchun Apple Developer ID + notarizatsiya va Windows Authenticode.
-> Ega ishi: Adobe hisobi, listing matni, vizual assetlar.
+> (QA, kredensialsiz) + `-- --release` (imzolangan `.zxp` + Adobe `ZXPSignCmd -verify`
+> kriptografik tekshiruvi SHART). Adobe'ga HECH NARSA topshirilmadi; YAKUNIY qabul — portal.
+> ✅ **Task 5 (CI Node 20 deprecation) TUGADI:** barcha 3 workflow (`ci.yml`, `db-backup.yml`,
+> `deploy-cloudrun.yml`) `actions/checkout@v7` · `actions/setup-node@v7` ·
+> `google-github-actions/auth@v3` · `setup-gcloud@v3`'ga ko'tarildi; loyiha `node-version: 20`
+> O'ZGARMADI. Lokal/statik isbot TO'LIQ (162 test, YAML parse, diff-check); **haqiqiy
+> "warning-free" isbot faqat push'dan keyingi masofaviy CI run bilan tasdiqlanadi**.
+> 🔴 **YAGONA KOD-YONDOSH TASHQI BLOKER — EGA (Marketplace):** ZXP sertifikati va
+> `ZXPSignCmd` vositasi bu mashinada yo'q → `-- --release` fail-closed. Ega ishi: Adobe
+> hisobi, listing matni, vizual assetlar.
 > Tafsilot: `docs/MARKETPLACE-SUBMISSION.md` · `docs/SESSION-REPORT.md` · `RELEASE-ARCHITECTURE.md` §3A.4.
 
 ---

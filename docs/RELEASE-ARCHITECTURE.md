@@ -327,7 +327,7 @@ va `main` push'ida **`windows-latest`** job'i ishlaydi:
 
 | Qadam | Nima bo'ladi |
 |---|---|
-| 1 | `actions/checkout@v4` · `actions/setup-node@v4` (Node 20) · `actions/setup-dotnet@v4` (8.0.x) — hammasi birinchi tomon |
+| 1 | `actions/checkout@v7` · `actions/setup-node@v7` (Node 20, `package-manager-cache: false`) · `actions/setup-dotnet@v4` (8.0.x) — hammasi birinchi tomon. Action IMPLEMENTATSIYASI Node 24'da ishlaydi (GitHub Node 20 runner deprecation, 2026-07-22); loyiha `node-version: 20` O'ZGARMAGAN |
 | 2 | **QADALGAN** WiX: `dotnet tool install --global wix --version $env:WIX_VERSION` (`WIX_VERSION: "5.0.2"`) — `latest`/`--prerelease` ATAYLAB ishlatilmaydi; keyin `wix --version` qadalgan qiymatga solishtiriladi (mos kelmasa job yiqiladi) |
 | 3 | **Haqiqiy** imzolanmagan QA MSI: `node build-installer-win.mjs --unsigned` (soxta `wix` YO'Q, MSI baytlari qo'lda yasalmaydi) |
 | 4 | **Rasmiy validatsiya:** `wix msi validate <msi>` — hech qanday ICE bostirilmaydi (`-sval`/`-sw`/`-sice` na workflow'da, na build skriptida; `continue-on-error`/`try-catch` ham YO'Q) |
@@ -363,7 +363,8 @@ Admin HTML, `CSXS/manifest.admin.xml`) + ALOHIDA `assetflow-data/…` sentinel e
   yaratmaydi, `signtool` chaqirmaydi. **Imzolanmagan `.msi` artefakt sifatida YUKLANMAYDI**
   (`upload-artifact` YO'Q) — u runner bilan birga yo'q bo'ladi.
 - Workflow ruxsati minimal (`permissions: contents: read`), concurrency + `timeout-minutes` bor,
-  har action birinchi tomon (`actions/*@vN`) — uchinchi tomon action ishlatilsa to'liq SHA shart.
+  har action birinchi tomon (`actions/*@vN` yoki `google-github-actions/*@vN`) — boshqa uchinchi
+  tomon action ishlatilsa to'liq SHA shart.
 - **Fail-closed:** asbob yo'qligi · versiya mos emasligi · build xatosi · validator xatosi ·
   nolga teng bo'lmagan `msiexec` kodi · kutilmagan/yetishmayotgan fayl · hash nomuvofiqligi ·
   qolib ketgan eski fayl · sentinel yo'qolishi — hammasi job'ni YIQITADI.

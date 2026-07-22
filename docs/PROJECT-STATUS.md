@@ -1,4 +1,18 @@
-> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval **«§-4 · 2026-07-22 MARKETPLACE PREFLIGHT»**, **«§-3 · 2026-07-22 PLAGIN RELIZ ZANJIRI»**, **«§-2 · 2026-07-11 JONLI TEKSHIRUV»** va **«§-1 · 2026-07-03 YANGILANISH»** bloklarini o'qing (ular eski faktlarni bekor qiladi).
+> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval **«§-5 · 2026-07-22 CI NODE 20 DEPRECATION»**, **«§-4 · 2026-07-22 MARKETPLACE PREFLIGHT»**, **«§-3 · 2026-07-22 PLAGIN RELIZ ZANJIRI»**, **«§-2 · 2026-07-11 JONLI TEKSHIRUV»** va **«§-1 · 2026-07-03 YANGILANISH»** bloklarini o'qing (ular eski faktlarni bekor qiladi).
+
+---
+
+## §-5. 2026-07-22 CI NODE 20 DEPRECATION — 3 workflow ko'tarildi, push kutilmoqda
+
+- Barcha `.github/workflows/*.yml` (`ci.yml`, `db-backup.yml`, `deploy-cloudrun.yml`):
+  `actions/checkout@v4→v7`, `actions/setup-node@v4→v7`, `google-github-actions/auth@v2→v3`,
+  `google-github-actions/setup-gcloud@v2→v3`. Ilova `node-version: 20` HAMMA joyda O'ZGARMADI.
+- Windows `Setup Node`ga `package-manager-cache: false` aniq qo'shildi (v7 implicit kesh YO'Q).
+- `test:ci-windows-installer` **162/162 PASS** (barcha workflow'ni skanerlaydi, joriy majorlarni
+  va `node-version: 20`ni tasdiqlaydi, mutatsiya isboti bilan).
+- **Lokal/statik isbot TO'LIQ; "warning-free" haqiqiy isbot faqat push'dan keyingi masofaviy
+  GitHub Actions run bilan tasdiqlanadi** (bu sessiyada push YO'Q).
+- Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.4.
 
 ---
 
