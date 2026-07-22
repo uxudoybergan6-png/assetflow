@@ -2,7 +2,7 @@
 
 > Amal qiladi: `plugins/after-effects-cep/`. Yagona haqiqat manbai —
 > `plugins/after-effects-cep/scripts/package-flavors.mjs` (build, o'rnatma va testlar shundan o'qiydi).
-> Oxirgi yangilanish: 2026-07-22 (Task 3 · `windows-latest` CI job'i · MSI ICE64 tuzatmasi — §3A.2/§3A.4).
+> Oxirgi yangilanish: 2026-07-22 (Task 3 · `windows-latest` CI job'i masofada TO'LIQ YASHIL — §3A.4).
 
 ---
 
@@ -360,7 +360,7 @@ build'ni, validatorni, jimgina o'rnatish/o'chirishni, aniq eski ro'yxatni, senti
 tekshiruvini, artefakt yuklamaslikni yoki xavfsiz tozalashni yo'qotsa — **macOS/Linux'da ham**
 darhol yiqiladi (6 mutatsiya bilan isbotlangan).
 
-> ⚠️ **JORIY MASOFAVIY HOLAT (halol).** Ikki masofaviy iteratsiya bo'ldi:
+> ✅ **JORIY MASOFAVIY HOLAT (halol).** Uch masofaviy iteratsiya bo'ldi, uchinchisi YASHIL:
 >
 > 1. `d1e44e8` → run **29878659236**: MSI qurildi, lekin **4-qadam** (`wix msi validate`)
 >    **10 marta** `error WIX0204: ICE64: … is in the user profile but is not listed in the
@@ -374,10 +374,16 @@ darhol yiqiladi (6 mutatsiya bilan isbotlangan).
 >    `(Invoke-NodeLines …)[0]` bir qatorlik chiqishda BIRINCHI HARFNI qaytarardi. Tuzatildi
 >    (`Invoke-NodeLine` fail-closed o'qigichi + 18 regressiya tekshiruvi).
 >
+> 3. `4293a6c` → run **29902381702** (job **88865831801**, 1m16s): **TO'LIQ YASHIL**.
+>    Barcha qadam o'tdi: qadalgan WiX, haqiqiy imzolanmagan MSI build, `wix msi validate`
+>    (faqat ICE91 ogohlantirishi bilan), va 5-qadam — **"Per-user install → migration →
+>    uninstall proof"**. Build job **88865831812** yashil, Cloudflare Pages check yashil.
+>
 > ICE91 (36 ta) — **ogohlantirish**, per-user paket uchun MUQARRAR (`AppDataFolder` `ALLUSERS`ga
 > qarab o'zgarmaydi), chiqish kodiga ta'sir qilmaydi va **bostirilmaydi**.
-> **HALOL HOLAT: haqiqiy `msiexec` HALI BIR MARTA HAM ISHLAMAGAN** — o'rnatish/migratsiya/
-> o'chirish isboti keyingi push va birinchi yashil run'gacha **tasdiqlanmagan**.
+> **HOLAT: haqiqiy `msiexec` MASOFADA BIRINCHI MARTA MUVAFFAQIYATLI ISHLADI** — o'rnatish,
+> MSI'dan oldingi qoldiqlardan migratsiya, aynan payload/hash mos kelishi, `assetflow-data`
+> sentinel saqlanishi va o'chirish — barchasi run 29902381702'da isbotlandi.
 
 ---
 

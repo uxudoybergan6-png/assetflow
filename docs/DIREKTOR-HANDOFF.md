@@ -123,20 +123,18 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ## 5. JORIY HOLAT (2026-07-22)
 
-> ✅ **Task 2/3 TAYYOR:** self-updater o'chirilgan; `.pkg`/`.msi` FAQAT per-user (UAC yo'q),
-> imzolash fail-closed, MSI'dan oldingi qoldiqlar `RemoveFile` bilan ketadi, `assetflow-data` tegilmaydi.
-> ✅ **ICE64 MASOFADA YOPILDI** (`a99edb7` → run 29901585416): `wix msi validate` endi faqat
-> ICE91 **ogohlantirishlari** bilan o'tadi va 5-qadamga yetadi. Bostirish qo'shilmadi.
-> 🔴 **YANGI QIZIL, ENDI TUZATILDI:** 5-qadam `ci-verify-win-install.ps1` 111-qatorda yiqildi
-> (`kontrakti kutilmagan shaklda: S`). MSI nuqsoni EMAS — PowerShell bir elementli massivni
-> skalyarga unroll qiladi, `(Invoke-NodeLines …)[0]` birinchi HARFNI berardi. Yechim: fail-closed
-> `Invoke-NodeLine` o'qigichi + har ikkala single-line iste'molchi (`installDirName`, `cleanupReg`).
-> 🧪 **Lokal PASS:** 244 · **135** (edi 117, +18 regressiya) · 47 · 118 · 108 · 10; eski ps1'da
-> yangi tekshiruvlardan 9/9 yiqiladi. macOS'da `pwsh` YO'Q → ps1 lokal bajarilmadi.
-> ⚠️ **HALOL:** haqiqiy `msiexec` HALI BIR MARTA HAM ISHLAMAGAN (o'rnatish/migratsiya/o'chirish
-> isboti yo'q). 🔴 **EGA blokerlari:** (1) push → birinchi YASHIL `windows-installer` run;
-> (2) imzolash kredensiallari (Apple Developer ID + notarizatsiya · Authenticode) + `PluginRelease`.
-> Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.2/§3A.4.
+> ✅ **Task 2/3 TEXNIK ZANJIR TUGADI VA MASOFADA ISBOTLANDI:** `4293a6c` `origin/main`'da,
+> CI run **29902381702** to'liq YASHIL. Windows job **88865831801** (1m16s) — qadalgan WiX,
+> haqiqiy imzolanmagan MSI build, `wix msi validate`, **"Per-user install → migration →
+> uninstall proof"** — HAMMASI o'tdi. Bu **birinchi marta** `msiexec` o'rnatish/o'chirish,
+> eski qoldiqdan migratsiya, aynan payload/hash va `assetflow-data` sentinel saqlanishi
+> masofada haqiqatan isbotlandi (avval faqat statik/lokal edi).
+> 🧪 **Lokal testlar:** 135 · 244 · 47 · 118 · 108 · 10 — barchasi PASS, regressiya yo'q.
+> 🌐 **Jonli API:** `plugin/version?platform=mac` → `installerStatus:"not_published"` —
+> kontrakt ishlaydi, hali BIRORTA `PluginRelease` yo'q (reliz chiqarilmagan).
+> 🔴 **SHU RELIZ ZANJIRIDAGI YAGONA TASHQI BLOKER — EGA:** imzolash kredensiallari yo'q (Apple Developer ID
+> Installer + notarizatsiya, Windows Authenticode). Kodda hal qilib bo'lmaydi.
+> Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.4.
 
 ---
 

@@ -1,4 +1,20 @@
-> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval **«§-2 · 2026-07-11 JONLI TEKSHIRUV»** va **«§-1 · 2026-07-03 YANGILANISH»** bloklarini o'qing (ular eski faktlarni bekor qiladi).
+> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval **«§-3 · 2026-07-22 PLAGIN RELIZ ZANJIRI»**, **«§-2 · 2026-07-11 JONLI TEKSHIRUV»** va **«§-1 · 2026-07-03 YANGILANISH»** bloklarini o'qing (ular eski faktlarni bekor qiladi).
+
+---
+
+## §-3. 2026-07-22 PLAGIN RELIZ ZANJIRI — Task 2/3 masofada YASHIL
+
+- Plagin installer/updater texnik zanjiri (Task 2 self-updater almashtirish + Task 3 `.pkg`/`.msi`
+  quvuri) tugadi va masofada isbotlandi: `4293a6c` `origin/main`'da, CI run **29902381702**
+  to'liq yashil, Windows job **88865831801** — qadalgan WiX, haqiqiy MSI build, `wix msi validate`,
+  **"Per-user install → migration → uninstall proof"** — hammasi o'tdi (birinchi haqiqiy
+  `msiexec` isboti). Lokal testlar: 135 · 244 · 47 · 118 · 108 · 10 (barchasi PASS).
+- Jonli `GET api.getframeflow.app/api/plugin/version?platform=mac` →
+  `installerStatus:"not_published"` — kontrakt ishlaydi, hali BIRORTA `PluginRelease` yo'q.
+- **Shu reliz zanjiridagi yagona tashqi bloker (EGA ishi, kodda hal qilinmaydi):** Apple Developer ID Installer +
+  notarizatsiya va Windows Authenticode imzolash kredensiallari yo'q.
+- Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.4 ·
+  `docs/PLUGIN-UPDATE-CHAIN.md` · `docs/DIREKTOR-HANDOFF.md` §5.
 
 ---
 

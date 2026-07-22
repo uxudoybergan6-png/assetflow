@@ -1,7 +1,10 @@
 # PLUGIN UPDATE CHAIN — plagin yangilanish zanjiri (P11 + Task 2)
 
 > Oxirgi yangilanish: 2026-07-22 (Task 2 — panel-ichi self-updater OLIB TASHLANDI,
-> o'rniga platformaga xos installer + majburiy SHA-256 + OS'ga topshirish).
+> o'rniga platformaga xos installer + majburiy SHA-256 + OS'ga topshirish. Task 3 installer
+> quvuri endi masofada TO'LIQ YASHIL isbotlandi — CI run 29902381702, `docs/SESSION-REPORT.md`.
+> Jonli `GET /api/plugin/version?platform=mac` → `installerStatus:"not_published"`: kontrakt
+> ishlaydi, hali BIRORTA `PluginRelease` yo'q.
 > Yagona haqiqat manbai: `apps/api/src/lib/plugin-release-contract.ts` (server kontrakti) va
 > `plugins/after-effects-cep/AssetFlow_Plugin.html` `AF-UPDATER-BEGIN…AF-UPDATER-END` bloki (klient).
 > Testlar shu ikkalasini AYNAN o'qiydi.
@@ -172,7 +175,8 @@ npm run test:release-contract        # server kontrakti (108 case)
 npm run test:plugin-updater          # jonli AF-UPDATER bloki (118 case)
 npm run test:plugin-download-state   # veb yuklab olish holat mashinasi (10 case)
 npm run test:plugin-package          # paket/flavor xavfsizligi (47 case)
-npm run test:plugin-installers       # .pkg/.msi installer quvuri (160 case)
+npm run test:plugin-installers       # .pkg/.msi installer quvuri (244 case)
+npm run test:ci-windows-installer    # Windows CI job shartnomasi (135 case, §3A.4)
 ```
 
 `test-updater-security.mjs` jonli HTML'dan updater blokini ajratib oladi va:
