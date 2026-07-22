@@ -42,6 +42,8 @@ import {
   FLAVORS,
   ADMIN_SURFACE,
   FORBIDDEN_CEF_FLAGS,
+  SECRET_PATTERNS,
+  matchesSecretPattern,
   PLUGIN_SRC,
   DIST_DIR,
   artifactPath,
@@ -126,39 +128,13 @@ function check(label, condition, detail) {
   }
 }
 
-// ── Maxfiy ma'lumot naqshlari — mos kelgan QIYMAT hech qachon chop etilmaydi ──
-const SECRET_PATTERNS = [
-  { name: "private key block", re: /-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----/ },
-  { name: "certificate block", re: /-----BEGIN CERTIFICATE-----/ },
-  { name: "AWS access key id", re: /\bAKIA[0-9A-Z]{16}\b/ },
-  { name: "Google API key", re: /\bAIza[0-9A-Za-z_-]{35}\b/ },
-  { name: "OpenAI-style secret key", re: /\bsk-[A-Za-z0-9]{32,}\b/ },
-  { name: "Stripe live key", re: /\b[sr]k_live_[A-Za-z0-9]{16,}\b/ },
-  { name: "GitHub token", re: /\bgh[pousr]_[A-Za-z0-9]{30,}\b/ },
-  { name: "Slack token", re: /\bxox[abprs]-[A-Za-z0-9-]{12,}\b/ },
-  { name: "JWT literal", re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/ },
-  {
-    // Generik "kalit = qiymat". Qiymat kamida 16 belgi VA raqam saqlashi shart — aks holda
-    // bu shunchaki identifikator/localStorage kalit nomi (masalan API_KEY = 'af_admin_api'),
-    // sir emas. Yolg'on ijobiy natija testni foydasiz qilib qo'yadi.
-    name: "hardcoded credential assignment",
-    re: /\b(?:password|passwd|client_secret|secret[_-]?key|api[_-]?key|private[_-]?key|cert[_-]?pass)["']?\s*[:=]\s*["']([^"'\s]{16,})["']/gi,
-    accept: (value) => /\d/.test(value),
-  },
-];
+// Maxfiy ma'lumot naqshlari — YAGONA manba `package-flavors.mjs` (marketplace preflight ham
+// aynan shu ro'yxatni o'qiydi). Mos kelgan QIYMAT hech qachon chop etilmaydi.
 
 const TEXT_EXT = new Set([".html", ".js", ".jsx", ".css", ".xml", ".json", ".txt", ".md", ".debug"]);
 
 function textEntries(entries) {
   return [...entries].filter((e) => !e.endsWith("/") && TEXT_EXT.has(path.extname(e).toLowerCase()));
-}
-
-function matchesSecret(body, p) {
-  if (!p.accept) return p.re.test(body);
-  const re = new RegExp(p.re.source, p.re.flags.includes("g") ? p.re.flags : `${p.re.flags}g`);
-  let m;
-  while ((m = re.exec(body))) if (p.accept(m[1])) return true;
-  return false;
 }
 
 function scanSecrets(archivePath, entries) {
@@ -167,7 +143,7 @@ function scanSecrets(archivePath, entries) {
     const body = readEntry(archivePath, entry);
     for (const p of SECRET_PATTERNS) {
       // FAQAT fayl nomi + naqsh nomi qaytadi — mos kelgan QIYMAT hech qayerga chiqmaydi.
-      if (matchesSecret(body, p)) hits.push(`${entry} [${p.name}]`);
+      if (matchesSecretPattern(body, p)) hits.push(`${entry} [${p.name}]`);
     }
   }
   return hits;

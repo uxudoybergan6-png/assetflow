@@ -123,18 +123,19 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ## 5. JORIY HOLAT (2026-07-22)
 
-> ✅ **Task 2/3 TEXNIK ZANJIR TUGADI VA MASOFADA ISBOTLANDI:** `4293a6c` `origin/main`'da,
-> CI run **29902381702** to'liq YASHIL. Windows job **88865831801** (1m16s) — qadalgan WiX,
-> haqiqiy imzolanmagan MSI build, `wix msi validate`, **"Per-user install → migration →
-> uninstall proof"** — HAMMASI o'tdi. Bu **birinchi marta** `msiexec` o'rnatish/o'chirish,
-> eski qoldiqdan migratsiya, aynan payload/hash va `assetflow-data` sentinel saqlanishi
-> masofada haqiqatan isbotlandi (avval faqat statik/lokal edi).
-> 🧪 **Lokal testlar:** 135 · 244 · 47 · 118 · 108 · 10 — barchasi PASS, regressiya yo'q.
-> 🌐 **Jonli API:** `plugin/version?platform=mac` → `installerStatus:"not_published"` —
-> kontrakt ishlaydi, hali BIRORTA `PluginRelease` yo'q (reliz chiqarilmagan).
-> 🔴 **SHU RELIZ ZANJIRIDAGI YAGONA TASHQI BLOKER — EGA:** imzolash kredensiallari yo'q (Apple Developer ID
-> Installer + notarizatsiya, Windows Authenticode). Kodda hal qilib bo'lmaydi.
-> Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.4.
+> ✅ **Task 2/3 (installer/updater zanjiri) MASOFADA ISBOTLANGAN:** `4293a6c` `origin/main`'da,
+> CI run **29902381702** to'liq YASHIL — haqiqiy `msiexec` o'rnatish → migratsiya → o'chirish.
+> ✅ **Task 4 (Marketplace preflight) KOD TOMONI TUGADI:** `npm run preflight:marketplace`
+> (QA, kredensialsiz — `ZXPSignCmd` chaqirilmaydi) + `-- --release` (imzolangan `.zxp` +
+> **Adobe `ZXPSignCmd -verify` kriptografik tekshiruvi** + to'liq ega metadata SHART) +
+> `marketplace-submission.json` + `docs/MARKETPLACE-SUBMISSION.md`. Adobe'ga HECH NARSA
+> topshirilmadi; lokal tekshiruv paketni tasdiqlaydi, YAKUNIY qabul — Adobe portali.
+> 🧪 **Lokal testlar:** 100(yangi) · 135 · 244 · 47 · 118 · 108 · 10 — barchasi PASS, regressiya yo'q.
+> 🔴 **YAGONA KOD-YONDOSH TASHQI BLOKER — EGA:** imzolash yo'q. Marketplace uchun ZXP sertifikati
+> **va `ZXPSignCmd` vositasi** (bu mashinada yo'q → `-- --release` fail-closed, exit 1); to'g'ridan
+> `.pkg`/`.msi` zaxira kanali uchun Apple Developer ID + notarizatsiya va Windows Authenticode.
+> Ega ishi: Adobe hisobi, listing matni, vizual assetlar.
+> Tafsilot: `docs/MARKETPLACE-SUBMISSION.md` · `docs/SESSION-REPORT.md` · `RELEASE-ARCHITECTURE.md` §3A.4.
 
 ---
 

@@ -1,0 +1,45 @@
+{
+  "_readme": [
+    "Adobe Developer Distribution (Creative Cloud Marketplace) uchun EGA (owner) qaror maydonlari.",
+    "Bu yerda KODDAN OLINADIGAN hech narsa takrorlanmaydi — versiya, extension ID, MainPath,",
+    "HostList, artefakt nomi CSXS/manifest.xml + scripts/package-flavors.mjs dan olinadi.",
+    "Tekshiruvchi: npm run preflight:marketplace (QA) / -- --release (topshirishga tayyor).",
+    "Qo'llanma: docs/MARKETPLACE-SUBMISSION.md",
+    "",
+    "OWNER-INPUT-REQUIRED  = ega to'ldirishi shart (matn/URL/qaror).",
+    "OWNER-VISUAL-INPUT    = tasdiqlangan vizual asset yo'q; ega fayl yo'lini yozadi.",
+    "QA rejimida bu qiymatlar RUXSAT; --release rejimida HAR BIRI yiqiladi."
+  ],
+
+  "channel": "adobe-developer-distribution",
+
+  "owner": {
+    "publisherDisplayName": "OWNER-INPUT-REQUIRED",
+    "publisherAccountEmail": "OWNER-INPUT-REQUIRED",
+    "supportUrl": "OWNER-INPUT-REQUIRED",
+    "privacyPolicyUrl": "OWNER-INPUT-REQUIRED",
+    "termsUrl": "OWNER-INPUT-REQUIRED",
+    "signingCertificateSource": "OWNER-INPUT-REQUIRED"
+  },
+
+  "listing": {
+    "name": "FrameFlow",
+    "shortDescription": "OWNER-INPUT-REQUIRED",
+    "longDescription": "OWNER-INPUT-REQUIRED",
+    "category": "OWNER-INPUT-REQUIRED",
+    "keywords": ["OWNER-INPUT-REQUIRED"],
+    "pricingModel": "OWNER-INPUT-REQUIRED"
+  },
+
+  "visualAssets": {
+    "icon": "OWNER-VISUAL-INPUT",
+    "screenshot1": "OWNER-VISUAL-INPUT",
+    "screenshot2": "OWNER-VISUAL-INPUT"
+  },
+
+  "acknowledgements": {
+    "updateChannel": "OWNER-INPUT-REQUIRED",
+    "inPanelUpdaterCoexistence": "OWNER-INPUT-REQUIRED",
+    "directInstallerChannel": "backup-later"
+  }
+}

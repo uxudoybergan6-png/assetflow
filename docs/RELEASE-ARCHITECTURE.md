@@ -149,6 +149,28 @@ Bitta arxivning referens tekshiruvi alohida ham ishlaydi:
 node plugins/after-effects-cep/scripts/verify-zxp-package.mjs [archive.zip]
 ```
 
+### 3.6 Marketplace preflight (Adobe Developer Distribution)
+
+```bash
+npm run preflight:marketplace               # QA struktura — kredensialsiz, ZXPSignCmd chaqirilmaydi
+npm run preflight:marketplace -- --release  # imzolangan .zxp + ZXPSignCmd -verify + metadata SHART
+npm run test:marketplace-preflight          # 100 case (mutatsiya isboti)
+```
+
+Manifest ↔ flavor drifti (versiya · ID · `<Extension Version=>` · MainPath/ScriptPath · Menu ·
+HostList · RequiredRuntime · CEF bayroq allowlist'i), YANGI qurilgan mijoz arxivi tuzilmasi,
+`.debug`/`PlayerDebugMode`/sir/Admin sirti, masofaviy `<script>`/`<link>`, HTTPS bo'lmagan
+standart endpoint va **imzolanmagan zip imzolangan nom ostida** — hammasi fail-closed.
+
+**Reliz rejimida imzo KRIPTOGRAFIK tekshiriladi:** Adobe `ZXPSignCmd -verify <artefakt>`
+argument massivi bilan (shell YO'Q) ishga tushadi, chiqish kodi AYNAN 0 bo'lishi shart; vosita
+topilmasa/ishga tushmasa/kod ≠ 0 → fail-closed, muvaffaqiyat xabari CHIQMAYDI. Vosita qidiruv
+joylari `build-zxp.sh` bilan bir xil (`PATH` · Extension Manager · `~/bin` · `<repo>/tools`),
+`--zxpsigncmd=<path>` / `ZXPSIGNCMD_PATH` bilan aniq beriladi. Vositaning stdout/stderr'i
+chop etilmaydi; `ZXP_CERT*` preflightda o'qilmaydi. Konvert borligi va konteyner baytlari —
+alohida, kuchsizroq tekshiruvlar; ular imzoni ISBOTLAMAYDI. Yakuniy qabul — Adobe portali.
+Ega qadamlari, listing worksheet va rollback: **`docs/MARKETPLACE-SUBMISSION.md`**.
+
 ---
 
 ## 3A. Installer artefaktlari (Task 3) — mijozga tarqatiladigan `.pkg` / `.msi`

@@ -15,6 +15,8 @@
     "api:only": "node scripts/run-api-only.mjs",
     "studio:ui": "node scripts/start-studio-ui.mjs",
     "verify:pipeline": "node scripts/verify-pipeline.mjs",
+    "preflight:marketplace": "node plugins/after-effects-cep/scripts/marketplace-preflight.mjs",
+    "test:marketplace-preflight": "node plugins/after-effects-cep/scripts/test-marketplace-preflight.mjs",
     "test:plugin-package": "node plugins/after-effects-cep/scripts/test-package-security.mjs",
     "test:plugin-installers": "node plugins/after-effects-cep/scripts/test-installer-artifacts.mjs",
     "test:ci-windows-installer": "node plugins/after-effects-cep/scripts/test-ci-windows-installer.mjs",

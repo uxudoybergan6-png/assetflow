@@ -50,7 +50,10 @@ export function extractAll(text, regex) {
 }
 
 /** Arxivning barcha runtime referenslarini tekshiradi.
- *  @returns {{ checks: {ok:boolean,label:string}[], failed:number, htmlEntries:string[] }} */
+ *  `resolved` — HAQIQATAN referens qilingan arxiv yo'llari (marketplace preflight undan
+ *  "paketda bor, lekin hech qayerdan chaqirilmaydi" fayllarni aniqlaydi).
+ *  @returns {{ checks: {ok:boolean,label:string}[], failed:number, htmlEntries:string[],
+ *              resolved:Set<string> }} */
 export function verifyArchiveReferences(archivePath) {
   const checks = [];
   const ok = (label) => checks.push({ ok: true, label });
@@ -58,12 +61,13 @@ export function verifyArchiveReferences(archivePath) {
 
   const entries = listEntries(archivePath);
   const htmlEntries = [];
+  const resolvedRefs = new Set();
 
   // 1) manifest MainPath/ScriptPath
   const manifestEntry = "CSXS/manifest.xml";
   if (!entries.has(manifestEntry)) {
     bad(`${manifestEntry} MISSING from archive`);
-    return { checks, failed: 1, htmlEntries };
+    return { checks, failed: 1, htmlEntries, resolved: resolvedRefs };
   }
   const xml = readEntry(archivePath, manifestEntry);
   const paths = [
@@ -74,6 +78,7 @@ export function verifyArchiveReferences(archivePath) {
     const resolved = normalizeRef(".", raw);
     if (entries.has(resolved)) {
       ok(`manifest → ${raw} (${resolved})`);
+      resolvedRefs.add(resolved);
       if (resolved.endsWith(".html")) htmlEntries.push(resolved);
     } else {
       bad(`manifest → ${raw} (${resolved}) MISSING from archive`);
@@ -97,6 +102,7 @@ export function verifyArchiveReferences(archivePath) {
         continue;
       }
       ok(`${htmlEntry} → ${raw} (${resolved})`);
+      resolvedRefs.add(resolved);
       if (!resolved.endsWith(".css") || seenCss.has(resolved)) continue;
       seenCss.add(resolved);
       const css = readEntry(archivePath, resolved);
@@ -104,13 +110,15 @@ export function verifyArchiveReferences(archivePath) {
       for (const url of extractAll(css, /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi)) {
         if (isIgnorableUrl(url)) continue;
         const target = normalizeRef(cssDir, url);
-        if (entries.has(target)) ok(`${resolved} → ${url} (${target})`);
-        else bad(`${resolved} → ${url} (${target}) MISSING from archive`);
+        if (entries.has(target)) {
+          ok(`${resolved} → ${url} (${target})`);
+          resolvedRefs.add(target);
+        } else bad(`${resolved} → ${url} (${target}) MISSING from archive`);
       }
     }
   }
 
-  return { checks, failed: checks.filter((c) => !c.ok).length, htmlEntries };
+  return { checks, failed: checks.filter((c) => !c.ok).length, htmlEntries, resolved: resolvedRefs };
 }
 
 // ── CLI ───────────────────────────────────────────────────────────────────────

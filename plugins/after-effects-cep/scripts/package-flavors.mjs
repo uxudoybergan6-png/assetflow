@@ -50,6 +50,22 @@ const ADMIN_FILES = [
   "css/fonts/*.woff2",
 ];
 
+/** Ikkala manifest e'lon qiladigan CEF bayroqlari — YOPIQ ro'yxat.
+ *  Yangi bayroq ONGLI ravishda shu yerga qo'shilishi kerak (marketplace-preflight
+ *  manifest bilan AYNAN tenglikni talab qiladi) — jimgina imkoniyat kengaymasin. */
+const CEF_PARAMS = [
+  "--allow-file-access-from-files",
+  "--allow-file-access",
+  "--persist-session-cookies",
+  "--mixed-context",
+  "--enable-nodejs",
+];
+
+/** Qo'llab-quvvatlanadigan host — manifest AYNAN shuni e'lon qiladi. Marketing/listing
+ *  matni bundan TASHQARI hech qanday ilovani va'da qila olmaydi. */
+const HOSTS = [{ name: "AEFT", version: "[22.0,99.9]" }];
+const REQUIRED_RUNTIME = { name: "CSXS", version: "11.0" };
+
 export const FLAVORS = {
   customer: {
     key: "customer",
@@ -58,10 +74,15 @@ export const FLAVORS = {
     manifestSource: "CSXS/manifest.xml",
     debugSource: ".debug",
     bundleId: "com.frameflow",
+    bundleName: "FrameFlow",
     extensionId: "com.frameflow.panel",
     mainPath: "./AssetFlow_Plugin.html",
     mainHtml: "AssetFlow_Plugin.html",
+    scriptPath: "./jsx/host.jsx",
     menuLabel: "FrameFlow",
+    hosts: HOSTS,
+    requiredRuntime: REQUIRED_RUNTIME,
+    cefParams: CEF_PARAMS,
     installDirName: "com.frameflow",
     artifactBase: "frameflow-plugin",
     files: CUSTOMER_FILES,
@@ -73,10 +94,15 @@ export const FLAVORS = {
     manifestSource: "CSXS/manifest.admin.xml",
     debugSource: ".debug.admin",
     bundleId: "com.frameflow.internal.admin",
+    bundleName: "FrameFlow Admin (Internal)",
     extensionId: "com.frameflow.admin",
     mainPath: "./AssetFlow_Admin.html",
     mainHtml: "AssetFlow_Admin.html",
+    scriptPath: "./jsx/host.jsx",
     menuLabel: "FrameFlow Admin",
+    hosts: HOSTS,
+    requiredRuntime: REQUIRED_RUNTIME,
+    cefParams: CEF_PARAMS,
     installDirName: "com.frameflow.internal.admin",
     artifactBase: "frameflow-internal-admin",
     files: ADMIN_FILES,
@@ -95,6 +121,48 @@ export const ADMIN_SURFACE = {
 
 /** HECH BIR manifest (mijoz ham, ichki ham) ishlatmasligi shart bo'lgan CEF bayroqlari. */
 export const FORBIDDEN_CEF_FLAGS = ["--disable-web-security"];
+
+/** Tarqatiladigan paketda HECH QACHON bo'lmasligi shart bo'lgan DEBUG sirti.
+ *  `files` — masofaviy debug portini ochadigan CEP profil fayllari (`.debug*`).
+ *  `markers` — paketlangan matnda uchramasligi kerak bo'lgan debug/xavfsizlik-pasaytiruvchi
+ *  satrlar: Adobe dasturchi rejimi kaliti va uni yoquvchi CSXS sozlama domeni. */
+export const DEBUG_SURFACE = {
+  files: [FLAVORS.customer.debugSource, FLAVORS.admin.debugSource],
+  markers: ["PlayerDebugMode", "com.adobe.CSXS.", ...FORBIDDEN_CEF_FLAGS],
+};
+
+/** Maxfiy ma'lumot naqshlari — paketlangan matn fayllarida skanerlanadi.
+ *  MUHIM: mos kelgan QIYMAT hech qachon chop etilmaydi, faqat fayl nomi + naqsh nomi.
+ *  Paket xavfsizlik testi ham, marketplace preflight ham AYNAN shu ro'yxatdan o'qiydi. */
+export const SECRET_PATTERNS = [
+  { name: "private key block", re: /-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----/ },
+  { name: "certificate block", re: /-----BEGIN CERTIFICATE-----/ },
+  { name: "AWS access key id", re: /\bAKIA[0-9A-Z]{16}\b/ },
+  { name: "Google API key", re: /\bAIza[0-9A-Za-z_-]{35}\b/ },
+  { name: "OpenAI-style secret key", re: /\bsk-[A-Za-z0-9]{32,}\b/ },
+  { name: "Stripe live key", re: /\b[sr]k_live_[A-Za-z0-9]{16,}\b/ },
+  { name: "GitHub token", re: /\bgh[pousr]_[A-Za-z0-9]{30,}\b/ },
+  { name: "Slack token", re: /\bxox[abprs]-[A-Za-z0-9-]{12,}\b/ },
+  { name: "JWT literal", re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/ },
+  {
+    // Generik "kalit = qiymat". Qiymat kamida 16 belgi VA raqam saqlashi shart — aks holda
+    // bu shunchaki identifikator/localStorage kalit nomi (masalan API_KEY = 'af_admin_api'),
+    // sir emas. Yolg'on ijobiy natija tekshiruvni foydasiz qilib qo'yadi.
+    name: "hardcoded credential assignment",
+    re: /\b(?:password|passwd|client_secret|secret[_-]?key|api[_-]?key|private[_-]?key|cert[_-]?pass)["']?\s*[:=]\s*["']([^"'\s]{16,})["']/gi,
+    accept: (value) => /\d/.test(value),
+  },
+];
+
+/** Bitta naqsh matnda uchraydimi. `accept` bo'lsa — mos kelgan QIYMAT ham shartni
+ *  qanoatlantirishi kerak. Qiymat qaytarilmaydi (chop etilib ketmasin). */
+export function matchesSecretPattern(body, p) {
+  if (!p.accept) return p.re.test(body);
+  const re = new RegExp(p.re.source, p.re.flags.includes("g") ? p.re.flags : `${p.re.flags}g`);
+  let m;
+  while ((m = re.exec(body))) if (p.accept(m[1])) return true;
+  return false;
+}
 
 export function getFlavor(name) {
   const f = FLAVORS[name];

@@ -1,4 +1,26 @@
-> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval **«§-3 · 2026-07-22 PLAGIN RELIZ ZANJIRI»**, **«§-2 · 2026-07-11 JONLI TEKSHIRUV»** va **«§-1 · 2026-07-03 YANGILANISH»** bloklarini o'qing (ular eski faktlarni bekor qiladi).
+> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval **«§-4 · 2026-07-22 MARKETPLACE PREFLIGHT»**, **«§-3 · 2026-07-22 PLAGIN RELIZ ZANJIRI»**, **«§-2 · 2026-07-11 JONLI TEKSHIRUV»** va **«§-1 · 2026-07-03 YANGILANISH»** bloklarini o'qing (ular eski faktlarni bekor qiladi).
+
+---
+
+## §-4. 2026-07-22 MARKETPLACE PREFLIGHT — kod tomoni tayyor, topshirilmagan
+
+- Adobe Developer Distribution (CC Marketplace) uchun fail-closed preflight qo'shildi:
+  `npm run preflight:marketplace` (QA struktura — kredensialsiz, ZXPSignCmd CHAQIRILMAYDI) va
+  `-- --release` (imzolangan `.zxp` + **Adobe `ZXPSignCmd -verify` bilan KRIPTOGRAFIK tekshiruv**
+  + to'liq ega metadata SHART). Yagona manba `package-flavors.mjs`/`verify-zxp-package.mjs`/
+  `installer-payload.mjs` qayta ishlatildi; raqib ro'yxat yo'q. Test — **100/100**.
+- Endi majburlanadi (ilgari tekshirilmasdi): `<Extension Version=>` ↔ bundle versiya ·
+  `HostList`/`RequiredRuntime`/`ScriptPath`/`Menu`/`ExtensionBundleName` · CEF bayroq allowlist'i ·
+  `.debug`/`PlayerDebugMode` · masofaviy `<script>`/`<link>` · HTTPS bo'lmagan standart endpoint ·
+  imzolanmagan zip imzolangan nom ostida · `owner.publisherAccountEmail` email SHAKLI.
+- **Kriptografik chegara halol nomlangan:** imzo konvertining borligi va konteyner baytlarining
+  mosligi imzoni ISBOTLAMAYDI (soxta `META-INF/signatures.xml` qo'shish mumkin) — hukmni
+  `ZXPSignCmd -verify` chiqish kodi beradi; vosita yo'q bo'lsa tekshiruv o'tkazib yuborilmaydi.
+  Lokal tekshiruv paketni tasdiqlaydi; **yakuniy qabul — Adobe portali / Creative Cloud**.
+- **Adobe'ga HECH NARSA topshirilmadi.** Bloker: `ZXPSignCmd`/imzolash identikasi yo'q →
+  `-- --release` ataylab yiqiladi (exit 1). Ega ishi: hisob, sertifikat, listing matni, vizual assetlar.
+- Operator qo'llanmasi: `docs/MARKETPLACE-SUBMISSION.md` ·
+  metadata: `plugins/after-effects-cep/marketplace-submission.json`.
 
 ---
 
