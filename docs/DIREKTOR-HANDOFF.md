@@ -123,19 +123,20 @@ Server deploy'ga KIRMAYDI — AE ичига `install-cep.sh` bilan o'rnatiladi.
 
 ## 5. JORIY HOLAT (2026-07-22)
 
-> ✅ **Task 2 — panel self-updater O'CHIRILDI (xavfsiz yangilanish zanjiri):** panel hech narsa
-> o'rnatmaydi; platformaga xos artefakt + MAJBURIY SHA-256 → OS installeriga topshiriladi.
-> ✅ **Task 3 — installer quvuri TAYYOR:** macOS `.pkg` + Windows `.msi`, ikkalasi ham FAQAT
-> per-user (admin/UAC so'ralmaydi), payload = mijoz flavor'i, imzolash fail-closed.
-> ✅ **Windows migratsiyasi:** MSI'dan OLDINGI o'rnatma qoldiqlari (`.debug*` + ichki Admin sirti)
-> generatordagi aniq `RemoveFile` qatorlari bilan olib tashlanadi; `assetflow-data` tegilmaydi.
-> 🆕 **`windows-latest` CI job'i:** qadalgan WiX → haqiqiy MSI build → `wix msi validate` →
-> haqiqiy per-user o'rnatish/migratsiya/o'chirish isboti. ⚠️ **PUSH YO'Q → hali masofada ISHLAMAGAN.**
-> 🧪 **Lokal testlar PASS:** 112 · 229 · 47 · 118 · 108 · 10 case + `npm run build -w apps/api`
-> (Windows'ga xos qadamlar macOS'da bajarib bo'lmaydi — faqat statik shartnoma isbotlangan).
-> 🔴 **EGA blokerlari:** (1) push → birinchi YASHIL CI run; (2) imzolash kredensiallari
-> (Apple Developer ID + notarizatsiya · Windows Authenticode) va `PluginRelease` publish.
-> Tarix/tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` · `docs/PLUGIN-UPDATE-CHAIN.md`.
+> ✅ **Task 2/3 TAYYOR:** self-updater o'chirilgan (artefakt + MAJBURIY SHA-256 → OS installeri);
+> `.pkg`/`.msi` FAQAT per-user (UAC yo'q), imzolash fail-closed, MSI'dan oldingi qoldiqlar
+> `RemoveFile` bilan ketadi, `assetflow-data` tegilmaydi.
+> 🔴 **MASOFAVIY QIZIL (birinchi haqiqiy run 29878659236, `d1e44e8`):** Linux/CF Pages/deploy
+> YASHIL, lekin `windows-installer` — MSI qurildi, `wix msi validate` **10× ICE64** (exit 204)
+> bilan yiqildi → haqiqiy o'rnatish qadami umuman ishlamadi.
+> 🛠 **TUZATILDI (bostirilmadi):** profil ostidagi HAR papkaga `<RemoveFolder On="uninstall"/>`
+> (`FF_ProfileFolders`) + `Subdirectory=` olib tashlandi. MSI faqat **BO'SH** papkani o'chiradi →
+> ma'lumot va umumiy Adobe papkalari saqlanadi; ICE91 (muqarrar ogohlantirish) TEGILMADI.
+> 🧪 **Lokal PASS:** 244 · 117 · 47 · 118 · 108 · 10 case + `apps/api` build; eski generatorда
+> yangi tekshiruvlar 5/5 yiqiladi. ⚠️ Tuzatma **masofada hali isbotlanmagan**.
+> 🔴 **EGA blokerlari:** (1) push → birinchi YASHIL `windows-installer` run; (2) imzolash
+> kredensiallari (Apple Developer ID + notarizatsiya · Windows Authenticode) + `PluginRelease`.
+> Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.2/§3A.4.
 
 ---
 

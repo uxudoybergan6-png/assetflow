@@ -822,10 +822,10 @@ check(
   JSON.stringify(wxsFiles) === JSON.stringify(expected),
   `wxs=${wxsFiles.length} expected=${expected.length}`
 );
-// Payload komponentlari + AYNAN bitta migratsiya (RemoveFile) komponenti.
-const WXS_COMPONENTS = expected.length + 1;
+// Payload komponentlari + migratsiya (RemoveFile) + profil papkalari (RemoveFolder, ICE64).
+const WXS_COMPONENTS = expected.length + 2;
 check(
-  "WiX komponent soni = fayl soni + 1 migratsiya komponenti (har fayl mustaqil komponent)",
+  "WiX komponent soni = fayl soni + migratsiya + profil-papka komponenti (har fayl mustaqil)",
   (wxs.match(/<Component /g) || []).length === WXS_COMPONENTS &&
     (wxs.match(/<ComponentRef /g) || []).length === WXS_COMPONENTS,
   `component=${(wxs.match(/<Component /g) || []).length} ref=${(wxs.match(/<ComponentRef /g) || []).length} kutilgan=${WXS_COMPONENTS}`
@@ -851,9 +851,13 @@ const collisionWxs = buildWxsSource({
 });
 const dirIds = [...collisionWxs.matchAll(/<Directory Id="([^"]+)"/g)].map((m) => m[1]);
 const genDirIds = dirIds.filter((id) => id.startsWith("D_"));
+// (`CSXS` ham chiqadi: eski `CSXS/manifest.admin.xml` qatori HAQIQIY Directory Id'ga ishora qiladi.)
+const collisionPaths = ["css", "css/fonts", "js", "js/fonts"];
 check(
   `takrorlangan papka nomlari (css/fonts ↔ js/fonts) NOYOB Directory Id beradi (${genDirIds.length})`,
-  genDirIds.length === 4 && new Set(genDirIds).size === 4,
+  collisionPaths.every((p) => genDirIds.includes(wixId("D", p))) &&
+    new Set(collisionPaths.map((p) => wixId("D", p))).size === 4 &&
+    new Set(genDirIds).size === genDirIds.length,
   genDirIds.join(", ")
 );
 check(
@@ -888,7 +892,21 @@ const removeRows = [...wxs.matchAll(/<RemoveFile\b([^>]*?)\/>/g)].map((m) => {
   for (const a of m[1].matchAll(/([A-Za-z]+)="([^"]*)"/g)) attrs[a[1]] = a[2];
   return attrs;
 });
-const rowPath = (r) => `${r.Subdirectory ? `${r.Subdirectory.replace(/\\/g, "/")}/` : ""}${r.Name}`;
+// Nishon papka `Directory=` orqali beriladi (`Subdirectory=` ATAYLAB YO'Q — ICE64 blokiga qara).
+const wxsDirIds = [...wxs.matchAll(/<Directory Id="([^"]+)"/g)].map((m) => m[1]);
+const dirPathById = new Map([["INSTALLFOLDER", ""]]);
+for (const rel of expected) {
+  const parts = rel.split("/");
+  parts.pop();
+  for (let i = 1; i <= parts.length; i++) {
+    const p = parts.slice(0, i).join("/");
+    dirPathById.set(wixId("D", p), p);
+  }
+}
+const rowPath = (r) => {
+  const dir = dirPathById.get(r.Directory);
+  return dir === undefined ? `??${r.Directory}/${r.Name}` : `${dir ? `${dir}/` : ""}${r.Name}`;
+};
 const rowPaths = removeRows.map(rowPath).sort();
 
 check(
@@ -909,10 +927,10 @@ check(
 for (const rel of staleList) {
   const parts = rel.split("/");
   const name = parts.pop();
-  const sub = parts.join("\\");
-  const row = removeRows.find((r) => r.Name === name && (r.Subdirectory || "") === sub);
+  const dirId = parts.length ? wixId("D", parts.join("/")) : "INSTALLFOLDER";
+  const row = removeRows.find((r) => r.Name === name && r.Directory === dirId);
   check(
-    `migratsiya: "${rel}" → Name="${name}"${sub ? ` Subdirectory="${sub}"` : " (INSTALLFOLDER ildizi)"}`,
+    `migratsiya: "${rel}" → Name="${name}" Directory="${dirId}"${parts.length ? "" : " (nishon ildizi)"}`,
     !!row,
     JSON.stringify(removeRows)
   );
@@ -924,21 +942,29 @@ check(
   removeRows.map((r) => r.On).join(",")
 );
 check(
-  'migratsiya: har bir <RemoveFile> Directory="INSTALLFOLDER" (nishon papkadan tashqariga chiqmaydi)',
-  removeRows.length > 0 && removeRows.every((r) => r.Directory === "INSTALLFOLDER")
+  "migratsiya: har bir <RemoveFile> nishon papka ichidagi E'LON QILINGAN Directory'ga tegishli",
+  removeRows.length > 0 && removeRows.every((r) => dirPathById.has(r.Directory) && wxsDirIds.includes(r.Directory)),
+  removeRows.map((r) => r.Directory).join(",")
 );
 check(
   "migratsiya: <RemoveFile> Id'lari noyob",
   new Set(removeRows.map((r) => r.Id)).size === removeRows.length
 );
 check(
-  "migratsiya: WILDCARD YO'Q (`*` yoki `?` na Name'da, na Subdirectory'da)",
-  removeRows.every((r) => !/[*?]/.test(r.Name || "") && !/[*?]/.test(r.Subdirectory || "")) &&
+  "migratsiya: WILDCARD YO'Q (`*` yoki `?` na Name'da, na Directory'da)",
+  removeRows.every((r) => !/[*?]/.test(r.Name || "") && !/[*?]/.test(r.Directory || "")) &&
     !/<RemoveFile[^>]*Name="[^"]*[*?]/.test(wxs)
 );
 check(
-  "migratsiya: <RemoveFolder> YO'Q — birorta PAPKA o'chirilmaydi",
-  !/<RemoveFolder\b/.test(wxs) && !/RemoveExistingProducts|RemoveFolderEx/.test(wxs)
+  "migratsiya: rekursiv/kengaytma o'chirish YO'Q (RemoveFolderEx · RemoveExistingProducts)",
+  !/RemoveExistingProducts|RemoveFolderEx/.test(wxs)
+);
+check(
+  "migratsiya komponentida <RemoveFolder> YO'Q (papka tozalash alohida komponentda)",
+  (() => {
+    const block = wxs.slice(wxs.indexOf(`<Component Id="${CLEANUP_ID}"`));
+    return !block.slice(0, block.indexOf("</Component>")).includes("<RemoveFolder");
+  })()
 );
 check(
   "migratsiya: CustomAction/skript YO'Q (faqat standart RemoveFile amali)",
@@ -981,6 +1007,95 @@ check(
       return false;
     }
   })()
+);
+
+// ── E3f — ICE64: profil papkalari `RemoveFile` jadvalida ────────────────────
+// MASOFAVIY ISBOT (run 29878659236, d1e44e8): `wix msi validate` 10 marta
+// `error WIX0204: ICE64: The directory <X> is in the user profile but is not listed in the
+// RemoveFile table` bilan yiqildi (exit 204) — o'rnatish qadamiga umuman yetib bormadi.
+// Rasmiy qoida: user-profile (`AppDataFolder`) ostida E'LON QILINGAN har bir `Directory`
+// qatori RemoveFile jadvalida bo'lishi SHART (FileName NULL = WiX `<RemoveFolder>`).
+// Windows Installer bunday qatorni FAQAT PAPKA BO'SH bo'lsa bajaradi → `assetflow-data` va
+// umumiy Adobe papkalari saqlanadi. Bu blok 1cc01ad/d1e44e8 generatorida YIQILADI.
+const removeFolders = [...wxs.matchAll(/<RemoveFolder\b([^>]*?)\/>/g)].map((m) => {
+  const attrs = {};
+  for (const a of m[1].matchAll(/([A-Za-z]+)="([^"]*)"/g)) attrs[a[1]] = a[2];
+  return attrs;
+});
+const FOLDER_ID = typeof wixGen.FOLDER_COMPONENT_ID === "string" ? wixGen.FOLDER_COMPONENT_ID : "FF_ProfileFolders";
+check(
+  `ICE64: e'lon qilingan HAR bir profil papkasi uchun <RemoveFolder> bor (${wxsDirIds.length})`,
+  wxsDirIds.length > 0 &&
+    JSON.stringify([...wxsDirIds].sort()) === JSON.stringify([...new Set(removeFolders.map((r) => r.Directory))].sort()),
+  `Directory=[${wxsDirIds.join(",")}] RemoveFolder=[${removeFolders.map((r) => r.Directory).join(",")}]`
+);
+check(
+  "ICE64: har papka uchun AYNAN bitta <RemoveFolder> (Id'lar noyob)",
+  removeFolders.length === wxsDirIds.length && new Set(removeFolders.map((r) => r.Id)).size === removeFolders.length
+);
+check(
+  'ICE64: har <RemoveFolder> On="uninstall" (o\'rnatishda papka o\'chirilmaydi)',
+  removeFolders.length > 0 && removeFolders.every((r) => r.On === "uninstall"),
+  removeFolders.map((r) => r.On).join(",")
+);
+check(
+  "ICE64: <RemoveFolder>da wildcard/`Property` yo'q — faqat e'lon qilingan Directory Id",
+  removeFolders.every((r) => !r.Property && !/[*?]/.test(r.Directory || "") && !/[*?]/.test(r.Id || ""))
+);
+check(
+  "ICE64: nishon ildizi (INSTALLFOLDER) va uning profil ota-papkalari ham qamrab olingan",
+  ["INSTALLFOLDER", "FF_extensions", "FF_CEP", "FF_Adobe"].every((id) => removeFolders.some((r) => r.Directory === id))
+);
+check(
+  "ICE64: papka qatorlari CHUQURDAN YUZAGA (bola ota-papkadan oldin — bo'shatish tartibi)",
+  (() => {
+    const order = removeFolders.map((r) => r.Directory);
+    const depth = (id) => (id === "INSTALLFOLDER" ? 0 : dirPathById.has(id) ? dirPathById.get(id).split("/").length : -1);
+    const inner = order.slice(0, order.indexOf("INSTALLFOLDER"));
+    return (
+      order.indexOf("INSTALLFOLDER") >= 0 &&
+      order.indexOf("FF_extensions") > order.indexOf("INSTALLFOLDER") &&
+      order.indexOf("FF_Adobe") === order.length - 1 &&
+      inner.every((id, i) => i === 0 || depth(inner[i - 1]) >= depth(id))
+    );
+  })(),
+  removeFolders.map((r) => r.Directory).join(" → ")
+);
+check(
+  "ICE64 REGRESSIYASI: `Subdirectory=` ISHLATILMAYDI (u avto-Id'li qo'shimcha Directory yasaydi)",
+  !/Subdirectory=/.test(wxs)
+);
+check(
+  "papka komponenti O'RNATILADI va per-user (HKCU keypath + ComponentRef + noyob GUID)",
+  new RegExp(`<Component Id="${FOLDER_ID}" Guid="\\{[0-9A-F-]{36}\\}">\\s*\\n\\s*<RegistryValue Root="HKCU"[^>]*KeyPath="yes"/>`).test(wxs) &&
+    new RegExp(`<ComponentRef Id="${FOLDER_ID}"/>`).test(wxs)
+);
+check(
+  "papka komponenti eski-fayl ro'yxatidan MUSTAQIL (boshqa payload'da ham to'liq qamrov)",
+  (() => {
+    const ids = [...collisionWxs.matchAll(/<Directory Id="([^"]+)"/g)].map((m) => m[1]);
+    const rf = [...collisionWxs.matchAll(/<RemoveFolder Id="[^"]+" Directory="([^"]+)" On="uninstall"\/>/g)].map((m) => m[1]);
+    return collisionWxs.includes(`<Component Id="${FOLDER_ID}"`) && ids.length > 0 && JSON.stringify(ids.sort()) === JSON.stringify(rf.sort());
+  })()
+);
+check(
+  "ICE64 tuzatmasi foydalanuvchi ma'lumotini xavf ostiga QO'YMAYDI (`assetflow-data` manbada yo'q)",
+  !/assetflow-data/.test(wxs)
+);
+
+// ── E3g — PER-USER doirasi: elevation/UAC/Program Files YO'Q ────────────────
+check("per-user: `Scope=\"perUser\"` AYNAN bir marta, `perMachine` YO'Q", (wxs.match(/Scope="perUser"/g) || []).length === 1 && !/perMachine/.test(wxs));
+check(
+  "per-user: ALLUSERS/Privileged/elevation xossalari AVTORLANMAGAN",
+  !/\bALLUSERS\b/.test(wxs) && !/Privileged/.test(wxs) && !/MSIINSTALLPERUSER/.test(wxs) && !/Impersonate="no"/.test(wxs)
+);
+check(
+  "per-user: yagona StandardDirectory = AppDataFolder (boshqa tizim ildizi YO'Q)",
+  [...wxs.matchAll(/<StandardDirectory Id="([^"]+)"/g)].map((m) => m[1]).join(",") === "AppDataFolder"
+);
+check(
+  "per-user: ICE validatsiyasini bostiruvchi avtorlash YO'Q (SuppressValidation/sice/InstallPrivileges)",
+  !/SuppressValidation|SuppressIces|-sice|InstallPrivileges/i.test(wxs)
 );
 
 // E3c — MSI tuzilma tekshiruvi (ixtiyoriy baytlar `.msi` DEB QABUL QILINMAYDI)

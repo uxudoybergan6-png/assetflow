@@ -221,6 +221,24 @@ check(
   "build skriptida ham validatsiya bostirilmaydi (`wix build` standart ICE'lari kuchda)",
   !/(^|\s|")-sval(\s|"|$)/m.test(winBuildCode) && !/(^|\s|")-sw\d*(\s|"|$)/m.test(winBuildCode)
 );
+// 2026-07-21 masofaviy run (d1e44e8): validator `error WIX0204: ICE64` bilan 10 marta yiqildi.
+// TO'G'RI yechim — avtorlashni tuzatish (generator `RemoveFolder` qatorlari), ICE'ni BOSTIRISH EMAS.
+check(
+  "ICE bostirish YO'Q: `-sice`/`SuppressIces`/`SuppressValidation` na workflow'da, na build skriptida",
+  !/-sice|SuppressIces|SuppressValidation/i.test(winJobCode) && !/-sice|SuppressIces|SuppressValidation/i.test(winBuildCode)
+);
+check(
+  "validate qadami `continue-on-error` bilan yumshatilmagan",
+  !/continue-on-error/.test(ymlCode)
+);
+check(
+  "validator xatosi try/catch bilan yutilmaydi (job'da PowerShell try/catch YO'Q)",
+  !/\btry\s*\{/.test(winJobCode) && !/\bcatch\b/.test(winJobCode)
+);
+check(
+  "validator chiqish kodi e'tiborsiz qoldirilmaydi (`|| true` / `$LASTEXITCODE` yumshatish YO'Q)",
+  !/\|\|\s*true/.test(winJobCode) && !/exit\s+0/.test(winJobCode)
+);
 check("PowerShell qadamlari native xatoda to'xtaydi", (winJob.match(/\$ErrorActionPreference = 'Stop'/g) || []).length >= 4);
 check(
   "PowerShell native chiqish kodlari xato deb qabul qilinadi",
@@ -256,6 +274,11 @@ check(
   (ps1.match(/sentinelAbs -PathType Leaf/g) || []).length >= 2 && (ps1.match(/sentinelSha/g) || []).length >= 3
 );
 check("ps1: o'chirishdan keyin MSI payload qoldig'i YO'Qligi tekshiriladi", /o'chirishdan keyin MSI payload qoldig|afterOwned/i.test(ps1));
+check(
+  "ps1: ICE64 papka tozalash BO'SH papkaga cheklangani isbotlanadi (nishon + umumiy Adobe papkasi QOLADI)",
+  /ma'lumoti BOR nishon papkani o'chirdi/.test(ps1) && /umumiy Adobe CEP papkasini o'chirdi/.test(ps1) &&
+    /Test-Path -LiteralPath \$extensionsRoot -PathType Container/.test(ps1)
+);
 check("ps1: per-user isboti — tizim papkasiga yozilmagani tekshiriladi", /ProgramFiles/.test(ps1));
 
 // ══ G) Ro'yxatlar YAGONA manbadan (nusxa YO'Q) ══════════════════════════════

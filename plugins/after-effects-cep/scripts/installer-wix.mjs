@@ -8,6 +8,11 @@
 //
 // Bu yerda MSI'dan OLDINGI o'rnatma qoldiqlari uchun `RemoveFile` qatorlari ham generatsiya
 // qilinadi (pastdagi "MSI'dan OLDINGI o'rnatma qoldiqlari" bo'limiga qara).
+//
+// QOIDA (ICE64 — Windows Installer rasmiy talabi): foydalanuvchi profili ostida (bizda
+// `AppDataFolder`) paket E'LON QILGAN HAR BIR papka `RemoveFile` jadvalida bo'lishi SHART
+// (FileName NULL qatori = WiX `<RemoveFolder>`), aks holda profil o'chirishdan keyin
+// ifloslanadi. Shuning uchun pastdagi "Profil papkalari" bo'limiga qara.
 
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -52,8 +57,12 @@ export function xmlAttr(s) {
 // QAT'IY chegara (macOS postinstall bilan bir xil siyosat):
 //   • ro'yxat FAQAT `obsoleteInstallFiles()` dan — installerda qattiq yozilgan nom YO'Q;
 //   • har yo'l uchun AYNAN bitta `RemoveFile`, aniq `Name` — wildcard (`*`/`?`) YO'Q;
-//   • `RemoveFolder` YO'Q, CustomAction YO'Q — papka hech qachon o'chirilmaydi;
+//   • CustomAction YO'Q — faqat standart `RemoveFiles` amali;
 //   • joriy payload va foydalanuvchi ma'lumoti (`assetflow-data`) TEGILMAYDI (quyida tekshiriladi).
+//
+// WiX `Subdirectory=` ATAYLAB ISHLATILMAYDI: u qatorga YANGI, avto-Id'li `Directory` qatori
+// yasaydi — unga `RemoveFolder` biriktirib bo'lmaydi va ICE64 uni "profilda qolib ketgan papka"
+// deb RAD ETADI. O'rniga daraxtdagi deterministik Directory Id'ga to'g'ridan ishora qilinadi.
 
 /** Migratsiya komponenti — HKCU keypath (per-user, ICE-mos), GUID ro'yxatdan MUSTAQIL
  *  (komponent keypath'i o'zgarmaydi → MSI komponent qoidasi buzilmaydi). */
@@ -64,8 +73,37 @@ const CLEANUP_COMPONENT_GUID_NAME = "component:legacy-cleanup";
 export const CLEANUP_REGISTRY_KEY = "Software\\FrameFlow\\Plugin\\Migration";
 export const CLEANUP_REGISTRY_NAME = "obsolete-internal-files";
 
+// ── Profil papkalari (ICE64) ────────────────────────────────────────────────
+//
+// ICE64: `AppDataFolder` ostida paket e'lon qilgan HAR BIR `Directory` qatori `RemoveFile`
+// jadvalida (FileName NULL — WiX `<RemoveFolder>`) bo'lishi SHART. Aks holda MSI validatsiyasi
+// `error WIX0204: ICE64` bilan RAD ETADI (2026-07-21 masofaviy run'ida aynan shu 10 marta yiqildi).
+//
+// XAVFSIZ, chunki Windows Installer `RemoveFile`ning papka qatorini FAQAT PAPKA BO'SH bo'lsa
+// bajaradi (RemoveFile jadvali, FileName ustuni: "null bo'lsa papka BO'SH bo'lsagina o'chiriladi"):
+//   • `assetflow-data` (yoki boshqa har qanday foydalanuvchi fayli) → nishon papka BO'SH EMAS → QOLADI;
+//   • umumiy `…\Adobe\CEP\extensions`, `…\CEP`, `…\Adobe` → boshqa Adobe kengaytmasi/holati
+//     bo'lsa BO'SH EMAS → TEGILMAYDI; butunlay bo'sh bo'lsagina yo'qoladi (profil ifloslanmaydi).
+// Rekursiv o'chirish YO'Q: `RemoveFolderEx`, wildcard va CustomAction ISHLATILMAYDI.
+
+/** Papkalar komponenti — HKCU keypath, ro'yxatdan MUSTAQIL (DOIM generatsiya qilinadi). */
+export const FOLDER_COMPONENT_ID = "FF_ProfileFolders";
+const FOLDER_COMPONENT_GUID_NAME = "component:profile-folders";
+export const FOLDER_REGISTRY_KEY = "Software\\FrameFlow\\Plugin\\Directories";
+export const FOLDER_REGISTRY_NAME = "profile-folders";
+
+/** Nishon papka Id va uning ustidagi profil papkalari (chuqurdan yuzaga). */
+export const INSTALL_FOLDER_ID = "INSTALLFOLDER";
+export const PROFILE_ANCESTOR_DIR_IDS = Object.freeze(["FF_extensions", "FF_CEP", "FF_Adobe"]);
+
+/** Nisbiy papka yo'li → Directory Id (ildiz = INSTALLFOLDER). Yagona qoida: `wixId("D", yo'l)`. */
+export function dirIdForPath(relDir) {
+  return relDir ? wixId("D", relDir) : INSTALL_FOLDER_ID;
+}
+
 /** `obsoleteInstallFiles()` → WiX `RemoveFile` qatorlari uchun ma'lumot.
- *  Id TO'LIQ nisbiy yo'ldan (deterministik va noyob), ichma-ich yo'l `Subdirectory` orqali. */
+ *  Id TO'LIQ nisbiy yo'ldan (deterministik va noyob); nishon papka — daraxtdagi Directory Id
+ *  (`Subdirectory=` ATAYLAB YO'Q — u avto-Id'li qo'shimcha Directory qatori yasab ICE64'ni buzadi). */
 export function obsoleteRemoveRows(payloadFiles = []) {
   const shipped = new Set(payloadFiles);
   return obsoleteInstallFiles().map((rel) => {
@@ -76,7 +114,8 @@ export function obsoleteRemoveRows(payloadFiles = []) {
     if (!fileName || parts.some((p) => !p || p === "." || p === "..")) {
       throw new Error(`Eski fayl yo'li noto'g'ri: ${rel}`);
     }
-    return { rel, fileName, subdirectory: parts.join("\\"), id: wixId("R", rel) };
+    const dirPath = parts.join("/");
+    return { rel, fileName, dirPath, directoryId: dirIdForPath(dirPath), id: wixId("R", rel) };
   });
 }
 
@@ -85,16 +124,35 @@ export function obsoleteRemoveRows(payloadFiles = []) {
 export function buildWxsSource({ version, payloadFiles, installDirName = "com.frameflow" }) {
   const components = [];
   const tree = { dirs: new Map(), files: [] };
-  for (const rel of payloadFiles) {
-    const parts = rel.split("/");
-    const fileName = parts.pop();
+  const dirNode = (relDir) => {
     let node = tree;
-    for (const part of parts) {
+    for (const part of relDir ? relDir.split("/") : []) {
       if (!node.dirs.has(part)) node.dirs.set(part, { dirs: new Map(), files: [] });
       node = node.dirs.get(part);
     }
-    node.files.push({ rel, fileName });
+    return node;
+  };
+  for (const rel of payloadFiles) {
+    const parts = rel.split("/");
+    const fileName = parts.pop();
+    dirNode(parts.join("/")).files.push({ rel, fileName });
   }
+
+  // Eski qoldiq ichma-ich yo'lda bo'lsa — o'sha papka daraxtda ham bo'lishi SHART, chunki
+  // `RemoveFile` uning deterministik Directory Id'siga ishora qiladi (`Subdirectory=` YO'Q).
+  const stale = obsoleteRemoveRows(payloadFiles);
+  for (const s of stale) dirNode(s.dirPath);
+
+  // Profil papkalari (ICE64) — chuqurdan yuzaga, ya'ni bola papka ota-papkadan OLDIN.
+  const dirPaths = [];
+  (function collect(node, base) {
+    for (const [name, child] of node.dirs) {
+      const p = base ? `${base}/${name}` : name;
+      collect(child, p);
+      dirPaths.push(p);
+    }
+  })(tree, "");
+  dirPaths.sort((a, b) => b.split("/").length - a.split("/").length || a.localeCompare(b));
 
   const lines = [];
   const emit = (depth, text) => lines.push(`${" ".repeat(depth * 2)}${text}`);
@@ -119,7 +177,7 @@ export function buildWxsSource({ version, payloadFiles, installDirName = "com.fr
     for (const [name, child] of [...node.dirs.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
       // Id TO'LIQ yo'ldan — ichma-ich bir xil papka nomlari to'qnashmaydi.
       const childPath = dirPath ? `${dirPath}/${name}` : name;
-      emit(depth, `<Directory Id="${wixId("D", childPath)}" Name="${xmlAttr(name)}">`);
+      emit(depth, `<Directory Id="${dirIdForPath(childPath)}" Name="${xmlAttr(name)}">`);
       emitNode(child, depth + 1, childPath);
       emit(depth, "</Directory>");
     }
@@ -128,7 +186,6 @@ export function buildWxsSource({ version, payloadFiles, installDirName = "com.fr
   emit(7, "<!-- generatsiya: build-installer-win.mjs — qo'lda tahrirlanmaydi -->");
 
   // MSI'dan oldingi (qo'lda/ZXP) o'rnatma qoldiqlari — aniq nomlar, faqat fayl.
-  const stale = obsoleteRemoveRows(payloadFiles);
   if (stale.length) {
     components.push(CLEANUP_COMPONENT_ID);
     emit(7, `<Component Id="${CLEANUP_COMPONENT_ID}" Guid="${stableGuid(CLEANUP_COMPONENT_GUID_NAME)}">`);
@@ -138,15 +195,24 @@ export function buildWxsSource({ version, payloadFiles, installDirName = "com.fr
         `Name="${CLEANUP_REGISTRY_NAME}" Type="integer" Value="1" KeyPath="yes"/>`
     );
     for (const s of stale) {
-      emit(
-        8,
-        `<RemoveFile Id="${s.id}" Directory="INSTALLFOLDER"` +
-          (s.subdirectory ? ` Subdirectory="${xmlAttr(s.subdirectory)}"` : "") +
-          ` Name="${xmlAttr(s.fileName)}" On="install"/>`
-      );
+      emit(8, `<RemoveFile Id="${s.id}" Directory="${s.directoryId}" Name="${xmlAttr(s.fileName)}" On="install"/>`);
     }
     emit(7, "</Component>");
   }
+
+  // Profil papkalari (ICE64) — HAR bir e'lon qilingan papka uchun AYNAN bitta `RemoveFolder`.
+  // FAQAT BO'SH papka o'chadi → `assetflow-data` va umumiy Adobe papkalari saqlanadi.
+  components.push(FOLDER_COMPONENT_ID);
+  emit(7, `<Component Id="${FOLDER_COMPONENT_ID}" Guid="${stableGuid(FOLDER_COMPONENT_GUID_NAME)}">`);
+  emit(
+    8,
+    `<RegistryValue Root="HKCU" Key="${xmlAttr(FOLDER_REGISTRY_KEY)}" ` +
+      `Name="${FOLDER_REGISTRY_NAME}" Type="integer" Value="1" KeyPath="yes"/>`
+  );
+  for (const id of [...dirPaths.map(dirIdForPath), INSTALL_FOLDER_ID, ...PROFILE_ANCESTOR_DIR_IDS]) {
+    emit(8, `<RemoveFolder Id="${wixId("RD", id)}" Directory="${id}" On="uninstall"/>`);
+  }
+  emit(7, "</Component>");
 
   emitNode(tree, 7, "");
   const body = lines.join("\n");
@@ -168,10 +234,10 @@ export function buildWxsSource({ version, payloadFiles, installDirName = "com.fr
     <Property Id="ARPNOMODIFY" Value="1"/>
     <Property Id="ARPNOREPAIR" Value="1"/>
     <StandardDirectory Id="AppDataFolder">
-      <Directory Id="FF_Adobe" Name="Adobe">
-        <Directory Id="FF_CEP" Name="CEP">
-          <Directory Id="FF_extensions" Name="extensions">
-            <Directory Id="INSTALLFOLDER" Name="${xmlAttr(installDirName)}">
+      <Directory Id="${PROFILE_ANCESTOR_DIR_IDS[2]}" Name="Adobe">
+        <Directory Id="${PROFILE_ANCESTOR_DIR_IDS[1]}" Name="CEP">
+          <Directory Id="${PROFILE_ANCESTOR_DIR_IDS[0]}" Name="extensions">
+            <Directory Id="${INSTALL_FOLDER_ID}" Name="${xmlAttr(installDirName)}">
 ${body}
             </Directory>
           </Directory>

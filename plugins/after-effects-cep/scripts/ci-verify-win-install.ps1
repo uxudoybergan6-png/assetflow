@@ -10,6 +10,8 @@
       3. O'rnatilgan fayl ro'yxati manba payload'i bilan AYNAN teng va HAR fayl SHA-256 bo'yicha
          bayt-ba-bayt bir xil; eski qoldiqlarning HAMMASI o'chgan; sentinel TEGILMAGAN.
       4. `msiexec /x /qn` jimgina o'chiradi: MSI o'z payload'ini olib tashlaydi, sentinel QOLADI.
+         ICE64 `RemoveFolder` qatorlari FAQAT BO'SH papkaga tegadi — shuning uchun foydalanuvchi
+         ma'lumoti bor nishon papka ham, umumiy `…\Adobe\CEP\extensions` ham JOYIDA qolishi SHART.
       5. `finally` — har qanday nosozlikda ham: MSI ro'yxatdan olinadi va FAQAT tekshirилган
          per-user nishon papkasi tozalanadi.
 
@@ -248,6 +250,15 @@ try {
         throw "O'chirish foydalanuvchi ma'lumotini o'chirdi: $sentinelRel"
     }
     if ((Get-Sha256 $sentinelAbs) -ne $sentinelSha) { throw "O'chirishdan keyin sentinel baytlari o'zgardi." }
+
+    # ICE64 papka qatorlari BO'SH papkaga cheklangan: ma'lumot bor papka va umumiy Adobe
+    # papkalari TEGILMAYDI (rekursiv o'chirish yo'q).
+    if (-not (Test-Path -LiteralPath $target -PathType Container)) {
+        throw "O'chirish foydalanuvchi ma'lumoti BOR nishon papkani o'chirdi: $target"
+    }
+    if (-not (Test-Path -LiteralPath $extensionsRoot -PathType Container)) {
+        throw "O'chirish umumiy Adobe CEP papkasini o'chirdi: $extensionsRoot"
+    }
 
     $regAfterUninstall = Get-ItemProperty -Path $cleanupRegKey -Name $cleanupRegName -ErrorAction SilentlyContinue
     if ($null -ne $regAfterUninstall) {

@@ -2,7 +2,7 @@
 
 > Amal qiladi: `plugins/after-effects-cep/`. Yagona haqiqat manbai —
 > `plugins/after-effects-cep/scripts/package-flavors.mjs` (build, o'rnatma va testlar shundan o'qiydi).
-> Oxirgi yangilanish: 2026-07-22 (Task 3 + `windows-latest` CI job'i — §3A.4).
+> Oxirgi yangilanish: 2026-07-22 (Task 3 · `windows-latest` CI job'i · MSI ICE64 tuzatmasi — §3A.2/§3A.4).
 
 ---
 
@@ -233,17 +233,28 @@ Timestamp: `FF_WIN_TIMESTAMP_URL` (default DigiCert).
   `AssetFlow_Admin.html`, `CSXS/manifest.admin.xml`) MSI'dan keyin ham qolardi. Endi
   `installer-wix.mjs` **`obsoleteInstallFiles()` (yagona manba)** ro'yxatidagi har bir yo'l
   uchun AYNAN bitta standart `<RemoveFile ... On="install"/>` qatorini generatsiya qiladi:
-  `Directory="INSTALLFOLDER"`, ichma-ich yo'l uchun `Subdirectory="CSXS"`, Id to'liq nisbiy
-  yo'l hash'idan (deterministik + noyob). Qatorlar bitta per-user komponentda
-  (`FF_LegacyCleanup`, HKCU keypath, `ComponentRef` bilan har o'rnatmada bajariladi).
-  **Joker (`*`/`?`) YO'Q · `RemoveFolder` YO'Q · CustomAction/skript YO'Q · papka
-  o'chirilmaydi.** Joriy payload va `assetflow-data` TEGILMAYDI — ro'yxat payload bilan
-  kesishsa generator fail-closed to'xtaydi. MSI `RemoveFiles` amali `InstallFiles` dan
-  oldin ishlaydi, ya'ni qoldiq yangi payload joylashishidan avval ketadi (macOS'dagi
-  `postinstall` siyosatining aynan ekvivalenti).
+  nishon papka **`Directory=`** orqali (ildiz → `INSTALLFOLDER`, ichma-ich yo'l → o'sha
+  papkaning daraxtdagi deterministik Id'si, masalan `D_CSXS_…`), Id to'liq nisbiy yo'l
+  hash'idan. Qatorlar bitta per-user komponentda (`FF_LegacyCleanup`, HKCU keypath,
+  `ComponentRef` bilan har o'rnatmada bajariladi). **Joker (`*`/`?`) YO'Q · CustomAction/
+  skript YO'Q · rekursiv `RemoveFolderEx` YO'Q.** Joriy payload va `assetflow-data`
+  TEGILMAYDI — ro'yxat payload bilan kesishsa generator fail-closed to'xtaydi. MSI
+  `RemoveFiles` amali `InstallFiles` dan oldin ishlaydi, ya'ni qoldiq yangi payload
+  joylashishidan avval ketadi (macOS'dagi `postinstall` siyosatining aynan ekvivalenti).
+  ⚠️ WiX **`Subdirectory=` ATAYLAB ISHLATILMAYDI:** u avto-Id'li QO'SHIMCHA `Directory`
+  qatori yasaydi, unga `RemoveFolder` biriktirib bo'lmaydi va ICE64 uni rad etadi (pastga qara).
+- **Profil papkalari (`RemoveFolder`) — ICE64 talabi.** Windows Installer qoidasi: foydalanuvchi
+  profili (`AppDataFolder`) ostida paket E'LON QILGAN **har bir** `Directory` qatori `RemoveFile`
+  jadvalida bo'lishi SHART (FileName NULL = WiX `<RemoveFolder>`), aks holda MSI validatsiyasi
+  `error WIX0204: ICE64` bilan **RAD ETADI**. Shuning uchun generator DOIM alohida per-user
+  komponent (`FF_ProfileFolders`, HKCU keypath) chiqaradi: har papka uchun AYNAN bitta
+  `<RemoveFolder ... On="uninstall"/>`, chuqurdan yuzaga (`css/fonts` → `css` → `INSTALLFOLDER`
+  → `extensions` → `CEP` → `Adobe`). **Bu foydalanuvchi ma'lumotini yo'qotmaydi:** MSI bunday
+  papkani FAQAT **BO'SH** bo'lsa o'chiradi — `assetflow-data` bor nishon papka ham, boshqa
+  kengaytmasi bor umumiy `…\Adobe\CEP\extensions` ham JOYIDA qoladi (CI isboti buni tekshiradi).
   ⚠️ **Cheklov:** lokal (macOS) kafolat generatsiya darajasida qoladi — `.wxs` `xmllint`
   bilan to'g'ri va tarkibi testda qulflangan. Haqiqiy `wix build`, ICE validatsiyasi va
-  eski o'rnatma ustidan haqiqiy o'rnatish endi **`windows-latest` CI job'ida** bajariladi
+  eski o'rnatma ustidan haqiqiy o'rnatish **`windows-latest` CI job'ida** bajariladi
   (quyida §3A.4) — lekin u **push qilinmaguncha va yashil bo'lmaguncha isbotlanmagan**.
 - Eski yakuniy artefakt tekshiruvlardan OLDIN o'chiriladi; imzo/notarizatsiya chegaralangan
   `dist/installers/_build.<platform>.XXXXXX/` ichida bajariladi va faqat HAMMASI muvaffaqiyatli
@@ -261,7 +272,7 @@ Timestamp: `FF_WIN_TIMESTAMP_URL` (default DigiCert).
 npm run test:plugin-installers
 ```
 
-**229/229 PASS.** Haqiqiy skriptlar va haqiqiy payload (mock YO'Q): macOS'da HAQIQIY
+**244/244 PASS.** Haqiqiy skriptlar va haqiqiy payload (mock YO'Q): macOS'da HAQIQIY
 `pkgbuild`/`productbuild` bilan `.pkg` quriladi va ichi ochib tekshiriladi (per-user
 install-location · `auth="none"` · faqat currentUserHome domeni · payload cpio ro'yxati
 flavor ro'yxatiga teng · AppleDouble `._` yozuvi yo'q · Admin sirti yo'q · `preinstall`
@@ -270,9 +281,14 @@ uchun buzg'unchi arxiv fiksturalari (nom bir xil–bayt boshqa · takrorlangan n
 `..`/absolyut yo'l · symlink yozuvi · yot `META-INF` yo'li) va MSI tuzilma tekshiruvi
 (ixtiyoriy baytlar rad, imzodan keyin ham qayta tekshiriladi) · WiX Id to'qnashuvi
 (`css/fonts` ↔ `js/fonts`) · **Windows migratsiyasi** (har eski yo'l uchun AYNAN bitta
-`RemoveFile`, aniq `Name`/`Subdirectory`, `On="install"`, joker/`RemoveFolder`/CustomAction
+`RemoveFile`, aniq `Name` + e'lon qilingan `Directory`, `On="install"`, joker/CustomAction
 YO'Q, joriy payload va `assetflow-data` tozalanmaydi — bu blok 1cc01ad generatorida
-20 tekshiruv bilan yiqiladi); fail-closed uch
+20 tekshiruv bilan yiqiladi) · **ICE64 qamrovi** (e'lon qilingan HAR bir profil papkasi uchun
+AYNAN bitta `<RemoveFolder On="uninstall"/>`, chuqurdan yuzaga tartib, `Subdirectory=`
+ISHLATILMAGANI, papka komponenti eski ro'yxatdan mustaqil) va **per-user doirasi**
+(`Scope="perUser"` bir marta, `ALLUSERS`/`Privileged`/`perMachine`/Program Files YO'Q,
+yagona `StandardDirectory` = `AppDataFolder`, ICE bostiruvchi avtorlash YO'Q) — bu ikki blok
+d1e44e8 generatorida yiqiladi; fail-closed uch
 holatda (kredensialsiz · qisman notarizatsiya kredensiali · imzolash buyrug'i yiqilganda)
 haqiqiy build ishga tushiriladi va yakuniy artefakt YO'Qligi, temp QOLMAGANI, parol/identika
 chop etilmagani tasdiqlanadi. "Boshqa artefakt tegilmadi" — ichki Admin arxivi va boshqa
@@ -292,7 +308,7 @@ va `main` push'ida **`windows-latest`** job'i ishlaydi:
 | 1 | `actions/checkout@v4` · `actions/setup-node@v4` (Node 20) · `actions/setup-dotnet@v4` (8.0.x) — hammasi birinchi tomon |
 | 2 | **QADALGAN** WiX: `dotnet tool install --global wix --version $env:WIX_VERSION` (`WIX_VERSION: "5.0.2"`) — `latest`/`--prerelease` ATAYLAB ishlatilmaydi; keyin `wix --version` qadalgan qiymatga solishtiriladi (mos kelmasa job yiqiladi) |
 | 3 | **Haqiqiy** imzolanmagan QA MSI: `node build-installer-win.mjs --unsigned` (soxta `wix` YO'Q, MSI baytlari qo'lda yasalmaydi) |
-| 4 | **Rasmiy validatsiya:** `wix msi validate <msi>` — hech qanday ICE bostirilmaydi (`-sval`/`-sw` na workflow'da, na build skriptida) |
+| 4 | **Rasmiy validatsiya:** `wix msi validate <msi>` — hech qanday ICE bostirilmaydi (`-sval`/`-sw`/`-sice` na workflow'da, na build skriptida; `continue-on-error`/`try-catch` ham YO'Q) |
 | 5 | `ci-verify-win-install.ps1` — ephemeral runner'da haqiqiy per-user o'rnatish/o'chirish (pastda) |
 
 **Migratsiya isboti (5-qadam).** O'rnatishdan OLDIN nishon papkaga AYNAN
@@ -306,7 +322,9 @@ Admin HTML, `CSXS/manifest.admin.xml`) + ALOHIDA `assetflow-data/…` sentinel e
 - migratsiya komponentining HKCU keypath'i haqiqatan yozilgan; `Program Files`ga hech narsa
   yozilmagan (per-user isboti);
 - `msiexec /x … /qn` — chiqish kodi AYNAN 0; MSI o'z payload'ini olib tashlaydi,
-  `assetflow-data` sentinel **YANA saqlanadi**, HKCU keypath yo'qoladi.
+  `assetflow-data` sentinel **YANA saqlanadi**, HKCU keypath yo'qoladi;
+- ICE64 papka qatorlari BO'SH papkaga cheklangani: ma'lumot bor **nishon papka** ham,
+  umumiy **`…\Adobe\CEP\extensions`** ham o'chirishdan keyin JOYIDA turishi tekshiriladi.
 
 **Xavfsizlik chegaralari (kod darajasida majburlangan):**
 
@@ -333,7 +351,7 @@ Admin HTML, `CSXS/manifest.admin.xml`) + ALOHIDA `assetflow-data/…` sentinel e
 Linux job (`build`) o'zgarmadi; unga faqat bitta statik regressiya qadami qo'shildi:
 
 ```bash
-npm run test:ci-windows-installer     # 112 case — Windows job shartnomasi
+npm run test:ci-windows-installer     # 117 case — Windows job shartnomasi
 ```
 
 Bu test JONLI `ci.yml` + `ci-verify-win-install.ps1` + `build-installer-win.mjs` fayllarini
@@ -342,10 +360,18 @@ build'ni, validatorni, jimgina o'rnatish/o'chirishni, aniq eski ro'yxatni, senti
 tekshiruvini, artefakt yuklamaslikni yoki xavfsiz tozalashni yo'qotsa — **macOS/Linux'da ham**
 darhol yiqiladi (6 mutatsiya bilan isbotlangan).
 
-> ⚠️ **HALOL CHEKLOV:** bu job **hali masofada ishlamagan** — u faqat push qilingandan keyin
-> ishga tushadi. macOS'da PowerShell (`pwsh`), `msiexec`, `wix` va Windows registri YO'Q,
-> shuning uchun lokal tekshiruvlar faqat **statik shartnomani** va mavjud testlarni isbotlaydi.
-> `wix build` / ICE / haqiqiy o'rnatish natijasi **birinchi yashil run'gacha tasdiqlanmagan**.
+> ⚠️ **JORIY MASOFAVIY HOLAT (halol).** `d1e44e8` push qilindi → run **29878659236**: Linux
+> `build`, CF Pages va deploy YASHIL, **`windows-installer` QIZIL**. WiX 5.0.2 o'rnatildi va
+> haqiqiy imzosiz MSI MUVAFFAQIYATLI qurildi, lekin **4-qadam** (`wix msi validate`) **10 marta**
+> `error WIX0204: ICE64: The directory <X> is in the user profile but is not listed in the
+> RemoveFile table` bilan yiqildi (`wix.exe` exit **204**) — ya'ni **5-qadam (haqiqiy o'rnatish/
+> migratsiya/o'chirish) UMUMAN ISHLAMADI**. Yonidagi 36 ta `warning WIX1076: ICE91` — **ogohlantirish**,
+> u ataylab per-user paket uchun MUQARRAR (`AppDataFolder` `ALLUSERS`ga qarab o'zgarmaydi) va
+> chiqish kodiga TA'SIR QILMAYDI; **bostirilmaydi**. Ildiz sabab: generator 9 ta profil papkasini
+> e'lon qilib, birortasiga ham `RemoveFolder` bermas edi + `Subdirectory="CSXS"` 10-chi, avto-Id'li
+> papka qatorini yasardi. Tuzatildi (yuqorida §3A.2 "Profil papkalari"). **Bu tuzatma hozircha
+> FAQAT lokal isbotlangan** — `wix build` / ICE / haqiqiy o'rnatish natijasi **keyingi push va
+> birinchi yashil run'gacha tasdiqlanmagan**.
 
 ---
 
@@ -377,8 +403,8 @@ yuqoridagi **3A-bo'lim** (Task 3, 2026-07-22).
 ```bash
 npm run test:plugin-updater         # jonli AF-UPDATER bloki — 118 case (mutatsiya isboti bilan)
 npm run test:release-contract       # server kontrakti — 108 case
-npm run test:plugin-installers      # installer quvuri — 229 case
-npm run test:ci-windows-installer   # Windows CI job shartnomasi — 112 case (§3A.4)
+npm run test:plugin-installers      # installer quvuri — 244 case
+npm run test:ci-windows-installer   # Windows CI job shartnomasi — 117 case (§3A.4)
 ```
 
 ⚠️ Reliz hali ham CHIQMAGAN: installer quvuri TAYYOR, lekin **imzolangan** artefaktlar
