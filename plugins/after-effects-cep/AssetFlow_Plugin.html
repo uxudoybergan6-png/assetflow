@@ -3872,6 +3872,97 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
   .axws-bal{margin-top:7px}
   .axws-viewbar{min-height:40px}
 }
+
+/* ============================================================
+   R5 · AE-PANEL DENSITY LAYER — yakuniy responsive override.
+   Maqsad: docked AE panelida (320–460px asosiy, 461–680 o'rta,
+   kengroq = enhancement; bo'y 500–650 qisqa) plagin veb-sahifa
+   emas, professional panel kabi zich ko'rinsin. FAQAT prezentatsiya:
+   ID/handler/API bog'lamalari tegilmaydi. CEP-xavfsiz (media query,
+   container-query yo'q). Bu blok kaskadning OXIRIDA — tenglikda yutadi.
+   ============================================================ */
+
+/* ── R5-A · AI: nested "telefon-maket" ramkasi CEP'da o'chadi — panel O'ZI app ── */
+html.cep-mode #aiPage{padding:0}
+html.cep-mode .axroot{padding:0;min-height:100%;align-items:stretch}
+html.cep-mode .axroot .hint{display:none}
+html.cep-mode .axroot .app{width:100%;max-width:none;height:auto;min-height:100%;border:0;border-radius:0;box-shadow:none;background:var(--bg)}
+/* (#aiPage.axws-tool zanjiri ID-specificity bilan baribir height:100% ni saqlaydi) */
+
+/* ── R5-B · AI launcher: 3 tool-oila kompozitsiyasi (2 karta + yetim EMAS) ── */
+.axroot .ai-launch-lead{margin:2px 2px 0}
+.axroot .ai-launch-t{font-size:16px}
+.axroot .cats{gap:9px;margin-top:12px}
+.axroot .cats .cat:last-child:nth-child(odd){grid-column:1/-1}
+.axroot .cat{padding:11px 12px;border-radius:12px}
+.axroot .cat .cat-nm{font-size:12.5px;margin-top:6px}
+@media(min-width:560px){
+  html.cep-mode .axroot .cats{grid-template-columns:repeat(3,1fr)}
+  html.cep-mode .axroot .cats .cat:last-child:nth-child(odd){grid-column:auto}
+}
+
+/* ── R5-C · AI generator ish maydonlari — tor/qisqa panel zichligi ── */
+@media(max-width:380px){
+  .axws-viewbar{padding:6px 7px;gap:6px}
+  .axws-stage{padding:10px 8px 4px}
+  .axws-dock{width:calc(100% - 12px);padding:10px 10px;border-radius:14px}
+}
+
+/* ── R5-D · HOME: marketing-hero → ixcham ish-launcher (CMS media/prompt/CTA saqlangan) ── */
+.fhome{padding:12px 12px 22px}
+.fhome-top{min-height:0;margin-bottom:8px}
+.fhome-greet{font-size:13px}
+.fhome-hero{height:auto;min-height:0;margin-bottom:12px;padding:14px;border-radius:14px}
+.fhome-hero-copy{max-width:340px}
+.fhome-kick{margin-bottom:5px}
+.fhome-hero-copy h1{font:650 19px/1.05 var(--font-display);letter-spacing:-.035em}
+.fhome-sub{margin-top:5px;font-size:10px;line-height:1.45}
+.fhome-heroprompt{margin-top:9px;max-width:320px;padding:3px 3px 3px 10px;border-radius:10px}
+.fhome-heroprompt input{font-size:11.5px;padding:7px 0}
+.fhome-heroprompt-go{width:28px;height:28px;border-radius:7px}
+.fhome-cta{margin-top:9px}
+.fhome-btn-ai,.fhome-btn-stock{min-height:30px;padding:6px 10px;font-size:9.5px;border-radius:9px}
+@media(min-width:680px){
+  .fhome-hero{padding:18px}
+  .fhome-hero-copy h1{font-size:22px}
+  .fhome-sub{font-size:11px}
+}
+/* Home rellari/kartalari — panel masshtabi (veb-sahifa 200×150 emas) */
+.fhome-sechd{margin:12px 2px 7px}
+.fhome-recent{gap:10px}
+.fhome-rcard{width:132px}
+.fhome-rmedia{height:88px;border-radius:10px}
+.fhome-railcard{width:148px}
+.fhome-rail-track{gap:10px}
+.fhome-sessrow{gap:10px}
+.fhome-sesscard{width:140px;border-radius:11px}
+.fhome-sesscard .sc-meta{padding:7px 9px}
+.fhome-cattiles{gap:8px}
+.fhome-cattile{padding:9px 10px;border-radius:11px}
+.fhome-cattile .ct-ic{width:28px;height:28px;border-radius:8px}
+
+/* ── R5-E · STOCK: ixcham 2-ustunli kartalar (~336px dan), keng panel ustun QO'SHADI ── */
+.grid,html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px 10px;padding:12px 12px 16px}
+html.dens-sm .grid,html.dens-sm.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px 8px}
+html.dens-md .grid,html.dens-md.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px 10px}
+html.dens-lg .grid,html.dens-lg.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px 12px}
+.card{border-radius:12px;gap:5px;padding-bottom:8px}
+/* Qidiruv/filtr chizig'i — ixcham boshqaruvlar (hit target ≥28px saqlanadi) */
+.cmp-toolbar{padding:8px 12px 0;gap:7px}
+.cmp-toolbar .env-search-field{height:32px;border-radius:9px}
+.cmp-iconbtn{width:32px;height:32px;border-radius:9px}
+.af-tabs{padding:8px 12px 0}
+.af-cathead{padding:9px 12px 6px}
+
+/* ── R5-F · TOPBAR: bitta chrome, panel balandligi ixcham ── */
+html.cep-mode .af-topbar{height:44px}
+
+/* ── R5-G · Qisqa bo'y (500–650) — vertikal zichlik ── */
+@media(max-height:650px){
+  html.cep-mode .af-topbar{height:40px}
+  .fhome{padding-top:10px}
+  .fhome-sechd{margin:10px 2px 6px}
+}
 </style>
 </head>
 <body>

@@ -1,11 +1,16 @@
-# SESSION-REPORT — GitHub Actions Node 20 deprecation tuzatildi (2026-07-22)
+# Sessiya hisoboti — 2026-07-23
 
-**Faqat CI workflow'lar tegildi. Backend/DB/auth/pul-zona/deploy dizayni/installer/updater/marketplace TEGILMAGAN.**
+**Vazifa:** FrameFlow mijoz plagini docked AE panelida "katta/veb-sahifa" ko'rinardi — to'liq UI zichlik auditi + tuzatish.
 
-- **Muammo:** direktor tasdiqlagan CI/Cloud Run annotatsiyalari `actions/checkout@v4`, `actions/setup-node@v4`, `google-github-actions/auth@v2`, `google-github-actions/setup-gcloud@v2`'ni eskirgan Node 20 runner'ga majburlangan deb belgiladi.
-- **Tuzatildi:** uchala workflow (`ci.yml` — `build` + `windows-installer`, `db-backup.yml`, `deploy-cloudrun.yml`) → `actions/checkout@v7`, `actions/setup-node@v7`, `google-github-actions/auth@v3`, `google-github-actions/setup-gcloud@v3`. Loyiha `node-version: 20` HAMMA joyda O'ZGARMADI (action implementatsiyasi Node 24, ilova Node versiyasi mustaqil).
-- Windows `Setup Node` qadamiga `package-manager-cache: false` aniq qo'shildi — setup-node v7 implicit kesh KIRITMASLIGI uchun. Linux CI'dagi `cache: npm` va Cloud Run migratsiya keshi SAQLANDI.
-- `test-ci-windows-installer.mjs`'ga yangi (J) bo'lim: barcha `.github/workflows/*.yml` ustidan skanerlaydi, 4 eskirgan ref qaytarilmasligini, joriy major'larni va `node-version: 20`ni tasdiqlaydi, birinchi-tomon-yoki-SHA siyosatini `google-github-actions`ga ham kengaytiradi, 6 mutatsiya isboti bilan.
-- **Testlar:** `test:ci-windows-installer` 162/162 PASS (avval 135; +27 yangi). `node --check`, `js-yaml` bilan 3 workflow parse, `git diff --check` — toza.
-- Faqat to'g'ridan tegishli hujjatlar yangilandi: `RELEASE-ARCHITECTURE.md` §3A.4 (majorlar + kesh siyosati), `DIREKTOR-HANDOFF.md` JORIY HOLAT.
-- **⚠️ QOLGAN:** lokal/statik isbot TO'LIQ, lekin "warning-free" haqiqiy isbot faqat push qilingandan keyingi masofaviy GitHub Actions run bilan tasdiqlanadi (bu sessiyada push YO'Q).
+**Qilindi (faqat prezentatsiya, ID/handler/API tegilmadi):**
+- `AssetFlow_Plugin.html` oxiriga yagona **R5 AE-PANEL DENSITY LAYER** qo'shildi (kaskad oxiri, tenglikda yutadi).
+- AI: `cep-mode`da 392×800 telefon-ramka o'chdi — `.axroot .app` full-bleed (border/radius/shadow/padding yo'q); `#aiPage.axws-tool` balandlik zanjiri saqlangan. Launcher: yetim 3-karta endi to'liq qator, ≥560px'da 3 ustun.
+- Home: marketing hero (clamp 260–460px) → ixcham ish-launcher (auto balandlik, 19px H1); CMS media, prompt, greeting, model chip, AI/Stock CTA saqlangan. Rellar/kartalar panel masshtabida (rcard 200→132, rmedia 150→88, sesscard 172→140).
+- Stock: grid minmax(225)→148 (2 ustun ~336px'dan, 320px'da 1), density sm/md/lg saqlangan; qidiruv/filtr boshqaruvlari 38→32px.
+- Topbar: cep-mode 52→44px (qisqa bo'yda 40); kredit hech qachon yashirilmaydi.
+
+**Fayllar:** `plugins/after-effects-cep/AssetFlow_Plugin.html`, `plugins/after-effects-cep/scripts/test-panel-responsive.mjs` (yangi), `package.json` (`test:plugin-responsive`).
+
+**Testlar:** panel-responsive kontrakt 44/44 ✓ (392×800 yo'q, hero cap, grid min, yagona chrome, ID/handler saqlanish, kaskad tartibi — mutation-proof); test:plugin-package 47/47 ✓; test:marketplace-preflight 100/100 ✓; install-cep.sh bajarildi (o'rnatilgan CEP = manba).
+
+**Kutilmoqda:** real AE'da vizual tasdiq — Home/AI/Stock 320–460px docked panelда ko'rib chiqish (AE qayta ochildi, panel yangilangan).
