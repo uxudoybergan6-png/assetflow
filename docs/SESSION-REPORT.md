@@ -1,16 +1,18 @@
-# Sessiya hisoboti — 2026-07-23
+# Sessiya hisoboti — 2026-07-28
 
-**Vazifa:** FrameFlow mijoz plagini docked AE panelida "katta/veb-sahifa" ko'rinardi — to'liq UI zichlik auditi + tuzatish.
+**Vazifa:** Seedance 2.0 Mini (BytePlus, id 3103) web + AE plagingacha E2E ulanganini TASDIQLASH; haqiqiy uzilish topilsa yopish.
 
-**Qilindi (faqat prezentatsiya, ID/handler/API tegilmadi):**
-- `AssetFlow_Plugin.html` oxiriga yagona **R5 AE-PANEL DENSITY LAYER** qo'shildi (kaskad oxiri, tenglikda yutadi).
-- AI: `cep-mode`da 392×800 telefon-ramka o'chdi — `.axroot .app` full-bleed (border/radius/shadow/padding yo'q); `#aiPage.axws-tool` balandlik zanjiri saqlangan. Launcher: yetim 3-karta endi to'liq qator, ≥560px'da 3 ustun.
-- Home: marketing hero (clamp 260–460px) → ixcham ish-launcher (auto balandlik, 19px H1); CMS media, prompt, greeting, model chip, AI/Stock CTA saqlangan. Rellar/kartalar panel masshtabida (rcard 200→132, rmedia 150→88, sesscard 172→140).
-- Stock: grid minmax(225)→148 (2 ustun ~336px'dan, 320px'da 1), density sm/md/lg saqlangan; qidiruv/filtr boshqaruvlari 38→32px.
-- Topbar: cep-mode 52→44px (qisqa bo'yda 40); kredit hech qachon yashirilmaydi.
+**Natija: 6/6 PASS — kodda uzilish YO'Q, tuzatish talab qilinmadi (hech narsa o'zgartirilmadi).**
+- Katalog: `gen-models.ts:1393` id 3103 `enabled:true`, `byteplusModel: dreamina-seedance-2-0-mini-260615` — rasmiy docs (`Model list.txt`, 480p/720p, 4–15s, multimodal ref + i2v) bilan mos. Runtime `getModelsByMode("video")` → 3103 QAYTARADI (11 ta model, tasdiqlandi `tsx` bilan).
+- Dispatch: `gen-processor.ts:1709` `provider==="byteplus"` → `runByteplusVideo` → `buildByteplusVideoBody` (`model.byteplusModel`, mediaRefs/endFrame/resolution/duration deskriptordan) — Mini uchun maxsus shart YO'Q. Boot validator `byteplus` ni PROVIDERS + VIDEO_DISPATCH da qamraydi va har byteplus modeli uchun body self-test bajaradi.
+- Narx: `provider-cost.ts:79` 3103 {480p 0.032, 720p 0.071}; runtime `estimateProviderUsd` 480p/4s=$0.128, 720p/15s=$1.065 (null EMAS). Marja 480p ≈4.7×, 720p ≈3.2× (target 2×). `assert-pricing-floors` = SOTUV kanallari poli, per-model emas → Mini'ga ta'sirsiz.
+- Web: `platform/index.html` `loadModels()` → `FFAPI.models(mode)` = `/api/studio/gen/models?mode=video`; yagona filtr `enabled!==false` + `video-upscale` ajratish. Hardcoded whitelist/dedup YO'Q.
+- Plagin: `AssetFlow_Plugin.html:14429` `ensureVgMeta()` shu endpointdan; SC_19 whitelist QAYTMAGAN (faqat `video-upscale` chetlanadi); `renderVgModelSheet` TO'LIQ ro'yxatni chizadi (slice yo'q). O'rnatilgan CEP (`com.frameflow`, 23-iyul) = manba bilan bayt-bir-xil.
+- Deploy: `deploy-cloudrun.yml` oxirgi 8 run "success"; eng so'nggi 2026-07-26, headSha `7f7a010` = joriy HEAD → prod Mini commit'idan (f74c7ee, 07-20) YANGIROQ. **Deploy KERAK EMAS.**
 
-**Fayllar:** `plugins/after-effects-cep/AssetFlow_Plugin.html`, `plugins/after-effects-cep/scripts/test-panel-responsive.mjs` (yangi), `package.json` (`test:plugin-responsive`).
+**Topilgan 2 haqiqiy nuqta (uzilish emas, ma'lumot uchun):**
+1. Web "RECOMMENDED FOR VIDEO" tez-tanlov faqat 4 ta model ko'rsatadi (`modelPickList.slice(0,4)`) → 10 ta yoqilgan video modeldan Mini u yerga tushmaydi; to'liq "All models" modalida BOR. Bu dizayn, xato emas — Mini'ni tez-tanlovda ko'rish uchun uni **pin** qilish kifoya (pinlangan model birinchi chiqadi).
+2. Aloqasiz: 1020 "Seedream 5.0 Lite" va 1022 "Seedream 4.5" `provider-cost` yozuvisiz (`findEnabledModelsWithoutCost`) → marja hisobida $0.5 default. Pul zonasi — TEGILMADI, egasi qaroriga qoldirildi.
 
-**Testlar:** panel-responsive kontrakt 44/44 ✓ (392×800 yo'q, hero cap, grid min, yagona chrome, ID/handler saqlanish, kaskad tartibi — mutation-proof); test:plugin-package 47/47 ✓; test:marketplace-preflight 100/100 ✓; install-cep.sh bajarildi (o'rnatilgan CEP = manba).
-
-**Kutilmoqda:** real AE'da vizual tasdiq — Home/AI/Stock 320–460px docked panelда ko'rib chiqish (AE qayta ochildi, panel yangilangan).
+**Sizning qo'lingizda qolgan yagona jonli qadam — BytePlus konsol aktivatsiyasi:**
+`.env` va `cloudrun-env.yaml` dagi `BYTEPLUS_API_KEY` **bir xil** (sha256 fingerprint `ab0afcfcc1f9`) → lokal probe = prod tekshiruvi. Ishga tushiring: `node scripts/probe-byteplus-model.mjs dreamina-seedance-2-0-mini-260615 480p 4` (~$0.13). HTTP 200 + taskId = AKTIV; `ModelNotOpen`/403 → BytePlus konsoli → ModelArk → region `ark+ap-southeast-1` → Model list → `dreamina-seedance-2-0-mini` → **Activate/Enable**.
