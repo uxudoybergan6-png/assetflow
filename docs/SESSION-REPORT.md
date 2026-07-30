@@ -18,4 +18,5 @@
 
 **COWORK auditi:** 6/7 P0 tasdiqlandi; P0-7 (`.dockerignore`) va P26 (to'lov busy-state) noto'g'ri; plagin PRO self-upgrade shubhasi ham rad etildi (fail-closed).
 **Plagin bozorga tayyorligi ~35%:** kod tayyor, marketplace metadata 16/19 maydon bo'sh, imzolangan `.zxp` va Adobe sertifikati yo'q.
-**Kutilmoqda:** prod DB tiklash + monitoring, so'ng `FULL-AUDIT` §14 tartibi (bugun / shu hafta / shu oy).
+**Ikki reja ajratildi:** `docs/REJA-SIZ-2026-07-30.md` (faqat egasi qila oladigan: prod DB, Sentry DSN, Adobe sertifikat/listing, 5 biznes qarori, LS konsoli, yurist) va `docs/REJA-CLAUDE-2026-07-30.md` (o'zi-yetarli ijro rejasi: BATCH 0–11, `/clear` dan keyin beriladi).
+**Kutilmoqda:** prod DB tiklash + monitoring; egasidan 11 ta qaror (REJA-SIZ §7); so'ng BATCH 0 dan boshlash.
