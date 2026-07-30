@@ -1,21 +1,22 @@
-# Sessiya hisoboti — 2026-07-30 (BATCH 5 — MIQYOS: ko'p shablon)
+# Sessiya hisoboti — 2026-07-30 (BATCH 3 — ZANJIR YAXLITLIGI)
 
-**Manba:** `docs/REJA-CLAUDE-2026-07-30.md` (BATCH 0/1/2/4 + T3.1-T3.2 + T9.1 oldingi commitlarda)
+**Manba:** `docs/REJA-CLAUDE-2026-07-30.md` (BATCH 0/1/2/4/5 + T9.1 oldingi commitlarda)
 
-- **#19 (T5.1)** Katalog o'qish yo'lida S3 LIST **yo'q**: kesh-siz qator fon navbatiga tushadi
-  (`asset-state.ts` — bounded 2 ta, restartga qarshi `reconcileMissingAssetKeys` har 10 daq).
-  `resolveAssetKeyCached` — kesh + 1 HEAD (27 HEAD probe faqat fallback).
-  Bir martalik `scripts/backfill-asset-keys.mjs` (DRY_RUN default) — **egasi prod'da ishga tushiradi**.
-- **#57 (T5.2)** `perf-seed-assets.mjs` endi massiv yozadi (production shakli) — `docs/PERF-BASELINE.md` yangilandi.
-- **#58/#59/#60 (T5.3)** Indekslar: `previewTranscodeStatus` qisman, `pg_trgm` GIN (name/description/
-  catLabel/tags), `ORDER BY name`. Transcode supurishi cron'ga ko'chdi.
-- **T5.4:** upload limiti Cloud Run realiga 32MiB (#61) · rate-limit `max` instans ulushiga bo'linadi
-  (`API_MAX_INSTANCES`, Redis bo'lsa to'liq `max`) (#62) · upload-progress
-  DB orqali instanslar aro (#63) · `INGEST_WORKER_INLINE` default `false` (#64) · `--concurrency=20` (#65) ·
-  broadcast `createMany` (#66) · `/plugin-subscribers` take/skip + DB aggregat stats (#67) ·
-  admin "All templates" server paginatsiya + real filtrlar (#68) · bulk upload parallel-3, presign har fayl oldidan (#69).
-- `npm run build -w apps/api` ✓ · `npm run studio:sync` ✓ · `prisma validate` ✓
+- **T3.3 (#17/Z8)** Yangi pack yuklanganda **boshqa kengaytmali eski obyektlar o'chiriladi**;
+  `resolveS3AssetKey(preferFileName)` DB `fileName` kengaytmasini ustun qo'yadi (eski baytlar serve qilinmaydi).
+  Bir martalik `scripts/cleanup-stale-pack-variants.mjs` (DRY_RUN default) — **egasi prod'da ishga tushiradi**.
+- **T3.4:** `incoming/` yetim zip tozalash (job yakunida + retention supurish) + `scripts/cleanup-orphan-incoming.mjs` (#50) ·
+  `reclaimStuck` **fencing token** (`attempts` bilan shartli yozuv, eski worker natijasi e'tiborsiz) (#51) ·
+  contributor o'z `DRAFT`/`REJECTED` yozuvini o'chira oladi (API + Studio tugma/modal) (#52) ·
+  katalog tartibi `updatedAt` dan ajratildi → `reviewedAt/createdAt/id` (kursor barqaror) (#53) ·
+  thumb/preview AYNI kalitda almashsa `updatedAt` bump (`?v=` cache-bust ishlaydi) (#54) ·
+  imzolangan rejimda `Cache-Control: private` + vaqt-paqirli ETag (#55) ·
+  klient versiya yubormasa `updateAvailable=true` fail-safe (#56) · admin review joriy holat gate'i (#126) ·
+  `restore` `published` ni aniq ko'rsatadi/tiklaydi (`republish`) (#127).
+- **T3.1 (4-band)** Admin navbat + detal panelida **Re-review** bayrog'i (tasdiqdan keyin kontent almashtirilgan).
+- `npm run build -w apps/api` ✓ · `npm run studio:sync` ✓ · plugin-release kontrakt testi 110/110 ✓
 
 ⚠️ **Migratsiya kutilmoqda** (prod'ga QO'LLANMAGAN): `20260730160000_ls_subscription_billing`,
-`20260730180000_catalog_scale_indexes`, `20260730190000_upload_progress_shared`.
-⏳ **AE testi kutilmoqda** (egasi): T9.1 zip import + plagin nashr oqimi.
+`20260730180000_catalog_scale_indexes`, `20260730190000_upload_progress_shared`,
+`20260730200000_catalog_stable_order_index`.
+⏳ **Egasi:** `backfill-asset-keys.mjs`, `cleanup-stale-pack-variants.mjs`, `cleanup-orphan-incoming.mjs` · T9.1 AE testi.

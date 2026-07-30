@@ -10,6 +10,12 @@ export function semverParts(v: string): number[] {
   return String(v || "0").split(".").map((x) => parseInt(x, 10) || 0);
 }
 
+/** #56 — qiymat semver ko'rinishidami (`1`, `1.2`, `1.2.3`). Bo'sh/axlat qiymat
+ *  `semverParts` da jimgina 0.0.0 ga aylanadi — buni "noma'lum" deb ajratamiz. */
+export function isSemver(v: string): boolean {
+  return /^\d+(\.\d+){0,2}$/.test(String(v || "").trim());
+}
+
 export function semverLt(a: string, b: string): boolean {
   const pa = semverParts(a), pb = semverParts(b);
   for (let i = 0; i < 3; i++) {
@@ -286,11 +292,19 @@ export function computePluginVersionResponse(
       installerStatus: ctx.platform ? "not_published" : "unsupported_platform",
     };
   }
-  const updateAvailable = !!current && semverLt(current, latest.version);
+  // #56 (T3.4) — FAIL-SAFE: klient o'z versiyasini yubormasa (yoki yuborgani
+  // semver emas) uni ESKI deb hisoblaymiz. Ilgari `!!current` sharti tufayli
+  // aynan shu klientlar (versiya yuborishni bilmaydigan eski bildlar) hech qachon
+  // yangilanish — jumladan MAJBURIY yangilanish — xabarini olmasdi.
+  const unknownCurrent = !current || !isSemver(current);
+  const updateAvailable = unknownCurrent || semverLt(current, latest.version);
   // Majburiy: reliz mandatory deb belgilangan YOKI klient minSupportedVersion'dan past
+  // (noma'lum versiya ham "past" deb qaraladi — fail-safe).
   const mandatory =
     updateAvailable &&
-    (latest.mandatory || (!!latest.minSupportedVersion && !!current && semverLt(current, latest.minSupportedVersion)));
+    (latest.mandatory ||
+      (!!latest.minSupportedVersion &&
+        (unknownCurrent || semverLt(current, latest.minSupportedVersion))));
   return {
     latest: {
       version: latest.version,

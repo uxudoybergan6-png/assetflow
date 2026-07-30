@@ -1,9 +1,11 @@
 import { prisma, Prisma } from "@creative-tools/database";
 import {
+  deleteS3Objects,
   isS3Configured,
   listTemplateS3Keys,
   resolveS3AssetKey,
   s3AssetKeyFromSet,
+  s3KeysForAsset,
   s3ObjectExists,
 } from "./s3.js";
 import type { TemplateAssetKind } from "./template-files.js";
@@ -26,21 +28,51 @@ export function assetKeySetFromStored(v: unknown): Set<string> | null {
  * `ensure` — hozirgina yozilgan kalitlar: List eventual-consistent bo'lsa ham
  * tushib qolmasin (pack uchun ayniqsa muhim — hasPack gate'ga kiradi).
  * `remove` — hozirgina o'chirilganlar (List hali ko'rsatib turgan bo'lishi mumkin).
- * Yozuv RAW SQL — prisma.update @updatedAt'ni bump qilardi, bu esa katalog
- * tartibi (orderBy updatedAt) va cache-bust versiyasini soxta o'zgartirardi.
+ * `prune` — #17 (T3.3): kind → SAQLANADIGAN kalit. O'sha kind'ning BOSHQA kengaytmali
+ * eski obyektlari (masalan `.zip`→`.aep` almashuvida qolgan `pack.zip`) o'chiriladi.
+ * Ilgari ular qolib ketardi va `resolveS3AssetKey` tartibi bo'yicha ESKI fayl
+ * serve qilinardi — contributor buni qayta yuklash bilan tuzata olmasdi.
+ * `touch` — #54 (T3.4): KO'RSATILADIGAN asset (thumb/preview/sahna) AYNI kalitda
+ * almashtirilganda `updatedAt` ni ko'taradi. Katalog CDN URL'lariga `?v=<updatedAt>`
+ * qo'shadi — bump bo'lmasa URL o'zgarmaydi va CDN eski rasmni max-age tugaguncha
+ * beradi (contributor thumb'ni qayta yuklab ham tuzata olmasdi). Chaqiruvchi
+ * allaqachon `prisma.update` qilgan bo'lsa (bump bo'lgan) `touch` shart emas.
+ * Yozuv RAW SQL — prisma.update @updatedAt'ni HAR sinxronda bump qilardi
+ * (`touch` bilan bump ANIQ nazorat ostida bo'ladi).
  * Xato YUTILADI (asosiy oqim buzilmasin) — sinxronlanmagan holat keyingi
  * o'qishda live List fallback bilan o'zini tuzatadi.
  */
 export async function syncTemplateAssetKeys(
   templateId: string,
-  opts?: { ensure?: Array<string | null | undefined>; remove?: string[] }
+  opts?: {
+    ensure?: Array<string | null | undefined>;
+    remove?: string[];
+    prune?: Partial<Record<TemplateAssetKind, string | null | undefined>>;
+    touch?: boolean;
+  }
 ): Promise<Set<string> | null> {
   if (!isS3Configured()) return null;
   try {
     const keys = await listTemplateS3Keys(templateId);
     for (const k of opts?.ensure ?? []) if (k) keys.add(k);
     for (const k of opts?.remove ?? []) keys.delete(k);
-    await persistTemplateAssetKeys(templateId, keys);
+    const stale: string[] = [];
+    for (const [kind, keep] of Object.entries(opts?.prune ?? {})) {
+      if (!keep) continue;
+      for (const k of s3KeysForAsset(templateId, kind as TemplateAssetKind)) {
+        if (k !== keep && keys.has(k)) stale.push(k);
+      }
+    }
+    if (stale.length) {
+      try {
+        await deleteS3Objects(stale);
+        for (const k of stale) keys.delete(k);
+        console.log(`[asset-state] eski variantlar o'chirildi (${templateId}): ${stale.join(", ")}`);
+      } catch (e) {
+        console.warn(`[asset-state] eski variant o'chirilmadi (${templateId}):`, e);
+      }
+    }
+    await persistTemplateAssetKeys(templateId, keys, opts?.touch === true);
     return keys;
   } catch (e) {
     console.warn(`[asset-state] sync xato (${templateId}):`, e);
@@ -48,14 +80,19 @@ export async function syncTemplateAssetKeys(
   }
 }
 
-/** Kalitlar to'plamini DB'ga yozadi (updatedAt'ga tegmasdan). Shablon o'chirilgan bo'lsa jim. */
+/** Kalitlar to'plamini DB'ga yozadi. `touch=false` (default) — `updatedAt` ga tegmaydi;
+ *  `touch=true` (#54) — cache-bust versiyasi yangilansin deb `updatedAt = NOW()`.
+ *  Shablon o'chirilgan bo'lsa jim. */
 export async function persistTemplateAssetKeys(
   templateId: string,
-  keys: Set<string>
+  keys: Set<string>,
+  touch = false
 ): Promise<void> {
   const json = JSON.stringify([...keys].sort());
   await prisma.$executeRaw(
-    Prisma.sql`UPDATE "ContributorTemplate" SET "assetKeysJson" = ${json}::jsonb WHERE "id" = ${templateId}`
+    Prisma.sql`UPDATE "ContributorTemplate" SET "assetKeysJson" = ${json}::jsonb${
+      touch ? Prisma.sql`, "updatedAt" = NOW()` : Prisma.empty
+    } WHERE "id" = ${templateId}`
   );
 }
 
@@ -144,22 +181,30 @@ export async function resolveAssetKeyCached(
   kind: TemplateAssetKind
 ): Promise<string | null> {
   if (!isS3Configured()) return null;
+  // #17 (T3.3) — `fileName` DB'dagi HAQIQIY pack nomi: kengaytmasi kalit tanlashda
+  // USTUN bo'ladi (eski `.zip` obyekt qolib ketgan bo'lsa ham `.aep` beriladi).
+  let fileName: string | null = null;
   try {
     const row = await prisma.contributorTemplate.findUnique({
       where: { id: templateId },
-      select: { assetKeysJson: true },
+      select: { assetKeysJson: true, fileName: true },
     });
+    fileName = kind === "pack" ? (row?.fileName ?? null) : null;
     const keys = assetKeySetFromStored(row?.assetKeysJson);
     if (keys) {
-      const key = s3AssetKeyFromSet(templateId, kind, keys);
+      const key = s3AssetKeyFromSet(templateId, kind, keys, fileName);
       // Kesh "yo'q" desa ham tasdiqlaymiz: kesh eskirgan bo'lishi mumkin
       // (masalan hozirgina yuklangan pack) — bu holda to'liq probe'ga o'tamiz.
-      if (key) return (await s3ObjectExists(key)) ? key : resolveS3AssetKey(templateId, kind);
+      if (key) {
+        return (await s3ObjectExists(key))
+          ? key
+          : resolveS3AssetKey(templateId, kind, fileName);
+      }
     } else {
       queueAssetKeyBackfill(templateId);
     }
   } catch (e) {
     console.warn(`[asset-state] kesh o'qilmadi (${templateId}):`, e);
   }
-  return resolveS3AssetKey(templateId, kind);
+  return resolveS3AssetKey(templateId, kind, fileName);
 }

@@ -208,6 +208,7 @@ function myTable(ts){
         ${(t.status==='draft'||t.status==='soft')?`<button class="act success" title="Submit to moderation" onclick="submitDraftToModeration('${t.id}')">${ic('upload')}</button>`:''}
         ${t.status==='soft'?`<button class="act" title="Resubmit" onclick="resubmit('${t.id}')">${ic('refresh')}</button>`:''}
         <button class="act" title="View" onclick="openTplDrawer('${t.id}')">${ic('eye')}</button>
+        ${canDeleteMine(t)?`<button class="act danger" title="Delete" onclick="deleteMyTemplate('${t.id}')">${ic('trash')}</button>`:''}
       </div></td>
     </tr>`).join('')}</tbody>
   </table></div></div>`;
@@ -253,6 +254,36 @@ async function submitDraftToModeration(id) {
 
 async function resubmit(id) {
   await submitDraftToModeration(id);
+}
+
+/** #52 (T3.4) — contributor FAQAT qoralama yoki rad etilgan yozuvni o'chira oladi.
+ *  Moderatsiya navbatidagi (`pending`) va jonli (`approved`) yozuv server tomonda ham
+ *  409 bilan rad etiladi — tugmani ko'rsatmaymiz. */
+function canDeleteMine(t) {
+  return t.status === "draft" || t.status === "soft" || t.status === "hard";
+}
+async function deleteMyTemplate(id) {
+  const t = TEMPLATES.find((x) => x.id === id);
+  if (t && !canDeleteMine(t)) return;
+  openModal(`
+    <div class="modal-head"><div class="modal-ico" style="background:var(--red-dim,rgba(230,90,90,.12));color:var(--red,#e65a5a)">${ic("trash")}</div>
+      <div><h3>Delete this product?</h3><p>${esc(t ? t.name : "")}</p></div></div>
+    <div class="modal-body"><p class="body">The record and its uploaded files are removed permanently. This cannot be undone.</p></div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteMyTemplate('${id}')">${ic("trash")} Delete</button></div>`);
+}
+async function confirmDeleteMyTemplate(id) {
+  closeModal();
+  try {
+    await StudioApi.deleteTemplate(id);
+    await StudioTemplates.refreshAfterUpload();
+    toast("Deleted", "The product was removed", "success");
+    closeDrawer();
+    if (CURRENT === "overview") route("overview");
+    else if (CURRENT === "templates") renderMy();
+  } catch (e) {
+    toast("Error", e.message || "Delete failed", "danger");
+  }
 }
 
 /** Audit §D — ro'yxat/drawer submit'ida rights-attestatsiya modali (wizard Step 3 muqobili). */
@@ -1685,5 +1716,6 @@ async function openTplDrawer(id){
       ${t.status==='approved'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close</button>`:''}
       ${t.status==='hard'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close</button>`:''}
       ${t.status==='pending'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close · in moderation</button>`:''}
+      ${canDeleteMine(t)?`<button class="btn btn-danger-ghost" title="Delete" onclick="deleteMyTemplate('${t.id}')">${ic('trash')}</button>`:''}
     </div>`);
 }

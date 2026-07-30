@@ -95,7 +95,7 @@ import { captureException } from "../lib/sentry.js";
 import { notifyAdminNewSubmission } from "../lib/notify.js";
 import { embedTemplateInBackground } from "../lib/ai/embed-templates.js";
 import { appForPackExt } from "../lib/apps.js";
-import { approvedCatalogWhere } from "../lib/catalog-map.js";
+import { approvedCatalogWhere, catalogStableOrderBy } from "../lib/catalog-map.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { getWebUrl } from "../lib/app-urls.js";
 import { scanFileHash, type MalwareScanResult } from "../lib/malware-scan.js";
@@ -641,7 +641,14 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
   }
 
   res.json({
-    items: rows.map((r) => applyRealCounts(r, counts)),
+    // T3.1 (4-band) — "re-review required": yozuv ilgari ko'rib chiqilgan (reviewedAt bor),
+    // lekin yana navbatda turibdi → jonli shablon almashtirilgani uchun qaytarilgan
+    // (/sync yoki /pack-uploaded post-approval swap). Admin buni oddiy yangi
+    // yuborishdan ajrata olishi kerak. Qo'shimcha ustun kerak emas — mavjud maydonlardan.
+    items: rows.map((r) => ({
+      ...applyRealCounts(r, counts),
+      reReview: r.reviewStatus === TemplateReviewStatus.PENDING_REVIEW && !!r.reviewedAt,
+    })),
     nextCursor: hasMore ? page[page.length - 1].id : null,
     ...(statusCounts ? { counts: statusCounts } : {}),
   });
@@ -982,6 +989,7 @@ contributorRouter.post(
         await syncTemplateAssetKeys(id, {
           ensure: [destKey],
           remove: srcKey && srcKey !== destKey ? [srcKey] : [],
+          touch: true, // #54 — preview MAZMUNI o'zgardi (kalit o'sha) → cache-bust yangilansin
         });
       }
 
@@ -1328,7 +1336,9 @@ contributorRouter.post(
       res.status(403).json({ error: "Not authorized" });
       return;
     }
-    await syncTemplateAssetKeys(id);
+    // #54 (T3.4) — bu signal thumb-only presigned PUT uchun keladi: kalit o'zgarmagani
+    // uchun DB'da hech narsa bump bo'lmasdi → `?v=` eski qolib CDN eski rasmni berardi.
+    await syncTemplateAssetKeys(id, { touch: true });
     res.json({ ok: true });
   }
 );
@@ -1715,7 +1725,9 @@ contributorRouter.post(
       processPackInBackground(id, packKey, existing.contributorId, isZip)
     );
     // FAZA 5 (A2) — pack (+ ekstraktsiya qilingan sahnalar) kalitlari keshini yangilash.
-    await syncTemplateAssetKeys(id, { ensure: [packKey] });
+    // #17 (T3.3) — prune: boshqa kengaytmali ESKI pack obyekti qolib ketmasin
+    // (`.zip`→`.aep` almashuvida eski `.zip` serve qilinardi).
+    await syncTemplateAssetKeys(id, { ensure: [packKey], prune: { pack: packKey } });
     res.json({ ok: true, extracting: isZip, scanning: false });
   }
 );
@@ -2969,16 +2981,27 @@ contributorRouter.post(
 
     // FAZA 5 (A2) — asset kalitlari keshini yangilash (javobdan OLDIN — Cloud Run
     // CPU throttle). ensure: hozirgina yozilgan kalitlar (List kechiksa ham tushmasin).
+    // #17 (T3.3) — prune: almashtirilgan asset'ning boshqa kengaytmali eski
+    // obyektlari o'chiriladi (aks holda ular serve tartibida g'olib chiqishi mumkin).
+    const writtenKeys = (
+      [
+        ["thumb", thumb],
+        ["preview", preview],
+        ["pack", pack],
+      ] as const
+    )
+      .filter(([kind, f]) => f?.path && !cloudSyncFailed.has(kind))
+      .map(
+        ([kind, f]) =>
+          [kind, s3UploadKeyForFile(id, kind, (f as Express.Multer.File).path)] as const
+      );
+    // #54 (T3.4) — thumb/preview AYNI kalitda almashsa `updatedAt` bump kerak:
+    // katalog `?v=<updatedAt>` cache-bust'i shundan olinadi (faqat pack yozilganda
+    // yuqoridagi prisma.update allaqachon bump qilgan).
     await syncTemplateAssetKeys(id, {
-      ensure: (
-        [
-          ["thumb", thumb],
-          ["preview", preview],
-          ["pack", pack],
-        ] as const
-      )
-        .filter(([kind, f]) => f?.path && !cloudSyncFailed.has(kind))
-        .map(([kind, f]) => s3UploadKeyForFile(id, kind, (f as Express.Multer.File).path)),
+      ensure: writtenKeys.map(([, key]) => key),
+      prune: Object.fromEntries(writtenKeys),
+      touch: writtenKeys.some(([kind]) => kind === "thumb" || kind === "preview"),
     });
 
     setUploadProgress(id, {
@@ -3388,6 +3411,41 @@ async function reviewOneTemplate(
 ): Promise<ReviewOutcome> {
   const { note, published } = opts;
 
+  // #126 (T3.4) — JORIY HOLAT GATE. Ilgari review holatni umuman tekshirmasdi:
+  //  · DRAFT (contributor hali submit qilmagan, tahrirlab turgan) approve bo'lib
+  //    tugallanmagan kontent katalogga chiqardi (post-approval content swap);
+  //  · REJECTED yozuv qayta submit qilinmasdan turib approve bo'lardi;
+  //  · takedown qilingan yozuv approve bilan jimgina tirilardi (/restore chetlab).
+  // Faqat PENDING_REVIEW (navbat) va APPROVED (qayta ko'rib chiqish/rad etish)
+  // holatlari ko'rib chiqiladi.
+  const cur = await prisma.contributorTemplate.findUnique({
+    where: { id },
+    select: { reviewStatus: true, takedownAt: true },
+  });
+  if (!cur) return { ok: false, status: 404, error: "Template not found" };
+  if (cur.takedownAt) {
+    return {
+      ok: false,
+      status: 409,
+      error: "Template is under takedown — restore it first (/restore)",
+      code: "TAKEDOWN_ACTIVE",
+    };
+  }
+  if (
+    cur.reviewStatus !== TemplateReviewStatus.PENDING_REVIEW &&
+    cur.reviewStatus !== TemplateReviewStatus.APPROVED
+  ) {
+    return {
+      ok: false,
+      status: 409,
+      error:
+        cur.reviewStatus === TemplateReviewStatus.DRAFT
+          ? "Template is a draft — the contributor has not submitted it for review"
+          : "Template was already rejected — the contributor must resubmit it",
+      code: "INVALID_REVIEW_STATE",
+    };
+  }
+
   // Karantin gate (Bosqich 2 #2): malware/dedup karantinидаги pack TASDIQLANMAYDI/NASHR
   // ETILMAYDI. Reject bloklanmaydi (admin baribir rad qila oladi).
   if (action === "approve") {
@@ -3672,7 +3730,7 @@ contributorRouter.get("/catalog", requireAuth, async (req, res) => {
     // Audit §D (P2) — plugin katalogi bilan BIR XIL predikat (takedownAt:null ham):
     // takedown qilingan shablon bu ochiq ro'yxatda ham ko'rinmasin.
     where: approvedCatalogWhere,
-    orderBy: { updatedAt: "desc" },
+    orderBy: catalogStableOrderBy, // #53 — kursor barqarorligi (updatedAt hisoblagich bilan ko'tariladi)
     take: take + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
@@ -3743,6 +3801,7 @@ contributorRouter.post(
         // (pack-uploaded dagi HeadObject naqshi). Yo'q bo'lsa eski nomni saqlaymiz.
         let verifiedFileName = existing.fileName;
         let verifiedSize = existing.fileSize;
+        let verifiedKey: string | null = null;
         if (fileChanged && nextFileName) {
           if (isS3Configured()) {
             const key = s3UploadKeyForFile(existing.id, "pack", nextFileName);
@@ -3750,6 +3809,7 @@ contributorRouter.post(
             if (m.sizeBytes != null) {
               verifiedFileName = nextFileName;
               verifiedSize = m.sizeBytes;
+              verifiedKey = key;
             }
           } else {
             verifiedFileName = nextFileName;
@@ -3790,6 +3850,14 @@ contributorRouter.post(
             targetId: existing.id,
             detail: `CEP sync overwrote approved template → re-review required${packSwapped ? " (pack replaced)" : ""}`,
           }).catch(() => {});
+        }
+        if (verifiedKey) {
+          // #17 (T3.3) — eski kengaytmali pack obyekti qolib ketmasin + kalit keshi.
+          await syncTemplateAssetKeys(existing.id, {
+            ensure: [verifiedKey],
+            prune: { pack: verifiedKey },
+          });
+          await deleteS3Objects([`templates/${existing.id}/pack.dl.zip`]).catch(() => {});
         }
         updated++;
       } else {
@@ -3889,48 +3957,108 @@ contributorRouter.post(
   }
 );
 
-/** POST /admin/templates/:id/restore — takedown'ni bekor qiladi (qayta nashr QILMAYDI —
- *  admin alohida /review approve bilan nashr etadi). */
+/**
+ * POST /admin/templates/:id/restore — takedown'ni bekor qiladi.
+ *
+ * #127 (T3.4): ilgari `published` ga UMUMAN tegilmasdi va javob buni ko'rsatmasdi →
+ * admin "restore" bosgach shablon katalogda ko'rinmay qolardi (takedown uni
+ * `published:false` qilgan) va buning sababi hech qayerda aytilmasdi. Endi:
+ *  · javob `published` bilan birga `republished` bayrog'ini ANIQ qaytaradi;
+ *  · `{"republish": true}` bilan APPROVED shablon bir qadamda katalogga qaytariladi;
+ *  · APPROVED bo'lmagan yozuvni republish qilishga urinish 409 (avval /review).
+ * Audit yozuvi ham yakuniy nashr holatini yozadi.
+ */
+const restoreSchema = z.object({ republish: z.boolean().optional() });
 contributorRouter.post(
   "/admin/templates/:id/restore",
   requireAuth,
   requireAdmin,
   async (req, res) => {
     const id = String(req.params.id);
+    const parsed = restoreSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
+      return;
+    }
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
     if (!existing) {
       res.status(404).json({ error: "Template not found" });
       return;
     }
+    const wantRepublish = parsed.data.republish === true;
+    if (wantRepublish && existing.reviewStatus !== TemplateReviewStatus.APPROVED) {
+      res.status(409).json({
+        error: "Only an approved template can be republished — review it first",
+        code: "NOT_APPROVED",
+        reviewStatus: existing.reviewStatus,
+      });
+      return;
+    }
     const template = await prisma.contributorTemplate.update({
       where: { id },
-      data: { takedownAt: null, takedownReason: null, takedownById: null },
+      data: {
+        takedownAt: null,
+        takedownReason: null,
+        takedownById: null,
+        ...(wantRepublish ? { published: true } : {}),
+      },
     });
     await writeAuditLog({
       actorId: req.user!.userId,
       action: "template.takedown_restore",
       targetType: "template",
       targetId: id,
-      detail: existing.name,
+      detail: `${existing.name} (published: ${template.published ? "yes" : "no"})`,
     });
-    res.json(template);
+    res.json({ ...template, republished: wantRepublish });
   }
 );
 
+/**
+ * DELETE /templates/:id — shablonni butunlay o'chirish.
+ *
+ * #52 (T3.4): ilgari FAQAT admin o'chira olardi — contributor xato yuklagan
+ * qoralamasini ham o'chira olmasdi (admin'ga yozishga majbur edi). Endi contributor
+ * O'Z shablonini o'chira oladi, LEKIN faqat `DRAFT`/`REJECTED` holatida:
+ *  - PENDING_REVIEW — moderatsiya navbatidagi yozuv izsiz yo'qolmasin (avval submit'ni bekor qil);
+ *  - APPROVED — jonli kontent (plagin katalogida, sotib olingan/yuklab olingan bo'lishi mumkin) →
+ *    faqat admin (takedown yo'li bor).
+ */
 contributorRouter.delete(
   "/templates/:id",
   requireAuth,
-  requireAdmin,
+  requireContributorOrAdmin,
   async (req, res) => {
     const id = String(req.params.id);
     const existing = await prisma.contributorTemplate.findUnique({ where: { id } });
+    const isAdmin = req.user!.role === UserRole.ADMIN;
 
     // Idempotent: DB'da yo'q bo'lsa ham (takroriy delete / yarim tugagan oldingi
     // urinish) qolgan bulut fayllarini best-effort tozalab 204 qaytaramiz —
-    // avval prisma.delete P2025 bilan 500 berardi.
+    // avval prisma.delete P2025 bilan 500 berardi. (Contributor uchun IDOR bo'lmasin
+    // deb faqat admin'ga ochiq — contributor mavjud bo'lmagan id'ga 404 oladi.)
     if (!existing) {
+      if (!isAdmin) return res.status(404).json({ error: "Template not found" });
       await deleteTemplateAssets(id).catch(() => {});
       return res.status(204).send();
+    }
+
+    if (!isAdmin) {
+      if (existing.contributorId !== req.user!.userId) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      if (!(await assertContributorNotBlocked(req.user!.userId, res))) return;
+      const deletable =
+        existing.reviewStatus === TemplateReviewStatus.DRAFT ||
+        existing.reviewStatus === TemplateReviewStatus.REJECTED;
+      if (!deletable) {
+        return res.status(409).json({
+          error:
+            existing.reviewStatus === TemplateReviewStatus.APPROVED
+              ? "Approved templates can only be removed by an admin — contact support for a takedown"
+              : "Withdraw the template from review before deleting it",
+        });
+      }
     }
 
     // 1) R2/S3 fayllarini avval tozalaymiz. Bu tashqi bog'liqlik va yagona xato
@@ -3965,7 +4093,7 @@ contributorRouter.delete(
       action: "template_delete",
       targetType: "template",
       targetId: id,
-      detail: existing?.name ?? id,
+      detail: `${existing?.name ?? id}${isAdmin ? "" : " (contributor self-delete)"}`,
     });
     res.status(204).send();
   }

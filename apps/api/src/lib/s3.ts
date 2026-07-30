@@ -49,6 +49,13 @@ export const s3 = new S3Client({
 // bo'yicha versiyalangan), shu sabab uzoq immutable kesh egress'ni kamaytiradi.
 export const ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
+/** #55 (T3.4) — CDN_BASE_URL o'rnatilganmi. `false` bo'lsa katalog javoblari
+ *  IMZOLANGAN (vaqtinchalik, so'rovga xos) URL'lar bilan keladi → javob umumiy
+ *  (shared/CDN) keshga qo'yilmasligi kerak. */
+export function isCdnPublicMode(): boolean {
+  return !!cdnBase;
+}
+
 export function getPublicUrl(key: string): string {
   if (cdnBase) return `${cdnBase.replace(/\/$/, "")}/${key}`;
   // CDN_BASE_URL bo'sh bo'lsa — S3_ENDPOINT'dan (masalan GCS S3-mos
@@ -198,8 +205,28 @@ export async function getS3ObjectMeta(
   }
 }
 
-/** R2 da pack/preview/thumb turli kengaytma bilan saqlanishi mumkin */
-export function s3KeysForAsset(templateId: string, kind: TemplateAssetKind): string[] {
+/**
+ * R2 da pack/preview/thumb turli kengaytma bilan saqlanishi mumkin.
+ *
+ * #17 (T3.3) — `preferFileName` berilsa DB'dagi HAQIQIY fayl nomining kengaytmasi
+ * ro'yxat BOSHIGA chiqadi. Ilgari tartib qat'iy edi: `.zip` `.aep` dan oldin turardi,
+ * shuning uchun contributor `.zip` → `.aep` ga o'tsa (eski obyekt qolib ketgan bo'lsa)
+ * DB `.aep` deb tursa ham foydalanuvchi ESKI `.zip` baytlarini olardi.
+ */
+export function s3KeysForAsset(
+  templateId: string,
+  kind: TemplateAssetKind,
+  preferFileName?: string | null
+): string[] {
+  const keys = s3KeyCandidates(templateId, kind);
+  const ext = preferFileName ? path.extname(preferFileName).toLowerCase() : "";
+  if (!ext) return keys;
+  const preferred = `templates/${templateId}/${kind}${ext}`;
+  const rest = keys.filter((k) => k !== preferred);
+  return [preferred, ...rest];
+}
+
+function s3KeyCandidates(templateId: string, kind: TemplateAssetKind): string[] {
   const base = `templates/${templateId}/${kind}`;
   if (kind === "pack") {
     // Stock S1 — pack endi barcha template app formatlari + stock media kengaytmalarida
@@ -224,10 +251,11 @@ export function s3KeysForAsset(templateId: string, kind: TemplateAssetKind): str
 
 export async function resolveS3AssetKey(
   templateId: string,
-  kind: TemplateAssetKind
+  kind: TemplateAssetKind,
+  preferFileName?: string | null
 ): Promise<string | null> {
   if (!isS3Configured()) return null;
-  for (const key of s3KeysForAsset(templateId, kind)) {
+  for (const key of s3KeysForAsset(templateId, kind, preferFileName)) {
     if (await s3ObjectExists(key)) return key;
   }
   return null;
@@ -241,9 +269,10 @@ export async function resolveS3AssetKey(
 export function s3AssetKeyFromSet(
   templateId: string,
   kind: TemplateAssetKind,
-  knownS3Keys: Set<string>
+  knownS3Keys: Set<string>,
+  preferFileName?: string | null
 ): string | null {
-  for (const key of s3KeysForAsset(templateId, kind)) {
+  for (const key of s3KeysForAsset(templateId, kind, preferFileName)) {
     if (knownS3Keys.has(key)) return key;
   }
   return null;
@@ -338,6 +367,41 @@ export async function templateAssetFlags(
     }
   }
   return assets;
+}
+
+/**
+ * Prefiks bo'yicha obyektlarni metadata bilan ro'yxatlaydi (pagination bilan).
+ * `maxKeys` — himoya chegarasi (juda katta prefiksda cheksiz aylanmaslik uchun);
+ * chegaraga yetilsa ro'yxat KESILADI va `truncated: true` qaytadi.
+ */
+export async function listS3ObjectsWithMeta(
+  prefix: string,
+  maxKeys = 5000
+): Promise<{ objects: Array<{ key: string; lastModified: Date | null; size: number }>; truncated: boolean }> {
+  if (!isS3Configured() || !prefix) return { objects: [], truncated: false };
+  const objects: Array<{ key: string; lastModified: Date | null; size: number }> = [];
+  let token: string | undefined;
+  do {
+    const res = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: token,
+        MaxKeys: 1000,
+      })
+    );
+    for (const o of res.Contents ?? []) {
+      if (!o.Key || !o.Key.startsWith(prefix)) continue;
+      objects.push({
+        key: o.Key,
+        lastModified: o.LastModified ?? null,
+        size: typeof o.Size === "number" ? o.Size : 0,
+      });
+      if (objects.length >= maxKeys) return { objects, truncated: true };
+    }
+    token = res.NextContinuationToken;
+  } while (token);
+  return { objects, truncated: false };
 }
 
 /**

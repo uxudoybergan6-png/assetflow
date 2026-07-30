@@ -16,7 +16,13 @@ import {
 import type { Request, Response } from "express";
 import { requireAuth, verifyToken } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists } from "../lib/s3.js";
+import {
+  isS3Configured,
+  isCdnPublicMode,
+  getPublicOrSignedUrl,
+  getSignedDownloadUrl,
+  s3ObjectExists,
+} from "../lib/s3.js";
 import { resolveAssetKeyCached } from "../lib/asset-state.js";
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
@@ -31,7 +37,12 @@ import {
   setPluginPlan,
   isPaidPlan,
 } from "../lib/plugin-profile.js";
-import { approvedCatalogWhere, mapCatalogItem, mapCatalogCard } from "../lib/catalog-map.js";
+import {
+  approvedCatalogWhere,
+  catalogStableOrderBy,
+  mapCatalogItem,
+  mapCatalogCard,
+} from "../lib/catalog-map.js";
 import { recordTemplateDownloadEvent, downloadAuditFromReq } from "../lib/download-events.js";
 import {
   type TemplateAssetKind,
@@ -301,10 +312,10 @@ function catalogOrderBy(sort: unknown): Prisma.ContributorTemplateOrderByWithRel
   const s = typeof sort === "string" ? sort.trim().toLowerCase() : "";
   if (s === "az") return [{ name: "asc" }, { id: "asc" }];
   if (s === "za") return [{ name: "desc" }, { id: "desc" }];
-  if (s === "new")
-    return [{ reviewedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }, { id: "desc" }];
-  // default / 'mos' / featured — bugungi tartib (updatedAt desc)
-  return [{ updatedAt: "desc" }, { id: "desc" }];
+  if (s === "new") return [...catalogStableOrderBy];
+  // #53 — default / 'mos' / featured: nashr vaqti bo'yicha BARQAROR tartib.
+  // (Ilgari `updatedAt desc` edi — har yuklab olish uni ko'tarib paginatsiyani buzardi.)
+  return [...catalogStableOrderBy];
 }
 
 /** FAZA 5 (A1) — katalog pagination chegaralari. Default 100: bugungi kichik katalog
@@ -312,6 +323,11 @@ function catalogOrderBy(sort: unknown): Prisma.ContributorTemplateOrderByWithRel
  *  DB/JSON/xotirani portlatmaydi. Klientlar nextCursor bilan sahifalab oladi. */
 const CATALOG_DEFAULT_TAKE = 100;
 const CATALOG_MAX_TAKE = 200;
+
+/** #55 — imzolangan rejimda ETag "vaqt paqiri" (soniya). Katalog display URL TTL'i
+ *  24 soat (catalog-map DISPLAY_URL_TTL) — 6 soatlik paqir 304 bilan qaytariladigan
+ *  eng eski javobda ham imzoga kamida 18 soat qoldiradi. */
+const CATALOG_SIGNED_ETAG_BUCKET_SEC = 6 * 3600;
 
 function parseTake(raw: unknown): number {
   const n = Number(raw);
@@ -426,9 +442,25 @@ pluginRouter.get("/catalog", async (req: Request, res: Response) => {
   // ko'p katalog ochilishi bazaga UMUMAN bormaydi. Katalog ommaviy (auth:false,
   // per-user ma'lumot yo'q) → public kesh xavfsiz. Har filtr/sahifa alohida URL =
   // alohida kesh kaliti. If-None-Match mos kelsa 304 (nol body).
+  //
+  // #55 (T3.4) — CDN YO'Q bo'lsa (CDN_BASE_URL o'rnatilmagan) URL'lar IMZOLANGAN:
+  //  (a) `s-maxage` bilan umumiy keshga qo'yish mumkin emas — bir mijozning imzosi
+  //      boshqasiga tarqaladi va imzo muddati tugagach butun sahifa buziladi →
+  //      `private` (faqat brauzer keshi).
+  //  (b) imzo query'si HAR javobda o'zgargani uchun ETag ham har safar boshqacha
+  //      bo'lardi → 304 hech qachon ishlamasdi. ETag'ni imzo query'sisiz kontentdan
+  //      hisoblaymiz; imzo eskirib qolmasligi uchun TTL'ning choragi bo'yicha
+  //      "vaqt paqiri" qo'shamiz (paqir almashsa yangi imzolar bilan to'liq javob).
   const serialized = JSON.stringify(body);
-  const etag = `W/"${crypto.createHash("sha1").update(serialized).digest("base64url")}"`;
-  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300");
+  const signedMode = !isCdnPublicMode();
+  const etagSource = signedMode
+    ? `${serialized.replace(/\?X-Amz-[^"]*/g, "")}|${Math.floor(Date.now() / (CATALOG_SIGNED_ETAG_BUCKET_SEC * 1000))}`
+    : serialized;
+  const etag = `W/"${crypto.createHash("sha1").update(etagSource).digest("base64url")}"`;
+  res.setHeader(
+    "Cache-Control",
+    signedMode ? "private, max-age=60" : "public, max-age=60, s-maxage=300"
+  );
   res.setHeader("ETag", etag);
   res.setHeader("Vary", "Accept-Encoding");
   if (req.headers["if-none-match"] === etag) {
@@ -465,7 +497,7 @@ pluginRouter.get("/featured", async (req: Request, res: Response) => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 6, 1), 12);
   const items = await prisma.contributorTemplate.findMany({
     where: catalogWhere(req.query.app),
-    orderBy: { updatedAt: "desc" },
+    orderBy: catalogStableOrderBy, // #53 — nashr vaqti (hisoblagichdan mustaqil)
     take: limit,
     select: CATALOG_SELECT,
   });

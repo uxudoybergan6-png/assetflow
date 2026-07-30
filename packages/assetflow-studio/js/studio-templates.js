@@ -58,6 +58,11 @@ const StudioTemplates = (() => {
       isNew:
         t.reviewStatus === "PENDING_REVIEW" &&
         Date.now() - (Date.parse(t.createdAt || "") || 0) < 48 * 3600000,
+      // T3.1 (#15/#16) — JONLI shablon almashtirilgani uchun navbatga QAYTGAN yozuv:
+      // server `reReview` beradi (avval ko'rib chiqilgan + yana PENDING_REVIEW).
+      // Admin buni oddiy yangi yuborishdan ajratishi shart — kontent moderatsiyadan
+      // KEYIN almashtirilgan bo'lishi mumkin (bait-and-switch).
+      reReview: !!t.reReview,
       // Stock S1 — mahsulot turi maydonlari (admin/moderation ko'rsatadi)
       kind: t.kind || "template",
       stockType: t.stockType || null,

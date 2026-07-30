@@ -21,6 +21,7 @@
  */
 import { prisma } from "@creative-tools/database";
 import { captureException } from "./sentry.js";
+import { deleteS3Objects, isS3Configured, listS3ObjectsWithMeta } from "./s3.js";
 
 /** Ingest natijasi (zip yoki raw asset uchun umumiy). retryable = transient xato
  *  (storage/tarmoq) → worker qayta urinishi mumkin. false = doimiy rad (skan/format). */
@@ -63,6 +64,8 @@ const WORKER_CONCURRENCY = intEnv("INGEST_WORKER_CONCURRENCY", 2, 1, 8);
 const IDLE_POLL_MS = intEnv("INGEST_WORKER_IDLE_MS", 4000, 500, 60_000);
 const STUCK_MINUTES = intEnv("INGEST_WORKER_STUCK_MIN", 15, 2, 240);
 const DONE_RETENTION_DAYS = intEnv("INGEST_JOB_RETENTION_DAYS", 14, 1, 180);
+/** #50 — shu yoshdan katta `incoming/` obyekt yetim deb hisoblanadi (navbatda bo'lmasa). */
+const INCOMING_RETENTION_DAYS = intEnv("INGEST_INCOMING_RETENTION_DAYS", 7, 1, 90);
 
 function intEnv(name: string, def: number, min: number, max: number): number {
   const v = Number(process.env[name]);
@@ -177,9 +180,12 @@ async function reclaimStuck(): Promise<void> {
   }
 }
 
-/** Bitta 'queued' jobni atomik claim qiladi (FOR UPDATE SKIP LOCKED) — id qaytadi yoki null. */
-async function claimNext(): Promise<string | null> {
-  const rows = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+/**
+ * Bitta 'queued' jobni atomik claim qiladi (FOR UPDATE SKIP LOCKED).
+ * Qaytadi: `{ id, attempts }` — `attempts` FENCING TOKEN vazifasini bajaradi (#51).
+ */
+async function claimNext(): Promise<{ id: string; attempts: number } | null> {
+  const rows = await prisma.$queryRawUnsafe<Array<{ id: string; attempts: number }>>(
     `UPDATE "IngestJob"
         SET "status" = 'processing',
             "claimedAt" = now(),
@@ -193,20 +199,48 @@ async function claimNext(): Promise<string | null> {
          FOR UPDATE SKIP LOCKED
          LIMIT 1
       )
-      RETURNING "id"`
+      RETURNING "id", "attempts"`
   );
-  return rows[0]?.id ?? null;
+  const row = rows[0];
+  return row ? { id: row.id, attempts: Number(row.attempts) } : null;
+}
+
+/**
+ * #51 (T3.4) — FENCING. `reclaimStuck` faqat TAXMIN qiladi ("15 daqiqadan beri
+ * jim = o'lgan"): birinchi ishchi hali tirik bo'lishi mumkin (uzoq ffmpeg, tarmoq
+ * osilishi). Ilgari u qaytib kelib jobni terminal statusga yozardi — reclaim
+ * qilingan/qayta claim qilingan ishning natijasini USTIGA yozib. Endi har yozuv
+ * `(status='processing' AND attempts=<claim paytidagi qiymat>)` sharti bilan:
+ * job reclaim qilingan (status→queued) yoki qayta claim qilingan (attempts+1)
+ * bo'lsa eskirgan ishchining yozuvi 0 qatorga tegadi va E'TIBORSIZ qoladi.
+ */
+async function fencedUpdate(
+  id: string,
+  attempts: number,
+  data: Record<string, unknown>
+): Promise<boolean> {
+  const r = await prisma.ingestJob.updateMany({
+    where: { id, status: "processing", attempts },
+    data: data as never,
+  });
+  if (r.count === 0) {
+    console.warn(
+      `[ingest-worker] fencing: ${id} natijasi e'tiborsiz qoldirildi (job qayta claim qilingan)`
+    );
+  }
+  return r.count > 0;
 }
 
 /** Claim qilingan jobni ishlaydi — natijaga qarab terminal status yoki retry. */
-async function runClaimedJob(id: string): Promise<void> {
+async function runClaimedJob(id: string, attempts: number): Promise<void> {
   const job = await prisma.ingestJob.findUnique({ where: { id } });
   if (!job) return;
   if (!processor) {
     // Ishlab chiquvchi ro'yxatga olinmagan (kutilmagan) — qayta navbatga qo'yamiz.
-    await prisma.ingestJob.update({
-      where: { id },
-      data: { status: "queued", claimedAt: null, lastError: "No ingest processor registered" },
+    await fencedUpdate(id, attempts, {
+      status: "queued",
+      claimedAt: null,
+      lastError: "No ingest processor registered",
     });
     return;
   }
@@ -240,53 +274,76 @@ async function runClaimedJob(id: string): Promise<void> {
   }
 
   if (result.status === "created") {
-    await prisma.ingestJob.update({
-      where: { id },
-      data: {
-        status: "done",
-        resultTemplateId: result.id ?? null,
-        lastError: null,
-        finishedAt: new Date(),
-      },
+    await fencedUpdate(id, attempts, {
+      status: "done",
+      resultTemplateId: result.id ?? null,
+      lastError: null,
+      finishedAt: new Date(),
     });
     return;
   }
   if (result.status === "duplicate") {
-    await prisma.ingestJob.update({
-      where: { id },
-      data: {
-        status: "duplicate",
-        resultTemplateId: result.duplicateOf ?? null,
-        lastError: result.reason ?? null,
-        finishedAt: new Date(),
-      },
+    await fencedUpdate(id, attempts, {
+      status: "duplicate",
+      resultTemplateId: result.duplicateOf ?? null,
+      lastError: result.reason ?? null,
+      finishedAt: new Date(),
     });
     return;
   }
 
   // failed — transient bo'lsa va limit oshmagan bo'lsa qayta navbatga.
   const canRetry = result.retryable === true && job.attempts < job.maxAttempts;
-  await prisma.ingestJob.update({
-    where: { id },
-    data: canRetry
+  const applied = await fencedUpdate(
+    id,
+    attempts,
+    canRetry
       ? { status: "queued", claimedAt: null, lastError: result.reason ?? "Transient failure" }
-      : { status: "failed", claimedAt: null, lastError: result.reason ?? "Failed", finishedAt: new Date() },
-  });
+      : {
+          status: "failed",
+          claimedAt: null,
+          lastError: result.reason ?? "Failed",
+          finishedAt: new Date(),
+        }
+  );
+  // #50 (T3.4) — retry imkoni tugadi: manba fayl `incoming/` da YETIM qolardi
+  // (muvaffaqiyat va doimiy rad yo'llari uni o'chiradi, bu yo'l esa o'chirmasdi) →
+  // contributor kvotasini yeb, bulutda abadiy turardi. Endi job yakunida o'chiriladi.
+  if (applied && !canRetry) {
+    await deleteIncomingSource(job.key);
+  }
+}
+
+/** `incoming/` prefiksidagi manba faylni o'chiradi (boshqa prefikslarga TEGMAYDI). */
+async function deleteIncomingSource(key: string): Promise<void> {
+  if (!key || !key.startsWith("incoming/")) return;
+  try {
+    await deleteS3Objects([key]);
+    console.log(`[ingest-worker] yetim incoming fayl o'chirildi: ${key}`);
+  } catch (e) {
+    console.warn(`[ingest-worker] incoming o'chirilmadi (${key}):`, e);
+  }
 }
 
 /** Bir sikl: reclaim + WORKER_CONCURRENCY tagacha job claim qilib parallel ishlaydi.
  *  Qaytadi: shu siklda nechta job ishlangani (0 = navbat bo'sh). */
 export async function ingestWorkerTick(): Promise<number> {
   await reclaimStuck();
-  const ids: string[] = [];
+  const claimed: Array<{ id: string; attempts: number }> = [];
   for (let i = 0; i < WORKER_CONCURRENCY; i++) {
-    const id = await claimNext();
-    if (!id) break;
-    ids.push(id);
+    const c = await claimNext();
+    if (!c) break;
+    claimed.push(c);
   }
-  if (!ids.length) return 0;
-  await Promise.all(ids.map((id) => runClaimedJob(id).catch((e) => console.error("[ingest-worker] job xato:", id, e))));
-  return ids.length;
+  if (!claimed.length) return 0;
+  await Promise.all(
+    claimed.map((c) =>
+      runClaimedJob(c.id, c.attempts).catch((e) =>
+        console.error("[ingest-worker] job xato:", c.id, e)
+      )
+    )
+  );
+  return claimed.length;
 }
 
 /** Eski terminal joblarni tozalaydi (retention) — navbat cheksiz o'smasin. */
@@ -302,6 +359,49 @@ async function pruneOldJobs(): Promise<void> {
   } catch (e) {
     console.warn("[ingest-worker] pruneOldJobs xato:", e);
   }
+}
+
+/**
+ * #50 (T3.4) — YETIM `incoming/` fayllarini tozalaydi. Job yakunidagi o'chirish
+ * (deleteIncomingSource) faqat navbatga TUSHGAN fayllarni qamraydi; presigned PUT
+ * bilan yuklanib `/ingest` chaqirilmagan yoki job qatori retention'da o'chib ketgan
+ * fayllar bulutda abadiy qolardi. Bu supurish faqat ESKI (retention'dan katta)
+ * obyektlarni ko'radi — hozir yuklanayotgan fayl hech qachon tegilmaydi.
+ */
+async function pruneOrphanIncoming(): Promise<number> {
+  if (!isS3Configured()) return 0;
+  try {
+    const cutoff = Date.now() - INCOMING_RETENTION_DAYS * 86_400_000;
+    const { objects, truncated } = await listS3ObjectsWithMeta("incoming/", 5000);
+    const old = objects.filter((o) => (o.lastModified?.getTime() ?? Date.now()) < cutoff);
+    if (!old.length) return 0;
+    // Navbatda hali kutayotgan (queued/processing) kalitlar TEGILMAYDI.
+    const active = await prisma.ingestJob.findMany({
+      where: { key: { in: old.map((o) => o.key) }, status: { in: ["queued", "processing"] } },
+      select: { key: true },
+    });
+    const activeKeys = new Set(active.map((a) => a.key));
+    const stale = old.filter((o) => !activeKeys.has(o.key)).map((o) => o.key);
+    if (!stale.length) return 0;
+    for (let i = 0; i < stale.length; i += 1000) {
+      await deleteS3Objects(stale.slice(i, i + 1000));
+    }
+    console.log(
+      `[ingest-worker] yetim incoming tozalandi: ${stale.length} fayl (>${INCOMING_RETENTION_DAYS} kun)` +
+        (truncated ? " — ro'yxat kesildi, keyingi passda davom etadi" : "")
+    );
+    return stale.length;
+  } catch (e) {
+    console.warn("[ingest-worker] pruneOrphanIncoming xato:", e);
+    return 0;
+  }
+}
+
+/** Retention: eski job qatorlari + yetim `incoming/` obyektlari. RUN_ONCE rejimida
+ *  ham chaqiriladi (u yerda bo'sh-sikl hisoblagichi yo'q). */
+export async function runIngestRetention(): Promise<void> {
+  await pruneOldJobs();
+  await pruneOrphanIncoming();
 }
 
 let looping = false;
@@ -329,7 +429,7 @@ export async function runIngestWorkerLoop(): Promise<void> {
     if (processed === 0) {
       if (++sincePrune >= 50) {
         sincePrune = 0;
-        await pruneOldJobs();
+        await runIngestRetention();
       }
       await sleep(IDLE_POLL_MS);
     } else {

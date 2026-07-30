@@ -25,7 +25,12 @@ import { prisma } from "@creative-tools/database";
 import { initSentry } from "../lib/sentry.js";
 // Side-effect: ingest processor'ini ro'yxatga oladi (ingestOneZip/ingestOneAsset).
 import "../routes/contributor.js";
-import { runIngestWorkerLoop, stopIngestWorkerLoop, ingestWorkerTick } from "../lib/ingest-worker.js";
+import {
+  runIngestWorkerLoop,
+  stopIngestWorkerLoop,
+  ingestWorkerTick,
+  runIngestRetention,
+} from "../lib/ingest-worker.js";
 
 initSentry();
 
@@ -59,6 +64,10 @@ async function main() {
         empty = 0;
       }
     }
+    // #50 — RUN_ONCE rejimida ham retention ishlasin (bu yerda bo'sh-sikl hisoblagichi yo'q).
+    await runIngestRetention().catch((e) =>
+      console.warn("[ingest-worker-job] retention xato:", e)
+    );
     console.log("[ingest-worker-job] navbat bo'sh — chiqyapman (RUN_ONCE)");
     await prisma.$disconnect().catch(() => {});
     process.exit(0);

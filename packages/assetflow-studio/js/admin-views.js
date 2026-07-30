@@ -320,7 +320,7 @@ function renderModeration(){
                 <div style="font-size:10.5px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(meta)}</div>
               </div>
               <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:none">
-                ${t.isNew?'<span class="adx-bdg adx-bdg-info">New</span>':''}
+                ${t.reReview?'<span class="adx-bdg adx-bdg-pending" title="Content was replaced after approval — re-review required">Re-review</span>':t.isNew?'<span class="adx-bdg adx-bdg-info">New</span>':''}
                 ${adxModStatusBdg(t.status, true)}
               </div>
             </div>`;
@@ -386,7 +386,9 @@ function renderModDetail(t){
           <div style="flex:1;min-width:0"><div class="adx-h18">${esc(t.name)}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${esc(t.cat)} \u00b7 ${esc(typeof kindTypeLabel==='function'?kindTypeLabel(t):'After Effects')}</div></div>
           ${adxModStatusBdg(t.status)}
           ${t.isNew?'<span class="adx-bdg adx-bdg-info">New</span>':''}
+          ${t.reReview?'<span class="adx-bdg adx-bdg-pending" title="Content was replaced after approval — re-review required">Re-review</span>':''}
         </div>
+        ${t.reReview?`<div style="margin-top:10px;font-size:11.5px;color:#FFB27C;background:rgba(255,178,124,.10);border:1px solid rgba(255,178,124,.22);border-radius:10px;padding:8px 10px">This template was already approved once and came back to the queue — its files or metadata were replaced. Check the pack and preview again before approving.</div>`:''}
         <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">${adxFileChips(t)}</div>
         <div style="display:flex;align-items:center;gap:9px;margin-top:14px;padding:10px 12px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:11px">
           <span class="adx-av ${adxModGrad(t.grad)}" style="width:34px;height:34px">${esc(initialsOf(con.name))}</span>

@@ -116,7 +116,9 @@ export async function generateStockWatermarkedDerivatives(id: string): Promise<b
         console.warn(`[stock-wm] toza sibling o'chirish xato (${id}):`, e);
       }
     }
-    await syncTemplateAssetKeys(id, { ensure, remove });
+    // #54 — suv belgili derivativ AYNI kalitni (thumb.jpg/preview.*) qayta yozadi →
+    // CDN cache-bust (`?v=<updatedAt>`) yangilanmasa toza nusxa keshdan chiqib turadi.
+    await syncTemplateAssetKeys(id, { ensure, remove, touch: true });
     console.log(`[stock-wm] ${id} (${stockType}) suv belgili derivativ: ${ensure.join(", ")}${remove.length ? ` | toza sibling o'chirildi: ${remove.join(", ")}` : ""}`);
     return true;
   } catch (e) {

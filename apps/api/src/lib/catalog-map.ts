@@ -1,4 +1,4 @@
-import { TemplateReviewStatus } from "@creative-tools/database";
+import { Prisma, TemplateReviewStatus } from "@creative-tools/database";
 import {
   publicAssetUrl,
   findScenePreview,
@@ -207,7 +207,9 @@ async function resolveCatalogAssets(t: TemplateRow, apiBase: string) {
   const previewS3 = useS3 ? s3AssetKeyFromSet(t.id, "preview", s3Keys) : null;
   // Raw .aep pack — serve-asset.ts uni yuklab olishda .zipga o'raydi (§9), shu bois
   // klient (ayniqsa AE plagin) ham .zip kutishi kerak.
-  const packS3Key = useS3 ? s3AssetKeyFromSet(t.id, "pack", s3Keys) : null;
+  // #17 (T3.3) — DB'dagi fileName kengaytmasi USTUN: eski kengaytmali obyekt
+  // (masalan `.zip`→`.aep` almashuvidan qolgan) tanlanmasin.
+  const packS3Key = useS3 ? s3AssetKeyFromSet(t.id, "pack", s3Keys, t.fileName) : null;
   const packIsRawAep = !!packS3Key && /\.aep$/i.test(packS3Key);
   const thumbUrl = thumbS3
     ? withCacheBust(await getPublicOrSignedUrl(thumbS3, DISPLAY_URL_TTL), cacheBust)
@@ -330,6 +332,18 @@ function stripPrivatePrompt(meta: Record<string, unknown>): Record<string, unkno
   }
   return meta;
 }
+
+/** #53 (T3.4) — KATALOG BARQAROR TARTIBI.
+ *  Ilgari default tartib `updatedAt desc` edi, lekin `bumpTemplateCounter` HAR yuklab
+ *  olish/importda `updatedAt` ni ko'taradi (@updatedAt) → qator ro'yxat boshiga sakraydi:
+ *  cursor paginatsiyasida bir shablon ikki marta chiqadi yoki umuman tushib qoladi.
+ *  Nashr vaqti (`reviewedAt` — publishedAt proksisi) va `createdAt` hisoblagichdan
+ *  MUSTAQIL → tartib barqaror. `id` — unikal tiebreaker (kursor uchun shart). */
+export const catalogStableOrderBy: Prisma.ContributorTemplateOrderByWithRelationInput[] = [
+  { reviewedAt: { sort: "desc", nulls: "last" } },
+  { createdAt: "desc" },
+  { id: "desc" },
+];
 
 export const approvedCatalogWhere = {
   reviewStatus: TemplateReviewStatus.APPROVED,

@@ -80,11 +80,23 @@ check(
   false
 );
 
-// 5) Klient versiyasi noma'lum (current="") — yangilanish taklif qilinmaydi (portlamaydi).
+// 5) #56 FAIL-SAFE: klient versiyasi noma'lum (current="" yoki axlat) — ESKI deb
+// hisoblanadi, aks holda majburiy yangilanish aynan shu klientlarga yetmaydi.
 check(
-  "empty current → updateAvailable false (no false mandatory prompt)",
+  "empty current → updateAvailable true (fail-safe, #56)",
   computePluginVersionResponse("", release(), "https://cdn/pack.zip").updateAvailable,
-  false
+  true
+);
+check(
+  "garbage current → updateAvailable true (fail-safe, #56)",
+  computePluginVersionResponse("dev-build", release(), "https://cdn/pack.zip").updateAvailable,
+  true
+);
+check(
+  "unknown current + minSupportedVersion → mandatory true (#56)",
+  computePluginVersionResponse("", release({ minSupportedVersion: "1.1.0" }), "https://cdn/pack.zip")
+    .mandatory,
+  true
 );
 
 // 6) mandatory=true bo'lgan reliz — eski klient uchun majburiy yangilanish.
