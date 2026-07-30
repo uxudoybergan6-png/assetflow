@@ -129,6 +129,12 @@ const StudioApi = (() => {
     return data;
   }
 
+  /* #76 (W3) — chiqishda server sessiyani bekor qiladi (tokenVersion++). Klient
+     tozalashdan OLDIN chaqiriladi; xato chiqishni to'smaydi (auth.js catch qiladi). */
+  async function logoutServer() {
+    return request("/api/auth/logout", { method: "POST" });
+  }
+
   async function healthCheck() {
     try {
       const res = await fetch(`${baseUrl()}/health`, { method: "GET" });
@@ -1068,6 +1074,7 @@ const StudioApi = (() => {
     takedownTemplate,
     restoreTemplate,
     requestContributorAccess,
+    logoutServer,
     healthCheck,
     baseUrl,
     /** #90 (C10) — UI lokal dev ko'rsatmalarini FAQAT lokal API'da ko'rsatsin. */

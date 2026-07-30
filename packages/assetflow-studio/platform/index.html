@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html><head>
+<html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
 <meta name="turnstile-site-key" content="0x4AAAAAAADvCAW2JrGu92omA">
 <title>FrameFlow — Creative Assets & AI Generation Platform</title>
 
-<!-- BATCH6 tema: FOUC oldini olish — birinchi bo'yoqdan oldin html[data-theme] o'rnatiladi -->
+<!-- BATCH6 tema: FOUC oldini olish — birinchi bo'yoqdan oldin html[data-theme] o'rnatiladi.
+     #80 (X6): kalit butun domen bo'ylab YAGONA — `ff-theme` ∈ {noir,neon,cold,light}.
+     Ommaviy webda yorug' palitra yo'q, shuning uchun `light` bu yerda noir'ga tushadi. -->
 <script>(function(){try{var t=localStorage.getItem('ff-theme');if(t!=='noir'&&t!=='neon'&&t!=='cold')t='noir';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','noir');}})();</script>
 
 <!-- ⚠️ ROOT-ABSOLUTE yo'llar (SHART): /stock/<type>/<slug>-<id> kabi CHUQUR deep-link'da
@@ -91,13 +93,16 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <!-- BATCH6 tema: Space Grotesk (display) · Inter (body) · JetBrains Mono (label) — CSP style-src/font-src ruxsat berilgan (audit #17) -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<style>/* cyrillic-ext */
+<style>/* #75 (W2) — shrift yo'llari ROOT-ABSOLUTE (`/assets/…`) bo'lishi SHART. Nisbiy
+   `assets/…` SPA fallback'da 2+ segmentli marshrutda (/stock/xyz) `/stock/assets/…`
+   ga aylanib 404 berardi va sahifa zaxira shriftda ochilardi. */
+/* cyrillic-ext */
 @font-face {
   font-family: 'Hanken Grotesk';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/886e43ce.woff2") format('woff2');
+  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* vietnamese */
@@ -106,7 +111,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/b07fad76.woff2") format('woff2');
+  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -115,7 +120,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/2d786135.woff2") format('woff2');
+  src: url("/assets/fonts/2d786135.woff2") format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -124,7 +129,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/9a5c604f.woff2") format('woff2');
+  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* cyrillic-ext */
@@ -133,7 +138,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/886e43ce.woff2") format('woff2');
+  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* vietnamese */
@@ -142,7 +147,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/b07fad76.woff2") format('woff2');
+  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -151,7 +156,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/2d786135.woff2") format('woff2');
+  src: url("/assets/fonts/2d786135.woff2") format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -160,7 +165,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/9a5c604f.woff2") format('woff2');
+  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* cyrillic-ext */
@@ -169,7 +174,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/886e43ce.woff2") format('woff2');
+  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* vietnamese */
@@ -178,7 +183,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/b07fad76.woff2") format('woff2');
+  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -187,7 +192,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/2d786135.woff2") format('woff2');
+  src: url("/assets/fonts/2d786135.woff2") format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -196,7 +201,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/9a5c604f.woff2") format('woff2');
+  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* cyrillic-ext */
@@ -205,7 +210,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("assets/fonts/886e43ce.woff2") format('woff2');
+  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* vietnamese */
@@ -214,7 +219,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("assets/fonts/b07fad76.woff2") format('woff2');
+  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -223,7 +228,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("assets/fonts/2d786135.woff2") format('woff2');
+  src: url("/assets/fonts/2d786135.woff2") format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -232,7 +237,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("assets/fonts/9a5c604f.woff2") format('woff2');
+  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* cyrillic-ext */
@@ -241,7 +246,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url("assets/fonts/886e43ce.woff2") format('woff2');
+  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* vietnamese */
@@ -250,7 +255,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url("assets/fonts/b07fad76.woff2") format('woff2');
+  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -259,7 +264,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url("assets/fonts/2d786135.woff2") format('woff2');
+  src: url("/assets/fonts/2d786135.woff2") format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -268,7 +273,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url("assets/fonts/9a5c604f.woff2") format('woff2');
+  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* cyrillic-ext */
@@ -277,7 +282,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/c26bd38a.woff2") format('woff2');
+  src: url("/assets/fonts/c26bd38a.woff2") format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* cyrillic */
@@ -286,7 +291,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/d16072c3.woff2") format('woff2');
+  src: url("/assets/fonts/d16072c3.woff2") format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 /* vietnamese */
@@ -295,7 +300,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/03302853.woff2") format('woff2');
+  src: url("/assets/fonts/03302853.woff2") format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -304,7 +309,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/944c675f.woff2") format('woff2');
+  src: url("/assets/fonts/944c675f.woff2") format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -313,7 +318,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("assets/fonts/280b622a.woff2") format('woff2');
+  src: url("/assets/fonts/280b622a.woff2") format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* cyrillic-ext */
@@ -322,7 +327,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/dcf0cc79.woff2") format('woff2');
+  src: url("/assets/fonts/dcf0cc79.woff2") format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* cyrillic */
@@ -331,7 +336,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/abc1ee6a.woff2") format('woff2');
+  src: url("/assets/fonts/abc1ee6a.woff2") format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 /* vietnamese */
@@ -340,7 +345,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/605a8c68.woff2") format('woff2');
+  src: url("/assets/fonts/605a8c68.woff2") format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -349,7 +354,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/02c53f77.woff2") format('woff2');
+  src: url("/assets/fonts/02c53f77.woff2") format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -358,7 +363,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("assets/fonts/663704e0.woff2") format('woff2');
+  src: url("/assets/fonts/663704e0.woff2") format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* cyrillic-ext */
@@ -367,7 +372,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/40e458e6.woff2") format('woff2');
+  src: url("/assets/fonts/40e458e6.woff2") format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* cyrillic */
@@ -376,7 +381,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/dfee119c.woff2") format('woff2');
+  src: url("/assets/fonts/dfee119c.woff2") format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 /* vietnamese */
@@ -385,7 +390,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/440323b3.woff2") format('woff2');
+  src: url("/assets/fonts/440323b3.woff2") format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -394,7 +399,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/19bbd1f5.woff2") format('woff2');
+  src: url("/assets/fonts/19bbd1f5.woff2") format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -403,7 +408,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("assets/fonts/97d6f528.woff2") format('woff2');
+  src: url("/assets/fonts/97d6f528.woff2") format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 </style>
@@ -14329,6 +14334,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   ::-webkit-scrollbar-thumb{background:#20262F;border-radius:7px;border:3px solid transparent;background-clip:padding-box}
   ::-webkit-scrollbar-thumb:hover{background:#2A3140;background-clip:padding-box}
   ::-webkit-scrollbar-track{background:transparent}
+  /* #79 (X5) — KLAVIATURA FOKUSI. Ilgari butun sirtda 0 ta focus qoidasi bor edi:
+     Tab bosgan foydalanuvchi qayerda turganini KO'RMASDI. `:focus-visible` faqat
+     klaviatura navigatsiyasida chiqadi — sichqoncha bosishida halqa ko'rinmaydi. */
+  :focus-visible{outline:2px solid var(--th-accent,#fff);outline-offset:2px;border-radius:8px}
+  /* Matn maydonlarida halqa o'rniga chegara+soya (mavjud dizayn saqlanadi) */
+  input:focus-visible,textarea:focus-visible{outline-offset:0}
+  /* Semantik bo'lmagan bosiladigan elementlar (div/span/a[onclick]) — `role="button"`
+     va `tabindex="0"` bilan belgilanadi; Enter/Space aktivatsiyasi global handler'da. */
+  [role="button"]{cursor:pointer}
   /* BATCH6 shim: eski lime .ff o'zgaruvchilari → 3-tema tokenlariga bog'landi (hardcode rang yo'q) */
   .ff{
     --bg:var(--th-bg);--bg2:var(--th-bg-deep);--panel:var(--th-surface);--panel2:var(--th-surface-2);
@@ -16145,7 +16159,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <!-- MARKETING TOP-NAV — flat at top, frosted on scroll -->
     <header class="{{ navCls }}" data-pop-root="nav">
       <div class="ffm-nav">
-        <span class="ffm-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
+        <span class="ffm-logo" onclick="{{ goLanding }}" role="button" tabindex="0"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
         <span style="flex:1"></span>
         <span class="ffm-navlinks" style="display:flex;align-items:center;gap:6px">
           <!-- BATCH6 MEGA-MENYU — hover (CSS) yoki klik (state); 2 ustun Features | Models -->
@@ -16175,24 +16189,24 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </div>
             </div>
           </span>
-          <a class="ffm-link" onclick="{{ goTemplates }}">{{ lcNavTemplates }}</a>
-          <a class="ffm-link" onclick="{{ goAistudio }}">{{ lcNavAistudio }}</a>
-          <a class="{{ navPricingCls }}" onclick="{{ goPricing }}">{{ lcNavPricing }}</a>
-          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}">{{ lcNavPlugin }}<span class="ffm-new">NEW</span></a>
+          <a class="ffm-link" onclick="{{ goTemplates }}" role="button" tabindex="0">{{ lcNavTemplates }}</a>
+          <a class="ffm-link" onclick="{{ goAistudio }}" role="button" tabindex="0">{{ lcNavAistudio }}</a>
+          <a class="{{ navPricingCls }}" onclick="{{ goPricing }}" role="button" tabindex="0">{{ lcNavPricing }}</a>
+          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}" role="button" tabindex="0">{{ lcNavPlugin }}<span class="ffm-new">NEW</span></a>
         </span>
         <span class="ffm-navcta" style="width:14px"></span>
-        <a class="ffm-btn2 sm ffm-navcta" onclick="{{ goLogin }}">{{ lcNavSignIn }}</a>
+        <a class="ffm-btn2 sm ffm-navcta" onclick="{{ goLogin }}" role="button" tabindex="0">{{ lcNavSignIn }}</a>
         <button class="ffm-btn sm ffm-navcta" onclick="{{ goRegister }}">{{ lcNavCta }}</button>
-        <span class="ffm-burger" onclick="{{ toggleNav }}"><i class="ph ph-list"></i></span>
+        <span class="ffm-burger" onclick="{{ toggleNav }}" role="button" tabindex="0" aria-label="Menu"><i class="ph ph-list"></i></span>
       </div>
       <sc-if value="{{ navOpen }}" hint-placeholder-val="{{ false }}">
         <div style="padding:10px 16px 18px;border-top:1px solid var(--hair2);display:flex;flex-direction:column;gap:4px;background:rgba(10,13,18,.96);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px)">
-          <a class="ffm-link" onclick="{{ goTemplates }}" style="padding:12px 13px;font-size:15px">{{ lcNavTemplates }}</a>
-          <a class="ffm-link" onclick="{{ goAistudio }}" style="padding:12px 13px;font-size:15px">{{ lcNavAistudio }}</a>
-          <a class="ffm-link" onclick="{{ goPricing }}" style="padding:12px 13px;font-size:15px">{{ lcNavPricing }}</a>
-          <a class="ffm-link" onclick="{{ goPlugin }}" style="padding:12px 13px;font-size:15px">{{ lcNavPlugin }}</a>
+          <a class="ffm-link" onclick="{{ goTemplates }}" style="padding:12px 13px;font-size:15px" role="button" tabindex="0">{{ lcNavTemplates }}</a>
+          <a class="ffm-link" onclick="{{ goAistudio }}" style="padding:12px 13px;font-size:15px" role="button" tabindex="0">{{ lcNavAistudio }}</a>
+          <a class="ffm-link" onclick="{{ goPricing }}" style="padding:12px 13px;font-size:15px" role="button" tabindex="0">{{ lcNavPricing }}</a>
+          <a class="ffm-link" onclick="{{ goPlugin }}" style="padding:12px 13px;font-size:15px" role="button" tabindex="0">{{ lcNavPlugin }}</a>
           <div style="height:1px;background:var(--hair2);margin:6px 0"></div>
-          <a class="ffm-btn2 full" onclick="{{ goLogin }}" style="margin-bottom:8px">{{ lcNavSignIn }}</a>
+          <a class="ffm-btn2 full" onclick="{{ goLogin }}" style="margin-bottom:8px" role="button" tabindex="0">{{ lcNavSignIn }}</a>
           <button class="ffm-btn full" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:14px"></i>{{ lcNavCta }}</button>
         </div>
       </sc-if>
@@ -16241,7 +16255,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <div class="ffl-shead" data-rv="">
           <div><div class="ffm-eyebrow">MADE WITH AI STUDIO</div><div class="ffm-d44" style="margin-top:10px">One idea. Full-screen impact.</div></div>
           <span style="flex:1"></span>
-          <a class="ffl-lnk" onclick="{{ goAistudio }}">Build a scene<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
+          <a class="ffl-lnk" onclick="{{ goAistudio }}" role="button" tabindex="0">Build a scene<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
         </div>
         <div class="ffl-cinema" data-rv="" data-rv-delay="120">
           <div class="ffl-cinema-bar"><span>CONCEPT PREVIEW</span><i></i><span>SEEDANCE 2.0 · 4K</span></div>
@@ -16256,7 +16270,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div><div class="ffm-eyebrow">{{ lcShowEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcShowTitle }}</div><div style="margin-top:6px;font-size:11px;color:var(--muted)">Concept previews — styles you can create, not live catalog listings</div></div>
           <span style="flex:1"></span>
           <div class="ffl-cattabs">
-            <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.clsL }}">{{ c.label }}</span></sc-for>
+            <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.clsL }}" role="button" tabindex="0">{{ c.label }}</span></sc-for>
           </div>
         </div>
         <div class="ffl-masonry" data-rv="" data-rv-delay="120">
@@ -16272,7 +16286,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </article>
           </sc-for>
         </div>
-        <div style="text-align:center;margin-top:32px"><a class="ffl-lnk ffl-lnk--pill" onclick="{{ goTemplates }}">{{ lcShowLink }}<i class="ph ph-arrow-right" style="font-size:13px"></i></a></div>
+        <div style="text-align:center;margin-top:32px"><a class="ffl-lnk ffl-lnk--pill" onclick="{{ goTemplates }}" role="button" tabindex="0">{{ lcShowLink }}<i class="ph ph-arrow-right" style="font-size:13px"></i></a></div>
       </section>
 
       <!-- VIRAL PRESETS — tab pill + karta reyka (statik kuratsiya · BATCH7: CMS) -->
@@ -16280,7 +16294,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <div class="ffl-shead" data-rv="">
           <div><div class="ffm-eyebrow">START FASTER</div><div class="ffm-d44" style="margin-top:10px">One-click creative presets</div></div>
           <span style="flex:1"></span>
-          <a class="ffl-lnk" onclick="{{ goAistudio }}">View all presets<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
+          <a class="ffl-lnk" onclick="{{ goAistudio }}" role="button" tabindex="0">View all presets<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
         </div>
         <div class="ffl-preset-rail" data-rv="" data-rv-delay="120">
           <article onclick="{{ goAistudio }}"><span class="ffl-preset-no">01</span><div class="ffl-preset-art ffm-g7"></div><strong>Editorial portrait</strong><small>Nano Banana Pro · ✦ 8</small></article>
@@ -16346,10 +16360,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="ffm-eyebrow">{{ lcPtEyebrow }}</div>
           <div class="ffm-d44" style="margin-top:12px">{{ lcPtTitle }}</div>
           <p>{{ lcPtSub }}</p>
-          <div class="ffl-ptnote">{{ lcPtNote }} <a onclick="{{ goPricing }}">{{ lcPtNoteLink }}</a></div>
+          <div class="ffl-ptnote">{{ lcPtNote }} <a onclick="{{ goPricing }}" role="button" tabindex="0">{{ lcPtNoteLink }}</a></div>
         </div>
         <sc-for list="{{ plansRv }}" as="p" hint-placeholder-count="3">
-          <div class="{{ p.miniPlanCls }}" data-rv="" data-rv-delay="{{ p.rd }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}">
+          <div class="{{ p.miniPlanCls }}" data-rv="" data-rv-delay="{{ p.rd }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}" role="button" tabindex="0">
             <span class="pn">{{ p.name }}</span>
             <b class="pp">${{ p.price }}</b>
             <small class="pc">{{ p.cr }}</small>
@@ -16363,7 +16377,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <div class="ffl-faq" data-rv="" data-rv-delay="80">
           <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
             <div class="{{ f.itCls }}">
-              <div class="q" data-idx="{{ f.idx }}" onclick="{{ onFaq }}"><b>{{ f.q }}</b><i class="ph ph-plus"></i></div>
+              <div class="q" data-idx="{{ f.idx }}" onclick="{{ onFaq }}" role="button" tabindex="0"><b>{{ f.q }}</b><i class="ph ph-plus"></i></div>
               <div class="a"><p>{{ f.a }}</p></div>
             </div>
           </sc-for>
@@ -16421,7 +16435,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="ffl-faq">
             <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
               <div class="{{ f.itCls }}">
-                <div class="q" data-idx="{{ f.idx }}" onclick="{{ onFaq }}"><b>{{ f.q }}</b><i class="ph ph-plus"></i></div>
+                <div class="q" data-idx="{{ f.idx }}" onclick="{{ onFaq }}" role="button" tabindex="0"><b>{{ f.q }}</b><i class="ph ph-plus"></i></div>
                 <div class="a"><p>{{ f.a }}</p></div>
               </div>
             </sc-for>
@@ -16469,18 +16483,18 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       <div class="ffm-sect" style="max-width:1280px;margin:0 auto;padding:56px 80px 34px">
         <div class="ffm-foot" style="display:flex;gap:60px">
           <div style="width:260px">
-            <span class="ffm-logo" onclick="{{ goLanding }}"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
+            <span class="ffm-logo" onclick="{{ goLanding }}" role="button" tabindex="0"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
             <div style="font-size:12px;color:var(--muted2);line-height:1.6;margin-top:12px">{{ lcFtTagline }}</div>
             <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:14px">{{ lcFtEmail }}</div>
           </div>
           <div class="ffm-footcols" style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
             <div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT1 }}</div>
-              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtProdLinks }}" as="l" hint-placeholder-count="4"><a class="ff-link" data-screen="{{ l.screen }}" onclick="{{ onNav }}" style="cursor:pointer">{{ l.label }}</a></sc-for></div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtProdLinks }}" as="l" hint-placeholder-count="4"><a class="ff-link" data-screen="{{ l.screen }}" onclick="{{ onNav }}" style="cursor:pointer" role="button" tabindex="0">{{ l.label }}</a></sc-for></div>
             </div>
             <div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT2 }}</div>
-              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtCatLinks }}" as="l" hint-placeholder-count="5"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer">{{ l.label }}</a></sc-for></div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtCatLinks }}" as="l" hint-placeholder-count="5"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer" role="button" tabindex="0">{{ l.label }}</a></sc-for></div>
             </div>
             <div>
               <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT3 }}</div>
@@ -16543,7 +16557,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
          Stock Catalog) HAR app ekranida ayni markazda, sticky, hech qachon yo'qolmaydi. -->
     <header class="va-nav">
       <div class="va-nav-l">
-        <div class="va-logo" onclick="{{ goLanding }}"><span class="mk"><svg class="va-ic"><use href="#i-bolt"></use></svg></span><span class="lg-t">FrameFlow</span></div>
+        <div class="va-logo" onclick="{{ goLanding }}" role="button" tabindex="0"><span class="mk"><svg class="va-ic"><use href="#i-bolt"></use></svg></span><span class="lg-t">FrameFlow</span></div>
       </div>
       <div class="va-nav-c">
         <nav class="va-seg" role="tablist" aria-label="Section">
@@ -16553,10 +16567,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
              Sessions web'da AI Studio rail'ida qoladi. -->
       </div>
       <div class="va-nav-r">
-      <div class="va-search"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search templates…"><span class="k">⌘K</span></div>
-      <span class="va-credpill" onclick="{{ openCredits }}" title="Add credits"><span class="s">✦</span>{{ creditsFmt }} <span class="pl">{{ planPill }}</span></span>
+      <div class="va-search"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search templates…" aria-label="Search templates"><span class="k">⌘K</span></div>
+      <span class="va-credpill" onclick="{{ openCredits }}" title="Add credits" role="button" tabindex="0"><span class="s">✦</span>{{ creditsFmt }} <span class="pl">{{ planPill }}</span></span>
       <div style="position:relative" data-pop-root="avatar">
-        <span class="va-ava" onclick="{{ toggleAvatar }}" style="{{ avaStyle }}">{{ avaText }}</span>
+        <span class="va-ava" onclick="{{ toggleAvatar }}" style="{{ avaStyle }}" role="button" tabindex="0" aria-label="Account menu">{{ avaText }}</span>
         <sc-if value="{{ avatarOpen }}" hint-placeholder-val="{{ false }}">
           <div class="ffa-menu" style="top:40px;right:0">
             <div style="display:flex;align-items:center;gap:10px;padding:8px 10px 10px;border-bottom:1px solid rgba(255,255,255,.06)">
@@ -16579,7 +16593,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
         <!-- TEMPLATE DETAIL — dedicated page (A2b), shown over any app screen while `detail` is set -->
         <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
-          <div class="va-crumb"><a onclick="{{ goStockRoot }}">Stock Catalog</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <a onclick="{{ openColCat }}">{{ detailPillLabel }}</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ detail.n }}</b></div>
+          <div class="va-crumb"><a onclick="{{ goStockRoot }}" role="button" tabindex="0">Stock Catalog</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <a onclick="{{ openColCat }}" role="button" tabindex="0">{{ detailPillLabel }}</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ detail.n }}</b></div>
           <div class="va-dwrap">
             <div style="min-width:0">
               <!-- BATCH6 · preview-player: ramka (border/radius/#000) + media + player-bar (poster holatida) -->
@@ -16612,7 +16626,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 <div class="va-sec" style="padding:26px 0 12px"><h3>Related templates</h3><span class="cnt">SAME CATEGORY</span></div>
                 <div class="va-rel4">
                   <sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4">
-                    <div data-id="{{ r.id }}" onclick="{{ openDetail }}" class="va-rc">
+                    <div data-id="{{ r.id }}" onclick="{{ openDetail }}" class="va-rc" role="button" tabindex="0">
                       <div class="{{ r.medCls }}" style="border-radius:12px;background:{{ r.g }}">
                         <sc-if value="{{ r.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ r.imgSrc }}" alt=""></sc-if>
                         <sc-if value="{{ r.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ r.pv }}" poster="{{ r.imgSrc }}" preload="{{ r.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
@@ -16657,20 +16671,20 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 <div><div class="k">Updated</div><div class="v">{{ detail.updatedFmt }}</div></div>
               </div>
               <!-- primary CTA — Pro darvozasi: Free rejada Pro shablon → "Upgrade to Pro"; aks holda yuklab olish -->
-              <sc-if value="{{ detail.gated }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}"><svg class="va-ic"><use href="#i-spark"></use></svg> Upgrade to Pro · $19/mo</a></sc-if>
-              <sc-if value="{{ detail.canDownload }}" hint-placeholder-val="{{ true }}"><a class="va-btn lime full" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.dlLabel }}</a></sc-if>
+              <sc-if value="{{ detail.gated }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> Upgrade to Pro · $19/mo</a></sc-if>
+              <sc-if value="{{ detail.canDownload }}" hint-placeholder-val="{{ true }}"><a class="va-btn lime full" onclick="{{ downloadTpl }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.dlLabel }}</a></sc-if>
               <!-- §E (P2) — Free oylik limit tugadi: post-click 403 o'rniga oldindan halol darvoza -->
-              <sc-if value="{{ detail.dlExhausted }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}"><svg class="va-ic"><use href="#i-spark"></use></svg> Monthly limit reached — Upgrade to Pro</a></sc-if>
+              <sc-if value="{{ detail.dlExhausted }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> Monthly limit reached — Upgrade to Pro</a></sc-if>
               <!-- §E (P2) — qolgan yuklab olishlar soni (faqat limitli tarifda) -->
               <sc-if value="{{ detail.showDlLeft }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:7px">{{ detail.dlLeftLabel }}</div></sc-if>
-              <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><a class="va-btn ghost full" onclick="{{ goPlugin }}"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a></sc-if>
+              <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><a class="va-btn ghost full" onclick="{{ goPlugin }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a></sc-if>
               <div class="va-gate"><svg class="va-ic" style="margin-top:1px"><use href="#i-check"></use></svg><span>{{ detailGate }}</span></div>
               <!-- inline-alert — faqat Free rejada Pro shablon uchun -->
               <sc-if value="{{ detail.gated }}" hint-placeholder-val="{{ false }}"><div class="va-alert"><b>PRO DOWNLOAD</b><span>Your Free plan can preview this template. Upgrade to download the production pack.</span></div></sc-if>
               <!-- SC_49: Favorite tugmasi O'CHIRILDI — Projects yagona saqlash mexanizmi. -->
               <div class="va-dact">
-                <span class="fav" onclick="{{ addTplToProject }}" title="Add to project"><i class="ph ph-folder-plus" style="font-size:14px"></i> Project</span>
-                <span class="fav" onclick="{{ shareTpl }}" title="Share"><svg class="va-ic"><use href="#i-share"></use></svg> Share</span>
+                <span class="fav" onclick="{{ addTplToProject }}" title="Add to project" role="button" tabindex="0"><i class="ph ph-folder-plus" style="font-size:14px"></i> Project</span>
+                <span class="fav" onclick="{{ shareTpl }}" title="Share" role="button" tabindex="0"><svg class="va-ic"><use href="#i-share"></use></svg> Share</span>
               </div>
               <div class="va-dtags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px"><sc-for list="{{ detail.tagsView }}" as="tg" hint-placeholder-count="4"><span style="font-size:10px;padding:5px 9px;border-radius:999px;background:none;border:1px solid var(--border);color:var(--muted)">{{ tg }}</span></sc-for></div>
             </div>
@@ -16683,14 +16697,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 <div class="va-kick">PART OF COLLECTION</div>
                 <h3>{{ detail.colTitle }}</h3>
                 <p>{{ detail.colDesc }}</p>
-                <a class="va-btn ghost sm" onclick="{{ openColCat }}">View collection <svg class="va-ic"><use href="#i-arrow"></use></svg></a>
+                <a class="va-btn ghost sm" onclick="{{ openColCat }}" role="button" tabindex="0">View collection <svg class="va-ic"><use href="#i-arrow"></use></svg></a>
               </div>
               <div class="peek">
                 <sc-for list="{{ detail.colPeek }}" as="pk" hint-placeholder-count="5">
-                  <div data-id="{{ pk.id }}" onclick="{{ openDetail }}" class="{{ pk.pkCls }}" style="background:{{ pk.g }}"><sc-if value="{{ pk.isThis }}" hint-placeholder-val="{{ false }}"><span class="you">THIS ITEM</span></sc-if></div>
+                  <div data-id="{{ pk.id }}" onclick="{{ openDetail }}" class="{{ pk.pkCls }}" style="background:{{ pk.g }}" role="button" tabindex="0"><sc-if value="{{ pk.isThis }}" hint-placeholder-val="{{ false }}"><span class="you">THIS ITEM</span></sc-if></div>
                 </sc-for>
                 <sc-if value="{{ detail.hasColMore }}" hint-placeholder-val="{{ false }}">
-                  <div class="more" onclick="{{ openColCat }}"><b>+{{ detail.colMoreN }}</b><span>more items</span></div>
+                  <div class="more" onclick="{{ openColCat }}" role="button" tabindex="0"><b>+{{ detail.colMoreN }}</b><span>more items</span></div>
                 </sc-if>
                 <span class="pfade"></span>
               </div>
@@ -16710,7 +16724,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <div class="va-kick">CREDIT BALANCE</div>
               <div class="bal"><span class="s">✦</span> {{ creditsFmt }}</div>
               <div class="bar"><i style="width:{{ creditPct }}"></i></div>
-              <div style="display:flex;align-items:center;font-size:10.5px;color:var(--muted)">{{ creditResetShort }} <a class="va-btn lime sm" style="margin-left:auto" onclick="{{ openCredits }}">Add credits</a></div>
+              <div style="display:flex;align-items:center;font-size:10.5px;color:var(--muted)">{{ creditResetShort }} <a class="va-btn lime sm" style="margin-left:auto" onclick="{{ openCredits }}" role="button" tabindex="0">Add credits</a></div>
             </div>
           </div>
           <div class="va-qa">
@@ -16721,11 +16735,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <button class="qc" data-screen="plugin" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-puzzle"></use></svg></span>
               <div class="qt">Install the plugin</div><div class="qd">Browse &amp; import inside After Effects</div></button>
           </div>
-          <div class="va-sec"><h3>Jump back in</h3><span class="all" onclick="{{ goAistudio }}">Open AI Studio <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+          <!-- #133 (X12) — "Jump back in" sarlavhasi ilgari HAR DOIM chiqardi: hech qachon
+               generatsiya qilmagan YANGI foydalanuvchi ham "qaytib kel" degan sarlavha ostida
+               "No generations yet" ni ko'rardi. Endi sarlavha faqat tarix BOR bo'lsa. -->
           <sc-if value="{{ hasDashGens }}" hint-placeholder-val="{{ true }}">
+            <div class="va-sec"><h3>Jump back in</h3><span class="all" onclick="{{ goAistudio }}" role="button" tabindex="0">Open AI Studio <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-strip">
               <sc-for list="{{ dashGensView }}" as="g" hint-placeholder-count="5">
-                <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="va-thumb gt{{ g.mcls }}" style="background:{{ g.g }}">
+                <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="va-thumb gt{{ g.mcls }}" style="background:{{ g.g }}" role="button" tabindex="0">
                   <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ g.imgSrc }}" alt=""></sc-if>
                   <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                   <sc-if value="{{ g.isAud }}" hint-placeholder-val="{{ false }}"><span class="va-audtile"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></span></sc-if>
@@ -16736,6 +16753,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
           </sc-if>
           <sc-if value="{{ noDashGens }}" hint-placeholder-val="{{ false }}">
+            <div class="va-sec"><h3>Start creating</h3></div>
             <div class="va-empty">
               <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--lime)"><svg class="va-ic"><use href="#i-spark"></use></svg></span>
               <div style="font-size:14px;font-weight:600;margin:10px 0 4px">No generations yet</div>
@@ -16749,9 +16767,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <div class="va-homeload"><span class="star">✦</span> Warming up the models…</div>
           </sc-if>
           <sc-if value="{{ hasFeatured }}" hint-placeholder-val="{{ false }}">
-            <div class="va-sec"><h3>Featured models</h3><span class="all" onclick="{{ goAistudio }}">Open AI Studio <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec"><h3>Featured models</h3><span class="all" onclick="{{ goAistudio }}" role="button" tabindex="0">Open AI Studio <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-fma">
-              <div class="va-fmhero va-thumb" style="background:{{ featHero.g }}" data-mode="{{ featHero.mode }}" data-id="{{ featHero.mid }}" onclick="{{ tryModel }}">
+              <div class="va-fmhero va-thumb" style="background:{{ featHero.g }}" data-mode="{{ featHero.mode }}" data-id="{{ featHero.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
                 <span class="spot">✦ MODEL OF THE WEEK</span>
                 <sc-if value="{{ featHero.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov" style="z-index:1"><span style="width:48px;height:48px"><svg class="va-ic" style="width:19px;height:19px"><use href="#i-play"></use></svg></span></span></sc-if>
                 <h4>{{ featHero.name }}</h4>
@@ -16764,7 +16782,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </div>
               <div class="va-fmrail">
                 <sc-for list="{{ featRail }}" as="m" hint-placeholder-count="4">
-                  <div class="va-fmmini va-thumb" style="background:{{ m.g }}" data-mode="{{ m.mode }}" data-id="{{ m.mid }}" onclick="{{ tryModel }}">
+                  <div class="va-fmmini va-thumb" style="background:{{ m.g }}" data-mode="{{ m.mode }}" data-id="{{ m.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
                     <span class="try">Try</span>
                     <div class="nm">{{ m.name }}</div>
                     <div class="cm"><span class="va-fmtag">{{ m.tag }}</span><span class="va-fmcost">{{ m.costPre }}<b>✦{{ m.costN }}</b>{{ m.costSuf }}</span></div>
@@ -16774,7 +16792,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
             <div class="va-fmstrip">
               <sc-for list="{{ featAll }}" as="m" hint-placeholder-count="5">
-                <div class="va-fmcard" data-mode="{{ m.mode }}" data-id="{{ m.mid }}" onclick="{{ tryModel }}">
+                <div class="va-fmcard" data-mode="{{ m.mode }}" data-id="{{ m.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
                   <div class="prev va-thumb" style="background:{{ m.g }}"><span class="va-typetag">{{ m.tag }}</span></div>
                   <div class="bd"><div class="nm">{{ m.name }}</div>
                     <div class="ft"><span class="va-fmcost">{{ m.costPre }}<b>✦{{ m.costN }}</b></span><a class="va-btn lime sm">Try</a></div></div>
@@ -16783,10 +16801,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
           </sc-if>
           <sc-if value="{{ hasRec }}" hint-placeholder-val="{{ true }}">
-          <div class="va-sec"><h3>Recommended for you</h3><span class="all" onclick="{{ goTemplates }}">Browse all templates <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+          <div class="va-sec"><h3>Recommended for you</h3><span class="all" onclick="{{ goTemplates }}" role="button" tabindex="0">Browse all templates <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
           <div class="va-rcgrid">
             <sc-for list="{{ recTemplates }}" as="t" hint-placeholder-count="4">
-              <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
+              <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc" role="button" tabindex="0">
                 <div class="{{ t.medCls }}" style="background:{{ t.g }}">
                       <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
                       <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
@@ -16812,11 +16830,11 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           </sc-if>
           <sc-if value="{{ hasTrend }}" hint-placeholder-val="{{ false }}">
             <!-- §F (P33) — halol yorliq: bu kesim aslida YAQINDA YANGILANGAN (updated desc), download/popularity hisobi YO'Q. "Trending/Most popular" soxta edi. -->
-            <div class="va-sec" style="padding-top:26px"><h3>Recently updated</h3><span class="cnt">FRESH PICKS</span><span class="all" onclick="{{ goTemplates }}">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec" style="padding-top:26px"><h3>Recently updated</h3><span class="cnt">FRESH PICKS</span><span class="all" onclick="{{ goTemplates }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-shwrap">
               <div class="va-sh">
                 <sc-for list="{{ shelfTrend }}" as="t" hint-placeholder-count="5">
-                  <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
+                  <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc" role="button" tabindex="0">
                     <div class="{{ t.medCls }}" style="background:{{ t.g }}">
                       <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
                       <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
@@ -16836,15 +16854,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 </sc-for>
               </div>
               <span class="va-shfade"></span>
-              <sc-if value="{{ trendArrow }}" hint-placeholder-val="{{ false }}"><span class="va-sharrow" onclick="{{ shelfNext }}"><svg class="va-ic"><use href="#i-arrowr"></use></svg></span></sc-if>
+              <sc-if value="{{ trendArrow }}" hint-placeholder-val="{{ false }}"><span class="va-sharrow" onclick="{{ shelfNext }}" role="button" tabindex="0" aria-label="Next"><svg class="va-ic"><use href="#i-arrowr"></use></svg></span></sc-if>
             </div>
           </sc-if>
           <sc-if value="{{ hasShelfCat }}" hint-placeholder-val="{{ false }}">
-            <div class="va-sec" style="padding-top:18px"><h3>{{ shelfCatTitle }}</h3><span class="cnt">CURATED · CATEGORY</span><span class="all" onclick="{{ openShelfCat }}">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec" style="padding-top:18px"><h3>{{ shelfCatTitle }}</h3><span class="cnt">CURATED · CATEGORY</span><span class="all" onclick="{{ openShelfCat }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-shwrap">
               <div class="va-sh">
                 <sc-for list="{{ shelfCat }}" as="t" hint-placeholder-count="5">
-                  <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
+                  <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc" role="button" tabindex="0">
                     <div class="{{ t.medCls }}" style="background:{{ t.g }}">
                       <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
                       <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
@@ -16864,15 +16882,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 </sc-for>
               </div>
               <span class="va-shfade"></span>
-              <sc-if value="{{ catArrow }}" hint-placeholder-val="{{ false }}"><span class="va-sharrow" onclick="{{ shelfNext }}"><svg class="va-ic"><use href="#i-arrowr"></use></svg></span></sc-if>
+              <sc-if value="{{ catArrow }}" hint-placeholder-val="{{ false }}"><span class="va-sharrow" onclick="{{ shelfNext }}" role="button" tabindex="0" aria-label="Next"><svg class="va-ic"><use href="#i-arrowr"></use></svg></span></sc-if>
             </div>
           </sc-if>
           <sc-if value="{{ hasShelfNew }}" hint-placeholder-val="{{ false }}">
-            <div class="va-sec" style="padding-top:18px"><h3>New this week</h3><span class="cnt">LATEST APPROVED</span><span class="all" onclick="{{ openShelfNew }}">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec" style="padding-top:18px"><h3>New this week</h3><span class="cnt">LATEST APPROVED</span><span class="all" onclick="{{ openShelfNew }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-shwrap">
               <div class="va-sh">
                 <sc-for list="{{ shelfNew }}" as="t" hint-placeholder-count="5">
-                  <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
+                  <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc" role="button" tabindex="0">
                     <div class="{{ t.medCls }}" style="background:{{ t.g }}">
                       <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
                       <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
@@ -16892,7 +16910,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 </sc-for>
               </div>
               <span class="va-shfade"></span>
-              <sc-if value="{{ newArrow }}" hint-placeholder-val="{{ false }}"><span class="va-sharrow" onclick="{{ shelfNext }}"><svg class="va-ic"><use href="#i-arrowr"></use></svg></span></sc-if>
+              <sc-if value="{{ newArrow }}" hint-placeholder-val="{{ false }}"><span class="va-sharrow" onclick="{{ shelfNext }}" role="button" tabindex="0" aria-label="Next"><svg class="va-ic"><use href="#i-arrowr"></use></svg></span></sc-if>
             </div>
           </sc-if>
           <div style="height:34px"></div>
@@ -16916,28 +16934,28 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="va-cathero">
             <div class="va-kick">FRAMEFLOW MARKETPLACE</div>
             <h2>A stock catalog that cuts<br>your edit time.</h2>
-            <div class="va-bigsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Try “glitch logo”, “wedding titles”, “lower thirds”…"><kbd>⌘ K</kbd></div>
+            <div class="va-bigsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Try “glitch logo”, “wedding titles”, “lower thirds”…" aria-label="Search templates"><kbd>⌘ K</kbd></div>
             <div class="va-catchips">
-              <sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><span data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.chipCls }}">{{ x.label }}</span></sc-for>
+              <sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><span data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.chipCls }}" role="button" tabindex="0">{{ x.label }}</span></sc-for>
             </div>
           </div>
           <div class="va-fbar">
             <!-- #3 — Categories multi-select (granular, pill bilan kompozitsiya) -->
-            <span class="{{ fbCatCls }}" data-pop="cats" data-pop-root="cats" onclick="{{ toggleFbar }}">{{ fbCatLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+            <span class="{{ fbCatCls }}" data-pop="cats" data-pop-root="cats" onclick="{{ toggleFbar }}" role="button" tabindex="0">{{ fbCatLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbCatOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}" style="max-height:320px;overflow-y:auto;min-width:190px"><sc-for list="{{ fGranView }}" as="x" hint-placeholder-count="14"><button data-v="{{ x.v }}" onclick="{{ pickFbCat }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><svg class="va-ic" style="width:10px;height:10px"><use href="#i-check"></use></svg></span>{{ x.v }}</button></sc-for><button class="ffa-fcat" onclick="{{ clearFbCats }}" style="color:var(--muted);border-top:1px solid rgba(255,255,255,.08);border-radius:0;margin-top:4px;padding-top:8px">Clear</button></span></sc-if>
             </span>
             <!-- P2 — AI Stock: Type (Image|Video). Faqat AI Stock pill'da. -->
-            <sc-if value="{{ showAiKind }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ fAiKindView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFAiKind }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
+            <sc-if value="{{ showAiKind }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ fAiKindView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFAiKind }}" class="{{ x.fchipCls }}" role="button" tabindex="0">{{ x.v }}</span></sc-for></sc-if>
             <!-- #3 — Applications Supported multi-select (Ae/Pr/Mn/Dr) — P2: faqat qo'llasa -->
-            <sc-if value="{{ showAppFilter }}" hint-placeholder-val="{{ true }}"><span class="{{ fbAppCls }}" data-pop="app" data-pop-root="app" onclick="{{ toggleFbar }}">{{ fbAppLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+            <sc-if value="{{ showAppFilter }}" hint-placeholder-val="{{ true }}"><span class="{{ fbAppCls }}" data-pop="app" data-pop-root="app" onclick="{{ toggleFbar }}" role="button" tabindex="0">{{ fbAppLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbAppOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}" style="min-width:180px"><sc-for list="{{ fAppsView }}" as="x" hint-placeholder-count="4"><button data-v="{{ x.v }}" onclick="{{ pickFbApp }}" class="{{ x.rowCls }}"><span class="{{ x.chkCls }}"><svg class="va-ic" style="width:10px;height:10px"><use href="#i-check"></use></svg></span>{{ x.label }}</button></sc-for><button class="ffa-fcat" onclick="{{ clearFbApps }}" style="color:var(--muted);border-top:1px solid rgba(255,255,255,.08);border-radius:0;margin-top:4px;padding-top:8px">Clear</button></span></sc-if>
             </span></sc-if>
-            <span class="{{ fbPlanCls }}" data-pop="plan" data-pop-root="plan" onclick="{{ toggleFbar }}">{{ fbPlanLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
+            <span class="{{ fbPlanCls }}" data-pop="plan" data-pop-root="plan" onclick="{{ toggleFbar }}" role="button" tabindex="0">{{ fbPlanLabel }} <svg class="va-ic"><use href="#i-chev"></use></svg>
               <sc-if value="{{ fbPlanOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop" onclick="{{ stop }}"><sc-for list="{{ fPlansView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.v }}" onclick="{{ pickFbPlan }}" class="{{ x.rowCls }}">{{ x.v }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span>
-            <sc-if value="{{ showOrientFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
-            <sc-if value="{{ showQualFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.fchipCls }}">{{ x.v }}</span></sc-for></sc-if>
-            <sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ false }}"><span class="va-fchip" onclick="{{ resetFilters }}" style="color:var(--muted)">Clear all ✕</span></sc-if>
+            <sc-if value="{{ showOrientFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fOrientView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onFOrient }}" class="{{ x.fchipCls }}" role="button" tabindex="0">{{ x.v }}</span></sc-for></sc-if>
+            <sc-if value="{{ showQualFilter }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ fQualView }}" as="x" hint-placeholder-count="2"><span data-v="{{ x.v }}" onclick="{{ onFQual }}" class="{{ x.fchipCls }}" role="button" tabindex="0">{{ x.v }}</span></sc-for></sc-if>
+            <sc-if value="{{ hasActiveFilters }}" hint-placeholder-val="{{ false }}"><span class="va-fchip" onclick="{{ resetFilters }}" style="color:var(--muted)" role="button" tabindex="0">Clear all ✕</span></sc-if>
             <span class="cnt">{{ resultsFmt }} results{{ resultsScope }} · sorted by <span style="position:relative" data-pop-root="sort"><b onclick="{{ toggleSort }}">{{ sortLabel }} ▾</b>
               <sc-if value="{{ sortOpen }}" hint-placeholder-val="{{ false }}"><span class="va-fpop r" onclick="{{ stop }}"><sc-for list="{{ sortView }}" as="x" hint-placeholder-count="3"><button data-v="{{ x.k }}" onclick="{{ pickSort }}" class="{{ x.rowCls }}">{{ x.label }}<sc-if value="{{ x.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></span></sc-if>
             </span></span>
@@ -16960,7 +16978,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <sc-if value="{{ hasFiltered }}" hint-placeholder-val="{{ true }}">
             <div class="va-mas">
               <sc-for list="{{ filtered }}" as="t" hint-placeholder-count="8">
-                <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc">
+                <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc" role="button" tabindex="0">
                   <div class="{{ t.medCls }}" style="aspect-ratio:{{ t.ar }};background:{{ t.g }}">
                     <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt="{{ t.n }}"></sc-if>
                     <sc-if value="{{ t.hasPv }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" data-src="{{ t.pv }}" poster="{{ t.imgSrc }}" preload="{{ t.pvPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
@@ -16997,7 +17015,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)"><svg class="va-ic"><use href="#i-search"></use></svg></span>
               <div style="font-size:15px;font-weight:600;margin:12px 0 5px">{{ emptyTitle }}</div>
               <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px">{{ emptyDesc }}</p>
-              <button class="va-btn ghost" onclick="{{ emptyClear }}">{{ emptyClearLabel }}</button>
+              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+                <button class="va-btn ghost" onclick="{{ emptyClear }}">{{ emptyClearLabel }}</button>
+                <!-- #81 (X7) — qidiruv + filtr birga: filtrlarni alohida tozalash -->
+                <sc-if value="{{ emptyShowFilters }}" hint-placeholder-val="{{ false }}">
+                  <button class="va-btn ghost" onclick="{{ emptyClearFilters }}">{{ emptyFiltersLabel }}</button>
+                </sc-if>
+              </div>
             </div>
           </sc-if>
         </sc-if>
@@ -17013,20 +17037,20 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <!-- left rail — QA-FIX #12: Artlist uslubi SESSIYALAR ro'yxati + My Library -->
               <aside class="va-axrail sess">
                 <button class="va-sessnew" onclick="{{ axNewSession }}"><i class="ph ph-plus" style="font-size:13px"></i>New session</button>
-                <div class="{{ libRowCls }}" onclick="{{ axOpenLibrary }}">
+                <div class="{{ libRowCls }}" onclick="{{ axOpenLibrary }}" role="button" tabindex="0">
                   <span class="cv lib"><i class="ph ph-squares-four"></i></span>
                   <span class="nm">My Library<span class="sub">{{ libCountLabel }}</span></span>
                 </div>
                 <span class="va-axrailh" style="align-self:stretch;display:flex;align-items:center;padding:8px 6px 2px">SESSIONS<b class="va-sessselbtn" onclick="{{ axSessSelectToggle }}">{{ sessSelectLabel }}</b></span>
                 <div class="va-sesslist">
                   <sc-for list="{{ sessListView }}" as="s" hint-placeholder-count="5">
-                    <div data-id="{{ s.id }}" onclick="{{ axOpenSession }}" class="{{ s.cls }}">
+                    <div data-id="{{ s.id }}" onclick="{{ axOpenSession }}" class="{{ s.cls }}" role="button" tabindex="0">
                       <sc-if value="{{ sessSelectOn }}" hint-placeholder-val="{{ false }}"><span class="{{ s.ckCls }}">✓</span></sc-if>
                       <span class="cv" style="background:{{ s.cv }}"><sc-if value="{{ s.noCv }}" hint-placeholder-val="{{ false }}"><i class="ph ph-{{ s.icon }}"></i></sc-if></span>
                       <sc-if value="{{ s.notEditing }}" hint-placeholder-val="{{ true }}"><span class="nm">{{ s.name }}<span class="sub">{{ s.meta }}</span></span></sc-if>
                       <!-- SC_40 — inline rename: Enter/blur saqlaydi, Esc bekor, bo'sh = avto-nom -->
-                      <sc-if value="{{ s.editing }}" hint-placeholder-val="{{ false }}"><input class="renin" maxlength="28" value="{{ sessRenVal }}" oninput="{{ onSessRenVal }}" onkeydown="{{ onSessRenKey }}" onblur="{{ onSessRenBlur }}" onclick="{{ onSessRenClick }}"></sc-if>
-                      <sc-if value="{{ s.showRen }}" hint-placeholder-val="{{ false }}"><span data-id="{{ s.id }}" class="ren" onclick="{{ axRenameSession }}" title="Rename session"><i class="ph ph-pencil-simple"></i></span></sc-if>
+                      <sc-if value="{{ s.editing }}" hint-placeholder-val="{{ false }}"><input class="renin" maxlength="28" value="{{ sessRenVal }}" oninput="{{ onSessRenVal }}" onkeydown="{{ onSessRenKey }}" onblur="{{ onSessRenBlur }}" onclick="{{ onSessRenClick }}" aria-label="Session name"></sc-if>
+                      <sc-if value="{{ s.showRen }}" hint-placeholder-val="{{ false }}"><span data-id="{{ s.id }}" class="ren" onclick="{{ axRenameSession }}" title="Rename session" role="button" tabindex="0"><i class="ph ph-pencil-simple"></i></span></sc-if>
                     </div>
                   </sc-for>
                   <sc-if value="{{ sessBulkOn }}" hint-placeholder-val="{{ false }}">
@@ -17051,8 +17075,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <div class="va-axmainc">
                 <div class="va-axhead">
                   <div class="va-axseg">
-                    <span class="{{ axSegVisCls }}" data-v="visuals" onclick="{{ onMediaView }}">Visuals <span class="ct">{{ visCount }}</span></span>
-                    <span class="{{ axSegAudCls }}" data-v="audio" onclick="{{ onMediaView }}">Audio <span class="ct">{{ audCount }}</span></span>
+                    <span class="{{ axSegVisCls }}" data-v="visuals" onclick="{{ onMediaView }}" role="button" tabindex="0">Visuals <span class="ct">{{ visCount }}</span></span>
+                    <span class="{{ axSegAudCls }}" data-v="audio" onclick="{{ onMediaView }}" role="button" tabindex="0">Audio <span class="ct">{{ audCount }}</span></span>
                   </div>
                   <span style="margin-left:auto"></span>
                   <!-- #6 — Full/Compact ko'rinish toggle (tanlov localStorage'da saqlanadi) -->
@@ -17103,7 +17127,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       </sc-for>
                       <sc-for list="{{ axVisGens }}" as="g" hint-placeholder-count="6">
                         <div class="va-axcell" data-pop-root="use">
-                          <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}">
+                          <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ onGridTile }}" class="{{ g.resCls }}" style="aspect-ratio:{{ g.asp }};background:{{ g.g }}" role="button" tabindex="0">
                             <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}"></sc-if>
                             <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                             <span class="va-typeicon"><i class="ph-fill ph-{{ g.tIcon }}"></i></span>
@@ -17112,8 +17136,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                               <div class="va-axabar">
                                 <button class="va-axuse" onclick="{{ toggleUseMenu }}">Use ▾</button>
                                 <span style="flex:1"></span>
-                                <span class="va-axaico" title="Download" onclick="{{ axTileDownload }}"><svg class="va-ic"><use href="#i-down"></use></svg></span>
-                                <span class="va-axaico" title="Regenerate" onclick="{{ axTileRegen }}">↻</span>
+                                <span class="va-axaico" title="Download" onclick="{{ axTileDownload }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-down"></use></svg></span>
+                                <span class="va-axaico" title="Regenerate" onclick="{{ axTileRegen }}" role="button" tabindex="0">↻</span>
                               </div>
                             </sc-if>
                           </div>
@@ -17122,25 +17146,25 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                             <div class="va-axmenu" style="{{ axUseMenuStyle }}" onclick="{{ stop }}">
                               <!-- SC_30: rasm bo'lmagan natijada (video) bu ikki band umuman ko'rinmaydi — o'lik band yo'q -->
                               <sc-if value="{{ axSrcImgRows }}" hint-placeholder-val="{{ true }}">
-                                <div class="{{ axEditCls }}" title="{{ axEditTip }}" onclick="{{ axUseEdit }}"><span class="mic">✎</span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div>
-                                <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
+                                <div class="{{ axEditCls }}" title="{{ axEditTip }}" onclick="{{ axUseEdit }}" role="button" tabindex="0"><span class="mic">✎</span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div>
+                                <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}" role="button" tabindex="0"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
                                 <div class="va-axmdiv"></div>
                               </sc-if>
-                              <div class="va-axmi plain" onclick="{{ axMenuAddProj }}"><span class="mic"><i class="ph ph-folder-plus"></i></span>Add to project</div>
+                              <div class="va-axmi plain" onclick="{{ axMenuAddProj }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-folder-plus"></i></span>Add to project</div>
                               <!-- P3 (step 34) — Add to Explore (yuborilgan bo'lsa holat ko'rsatadi) -->
-                              <div class="{{ axExploreCls }}" onclick="{{ axMenuAddExplore }}"><span class="mic"><i class="ph ph-compass"></i></span>{{ axExploreLabel }}</div>
-                              <div class="va-axmi plain" onclick="{{ axMenuDownload }}"><span class="mic">⬇</span>Download</div>
-                              <div class="va-axmi plain" onclick="{{ axMenuRegen }}"><span class="mic">↻</span>Regenerate</div>
-                              <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}"><span class="mic">⧉</span>Copy prompt</div></sc-if>
-                              <div class="{{ axMenuDelCls }}" onclick="{{ axMenuDelete }}"><span class="mic">🗑</span>{{ axMenuDelLabel }}</div>
+                              <div class="{{ axExploreCls }}" onclick="{{ axMenuAddExplore }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-compass"></i></span>{{ axExploreLabel }}</div>
+                              <div class="va-axmi plain" onclick="{{ axMenuDownload }}" role="button" tabindex="0"><span class="mic">⬇</span>Download</div>
+                              <div class="va-axmi plain" onclick="{{ axMenuRegen }}" role="button" tabindex="0"><span class="mic">↻</span>Regenerate</div>
+                              <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}" role="button" tabindex="0"><span class="mic">⧉</span>Copy prompt</div></sc-if>
+                              <div class="{{ axMenuDelCls }}" onclick="{{ axMenuDelete }}" role="button" tabindex="0"><span class="mic">🗑</span>{{ axMenuDelLabel }}</div>
                               <div class="va-axmdiv"></div>
                               <!-- R4_08 — Topaz enhance/upscale bir-bosishlik (faqat yoqilgan op + mos media turida ko'rinadi) -->
                               <sc-if value="{{ axUpscaleImgRow }}" hint-placeholder-val="{{ false }}">
-                                <div class="va-axmi plain" title="Upscale this image with Topaz Gigapixel" onclick="{{ axUseUpscaleImg }}"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>{{ axUpscaleImgLabel }}<span class="sub">Topaz Gigapixel · signed price</span></span></div>
+                                <div class="va-axmi plain" title="Upscale this image with Topaz Gigapixel" onclick="{{ axUseUpscaleImg }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>{{ axUpscaleImgLabel }}<span class="sub">Topaz Gigapixel · signed price</span></span></div>
                               </sc-if>
                               <sc-if value="{{ axUpscaleVidRow }}" hint-placeholder-val="{{ false }}">
-                                <div class="va-axmi plain" title="Upscale this video 2× with Topaz Proteus" onclick="{{ axUseUpscaleVid2 }}"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>Upscale video 2×<span class="sub">Topaz Proteus · signed price</span></span></div>
-                                <div class="va-axmi plain" title="Upscale this video 4× with Topaz Proteus" onclick="{{ axUseUpscaleVid4 }}"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>Upscale video 4×<span class="sub">Topaz Proteus · signed price</span></span></div>
+                                <div class="va-axmi plain" title="Upscale this video 2× with Topaz Proteus" onclick="{{ axUseUpscaleVid2 }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>Upscale video 2×<span class="sub">Topaz Proteus · signed price</span></span></div>
+                                <div class="va-axmi plain" title="Upscale this video 4× with Topaz Proteus" onclick="{{ axUseUpscaleVid4 }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>Upscale video 4×<span class="sub">Topaz Proteus · signed price</span></span></div>
                               </sc-if>
                               <!-- BATCH4 #1 — Upscale JONLI (Imagen imagegeneration@002); ✦ narx imzolangan quote'dan composer'da tasdiqlanadi -->
                               <!-- SC_17: Upscale x2/x4 menyu qatorlari o'chirildi (funksiya butunlay olib tashlandi) -->
@@ -17169,8 +17193,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                         </div>
                       </sc-for>
                       <sc-for list="{{ axAudGens }}" as="g" hint-placeholder-count="3">
-                        <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ openLightbox }}" class="{{ g.arowCls }}">
-                          <span class="va-axplay" onclick="{{ toggleAudioRow }}" title="Play / pause">
+                        <div data-id="{{ g.id }}" data-gtype="{{ g.gtype }}" draggable="true" onclick="{{ openLightbox }}" class="{{ g.arowCls }}" role="button" tabindex="0">
+                          <span class="va-axplay" onclick="{{ toggleAudioRow }}" title="Play / pause" role="button" tabindex="0">
                             <sc-if value="{{ g.playing }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 16 16" fill="currentColor" style="width:11px;height:11px"><rect x="3" y="2" width="3.4" height="12" rx="1"></rect><rect x="9.6" y="2" width="3.4" height="12" rx="1"></rect></svg></sc-if>
                             <sc-if value="{{ g.notPlaying }}" hint-placeholder-val="{{ true }}"><svg class="va-ic"><use href="#i-play"></use></svg></sc-if>
                           </span>
@@ -17242,10 +17266,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </div>
               <div class="va-dockrow">
                 <div class="va-setgroup">
-                <span class="va-set mode" data-pop="mode" data-pop-root="mode" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <span class="va-set mode" data-pop="mode" data-pop-root="mode" onclick="{{ toggleChip }}" role="button" tabindex="0"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span>
-                <span class="va-set" data-pop="model" data-pop-root="model" onclick="{{ toggleChip }}" title="{{ modelName }}"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <span class="va-set" data-pop="model" data-pop-root="model" onclick="{{ toggleChip }}" title="{{ modelName }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop mdl" onclick="{{ stop }}">
                     <div class="va-axpoph">{{ modePickHead }}</div>
                     <sc-for list="{{ modelPickView }}" as="m" hint-placeholder-count="3">
@@ -17255,12 +17279,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                         <sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><span class="ck">✓</span></sc-if>
                       </button>
                     </sc-for>
-                    <div class="va-axpmore" onclick="{{ openModelModal }}">⊞ More models<span class="arr">→</span></div>
+                    <div class="va-axpmore" onclick="{{ openModelModal }}" role="button" tabindex="0">⊞ More models<span class="arr">→</span></div>
                   </div></sc-if>
                 </span>
                 <!-- P16 — BITTA sozlama chipi: barcha per-model sozlamalar guruhlangan popover'da.
                      Model qo'llamaydigan qatorlar UMUMAN render bo'lmaydi (show* darvozalari). -->
-                <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ true }}"><span class="va-set va-setgear" data-pop="settings" data-pop-root="settings" onclick="{{ toggleChip }}"><svg class="va-ic"><use href="#i-sliders"></use></svg> <b>{{ settingsSummary }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ true }}"><span class="va-set va-setgear" data-pop="settings" data-pop-root="settings" onclick="{{ toggleChip }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-sliders"></use></svg> <b>{{ settingsSummary }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
                   <sc-if value="{{ popSettings }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop va-setpop" onclick="{{ stop }}">
                     <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div class="va-sgrp"><div class="va-sgh">Aspect Ratio</div><div class="va-sgops"><sc-for list="{{ aspectsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSizeM }}" class="{{ z.setoptCls }}"><i class="arg" style="width:{{ z.gw }};height:{{ z.gh }}"></i>{{ z.v }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Resolution</div><div class="va-sgops"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onResM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
@@ -17272,12 +17296,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><div class="va-sgrow"><span class="va-sgh">Audio{{ audioLockNote }}</span><button class="{{ audioToggleCls }}" onclick="{{ toggleAudio }}" title="{{ audioLockNote }}"></button></div></sc-if>
                   </div></sc-if>
                 </span></sc-if>
-                <span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span>
-                <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)">✕ <span class="va-clr-lbl">Clear</span></span></sc-if>
+                <span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span>
+                <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)" role="button" tabindex="0">✕ <span class="va-clr-lbl">Clear</span></span></sc-if>
                 </div>
                 <div class="va-genwrap">
                   <span class="va-axcost"><span class="lbl">COST</span>{{ axQuote }}</span>
-                  <a class="{{ genBtnCls }}" onclick="{{ doGenerate }}"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }}</a>
+                  <a class="{{ genBtnCls }}" onclick="{{ doGenerate }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }}</a>
                 </div>
               </div>
               <sc-if value="{{ genGateOn }}" hint-placeholder-val="{{ false }}"><div class="va-gengate"><svg class="va-ic"><use href="#i-bolt"></use></svg><span>{{ genGateMsg }}</span><sc-if value="{{ genGateTopup }}" hint-placeholder-val="{{ false }}"><button class="va-gategtu" onclick="{{ openCredits }}"><svg class="va-ic"><use href="#i-plus"></use></svg>Top up</button></sc-if></div></sc-if>
@@ -17295,18 +17319,18 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <sc-if value="{{ modelModalOpen }}" hint-placeholder-val="{{ false }}">
               <div class="va-axscrim" onclick="{{ closeModelModal }}">
                 <div class="va-axmodal" onclick="{{ stop }}">
-                  <div class="va-axmdh"><h3>Choose a model</h3><span class="x" onclick="{{ closeModelModal }}">✕</span></div>
-                  <div class="va-axsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ modelQ }}" oninput="{{ onModelQ }}" placeholder="Search models…"></div>
+                  <div class="va-axmdh"><h3>Choose a model</h3><span class="x" onclick="{{ closeModelModal }}" role="button" tabindex="0" aria-label="Close">✕</span></div>
+                  <div class="va-axsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ modelQ }}" oninput="{{ onModelQ }}" placeholder="Search models…" aria-label="Search models"></div>
                   <div class="va-axftags">
                     <sc-for list="{{ modelFilterView }}" as="f" hint-placeholder-count="5">
-                      <span data-v="{{ f.v }}" onclick="{{ onModelFilter }}" class="{{ f.cls }}">{{ f.label }}</span>
+                      <span data-v="{{ f.v }}" onclick="{{ onModelFilter }}" class="{{ f.cls }}" role="button" tabindex="0">{{ f.label }}</span>
                     </sc-for>
                   </div>
                   <div class="va-axmbody">
                     <sc-for list="{{ modelGroupsView }}" as="grp" hint-placeholder-count="2">
                       <div class="va-axmgh"><svg class="va-ic" style="font-size:11px;color:var(--muted)"><use href="{{ grp.iconRef }}"></use></svg>{{ grp.label }}</div>
                       <sc-for list="{{ grp.models }}" as="m" hint-placeholder-count="2">
-                        <div class="{{ m.rowCls }}" data-v="{{ m.v }}" data-mode="{{ m.mode }}" onclick="{{ pickModel }}">
+                        <div class="{{ m.rowCls }}" data-v="{{ m.v }}" data-mode="{{ m.mode }}" onclick="{{ pickModel }}" role="button" tabindex="0">
                           <span class="mic2"><svg class="va-ic"><use href="{{ m.iconRef }}"></use></svg></span>
                           <span class="mid"><span class="nm">{{ m.label }}<sc-if value="{{ m.hasBrand }}" hint-placeholder-val="{{ false }}"><span class="{{ m.brandCls }}" title="{{ m.brandTitle }}">{{ m.brandGlyph }}</span></sc-if> <sc-if value="{{ m.isDefault }}" hint-placeholder-val="{{ false }}"><span class="new">DEFAULT</span></sc-if></span>
                           <span class="ds">{{ m.desc }}</span><span class="rcap">🖼 {{ m.refCap }}</span></span>
@@ -17332,7 +17356,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <div class="va-accemail">{{ accEmailLine }}</div>
             </div>
             <div class="va-acctabs">
-              <sc-for list="{{ accView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onAccTab }}" class="{{ x.cls }}">{{ x.v }}</span></sc-for>
+              <sc-for list="{{ accView }}" as="x" hint-placeholder-count="3"><span data-v="{{ x.v }}" onclick="{{ onAccTab }}" class="{{ x.cls }}" role="button" tabindex="0">{{ x.v }}</span></sc-for>
             </div>
           </div>
 
@@ -17346,8 +17370,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <sc-for list="{{ planFeats }}" as="f" hint-placeholder-count="4"><li><svg class="va-ic"><use href="#i-check"></use></svg> {{ f.t }}</li></sc-for>
                 </ul>
                 <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
-                  <a class="va-btn ghost sm" onclick="{{ goPricing }}">Manage subscription</a>
-                  <a class="va-btn ghost sm" onclick="{{ goPricing }}" style="color:var(--muted)">Compare plans</a>
+                  <a class="va-btn ghost sm" onclick="{{ goPricing }}" role="button" tabindex="0">Manage subscription</a>
+                  <a class="va-btn ghost sm" onclick="{{ goPricing }}" style="color:var(--muted)" role="button" tabindex="0">Compare plans</a>
                   <span style="margin-left:auto;font:500 10px var(--mono);color:var(--muted2)">via Lemon Squeezy · cancel anytime</span>
                 </div>
               </div>
@@ -17370,10 +17394,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <div class="t"><span class="k">NET SPENT</span><span class="v">{{ ledgerTotNet }}</span></div>
                   <div class="t"><span class="k">PURCHASED</span><span class="v">{{ ledgerTotPurchased }}</span></div>
                 </div>
-                <div class="va-ledfilters"><sc-for list="{{ ledgerFilterView }}" as="f" hint-placeholder-count="4"><span data-f="{{ f.f }}" onclick="{{ onLedgerFilter }}" class="{{ f.cls }}">{{ f.label }}</span></sc-for></div>
+                <div class="va-ledfilters"><sc-for list="{{ ledgerFilterView }}" as="f" hint-placeholder-count="4"><span data-f="{{ f.f }}" onclick="{{ onLedgerFilter }}" class="{{ f.cls }}" role="button" tabindex="0">{{ f.label }}</span></sc-for></div>
                 <sc-if value="{{ hasLedger }}" hint-placeholder-val="{{ true }}">
                   <div class="va-ledlist"><sc-for list="{{ ledgerView }}" as="h" hint-placeholder-count="5">
-                    <div class="{{ h.rowCls }}" data-id="{{ h.gid }}" data-del="{{ h.delFlag }}" onclick="{{ onLedgerRow }}">
+                    <div class="{{ h.rowCls }}" data-id="{{ h.gid }}" data-del="{{ h.delFlag }}" onclick="{{ onLedgerRow }}" role="button" tabindex="0">
                       <div class="va-ledthumb"><sc-if value="{{ h.hasThumb }}" hint-placeholder-val="{{ false }}"><img src="{{ h.thumbUrl }}" alt="" loading="lazy"></sc-if><sc-if value="{{ h.noThumb }}" hint-placeholder-val="{{ true }}"><i class="{{ h.ficon }}"></i></sc-if></div>
                       <div class="va-ledmeta"><b>{{ h.title }}</b><small>{{ h.sub }} · {{ h.when }}</small></div>
                       <div class="{{ h.amtCls }}">{{ h.amt }}<small>{{ h.balance }}</small></div>
@@ -17402,8 +17426,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <div class="ffa-acccard" style="padding:24px">
                 <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px"><div style="position:relative;flex:none"><div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#6C3FA8,#33549E);display:grid;place-items:center;font-size:22px;font-weight:700;color:#fff;{{ avaStyle }}">{{ avaText }}</div><button type="button" title="Change photo" onclick="{{ pickAvatarFile }}" style="position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:var(--surface);border:1px solid var(--hair2);color:var(--muted);display:grid;place-items:center;cursor:pointer;padding:0"><i class="ph ph-camera" style="font-size:12px"></i></button><input type="file" id="ffaAvatarFile" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="{{ onAvatarPick }}"></div><div style="min-width:0"><div style="font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userEmail }}</div></div></div>
                 <div style="display:flex;flex-direction:column;gap:14px">
-                  <div><span class="ffa-flab">FULL NAME</span><input value="{{ accName }}" oninput="{{ onAccName }}" placeholder="Your name" class="ffa-field"></div>
-                  <div><span class="ffa-flab">EMAIL</span><input value="{{ userEmail }}" readonly="" class="ffa-field" style="color:var(--muted2)"></div>
+                  <div><span class="ffa-flab">FULL NAME</span><input value="{{ accName }}" oninput="{{ onAccName }}" placeholder="Your name" class="ffa-field" aria-label="Full name"></div>
+                  <div><span class="ffa-flab">EMAIL</span><input value="{{ userEmail }}" readonly="" class="ffa-field" style="color:var(--muted2)" aria-label="Email (read-only)"></div>
                   <button onclick="{{ saveAcc }}" class="ffm-btn" style="align-self:flex-start;margin-top:4px">Save</button>
                 </div>
               </div>
@@ -17494,7 +17518,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <sc-if value="{{ projListReady }}" hint-placeholder-val="{{ true }}">
           <div class="ffa-proj-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px">
             <sc-for list="{{ projectsView }}" as="p" hint-placeholder-count="4">
-              <div data-id="{{ p.id }}" onclick="{{ openProject }}" class="{{ p.cardCls }}">
+              <div data-id="{{ p.id }}" onclick="{{ openProject }}" class="{{ p.cardCls }}" role="button" tabindex="0">
                 <sc-if value="{{ projSelectOn }}" hint-placeholder-val="{{ false }}"><span class="{{ p.ckCls }}">✓</span></sc-if>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;height:200px">
                   <sc-for list="{{ p.cells }}" as="cv" hint-placeholder-count="4">
@@ -17521,7 +17545,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <!-- detal — item'lar masonry (gen + shablon, real media) -->
           <sc-if value="{{ projDetail }}" hint-placeholder-val="{{ false }}">
           <div class="va-accpad" style="padding-top:24px">
-            <div class="va-crumb" style="padding:0 0 16px"><a onclick="{{ backToProjects }}">Projects</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ projDetail.name }}</b></div>
+            <div class="va-crumb" style="padding:0 0 16px"><a onclick="{{ backToProjects }}" role="button" tabindex="0">Projects</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ projDetail.name }}</b></div>
             <div class="va-ptitle">
               <div><div class="va-kick">PROJECT</div><h1 class="va-ph1">{{ projDetail.name }}</h1><p class="va-psub" style="font-family:'IBM Plex Mono',monospace">{{ projDetail.metaLine }}</p></div>
               <span style="flex:1"></span>
@@ -17540,14 +17564,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </sc-if>
             <div class="va-mas" style="padding:4px 0 60px">
               <sc-for list="{{ projItemsView }}" as="t" hint-placeholder-count="6">
-                <div data-id="{{ t.refId }}" data-item="{{ t.itemId }}" data-kind="{{ t.kindStr }}" onclick="{{ openProjItem }}" class="va-rc">
+                <div data-id="{{ t.refId }}" data-item="{{ t.itemId }}" data-kind="{{ t.kindStr }}" onclick="{{ openProjItem }}" class="va-rc" role="button" tabindex="0">
                   <div class="med va-thumb{{ t.mcls }}" style="aspect-ratio:{{ t.asp }};background:{{ t.g }}">
                     <sc-if value="{{ t.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ t.imgSrc }}" alt=""></sc-if>
                     <sc-if value="{{ t.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ t.vidSrc }}" poster="{{ t.vidPoster }}" preload="{{ t.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                     <sc-if value="{{ t.isAud }}" hint-placeholder-val="{{ false }}"><span class="va-audtile"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></span></sc-if>
                     <span class="va-typeicon"><i class="ph-fill ph-{{ t.tIcon }}"></i></span>
                     <sc-if value="{{ t.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
-                    <span data-item="{{ t.itemId }}" onclick="{{ removeProjItem }}" class="va-projrm" title="Remove from project"><i class="ph ph-x"></i></span>
+                    <span data-item="{{ t.itemId }}" onclick="{{ removeProjItem }}" class="va-projrm" title="Remove from project" role="button" tabindex="0"><i class="ph ph-x"></i></span>
                   </div>
                   <div class="meta"><span class="tt">{{ t.title }}</span><span class="sub">{{ t.sub }}</span></div>
                 </div>
@@ -17562,10 +17586,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
     <!-- MOBILE BOTTOM TAB BAR (A5 va-mtabs) -->
     <nav class="va-mtabs">
-      <a data-screen="dashboard" onclick="{{ onNav }}" class="{{ btmDashCls }}"><svg class="va-ic"><use href="#i-home"></use></svg>Home</a>
-      <a data-screen="templates" onclick="{{ onNav }}" class="{{ btmTplCls }}"><svg class="va-ic"><use href="#i-grid"></use></svg>Catalog</a>
-      <a data-screen="aistudio" onclick="{{ onNav }}" class="{{ btmAiCls }}"><svg class="va-ic"><use href="#i-spark"></use></svg>AI</a>
-      <a data-screen="account" onclick="{{ onNav }}" class="{{ btmAccCls }}"><svg class="va-ic"><use href="#i-user"></use></svg>Account</a>
+      <a data-screen="dashboard" onclick="{{ onNav }}" class="{{ btmDashCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-home"></use></svg>Home</a>
+      <a data-screen="templates" onclick="{{ onNav }}" class="{{ btmTplCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-grid"></use></svg>Catalog</a>
+      <a data-screen="aistudio" onclick="{{ onNav }}" class="{{ btmAiCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg>AI</a>
+      <a data-screen="account" onclick="{{ onNav }}" class="{{ btmAccCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-user"></use></svg>Account</a>
     </nav>
   </div>
   </sc-if>
@@ -17575,7 +17599,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <div class="ffa-auth">
       <!-- Brand panel (mesh + visual) — chapda · mockup .auth-art (brand · visual · quote) -->
       <div class="ffa-auth-brand ffm-mesh">
-        <span class="ffa-logo" onclick="{{ goLanding }}" style="font-size:15px;position:relative;z-index:2"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
+        <span class="ffa-logo" onclick="{{ goLanding }}" style="font-size:15px;position:relative;z-index:2" role="button" tabindex="0"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
         <div class="ffa-auth-visual" aria-hidden="true">
           <div class="ffl-art ffl-art-aurora"><span class="orb orb-a"></span><span class="orb orb-b"></span><span class="floor"></span></div>
         </div>
@@ -17587,7 +17611,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       </div>
       <!-- Form panel — o'ngda · mockup .auth-form (brand · h1 · fields · google · switch) -->
       <div class="ffa-auth-form">
-        <a class="ffa-logo" onclick="{{ goLanding }}" style="font-size:16px;margin-bottom:22px"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</a>
+        <a class="ffa-logo" onclick="{{ goLanding }}" style="font-size:16px;margin-bottom:22px" role="button" tabindex="0"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</a>
         <div class="ffa-auth-h1">{{ authTitle }}</div>
         <div style="font-size:13.5px;color:var(--muted);margin-top:8px">{{ authSub }}</div>
         <sc-if value="{{ authErr }}" hint-placeholder-val="{{ false }}">
@@ -17597,13 +17621,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 30%,transparent);font-size:13px;color:var(--lime);margin-top:18px"><i class="ph-fill ph-check-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authInfo }}</div>
         </sc-if>
         <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:22px"><span class="ffa-flab">NAME</span><input value="{{ authName }}" oninput="{{ onAuthName }}" placeholder="Your name" class="ffa-field"></div>
+          <div style="margin-top:22px"><span class="ffa-flab">NAME</span><input value="{{ authName }}" oninput="{{ onAuthName }}" placeholder="Your name" class="ffa-field" aria-label="Your name"></div>
         </sc-if>
-        <div style="margin-top:16px"><span class="ffa-flab">EMAIL</span><input value="{{ authEmail }}" oninput="{{ onAuthEmail }}" onkeydown="{{ onAuthKey }}" type="email" placeholder="you@email.com" class="ffa-field"></div>
+        <div style="margin-top:16px"><span class="ffa-flab">EMAIL</span><input value="{{ authEmail }}" oninput="{{ onAuthEmail }}" onkeydown="{{ onAuthKey }}" type="email" placeholder="you@email.com" class="ffa-field" aria-label="Email"></div>
         <sc-if value="{{ authShowPassword }}" hint-placeholder-val="{{ true }}">
           <div style="margin-top:14px">
             <span class="ffa-flab">PASSWORD</span>
-            <input value="{{ authPassword }}" oninput="{{ onAuthPassword }}" onkeydown="{{ onAuthKey }}" type="password" placeholder="••••••••" class="ffa-field">
+            <input value="{{ authPassword }}" oninput="{{ onAuthPassword }}" onkeydown="{{ onAuthKey }}" type="password" placeholder="••••••••" class="ffa-field" aria-label="Password">
             <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}"><div style="font-size:10px;color:var(--muted2);margin-top:5px">At least 8 characters</div></sc-if>
           </div>
         </sc-if>
@@ -17616,9 +17640,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div id="ffGoogleBtn" style="display:flex;justify-content:center;min-height:44px"></div>
         </sc-if>
         <div class="ffa-auth-switch">
-          <sc-if value="{{ authShowLoginLinks }}" hint-placeholder-val="{{ true }}">New to FrameFlow? <a onclick="{{ switchRegister }}">Create account</a> · <a onclick="{{ switchForgot }}">Forgot password?</a></sc-if>
-          <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">Already have an account? <a onclick="{{ switchLogin }}">Sign in</a></sc-if>
-          <sc-if value="{{ authIsForgot }}" hint-placeholder-val="{{ false }}"><a onclick="{{ switchLogin }}">← Back to sign in</a></sc-if>
+          <sc-if value="{{ authShowLoginLinks }}" hint-placeholder-val="{{ true }}">New to FrameFlow? <a onclick="{{ switchRegister }}" role="button" tabindex="0">Create account</a> · <a onclick="{{ switchForgot }}" role="button" tabindex="0">Forgot password?</a></sc-if>
+          <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">Already have an account? <a onclick="{{ switchLogin }}" role="button" tabindex="0">Sign in</a></sc-if>
+          <sc-if value="{{ authIsForgot }}" hint-placeholder-val="{{ false }}"><a onclick="{{ switchLogin }}" role="button" tabindex="0">← Back to sign in</a></sc-if>
         </div>
       </div>
     </div>
@@ -17629,7 +17653,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <div style="min-height:100vh;display:grid;place-items:center;padding:32px 20px;position:relative">
       <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(50% 40% at 50% 30%,color-mix(in srgb,var(--lime) 7%,transparent),transparent 70%);pointer-events:none"></div>
       <div style="width:100%;max-width:420px">
-        <a onclick="{{ goLanding }}" class="ffa-logo" style="justify-content:center;font-size:18px;margin-bottom:26px"><span class="lb" style="width:30px;height:30px;font-size:16px"><i class="ph-fill ph-lightning"></i></span>FrameFlow</a>
+        <a onclick="{{ goLanding }}" class="ffa-logo" style="justify-content:center;font-size:18px;margin-bottom:26px" role="button" tabindex="0"><span class="lb" style="width:30px;height:30px;font-size:16px"><i class="ph-fill ph-lightning"></i></span>FrameFlow</a>
         <div style="border-radius:16px;background:var(--pop);border:1px solid rgba(255,255,255,.09);padding:36px 28px;box-shadow:0 30px 70px rgba(0,0,0,.6);text-align:center">
           <span style="width:56px;height:56px;border-radius:16px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 25%,transparent);display:inline-flex;align-items:center;justify-content:center;font-size:26px;color:var(--lime)"><i class="ph ph-envelope-simple-open"></i></span>
           <div style="font-weight:700;font-size:21px;letter-spacing:-.015em;margin-top:20px">Verify your email</div>
@@ -17641,8 +17665,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <div style="display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:11px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 30%,transparent);font-size:13px;color:var(--lime);margin-top:16px;text-align:left"><i class="ph-fill ph-check-circle" style="font-size:16px;flex:none;margin-top:1px"></i>{{ authInfo }}</div>
           </sc-if>
           <button onclick="{{ recheckVerification }}" class="ffm-btn full lg" style="margin-top:24px">Check</button>
-          <div style="font-size:12.5px;color:var(--muted);margin-top:16px">Didn't get the link? <a onclick="{{ resendVerification }}" style="color:var(--lime);font-weight:600;cursor:pointer">Resend the link</a></div>
-          <a onclick="{{ logoutAndGoAuth }}" style="display:inline-block;margin-top:14px;font-size:12px;color:var(--muted2);cursor:pointer">Sign out</a>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:16px">Didn't get the link? <a onclick="{{ resendVerification }}" style="color:var(--lime);font-weight:600;cursor:pointer" role="button" tabindex="0">Resend the link</a></div>
+          <a onclick="{{ logoutAndGoAuth }}" style="display:inline-block;margin-top:14px;font-size:12px;color:var(--muted2);cursor:pointer" role="button" tabindex="0">Sign out</a>
         </div>
       </div>
     </div>
@@ -17685,7 +17709,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </div>
         <p style="font-size:14px;color:var(--txt2);margin:0 0 10px">This permanently anonymizes your account and revokes access. Your published templates are unpublished; financial records are retained (anonymized). This cannot be undone.</p>
         <p style="font-size:13px;color:var(--muted);margin:0 0 8px">Type <b style="color:var(--txt)">DELETE</b> to confirm:</p>
-        <input value="{{ delConfirm }}" oninput="{{ onDelConfirm }}" onkeydown="{{ onDelConfirmKey }}" placeholder="DELETE" class="ffa-field" style="margin-bottom:18px">
+        <input value="{{ delConfirm }}" oninput="{{ onDelConfirm }}" onkeydown="{{ onDelConfirmKey }}" placeholder="DELETE" class="ffa-field" style="margin-bottom:18px" aria-label="Type DELETE to confirm">
         <div style="display:flex;gap:10px;justify-content:flex-end">
           <button onclick="{{ closeDeleteAccount }}" class="ffm-btn2 sm">Cancel</button>
           <button onclick="{{ confirmDeleteAccount }}" class="ffm-btn sm" style="background:var(--th-danger);color:#fff;border-color:var(--th-danger)">Delete my account</button>
@@ -17702,7 +17726,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div style="display:inline-flex;align-items:center;gap:9px;font-size:18px;font-weight:600"><i class="ph ph-{{ nameModal.icon }}" style="color:var(--teal)"></i>{{ nameModal.title }}</div>
           <button onclick="{{ closeNameModal }}" style="width:34px;height:34px;border-radius:9px;background:var(--card2);border:1px solid var(--bd);color:var(--txt2);cursor:pointer;display:grid;place-items:center;font-size:16px"><i class="ph ph-x"></i></button>
         </div>
-        <input value="{{ nameModal.value }}" oninput="{{ onNameModal }}" onkeydown="{{ onNameModalKey }}" placeholder="{{ nameModal.ph }}" class="ffa-field" style="margin-bottom:18px">
+        <input value="{{ nameModal.value }}" oninput="{{ onNameModal }}" onkeydown="{{ onNameModalKey }}" placeholder="{{ nameModal.ph }}" class="ffa-field" style="margin-bottom:18px" aria-label="Name">
         <div style="display:flex;gap:10px;justify-content:flex-end">
           <button onclick="{{ closeNameModal }}" class="ffm-btn2 sm">Cancel</button>
           <button onclick="{{ confirmNameModal }}" class="ffm-btn sm">{{ nameModal.cta }}</button>
@@ -17713,7 +17737,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
   <!-- ============ GLOBAL: ADD TO PROJECT PICKER (QA-FIX #13) ============ -->
   <sc-if value="{{ addPick }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ closeAddPick }}" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+    <div onclick="{{ closeAddPick }}" style="position:fixed;inset:0;z-index:120;background:rgba(5,5,9,.7);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px" role="button" tabindex="0">
       <div onclick="{{ stop }}" style="width:100%;max-width:420px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:26px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <div style="display:inline-flex;align-items:center;gap:9px;font-size:18px;font-weight:600"><i class="ph ph-folder-plus" style="color:var(--teal)"></i>Add to project</div>
@@ -17732,7 +17756,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           </sc-if>
         </div>
         <div style="display:flex;gap:9px;margin-top:14px">
-          <input value="{{ addPickName }}" oninput="{{ onAddPickName }}" onkeydown="{{ onAddPickKey }}" placeholder="New project name" class="ffa-field" style="flex:1;margin:0">
+          <input value="{{ addPickName }}" oninput="{{ onAddPickName }}" onkeydown="{{ onAddPickKey }}" placeholder="New project name" class="ffa-field" style="flex:1;margin:0" aria-label="New project name">
           <button onclick="{{ createAndAdd }}" class="ffm-btn sm" style="flex:none">Create</button>
         </div>
       </div>
@@ -17741,7 +17765,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
   <!-- ============ P3 (step 34): ADD TO EXPLORE — huquq attestatsiyasi ============ -->
   <sc-if value="{{ exploreModal }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ closeExplore }}" style="position:fixed;inset:0;z-index:130;background:rgba(5,5,9,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px">
+    <div onclick="{{ closeExplore }}" style="position:fixed;inset:0;z-index:130;background:rgba(5,5,9,.72);backdrop-filter:blur(6px);display:grid;place-items:center;padding:24px" role="button" tabindex="0">
       <div onclick="{{ stop }}" style="width:100%;max-width:440px;border-radius:22px;background:var(--panel);border:1px solid var(--bd2);padding:26px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <div style="display:inline-flex;align-items:center;gap:9px;font-size:18px;font-weight:600"><i class="ph ph-compass" style="color:var(--lime)"></i>Add to Explore</div>
@@ -17811,7 +17835,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
   <!-- #8 — My Library referens tanlagichi (Upload'ga muqobil manba) -->
   <sc-if value="{{ refLibOpen }}" hint-placeholder-val="{{ false }}">
-    <div onclick="{{ refLibClose }}" style="position:fixed;inset:0;z-index:96;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px">
+    <div onclick="{{ refLibClose }}" style="position:fixed;inset:0;z-index:96;background:rgba(5,5,9,.82);backdrop-filter:blur(8px);display:grid;place-items:center;padding:32px 24px" role="button" tabindex="0">
       <div onclick="{{ stop }}" style="width:100%;max-width:640px;max-height:76vh;display:flex;flex-direction:column;background:var(--pop,#14161c);border:1px solid var(--hair2);border-radius:20px;padding:18px;box-shadow:0 40px 90px -25px rgba(0,0,0,.8)">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
           <div style="font-size:15px;font-weight:600">Pick from My Library</div>
@@ -17824,7 +17848,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </sc-if>
         <div style="overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
           <sc-for list="{{ refLibItems }}" as="g" hint-placeholder-count="6">
-            <div data-id="{{ g.id }}" onclick="{{ refLibPickItem }}" style="cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid var(--hair2)">
+            <div data-id="{{ g.id }}" onclick="{{ refLibPickItem }}" style="cursor:pointer;border-radius:12px;overflow:hidden;border:1px solid var(--hair2)" role="button" tabindex="0">
               <div style="aspect-ratio:1/1;background-image:{{ g.bgi }};background-size:cover;background-position:center;display:grid;place-items:center">
                 <sc-if value="{{ g.noThumb }}" hint-placeholder-val="{{ false }}"><i class="ph ph-{{ g.icon }}" style="font-size:20px;color:var(--muted)"></i></sc-if>
               </div>
@@ -18426,7 +18450,7 @@ class Component extends DCLogic {
   plans = [
     { key: 'free', name: 'Free', pm: 0, cr: '50 credits/mo', pop: false, cta: 'Get started', sub: 'For trying it out', feats: ['50 AI credits per month', 'Full template library, any resolution', '15 downloads per month', '1 active project', 'Community support'], tf: ['Full template library, any resolution', '15 downloads per month', '1 active project'] },
     { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin', 'Email support'], tf: ['Full template library, any resolution', 'Unlimited downloads', 'After Effects plugin'] },
-    { key: 'studio', name: 'Studio', pm: 59, cr: '3,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For teams', feats: ['3,000 AI credits per month', 'Everything in Pro'], tf: ['Everything in Pro'] },
+    { key: 'studio', name: 'Studio', pm: 59, cr: '3,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For high-volume work', feats: ['3,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin', 'Email support'], tf: ['3,000 credits per month', 'Unlimited downloads', 'After Effects plugin'] },
   ];
 
   faqs = [
@@ -18549,9 +18573,9 @@ class Component extends DCLogic {
       { name: 'Pro', price: 19, credits: '1,000 credits/mo', sub: 'For professionals', cta: 'Upgrade to Pro',
         feats: ['1,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin', 'Email support'],
         teaserFeats: ['Full template library, any resolution', 'Unlimited downloads', 'After Effects plugin'] },
-      { name: 'Studio', price: 59, credits: '3,000 credits/mo', sub: 'For teams', cta: 'Choose Studio',
-        feats: ['3,000 AI credits per month', 'Everything in Pro'],
-        teaserFeats: ['Everything in Pro'] },
+      { name: 'Studio', price: 59, credits: '3,000 credits/mo', sub: 'For high-volume work', cta: 'Choose Studio',
+        feats: ['3,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin', 'Email support'],
+        teaserFeats: ['3,000 credits per month', 'Unlimited downloads', 'After Effects plugin'] },
     ],
     pluginPage: {
       badge: 'After Effects 2022+', title: 'Install the FrameFlow plugin in one click',
@@ -19447,6 +19471,34 @@ class Component extends DCLogic {
       return 'The request was rejected by the model — your credits were refunded';
     return raw;
   }
+  // #23 (X2) — TO'LOV xatolari sanitizatori. Checkout oqimi `err.message` ni TO'G'RIDAN
+  // ko'rsatardi, ya'ni "NETWORK", "HTTP 502" yoki provayder JSON'i xaridorga chiqardi.
+  // Pul zonasidagi xato eng ko'p ishonch talab qiladigan joy — texnik satr ko'rsatilmaydi.
+  payErrMsg(e) {
+    if (e && e.message === 'NETWORK') return "Can't reach the server — check your connection and try again";
+    const st = (e && e.status) || 0;
+    const code = (e && e.code) || (e && e.data && e.data.code) || '';
+    if (st === 401 || st === 403) return 'Please sign in again to continue with the purchase';
+    if (code === 'CHECKOUT_UNCONFIGURED' || st === 501) return "Payments aren't available yet — please contact support";
+    if (st >= 500) return 'The payment service is temporarily unavailable — please try again in a minute';
+    const m = this.errMsg(e);
+    // Texnik qoldiq (HTTP kod, JSON, SNAKE_CASE kod) → umumiy xabar.
+    if (!m || /^HTTP\b/i.test(m) || /^\s*[[{]/.test(m) || /^[A-Z0-9_]{4,}$/.test(m) || /\d{3}\s*:/.test(m))
+      return "Payment isn't available right now — please try again";
+    return m;
+  }
+  // #129 (W4) — checkout URL'iga o'tish. Redirect amalga oshmasa (brauzer navigatsiyani
+  // rad etsa, CSP, orqaga qaytish) `_payBusy` ABADIY true qolib, tugma o'lik bo'lardi.
+  // 8 soniyadan keyin holat tiklanadi va qayta urinish taklif qilinadi.
+  _payGo(url) {
+    clearTimeout(this._payTimer);
+    this._payTimer = setTimeout(() => {
+      this._payBusy = false;
+      if (this.state && this.state.payBusy) this.setState({ payBusy: '' });
+      this.toastWithRetry("Checkout didn't open — try again", () => { window.location.href = url; });
+    }, 8000);
+    window.location.href = url;
+  }
   fmtDate(iso) {
     if (!iso) return '';
     try { const d = new Date(iso); return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e) { return ''; }
@@ -19552,6 +19604,17 @@ class Component extends DCLogic {
     clearTimeout(this._browseT);
     this._browseT = setTimeout(() => this.loadBrowse(true), 300);
   }
+  /** #81 (X7) — katalogda birorta filtr faolmi? (qidiruv `q` bunga kirmaydi) */
+  _anyCatalogFilter() {
+    const s = this.state;
+    return (s.fApps || []).length > 0 || (s.fCats || []).length > 0
+      || s.fCat !== 'All' || s.fPlan !== 'All' || s.fOrient !== 'All' || s.fQual !== 'All';
+  }
+  /** #81 (X7) — barcha katalog filtrlarini tozalash (`q` tegilmaydi). */
+  clearCatalogFilters() {
+    this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All' });
+    this.scheduleBrowse();
+  }
   mapCatalogItems(raw, APP_L, APP_C) {
       return raw.map((it) => { const tb = typeBadge(it, APP_L, APP_C); return {
         id: String(it.id), n: it.name || 'Template', c: it.catLabel || it.cat || 'Template',
@@ -19652,9 +19715,9 @@ class Component extends DCLogic {
     if (this._payBusy) return; this._payBusy = true;
     try {
       const r = await FFAPI.checkout(body);
-      if (r && r.url) { window.location.href = r.url; return; }
+      if (r && r.url) { this._payGo(r.url); return; }
       this._payBusy = false; this.toast("Couldn't get the payment link", 'error');
-    } catch (err) { this._payBusy = false; this.toast((err && err.message) || "Payment isn't available right now", 'error'); }
+    } catch (err) { this._payBusy = false; this.toast(this.payErrMsg(err), 'error'); }
   }
   // §F (P33) — sevimlilarni serverdan yuklaymiz (qurilmalar aro sinxron). localStorage endi
   // faqat oflayn/issiq-boot keshi. Server ro'yxati haqiqat manbai — kelgach ustiga yozadi.
@@ -20196,6 +20259,9 @@ class Component extends DCLogic {
     }, extra || {}));
   }
   logout() {
+    // #76 (W3) — avval SERVER sessiyani bekor qiladi (tokenVersion++), keyin klient
+    // tozalanadi. Kutmaymiz: chiqish darhol ko'rinadi, xato bo'lsa ham to'sib qolmaydi.
+    try { if (window.FFAPI && FFAPI.getToken()) FFAPI.logoutServer().catch(() => {}); } catch (e) {}
     if (window.FFAPI) FFAPI.clearSession();
     this.resetUserState({ user: null });
     this.go('landing');
@@ -21909,13 +21975,6 @@ class Component extends DCLogic {
     const qTrim = (this.state.q || '').trim();
     const scopePill = this.state.fCat !== 'All' ? this.pillLabel(this.state.fCat) : '';
     const resultsScope = qTrim ? (' for “' + qTrim + '”' + (scopePill ? ' in ' + scopePill : '')) : '';
-    // SC_37 — bo'sh natija retsepti: qidiruvda "Clear search" (faqat q tozalanadi,
-    // filtrlar joyida), aks holda "Clear filters" (hammasi).
-    const emptyTitle = qTrim ? ('No results for “' + qTrim + '”') : 'Nothing found';
-    const emptyDesc = qTrim
-      ? ('Searched ' + (scopePill ? ('within ' + scopePill) : 'the whole catalog') + ' — try a different phrase or clear the search.')
-      : 'Try adjusting your filters — the catalog is updated regularly';
-    const emptyClearLabel = qTrim ? 'Clear search' : 'Clear filters';
     const fbAppCls = 'va-fchip' + (hasFbApps ? ' on' : '');
     const fbAppLabel = hasFbApps ? ('Apps · ' + fAppsSel.length) : 'All apps';
     const fbCatCls = 'va-fchip' + (hasFbCats ? ' on' : '');
@@ -21934,6 +21993,28 @@ class Component extends DCLogic {
     if (this.state.fPlan !== 'All') activeChips.push({ k: 'plan', v: this.state.fPlan, ic: 'tag' });
     const hasActiveFilters = activeChips.length > 0 || this.state.fCat !== 'All';
     const filterCount = activeChips.length + (this.state.fCat !== 'All' ? 1 : 0);
+    // SC_37 / #81 (X7) — bo'sh natija retsepti UCH holatga bo'linadi. Ilgari filtr ham,
+    // qidiruv ham yo'q chindan bo'sh katalogda ham "Clear filters" chiqardi va u HECH
+    // NARSA tozalamasdi (boshi berk ko'cha). Endi: (1) qidiruv bor → Clear search,
+    // (2) faqat filtr → Clear filters · N, (3) ikkalasi ham yo'q → Refresh.
+    // Qidiruv + filtr birga bo'lsa qidiruvni tozalash yetmasligi mumkin → ikkinchi tugma.
+    const emptyFilterList = activeChips
+      .map(c => c.v)
+      .concat(this.state.fCat !== 'All' ? [this.pillLabel(this.state.fCat)] : [])
+      .join(' · ');
+    const emptyTitle = qTrim
+      ? ('No results for “' + qTrim + '”')
+      : (hasActiveFilters ? 'Nothing matches these filters' : 'Nothing here yet');
+    const emptyDesc = qTrim
+      ? ('Searched ' + (scopePill ? ('within ' + scopePill) : 'the whole catalog') + ' — try a different phrase or clear the search.')
+      : (hasActiveFilters
+        ? ('Active filters: ' + emptyFilterList + ' — clear them to see the whole catalog.')
+        : 'This catalog is empty right now — new assets are added regularly. Check back soon.');
+    const emptyClearLabel = qTrim
+      ? 'Clear search'
+      : (hasActiveFilters ? ('Clear filters · ' + filterCount) : 'Refresh');
+    const emptyShowFilters = !!qTrim && hasActiveFilters;
+    const emptyFiltersLabel = 'Clear filters · ' + filterCount;
     const tplHeading = this.state.fCat === 'All' ? 'All stock' : this.pillLabel(this.state.fCat);
     const dRaw = this.state.detail;
     // §E (P2) — oylik yuklab olish standingi (detail CTA uchun). unlimited/limitsiz → null.
@@ -22451,10 +22532,10 @@ class Component extends DCLogic {
         if (this._payBusy) return; this._payBusy = true; this.setState({ payBusy: 'c' + amt });
         try {
           const r = await FFAPI.checkout({ credits: amt });
-          if (r && r.url) { window.location.href = r.url; return; } // navigatsiya — busy shu holicha qoladi
+          if (r && r.url) { this._payGo(r.url); return; } // #129 — navigatsiya bo'lmasa _payGo tiklaydi
           this._payBusy = false; this.setState({ payBusy: '' });
           this.toast("Couldn't get the payment link", 'error');
-        } catch (err) { this._payBusy = false; this.setState({ payBusy: '' }); this.toast((err && err.message) || "Payment isn't available right now", 'error'); }
+        } catch (err) { this._payBusy = false; this.setState({ payBusy: '' }); this.toast(this.payErrMsg(err), 'error'); }
       },
       onChoosePlan: async (e) => {
         const key = (e && e.currentTarget && e.currentTarget.dataset.plan) || '';
@@ -22467,10 +22548,10 @@ class Component extends DCLogic {
         if (this._payBusy) return; this._payBusy = true; this.setState({ payBusy: 'p' + key });
         try {
           const r = await FFAPI.checkout({ plan: key });
-          if (r && r.url) { window.location.href = r.url; return; }
+          if (r && r.url) { this._payGo(r.url); return; }
           this._payBusy = false; this.setState({ payBusy: '' });
           this.toast("Couldn't get the payment link", 'error');
-        } catch (err) { this._payBusy = false; this.setState({ payBusy: '' }); this.toast((err && err.message) || "Payment isn't available right now", 'error'); }
+        } catch (err) { this._payBusy = false; this.setState({ payBusy: '' }); this.toast(this.payErrMsg(err), 'error'); }
       },
       // §H — niyatni bajarish (login'dan keyin chaqiriladi): saqlangan tarif/kreditga to'g'ridan checkout.
       resumePayIntent: () => this._resumePayIntent(),
@@ -22783,7 +22864,14 @@ class Component extends DCLogic {
       q: this.state.q, filtered, filtCount: filtered.length, resultsFmt, resultsScope,
       // SC_37 — bo'sh natija: qidiruvda faqat q tozalanadi (filtrlar qoladi)
       emptyTitle, emptyDesc, emptyClearLabel,
-      emptyClear: () => { if ((this.state.q || '').trim()) { this.setState({ q: '' }); this.scheduleBrowse(); } else { this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }); this.scheduleBrowse(); } },
+      // #81 (X7) — holat handler ICHIDA qayta hisoblanadi (render'dagi const'ga tayanmaydi).
+      emptyClear: () => {
+        if ((this.state.q || '').trim()) { this.setState({ q: '' }); this.scheduleBrowse(); return; }
+        if (this._anyCatalogFilter()) { this.clearCatalogFilters(); return; }
+        this.scheduleBrowse(); // tozalaydigan narsa yo'q — katalogni qayta so'raymiz
+      },
+      emptyClearFilters: () => { this.clearCatalogFilters(); },
+      emptyShowFilters, emptyFiltersLabel,
       fbAppCls, fbAppLabel, fbCatCls, fbCatLabel, fbCatOpen, fGranView, fbPlanCls, fbPlanLabel, fbAppOpen, fbPlanOpen, detailGate,
       toggleFbar: (e) => { const p = e.currentTarget.dataset.pop; this.setState(st => ({ fbarPop: st.fbarPop === p ? null : p, sortOpen: false })); },
       // #3 — multi-select toggle'lar: popover ochiq qoladi (bir nechta belgilash qulay)
@@ -23054,6 +23142,20 @@ class Component extends DCLogic {
 
 
 <script>
+/* ═══ #79 (X5) · Semantik bo'lmagan tugmalar uchun klaviatura aktivatsiyasi ═══
+   Shablonda `role="button" tabindex="0"` bilan belgilangan div/span/a elementlari
+   sichqonchada ishlardi, klaviaturada YO'Q edi. Bitta delegatsiyalangan handler
+   Enter/Space ni click'ga aylantiradi (native tugma/link/input'ga tegmaydi). */
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+  var t = e.target;
+  if (!t || !t.getAttribute || t.getAttribute('role') !== 'button') return;
+  if (t.tagName === 'BUTTON' || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT') return;
+  if (t.getAttribute('aria-disabled') === 'true') return;
+  e.preventDefault();       // Space sahifani pastga surmasin
+  t.click();
+});
+
 /* ═══ BATCH6 · 3-tema almashtirgich ═══
    html[data-theme] (default noir) · localStorage 'ff-theme' · FOUC yo'q (head snippet oldindan o'rnatadi)
    · dc-runtime .ff subtree'ni qayta render qilganda swatch'lar o'chadi → MutationObserver qayta joylaydi. */

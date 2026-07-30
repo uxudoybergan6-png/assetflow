@@ -13,10 +13,20 @@ const dist = path.join(root, "dist");
 if (fs.existsSync(dist)) fs.rmSync(dist, { recursive: true });
 fs.mkdirSync(dist, { recursive: true });
 
+// #21 (W1) — `_` bilan boshlanadigan fayl/papkalar ICHKI (dizayn mockup, qoralama):
+// ular deploy'ga TUSHMASLIGI kerak edi, lekin copyDir hammasini ko'chirardi va 17 ta
+// mockup (~1MB) production domenida ochiq turardi. `_headers`/`_redirects` — Cloudflare
+// Pages'ning O'Z fayllari, ular istisno.
+const CF_RESERVED = new Set(["_headers", "_redirects", "_routes.json", "_worker.js"]);
+function isInternal(name) {
+  return name.startsWith("_") && !CF_RESERVED.has(name);
+}
+
 function copyDir(src, dst) {
   if (!fs.existsSync(src)) return;
   fs.mkdirSync(dst, { recursive: true });
   for (const name of fs.readdirSync(src)) {
+    if (isInternal(name)) continue;
     const s = path.join(src, name);
     const d = path.join(dst, name);
     if (fs.statSync(s).isDirectory()) copyDir(s, d);
@@ -55,7 +65,6 @@ copyDir(SRC_STYLES, path.join(dist, "admin", "styles"));
 copyDir(SRC_JS, path.join(dist, "studio", "js"));
 copyDir(SRC_STYLES, path.join(dist, "studio", "styles"));
 copyFile(path.join(root, "login.html"), path.join(dist, "studio", "login.html"));
-copyFile(path.join(root, "hub.html"), path.join(dist, "studio", "hub.html"));
 copyFile(
   path.join(root, "contributor", "index.html"),
   path.join(dist, "studio", "contributor", "index.html")
@@ -72,12 +81,14 @@ copyFile(
 // /login yo'lini egallab olardi. Studio login /studio/login.html (3-bosqichda
 // real fayl), admin login /admin/login.html (2-bosqichda). Root /login endi
 // SPA fallback orqali PLATFORMA auth ekraniga tushadi.
+// #21 (W1) — `hub.html` ("Which panel?" ichki ops chooser) va `design-system.html`
+// (dizayn-tizim referensi) endi DEPLOY QILINMAYDI: ikkalasi ham ichki asboblar,
+// ommaviy domenda ular ichki tuzilmani oshkor qilardi. Lokal dev'da o'zgarishsiz
+// (dev-studio-server.mjs manbadan servlaydi).
 const FILES = [
-  "hub.html",
   "reset-password.html",
   "verify-email.html",
   "device.html",
-  "design-system.html",
 ];
 for (const f of FILES) copyFile(path.join(root, f), path.join(dist, f));
 
@@ -183,7 +194,6 @@ copyDir(path.join(root, "platform"), dist);
 const redirects = `\
 /studio/js/*        /js/:splat                  200
 /studio/styles/*    /styles/:splat              200
-/studio/hub.html    /hub.html                   200
 /studio/contributor /contributor/index.html     200
 /studio/contributor/ /contributor/index.html   200
 /contributor        /contributor/index.html     200

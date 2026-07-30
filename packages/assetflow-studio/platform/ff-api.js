@@ -210,6 +210,9 @@
     checkout: function (body) { return req("/api/billing/checkout", { method: "POST", body: body }); },
 
     // FAZA 1c — GDPR: o'z ma'lumotini eksport / hisobni o'chirish
+    // #76 (W3) — server tomonda sessiyani bekor qilish (tokenVersion++). Klient
+    // sessiyani tozalashdan OLDIN chaqiradi; xatosi chiqishni to'sib qo'ymasligi kerak.
+    logoutServer: function () { return req("/api/auth/logout", { method: "POST" }); },
     exportData: function () { return req("/api/users/export", { method: "POST" }); },
     deleteAccount: function () { return req("/api/account", { method: "DELETE", body: { confirm: "DELETE" } }); },
 

@@ -144,6 +144,11 @@ body.portal-admin .adx-eyebrow{color:#FFB000}
 @keyframes adxbreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(194,240,74,0)}50%{opacity:.85;box-shadow:0 0 26px 2px rgba(194,240,74,.24)}}
 @keyframes adxspin{to{transform:rotate(360deg)}}
 
+/* #79 (X5) — klaviatura fokusi: admin qobig'ida ham bitta focus halqasi */
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:8px}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline-offset:0}
+[role="button"]{cursor:pointer}
+
 /* ── App qobiq (real app: butun viewport) ── */
 body.adx-body{background:#06080B}
 .adx-app{display:flex;align-items:stretch;height:100vh;height:100dvh;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-size:13.5px;line-height:1.45}

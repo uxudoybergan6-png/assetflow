@@ -196,6 +196,11 @@ const AssetFlowAuth = (() => {
   }
 
   function logout(redirect = true) {
+    // #76 (W3) — server tomonda ham bekor qilamiz (tokenVersion++), aks holda nusxa
+    // ko'chirilgan JWT chiqishdan keyin ham 30 kun ishlayverardi. Kutmaymiz.
+    try {
+      if (typeof StudioApi !== "undefined" && StudioApi.logoutServer) StudioApi.logoutServer().catch(() => {});
+    } catch (e) { /* chiqish hech qachon to'silmasin */ }
     clearSession();
     localStorage.removeItem("af_remember_email");
     localStorage.removeItem("af_remember_session");

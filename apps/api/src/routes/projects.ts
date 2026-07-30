@@ -138,12 +138,33 @@ projectsRouter.get("/", async (req: Request, res: Response) => {
   });
 });
 
+/** #82 (X8) — Free rejadagi loyiha chegarasi. Narx sahifasi Free uchun "1 active project"
+ *  deb YOZADI, lekin server hech qanday cheklov qo'ymasdi: Free foydalanuvchi cheksiz
+ *  loyiha ochardi va eʼlon qilingan taklif bilan kod bir-biriga mos kelmasdi. Mavjud
+ *  loyihalar TEGILMAYDI — faqat YANGI yaratish cheklanadi. */
+const FREE_PROJECT_LIMIT = 1;
+
 /** POST / — yangi loyiha. */
 projectsRouter.post("/", async (req: Request, res: Response) => {
   const p = nameSchema.safeParse(req.body);
   if (!p.success) {
     res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
+  }
+  const paid = await viewerIsPaidPlan(req.user!.userId);
+  if (!paid) {
+    const owned = await prisma.project.count({ where: { ownerId: req.user!.userId } });
+    if (owned >= FREE_PROJECT_LIMIT) {
+      res.status(403).json({
+        error:
+          FREE_PROJECT_LIMIT === 1
+            ? "The Free plan includes 1 project — upgrade to Pro for unlimited projects"
+            : `The Free plan includes ${FREE_PROJECT_LIMIT} projects — upgrade to Pro for unlimited projects`,
+        code: "PROJECT_LIMIT",
+        limit: FREE_PROJECT_LIMIT,
+      });
+      return;
+    }
   }
   const project = await prisma.project.create({
     data: { ownerId: req.user!.userId, name: p.data.name },

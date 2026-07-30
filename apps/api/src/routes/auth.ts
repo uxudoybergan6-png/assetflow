@@ -738,6 +738,24 @@ authRouter.post("/2fa/disable", requireAuth, twofaLimiter, async (req, res) => {
   res.json({ ok: true, enabled: false });
 });
 
+/** #76 (W3) — POST /logout: SERVER tomonda sessiyani bekor qiladi. Ilgari "Sign out"
+ *  faqat klientdagi `localStorage` ni tozalardi — nusxa ko'chirilgan yoki o'g'irlangan
+ *  JWT yana 30 kun ishlayverardi. `tokenVersion` oshirilishi bilan `requireAuth` eski
+ *  JWT'larni 401 TOKEN_REVOKED qiladi.
+ *
+ *  Qamrov: bu WEB/Studio JWT sessiyalari (barcha qurilma). AE plagin tokenlari alohida
+ *  `PluginToken` qatorlari — ular ATAYLAB tegilmaydi, aks holda brauzerda chiqish AE'dagi
+ *  ishni ham uzib qo'yardi (plagin chiqishi o'z yo'liga ega). */
+authRouter.post("/logout", requireAuth, async (req, res) => {
+  await prisma.user
+    .update({
+      where: { id: req.user!.userId },
+      data: { tokenVersion: { increment: 1 } },
+    })
+    .catch(() => null); // klient baribir sessiyani tozalaydi — bu yo'l hech qachon yiqilmasin
+  res.json({ ok: true });
+});
+
 authRouter.get("/me", requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },

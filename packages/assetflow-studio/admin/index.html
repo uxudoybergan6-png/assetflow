@@ -310,7 +310,9 @@ document.getElementById('adxScrim').addEventListener('click', () => {
 
 /* ── Theme button (for legacy screens; the new shell is dark-fixed) ── */
 /* Redesign dark-first: admin opens in dark mode unless the user explicitly chose otherwise */
-if (!localStorage.getItem('af-theme')) AssetFlowTheme.apply('dark');
+/* #80 (X6) — kalit endi yagona (`ff-theme`); "tanlanganmi?" ni modul aytadi
+   (localStorage'ni bevosita o'qish init'dan keyin HAR DOIM true berardi). */
+if (!AssetFlowTheme.hasPreference()) AssetFlowTheme.apply('dark');
 document.getElementById('adxThemeBtn').addEventListener('click', () => AssetFlowTheme.toggle());
 window.addEventListener('af-theme-change', (e) => {
   const i = document.getElementById('adxThemeIco');

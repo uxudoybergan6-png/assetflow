@@ -245,9 +245,14 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
       // (public API YO'Q) va "Priority render queue" (priority queue YO'Q) olib tashlandi.
       // Launch Task B — jamoa/brendkit/shaxsiy menejer imtiyozlari olib tashlandi: bularning
       // hech biri kodda/DB'da amalga oshirilmagan (grep tasdiqladi).
-      name: "Studio", price: 59, credits: "3,000 credits/mo", sub: "For teams", cta: "Choose Studio",
-      feats: ["3,000 AI credits per month", "Everything in Pro"],
-      teaserFeats: ["Everything in Pro"],
+      // #132 (X11) — Studio kartasida atigi 2 bullet bor edi (Pro'da 6): "Everything in Pro"
+      // hech narsa aytmaydi va qimmatroq tarif arzonrog'idan KAMBAG'AL ko'rinardi. Bulletlar
+      // Pro'nikidan KO'CHIRILDI (Studio ularning hammasini o'z ichiga oladi) — yangi
+      // (mavjud bo'lmagan) imtiyoz QO'SHILMADI. `sub` ham "For teams" edi-yu jamoa
+      // funksiyalari yo'q → "For high-volume work".
+      name: "Studio", price: 59, credits: "3,000 credits/mo", sub: "For high-volume work", cta: "Choose Studio",
+      feats: ["3,000 AI credits per month", "Full template library, any resolution", "Unlimited downloads", "Unlimited projects", "After Effects plugin", "Email support"],
+      teaserFeats: ["3,000 credits per month", "Unlimited downloads", "After Effects plugin"],
     },
   ],
   pluginPage: {

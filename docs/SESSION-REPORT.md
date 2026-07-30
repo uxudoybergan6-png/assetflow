@@ -1,20 +1,23 @@
-# Sessiya hisoboti — 2026-07-30 (BATCH 8 — ADMIN PANEL)
+# Sessiya hisoboti — 2026-07-30 (BATCH 6 — OMMAVIY WEB)
 
-**Manba:** `docs/REJA-CLAUDE-2026-07-30.md` (BATCH 0/1/2/3/4/5/7 + T9.1 oldingi commitlarda)
+**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`, 7-bosqich (BATCH 0–5, 7, 8 + T9.1 oldingi commitlarda)
 
-- **Bajarildi 8/8:** #27 bulk tanlov filtr o'zgarganda tozalanadi + tasdiq dialogi · #28 DMCA/takedown admin UI
-  (backend allaqachon bor edi) · #91 Marketplace Settings soxta "Save" o'rniga HAQIQIY server limitlari (read-only) ·
-  #93 "Clear logs" endi StudioApi (token) bilan va natija rostgo'y ko'rsatiladi.
-- **#92** localStorage promo/chegirma OLIB TASHLANDI — chegirma faqat Lemon Squeezy Discounts'da amal qiladi;
-  UI ilgari hech kimga yetib bormaydigan "chegirmali narx" ko'rsatib chalg'itardi.
-- **#94** tizim loglari efemer JSON fayldan **DB**ga (`SystemLog`, retention 20k qator). Migratsiya qo'llanmaguncha
-  API yiqilmaydi: GET/POST `degraded: true` qaytaradi.
-- **#95** umumiy hisob to'xtatish (`User.suspendedAt`): har login yo'li (web/Google/plagin/device-code) + markaziy
-  `isBlocked` + `tokenVersion++` va plagin tokenlarini o'chirish; o'zini va oxirgi faol adminni to'xtatish taqiqlangan.
-- **#137** Subscriber Generations: qattiq 40 element o'rniga cursor sahifalash ("Load more") + per-item **Refund**
-  (`POST /api/admin/users/:id/generations/:genId/refund`, `refundAiCredits` atomik claim → idempotent, audit log).
-- Yon tuzatish: `toast(..., 'error')` noma'lum kind → TypeError, toast UMUMAN ko'rinmasdi (2FA ekranlari) — alias + zaxira.
-- `npm run build -w apps/api` ✓ · `npx prisma generate` ✓ · `npm run studio:sync` ✓ · `node --check` ✓
+- **Bajarildi 11/13.** #21 CF Pages build `_*` fayl/papkani chiqarib tashlaydi (17 ichki mockup + ops sahifasi
+  ommaviy edi; `_headers`/`_redirects` allowlist'da) · #23 checkout xatosi `payErrMsg()` orqali tarjima qilinadi
+  (xom `NETWORK`/HTTP kodlari yo'q) · #75 shrift yo'llari root-absolute → 2+ segmentli SPA route'da 404 yo'q.
+- **#76** `POST /api/auth/logout` (`tokenVersion++`) — chiqishdan keyin nusxa ko'chirilgan JWT o'lik. AE `PluginToken`
+  ataylab TEGILMAYDI (brauzerdan chiqish AE sessiyasini o'ldirmasin).
+- **#79 (a11y)** yagona `:focus-visible` halqa (platforma + `app.css` + `admin.css`), 122 semantik bo'lmagan
+  bosiladigan element `role="button" tabindex="0"`, Enter/Space delegatsiyasi, 12 input `aria-label`, 6 ikonkali
+  tugmaga nom. Brauzerda tekshirildi: Tab → 2px halqa, Enter → click, konsol toza.
+- **#80** tema kaliti YAGONA: `ff-theme` ∈ {noir,neon,cold,light}; eski `af-theme` bir marta ko'chiriladi;
+  `AssetFlowTheme.hasPreference()` (admin "dark-first" gate ilgari o'lik kod edi).
+- **#81** bo'sh katalog 3 holatga bo'lindi (qidiruv / filtr / chindan bo'sh) — "Clear filters" endi hech qachon
+  no-op emas; filtr yo'q bo'lsa "Refresh", qidiruv+filtr birga bo'lsa ikkinchi tugma.
+- **#82** Free = 1 loyiha, server majburlaydi (`projects.ts`, 403 `PROJECT_LIMIT`) · **#129** `_payBusy` 8 s timeout +
+  qayta urinish · **#130** `<html lang="en">` · **#132** Studio tarifi 6 bullet · **#133** "Jump back in" faqat tarix bo'lsa.
+- **Bajarilmadi (egasi):** #22 obunani bekor qilish URL'i · #131 ommaviy webni o'zbekchaga o'girish (alohida reja).
+- `npm run build -w apps/api` ✓ · `verify-public-copy` 67/67 ✓ · `studio:sync` ✓ · CF Pages build ✓ (`dist/`da `_*` yo'q).
 
 ⚠️ **Migratsiya kutilmoqda** (prod'ga QO'LLANMAGAN, 8 ta): `20260730160000_ls_subscription_billing`,
 `20260730180000_catalog_scale_indexes`, `20260730190000_upload_progress_shared`,
