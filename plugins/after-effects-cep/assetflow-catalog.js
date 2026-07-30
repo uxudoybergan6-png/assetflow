@@ -591,19 +591,25 @@ const AssetFlowCatalog = (() => {
   }
 
   /**
-   * ZIP ichidagi barcha fayllarni kengaytma bo'yicha filterlash — papka nomi muhim emas.
-   * `unzip -Z1` barcha entry yo'llarini bir qatorda qaytaradi (portativ, tar kerak emas).
+   * Sof-Node ZIP kutubxonasi (assetflow-zip.js). Audit #2 (P0): ilgari bu yerda
+   * `unzip` CLI ishlatilardi — Windows'da bunday buyruq YO'Q (har pack importi
+   * sinardi) va fayl nomi shell'ga tushardi. Endi shell umuman chaqirilmaydi.
    */
-  function listEntriesInZip(child, zipPath, extLower) {
-    try {
-      return child.execFileSync("unzip", ["-Z1", zipPath], { encoding: "utf8", timeout: 15_000 })
-        .split("\n")
-        .filter(e => e.trim().toLowerCase().endsWith(extLower) && !/(^|\/)__MACOSX\//i.test(e) && !/(?:^|\/)\.\_/.test(e))
-        .map(e => e.trim())
-        .filter(Boolean);
-    } catch {
-      return [];
+  function zipLib() {
+    if (!window.AFZip) {
+      throw new Error("ZIP module is not loaded (assetflow-zip.js).");
     }
+    return window.AFZip;
+  }
+
+  /**
+   * ZIP ichidagi barcha fayllarni kengaytma bo'yicha filterlash — papka nomi muhim emas.
+   */
+  function listEntriesInZip(zipPath, extLower) {
+    return zipLib()
+      .listEntries(zipPath)
+      .map((e) => e.name)
+      .filter((name) => name.toLowerCase().endsWith(extLower));
   }
 
   function findFileByExtInDir(fs, path, rootDir, exts) {
@@ -706,7 +712,7 @@ const AssetFlowCatalog = (() => {
    * .mogrt = ZIP (project.aegraphic + definition.json + thumb'lar);
    * yangi AE'larda .aegraphic O'ZI ham ZIP (ichida asl RIFX .aep).
    */
-  function extractMogrtFileToAep(fs, path, child, NodeBuffer, baseDir, templateId, mogrtPath) {
+  async function extractMogrtFileToAep(fs, path, NodeBuffer, baseDir, templateId, mogrtPath) {
     const slug = mogrtSlug(path.basename(mogrtPath, path.extname(mogrtPath)));
     const dir = path.join(
       baseDir,
@@ -715,13 +721,11 @@ const AssetFlowCatalog = (() => {
     fs.mkdirSync(dir, { recursive: true });
     if (typeof showToast === "function") showToast("Opening item…");
     try {
-      child.execFileSync("unzip", ["-o", mogrtPath, "-d", dir], {
-        timeout: 120_000,
-      });
+      await zipLib().extractAll(mogrtPath, dir);
     } catch (e) {
       throw new Error("Could not open MOGRT — the file may be corrupted.");
     }
-    // Robustlik: unzip nol fayl chiqarsa aniq xato (jimgina davom etmaydi)
+    // Robustlik: ochish nol fayl chiqarsa aniq xato (jimgina davom etmaydi)
     let __mextract = [];
     try { __mextract = fs.readdirSync(dir); } catch {}
     if (!__mextract.length) throw new Error("MOGRT is empty or could not be opened.");
@@ -734,9 +738,7 @@ const AssetFlowCatalog = (() => {
       fs.closeSync(fd);
       if (head[0] === 0x50 && head[1] === 0x4b) {
         try {
-          child.execFileSync("unzip", ["-o", graphic, "-d", dir], {
-            timeout: 120_000,
-          });
+          await zipLib().extractAll(graphic, dir);
         } catch (e) {
           throw new Error("Could not open MOGRT project part (aegraphic).");
         }
@@ -760,7 +762,7 @@ const AssetFlowCatalog = (() => {
    * thumb.png/thumb.mp4 ni mogrt ichidan __af_thumbs/<slug>/ ga chiqaradi
    * (bir marta — keyin keshdan). Render KERAK EMAS: preview .mogrt'ning o'zida.
    */
-  function mogrtItemsFromDir(fs, path, child, cacheDir) {
+  function mogrtItemsFromDir(fs, path, cacheDir) {
     const files = findAllFilesByExtInDir(fs, path, cacheDir, [".mogrt"]);
     return files.map((p) => {
       const base = path.basename(p, path.extname(p));
@@ -771,12 +773,11 @@ const AssetFlowCatalog = (() => {
       if (!fs.existsSync(png) && !fs.existsSync(mp4)) {
         try {
           fs.mkdirSync(tdir, { recursive: true });
-          // -j: papkasiz; faqat thumb a'zolari (yo'q bo'lsa exit!=0 — e'tiborsiz)
-          child.execFileSync(
-            "unzip",
-            ["-o", "-j", p, "thumb.png", "thumb.mp4", "-d", tdir],
-            { timeout: 30_000 }
-          );
+          // flatten: papkasiz; faqat thumb a'zolari (yo'q bo'lsa 0 — e'tiborsiz).
+          // Fayllar kichik → sinxron ochamiz (UI ro'yxati sync quriladi).
+          zipLib().extractEntriesSync(p, tdir, ["thumb.png", "thumb.mp4"], {
+            flatten: true,
+          });
         } catch (e) {
           /* thumb'siz mogrt — karta ikonka bilan qoladi */
         }
@@ -800,11 +801,10 @@ const AssetFlowCatalog = (() => {
       const fs = require("fs");
       const path = require("path");
       const os = require("os");
-      const child = require("child_process");
       const baseDir = downloadDir() || os.tmpdir();
       const cacheDir = unzipDirFor(fs, path, baseDir, templateId, findServerPackMeta(templateId).name); // P9
       if (!fs.existsSync(cacheDir)) return [];
-      return mogrtItemsFromDir(fs, path, child, cacheDir);
+      return mogrtItemsFromDir(fs, path, cacheDir);
     } catch {
       return [];
     }
@@ -818,14 +818,13 @@ const AssetFlowCatalog = (() => {
     const fs = require("fs");
     const path = require("path");
     const os = require("os");
-    const child = require("child_process");
     const { Buffer: NodeBuffer } = require("buffer");
     if (!mogrtPath || !fs.existsSync(mogrtPath)) {
       throw new Error("MOGRT file not found — please re-download the pack.");
     }
     const baseDir = downloadDir() || os.tmpdir();
     return extractMogrtFileToAep(
-      fs, path, child, NodeBuffer, baseDir, templateId, mogrtPath
+      fs, path, NodeBuffer, baseDir, templateId, mogrtPath
     );
   }
 
@@ -1164,7 +1163,6 @@ const AssetFlowCatalog = (() => {
     const fs = require("fs");
     const path = require("path");
     const os = require("os");
-    const child = require("child_process");
     const { Buffer: NodeBuffer } = require("buffer");
     const slug = mogrtSlug(scene.slug || scene.aeComp || scene.n);
     const baseDir = downloadDir() || os.tmpdir();
@@ -1190,7 +1188,7 @@ const AssetFlowCatalog = (() => {
       _freshDownload = true;
     }
     const result = await extractMogrtFileToAep(
-      fs, path, child, NodeBuffer, baseDir, templateId, out
+      fs, path, NodeBuffer, baseDir, templateId, out
     );
     // Hisob endi faqat bitta joyda: AE'ga import muvaffaqiyatli bo'lgach
     // recordImport (HTML) chaqiriladi — shu yerda recordDownload chaqirilmaydi
@@ -1206,7 +1204,6 @@ const AssetFlowCatalog = (() => {
     const fs = require("fs");
     const path = require("path");
     const os = require("os");
-    const child = require("child_process");
     const { Buffer: NodeBuffer } = require("buffer");
     const ext = path.extname(fileName || "") || ".aep";
     const baseDir = downloadDir() || os.tmpdir();
@@ -1232,11 +1229,11 @@ const AssetFlowCatalog = (() => {
         const mogrts = findAllFilesByExtInDir(fs, path, cacheDir, [".mogrt"]);
         if (mogrts.length === 1) {
           return extractMogrtFileToAep(
-            fs, path, child, NodeBuffer, baseDir, templateId, mogrts[0]
+            fs, path, NodeBuffer, baseDir, templateId, mogrts[0]
           );
         }
         if (mogrts.length > 1) {
-          throw mogrtPackError(mogrtItemsFromDir(fs, path, child, cacheDir));
+          throw mogrtPackError(mogrtItemsFromDir(fs, path, cacheDir));
         }
         // P35 — footage-to'plami keshi: .aep/.mogrt yo'q, lekin media bor →
         // qayta yuklab olmaymiz (277MB'ni har importda emas), keshdan qaytaramiz.
@@ -1303,18 +1300,22 @@ const AssetFlowCatalog = (() => {
         fs.mkdirSync(dir, { recursive: true });
       } catch {}
       // zip ichidagi .mogrt yo’llarini o’chirishdan OLDIN olamiz — papka nomi muhim emas
-      const zipMogrts = listEntriesInZip(child, out, ".mogrt");
+      const zipMogrts = listEntriesInZip(out, ".mogrt");
       if (typeof showToast === "function") showToast("Extracting pack…");
       try {
-        // macOS ships `unzip` by default. execFileSync exit != 0 bo'lsa throw qiladi.
-        // -o papka strukturasini SAQLAB ochadi (.aep'ning nisbiy footage/audio
-        // havolalari buzilmaydi). QA-FIX #7: pack endi footage/audio bilan to'liq
-        // keladi — 60s timeout katta arxivlarga yetmasdi, 10 daqiqaga oshirildi.
-        child.execFileSync("unzip", ["-o", out, "-d", dir], { timeout: 600_000 });
+        // Papka strukturasi SAQLANADI (.aep'ning nisbiy footage/audio havolalari
+        // buzilmaydi). Katta pack oqim bilan ochiladi — xotiraga to'liq yuklanmaydi.
+        await zipLib().extractAll(out, dir, {
+          onProgress: function (done, total) {
+            if (typeof showToast === "function" && total > 40 && done % 25 === 0) {
+              showToast(`Extracting pack… ${done}/${total}`);
+            }
+          },
+        });
       } catch (e) {
         throw new Error("Could not open ZIP. The pack must contain an .aep or .mogrt file.");
       }
-      // Robustlik: unzip nol fayl chiqarsa (buzuq/bo'sh arxiv) — jimgina emas, aniq xato
+      // Robustlik: ochish nol fayl chiqarsa (buzuq/bo'sh arxiv) — jimgina emas, aniq xato
       let __extracted = [];
       try { __extracted = fs.readdirSync(dir); } catch {}
       if (!__extracted.length) {
@@ -1329,18 +1330,18 @@ const AssetFlowCatalog = (() => {
       } catch {}
       const aep = findAepInDir(fs, path, dir);
       if (aep) { await _record(); return aep; }
-      // .aep yo’q — unzip -Z1 dan olingan entry yo’llari bo’yicha .mogrt’larni topamiz
+      // .aep yo’q — zip entry yo’llari bo’yicha .mogrt’larni topamiz
       const mogrts = zipMogrts.map(e => path.join(dir, e)).filter(p => fs.existsSync(p));
       if (!mogrts.length) mogrts.push(...findAllFilesByExtInDir(fs, path, dir, [".mogrt"]));
       if (mogrts.length === 1) {
         const r = await extractMogrtFileToAep(
-          fs, path, child, NodeBuffer, baseDir, templateId, mogrts[0]
+          fs, path, NodeBuffer, baseDir, templateId, mogrts[0]
         );
         await _record();
         return r;
       }
       if (mogrts.length > 1) {
-        throw mogrtPackError(mogrtItemsFromDir(fs, path, child, dir));
+        throw mogrtPackError(mogrtItemsFromDir(fs, path, dir));
       }
       // P35 — .aep/.mogrt YO'Q: bu FOOTAGE-to'plami (transitions/overlays/elements
       // bundle — raw-file ingest quvuri endi aynan shunday pack ishlab chiqaradi).
@@ -1359,7 +1360,7 @@ const AssetFlowCatalog = (() => {
     // .mogrt’ning o’zi kesh bo’lib qoladi, qayta yuklab olinmaydi).
     if (ext.toLowerCase() === ".mogrt") {
       const r = await extractMogrtFileToAep(
-        fs, path, child, NodeBuffer, baseDir, templateId, out
+        fs, path, NodeBuffer, baseDir, templateId, out
       );
       await _record();
       return r;

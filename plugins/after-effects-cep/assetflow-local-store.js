@@ -540,10 +540,12 @@ const AssetFlowStore = (() => {
   async function prepareImportFile(blobId, fileName) {
     const outPath = await exportBlobToPath(blobId, fileName || "template.aep");
     if (!/\.zip$/i.test(outPath)) return outPath;
-    const { execSync } = require("child_process");
     const dest = pathLib.join(pathLib.dirname(outPath), `extract_${Date.now()}`);
     fs.mkdirSync(dest, { recursive: true });
-    execSync(`unzip -o -q ${JSON.stringify(outPath)} -d ${JSON.stringify(dest)}`, { stdio: "pipe" });
+    // Audit #2 (P0): shell `unzip` YO'Q — Windows'da mavjud emas va fayl nomi
+    // shell'ga tushardi. Sof-Node ZIP (assetflow-zip.js) ikkala OS'da ishlaydi.
+    if (!window.AFZip) throw new Error("ZIP module is not loaded (assetflow-zip.js).");
+    await window.AFZip.extractAll(outPath, dest);
     const findAep = (dir) => {
       for (const name of fs.readdirSync(dir)) {
         const p = pathLib.join(dir, name);

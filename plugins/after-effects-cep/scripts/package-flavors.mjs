@@ -32,6 +32,7 @@ const CUSTOMER_FILES = [
   "assetflow-init.js",
   "assetflow-local-store.js",
   "assetflow-log.js",
+  "assetflow-zip.js",
   "js/CSInterface.js",
   "jsx/host.jsx",
   "css/tokens.css",
