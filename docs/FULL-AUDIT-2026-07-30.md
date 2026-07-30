@@ -1,7 +1,8 @@
 # FrameFlow — TO'LIQ MUSTAQIL AUDIT
 
 **Sana:** 2026-07-30 · **Branch:** main · **Metod:** 16 yo'nalish bo'yicha mustaqil kod-tekshiruv (11 yo'nalish ko'p-agentli, 5 yo'nalish qo'lda), har topilma real kodda tasdiqlangan + jonli prod tekshiruvi.
-**Hajm:** 127 topilma (4×P0, 24×P1, 56×P2, 33×P3) + COWORK-AUDIT-2026-07-28 daʼvolarining tekshiruvi.
+**Hajm:** 157 topilma (4×P0, 34×P1, 84×P2, 35×P3) + COWORK-AUDIT-2026-07-28 daʼvolarining tekshiruvi.
+**Aniq raqamlangan ro'yxat (1–157):** `docs/MUAMMOLAR-2026-07-30.md`
 
 ---
 

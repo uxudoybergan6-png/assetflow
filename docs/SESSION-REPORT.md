@@ -1,7 +1,8 @@
 # Sessiya hisoboti — 2026-07-30
 
 **Vazifa:** COWORK-AUDIT-2026-07-28 tahlili + to'liq mustaqil audit (16 yo'nalish, pul zonasi / zanjir / miqyos / UI-UX / xavfsizlik / plagin bozorga tayyorligi).
-**Natija:** `docs/FULL-AUDIT-2026-07-30.md` — 127 topilma (4×P0, 24×P1, 56×P2, 33×P3), har biri kodda tasdiqlangan.
+**Natija:** `docs/FULL-AUDIT-2026-07-30.md` (batafsil) + `docs/MUAMMOLAR-2026-07-30.md` (aniq raqamlangan ro'yxat 1–157).
+**157 muammo:** 4×P0, 34×P1, 84×P2, 35×P3 — har biri kodda tasdiqlangan.
 
 **🔴 ENG MUHIM — production HOZIR ishlamayapti:** `/health` → 503 `db:"down"`, `/api/plugin/catalog` → 500.
 3 marta tekshirildi, tiklanmadi. `SENTRY_DSN` prod env'da yo'q → hech qanday ogohlantirish kelmaydi.
