@@ -17,9 +17,23 @@ const StudioApi = (() => {
   // Global 401 ishlovi: token yuborilgan bo'lsa-yu server 401 qaytarsa —
   // sessiya tugagan/bekor qilingan. Sessiyani tozalab login'ga qaytaramiz.
   let _handling401 = false;
+  /** #26 (C3) — login'ga otishdan OLDIN chaqiriladigan ishlovchilar. Bulk yuklovchi
+   *  shu yerda qoralamasini `localStorage`'ga yozadi: ilgari uzoq partiya o'rtasida
+   *  sessiya tugasa sahifa darhol almashardi va butun ish izsiz yo'qolardi. */
+  const _expireHooks = [];
+  function onSessionExpired(fn) {
+    if (typeof fn === "function") _expireHooks.push(fn);
+  }
   function handleExpiredSession() {
     if (_handling401) return;
     _handling401 = true;
+    for (const fn of _expireHooks) {
+      try {
+        fn();
+      } catch {
+        /* hook xatosi redirect'ni bloklamasin */
+      }
+    }
     try {
       if (typeof AssetFlowAuth !== "undefined") AssetFlowAuth.clearSession();
       localStorage.removeItem("af_remember_email");
@@ -36,7 +50,17 @@ const StudioApi = (() => {
     try {
       sessionStorage.setItem("af_session_expired", "1");
     } catch {}
-    location.href = target;
+    // #26 — foydalanuvchi nima bo'lganini ko'rsin (uzoq yuklash o'rtasida bo'lishi mumkin).
+    if (typeof toast === "function") {
+      try {
+        toast("Session expired", "Signing you in again — your upload progress was saved", "warn");
+      } catch {
+        /* ignore */
+      }
+    }
+    setTimeout(() => {
+      location.href = target;
+    }, 1200);
   }
 
   async function request(path, options = {}) {
@@ -75,7 +99,7 @@ const StudioApi = (() => {
       const isLocal = /localhost|127\.0\.0\.1/.test(baseUrl());
       throw new Error(
         isLocal
-          ? "API is not running. In the terminal: npm run dev:api (port 4000)"
+          ? "API is not running. In the terminal: npm run dev:api (port 4000)" // #90 — faqat lokal
           : "Lost connection to the server — it may be waking up from sleep, please wait and try again"
       );
     }
@@ -183,11 +207,48 @@ const StudioApi = (() => {
    * Fayllarni XHR bilan yuklaydi — fetch'dan farqli, upload progress beradi.
    * onProgress(yuklangan, jami) baytlarda chaqiriladi.
    */
-  // Bitta XHR yuklash (PUT R2 yoki POST server). opts: {method,url,body,headers,onProg}.
+  /** #25 (C2) — bulk yuklashni bekor qilish signali. `{aborted:boolean}` shaklidagi
+   *  oddiy obyekt yoki `AbortSignal` — ikkalasida ham `.aborted` o'qiladi. */
+  function isAborted(signal) {
+    return !!(signal && signal.aborted);
+  }
+  function abortError() {
+    const e = new Error("Cancelled");
+    e.__aborted = true;
+    return e;
+  }
+
+  // Bitta XHR yuklash (PUT R2 yoki POST server). opts: {method,url,body,headers,onProg,signal}.
   // 502/503/504/tarmoq uzilishida {__retry:true} bilan rad etadi (tashqi run() qayta uradi).
   function xhrSend(opts, tryNo) {
     return new Promise((resolve, reject) => {
+      if (isAborted(opts.signal)) {
+        reject(abortError());
+        return;
+      }
       const xhr = new XMLHttpRequest();
+      // #25 — bekor qilinganda ochiq PUT'ni ham uzamiz (aks holda GB'lik fayl oqishda davom etadi).
+      let aborter = null;
+      if (opts.signal) {
+        aborter = () => {
+          try {
+            xhr.abort();
+          } catch {
+            /* ignore */
+          }
+        };
+        if (typeof opts.signal.addEventListener === "function")
+          opts.signal.addEventListener("abort", aborter, { once: true });
+      }
+      const done = () => {
+        if (aborter && opts.signal && typeof opts.signal.removeEventListener === "function")
+          opts.signal.removeEventListener("abort", aborter);
+      };
+      xhr.onabort = () => {
+        done();
+        reject(abortError());
+      };
+      xhr.addEventListener("loadend", done);
       xhr.open(opts.method, opts.url);
       const h = opts.headers || {};
       Object.keys(h).forEach((k) => xhr.setRequestHeader(k, h[k]));
@@ -231,7 +292,7 @@ const StudioApi = (() => {
       try {
         return await xhrSend(opts, tryNo);
       } catch (e) {
-        if (e && e.__retry && tryNo < 2) {
+        if (e && e.__retry && tryNo < 2 && !isAborted(opts.signal)) {
           await new Promise((r) => setTimeout(r, 5000 * (tryNo + 1)));
           return run(tryNo + 1);
         }
@@ -348,13 +409,17 @@ const StudioApi = (() => {
   }
 
   /** signOne(file, index) → {url, key, contentType} (har fayl uchun alohida so'rov). */
-  async function bulkUploadEach(files, onFileProgress, signOne, contentTypeOf) {
+  async function bulkUploadEach(files, onFileProgress, signOne, contentTypeOf, signal) {
     const uploaded = [];
     await mapLimit(files, BULK_UPLOAD_CONCURRENCY, async (f, i) => {
+      // #25 — bekor qilingandan keyin navbatdagi fayllarga umuman tegmaymiz
+      // (ular `queued` bo'lib qoladi → foydalanuvchi qayta boshlashi mumkin).
+      if (isAborted(signal)) return;
       let u = null;
       try {
         u = await signOne(f, i);
       } catch (e) {
+        if (isAborted(signal)) return;
         if (onFileProgress)
           onFileProgress(i, { stage: "error", error: (e && e.message) || "No upload URL returned" });
         return;
@@ -370,6 +435,7 @@ const StudioApi = (() => {
           url: u.url,
           body: f,
           headers: { "Content-Type": contentTypeOf(u, f) },
+          signal,
           onProg: (loaded) => {
             const pct = f.size > 0 ? Math.floor((loaded / f.size) * 100) : 100;
             if (onFileProgress) onFileProgress(i, { stage: "uploading", pct });
@@ -378,6 +444,12 @@ const StudioApi = (() => {
         if (onFileProgress) onFileProgress(i, { stage: "processing", pct: 100 });
         uploaded.push({ index: i, key: u.key });
       } catch (e) {
+        if (e && e.__aborted) {
+          // Yarim yuklangan fayl — qayta boshlash mumkin (bulut obyekti to'liq emas,
+          // ingest'ga umuman yuborilmaydi).
+          if (onFileProgress) onFileProgress(i, { stage: "queued", pct: 0 });
+          return;
+        }
         if (onFileProgress) onFileProgress(i, { stage: "error", error: e.message || "Upload failed" });
       }
     });
@@ -387,7 +459,7 @@ const StudioApi = (() => {
     return uploaded;
   }
 
-  async function bulkIngestZips(files, onFileProgress, rights) {
+  async function bulkIngestZips(files, onFileProgress, rights, signal, onBatchId) {
     const uploaded = await bulkUploadEach(
       files,
       onFileProgress,
@@ -398,9 +470,10 @@ const StudioApi = (() => {
         });
         return (resp && resp.uploads && resp.uploads[0]) || null;
       },
-      () => "application/zip"
+      () => "application/zip",
+      signal
     );
-    if (!uploaded.length) return [];
+    if (!uploaded.length || isAborted(signal)) return [];
     // P1 #19 — /ingest endi SINXRON ishlamaydi: navbatga qo'shadi va {batchId} qaytaradi.
     // Fon ishchisi (ingest-worker) navbatni ishlaydi; klient batchId bilan pollaydi.
     const ingestResp = await request("/api/contributor/ingest", {
@@ -418,7 +491,10 @@ const StudioApi = (() => {
         if (onFileProgress) onFileProgress(index, { stage: "error", error: "Ingest queue error" });
       return [];
     }
-    return pollIngestBatch(batchId, uploaded, onFileProgress);
+    // #26 (C3) — batchId'ni klientga beramiz: sessiya tugasa/sahifa yopilsa
+    // qaytib kelgach shu partiyani kuzatib tugatish mumkin.
+    if (onBatchId) onBatchId(batchId);
+    return pollIngestBatch(batchId, uploaded, onFileProgress, signal);
   }
 
   /**
@@ -426,16 +502,23 @@ const StudioApi = (() => {
    * `uploaded` = [{index, key}]; batch elementlarini key bo'yicha fayl indeksiga bog'laydi.
    * Barcha elementlar terminal (done/duplicate/failed) bo'lgunча GET /ingest/progress'ni
    * pollaydi va onFileProgress(index, {stage,id,error}) chaqiradi. Timeout ~30 daqiqa.
+   *
+   * #25 (C2) — deadline yoki bekor qilish: terminalga yetmagan elementlar `unknown`
+   * bosqichiga o'tadi. Ilgari ular abadiy "Processing…" da qotardi (o'chirish tugmasi
+   * ham yashirin edi) — server ishlashda davom etayotgan bo'lishi mumkin, shuning uchun
+   * "xato" emas, "noma'lum" deymiz va qatorni yopish imkonini beramiz.
    */
-  async function pollIngestBatch(batchId, uploaded, onFileProgress) {
+  async function pollIngestBatch(batchId, uploaded, onFileProgress, signal) {
     const byKey = new Map(uploaded.map((u) => [u.key, u.index]));
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const deadline = Date.now() + 30 * 60 * 1000;
     let last = [];
+    let settled = false;
+    const terminal = new Set();
     // Klientga darhol "processing" ko'rsatamiz (navbatda kutmoqda).
     for (const { index } of uploaded)
       if (onFileProgress) onFileProgress(index, { stage: "processing", pct: 100 });
-    while (Date.now() < deadline) {
+    while (Date.now() < deadline && !isAborted(signal)) {
       let prog;
       try {
         prog = await request(`/api/contributor/ingest/progress?batchId=${encodeURIComponent(batchId)}`);
@@ -447,15 +530,34 @@ const StudioApi = (() => {
       for (const it of last) {
         const index = byKey.get(it.key);
         if (index == null || !onFileProgress) continue;
-        if (it.status === "done") onFileProgress(index, { stage: "done", id: it.resultTemplateId });
-        else if (it.status === "duplicate")
+        if (it.status === "done") {
+          terminal.add(index);
+          onFileProgress(index, { stage: "done", id: it.resultTemplateId });
+        } else if (it.status === "duplicate") {
+          terminal.add(index);
           onFileProgress(index, { stage: "duplicate", error: it.lastError || "Duplicate", id: it.resultTemplateId });
-        else if (it.status === "failed")
+        } else if (it.status === "failed") {
+          terminal.add(index);
           onFileProgress(index, { stage: "error", error: it.lastError || "Processing failed" });
-        else onFileProgress(index, { stage: "processing", pct: 100 });
+        } else onFileProgress(index, { stage: "processing", pct: 100 });
       }
-      if (prog && prog.done) break;
+      if (prog && prog.done) {
+        settled = true;
+        break;
+      }
       await sleep(2500);
+    }
+    // #25 — kuzatuv to'xtadi (deadline yoki bekor qilish), lekin elementlar terminal emas.
+    if (!settled && onFileProgress) {
+      for (const { index } of uploaded) {
+        if (terminal.has(index)) continue;
+        onFileProgress(index, {
+          stage: "unknown",
+          error: isAborted(signal)
+            ? "Stopped watching — processing continues on the server"
+            : "Still processing — check My templates later",
+        });
+      }
     }
     // Progress → eski `results[]` shakliga o'giramiz (startBulkIngest done/dup/err sanaydi).
     return last.map((it) => ({
@@ -474,7 +576,7 @@ const StudioApi = (() => {
    * bo'yicha presigned PUT → /ingest-assets navbatga qo'shadi → pollIngestBatch.
    * onFileProgress(index, {stage,pct,error,id}) — bulk UI bilan bir xil kontrakt.
    */
-  async function bulkIngestAssets(category, files, onFileProgress, rights) {
+  async function bulkIngestAssets(category, files, onFileProgress, rights, signal, onBatchId) {
     const uploaded = await bulkUploadEach(
       files,
       onFileProgress,
@@ -488,9 +590,10 @@ const StudioApi = (() => {
         });
         return (resp && resp.uploads && resp.uploads[0]) || null;
       },
-      (u, f) => u.contentType || f.type || "application/octet-stream"
+      (u, f) => u.contentType || f.type || "application/octet-stream",
+      signal
     );
-    if (!uploaded.length) return [];
+    if (!uploaded.length || isAborted(signal)) return [];
     const ingestResp = await request("/api/contributor/ingest-assets", {
       method: "POST",
       body: {
@@ -506,7 +609,15 @@ const StudioApi = (() => {
         if (onFileProgress) onFileProgress(index, { stage: "error", error: "Ingest queue error" });
       return [];
     }
-    return pollIngestBatch(batchId, uploaded, onFileProgress);
+    // #26 (C3) — batchId'ni klientga beramiz: sessiya tugasa/sahifa yopilsa
+    // qaytib kelgach shu partiyani kuzatib tugatish mumkin.
+    if (onBatchId) onBatchId(batchId);
+    return pollIngestBatch(batchId, uploaded, onFileProgress, signal);
+  }
+
+  /** #26 (C3) — saqlangan partiyani keyinroq (qayta login'dan so'ng) tekshirish. */
+  async function ingestProgress(batchId) {
+    return request(`/api/contributor/ingest/progress?batchId=${encodeURIComponent(batchId)}`);
   }
 
   async function listTemplates(query = "") {
@@ -514,13 +625,16 @@ const StudioApi = (() => {
     return request(`/api/contributor/templates${q}`);
   }
 
-  async function reviewTemplate(id, action, note) {
+  // #89 (C10) — `hard` endi ANIQ parametr (server `rejectKind` maydoniga yozadi);
+  // izohdagi "[hard]" markeri faqat eski yozuvlar uchun qoladi.
+  async function reviewTemplate(id, action, note, hard) {
     return request(`/api/contributor/templates/${id}/review`, {
       method: "POST",
       body: {
         action,
         note: note || undefined,
         published: action === "approve",
+        ...(action === "reject" ? { hard: !!hard } : {}),
       },
     });
   }
@@ -552,6 +666,7 @@ const StudioApi = (() => {
     if (opts.note != null) body.note = opts.note;
     if (typeof opts.published === "boolean") body.published = opts.published;
     if (typeof opts.isPro === "boolean") body.isPro = opts.isPro;
+    if (typeof opts.hard === "boolean") body.hard = opts.hard; // #89 (C10)
     return request(`/api/contributor/admin/templates/bulk`, {
       method: "POST",
       body,
@@ -604,6 +719,23 @@ const StudioApi = (() => {
 
   async function patchProfile(body) {
     return request("/api/auth/me", { method: "PATCH", body });
+  }
+
+  /** #86 (C7) — profil (bio ham) serverdan; sessiya faqat name/email saqlaydi. */
+  async function getProfile() {
+    return request("/api/auth/me");
+  }
+
+  /**
+   * #87 (C8) — o'z faylini ochish uchun qisqa muddatli imzolangan URL.
+   * `target=_blank` havolasi Authorization sarlavhasini yubora olmaydi (401) —
+   * shuning uchun URL avval shu yerdan olinadi, keyin ochiladi.
+   */
+  async function assetDownloadUrl(templateId, kind) {
+    const data = await request(
+      `/api/contributor/templates/${encodeURIComponent(templateId)}/download-url?kind=${encodeURIComponent(kind || "pack")}`
+    );
+    return data.url;
   }
 
   async function pluginAnalytics() {
@@ -823,6 +955,8 @@ const StudioApi = (() => {
     uploadAssets,
     bulkIngestZips,
     bulkIngestAssets,
+    ingestProgress,
+    onSessionExpired,
     listTemplates,
     reviewTemplate,
     patchTemplate,
@@ -836,6 +970,8 @@ const StudioApi = (() => {
     updateSubscriber,
     patchContributorStatus,
     patchProfile,
+    getProfile,
+    assetDownloadUrl,
     pluginAnalytics,
     listMessageThreads,
     getMessageThread,
@@ -881,6 +1017,9 @@ const StudioApi = (() => {
     dismissContributorRequest,
     requestContributorAccess,
     healthCheck,
+    baseUrl,
+    /** #90 (C10) — UI lokal dev ko'rsatmalarini FAQAT lokal API'da ko'rsatsin. */
+    isLocalApi: () => /localhost|127\.0\.0\.1/.test(baseUrl()),
   };
 })();
 

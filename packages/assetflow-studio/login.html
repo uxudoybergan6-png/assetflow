@@ -190,7 +190,10 @@
       const apiBanner = document.createElement("p");
       apiBanner.className = "auth-error";
       apiBanner.style.marginBottom = "12px";
-      apiBanner.textContent = "Could not reach the API. In a separate terminal: npm run dev:api";
+      // #90 (C10) — lokal dev buyrug'i production foydalanuvchisiga ko'rsatilmasin.
+      apiBanner.textContent = StudioApi.isLocalApi()
+        ? "Could not reach the API. In a separate terminal: npm run dev:api (:4000)"
+        : "Could not reach the server right now. Please try again in a moment.";
       card.prepend(apiBanner);
     }
   }
@@ -322,11 +325,33 @@
     initGoogleButtons();
   }
 
+
+  /** #134 (C12) — submit tugmasi loading/disabled holati: ilgari sekin tarmoqda
+   *  hech qanday javob ko'rinmasdi va foydalanuvchi tugmani qayta-qayta bosardi. */
+  function busy(form, on, label) {
+    const b = form.querySelector('button[type="submit"]');
+    if (!b) return;
+    if (on) {
+      if (!b.dataset.label) b.dataset.label = b.textContent;
+      b.disabled = true;
+      b.textContent = label || "Please wait\u2026";
+    } else {
+      b.disabled = false;
+      if (b.dataset.label) b.textContent = b.dataset.label;
+    }
+  }
+
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const err = document.getElementById("loginError");
     const fd = new FormData(e.target);
-    const r = await AssetFlowAuth.login(fd.get("email"), fd.get("password"));
+    busy(e.target, true, "Signing in\u2026");
+    let r;
+    try {
+      r = await AssetFlowAuth.login(fd.get("email"), fd.get("password"));
+    } finally {
+      busy(e.target, false);
+    }
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
     if (r.twoFactorRequired) {
       err.textContent = "This admin account uses 2FA — please sign in from the Admin Console (/admin/login.html).";
@@ -360,12 +385,18 @@
       err.classList.remove("hidden");
       return;
     }
-    const r = await AssetFlowAuth.register({
-      email: fd.get("email"),
-      password: fd.get("password"),
-      name: fd.get("name"),
-      turnstileToken: turnstileToken || undefined,
-    });
+    busy(e.target, true, "Creating account\u2026");
+    let r;
+    try {
+      r = await AssetFlowAuth.register({
+        email: fd.get("email"),
+        password: fd.get("password"),
+        name: fd.get("name"),
+        turnstileToken: turnstileToken || undefined,
+      });
+    } finally {
+      busy(e.target, false);
+    }
     if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
     turnstileToken = "";
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }

@@ -882,10 +882,13 @@ async function modRejectConfirm(id, hard) {
     return;
   }
   try {
+    // #89 (C10) — tur ENDI alohida parametr (server `rejectKind` maydoniga yozadi).
+    // "[hard]" prefiksi izohda ham qoladi: eski klient/hisobotlar uni o'qiydi.
     await StudioApi.reviewTemplate(
       id,
       "reject",
-      (hard ? "[hard] " : "") + (cat ? `[${cat}] ` : "") + note
+      (hard ? "[hard] " : "") + (cat ? `[${cat}] ` : "") + note,
+      hard
     );
     await StudioTemplates.refreshAfterReview();
     toast(

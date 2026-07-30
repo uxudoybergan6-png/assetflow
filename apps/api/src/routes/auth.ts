@@ -3,7 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import { z } from "zod";
-import { prisma, UserRole } from "@creative-tools/database";
+import { prisma, Prisma, UserRole } from "@creative-tools/database";
 import { signToken, requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
@@ -724,6 +724,7 @@ authRouter.get("/me", requireAuth, async (req, res) => {
     id: user.id,
     email: user.email,
     name: user.name,
+    bio: user.bio || "", // #86 (C7)
     avatarUrl: avatarPublicUrl(user.id, user.image),
     role: user.role,
     emailVerified: !!user.emailVerified,
@@ -851,6 +852,8 @@ authRouter.get("/avatar/:ref", async (req, res) => {
 
 const profilePatchSchema = z.object({
   name: z.string().min(1).max(120).optional(),
+  // #86 (C7) — bio: bo'sh satr = tozalash (null'ga yozamiz).
+  bio: z.string().max(500).optional(),
 });
 
 authRouter.patch("/me", requireAuth, async (req, res) => {
@@ -859,13 +862,18 @@ authRouter.patch("/me", requireAuth, async (req, res) => {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
     return;
   }
+  // Faqat kelgan maydonlar yoziladi (`undefined` Prisma'da "tegma" degani).
+  const data: Prisma.UserUpdateInput = {};
+  if (parsed.data.name !== undefined) data.name = parsed.data.name;
+  if (parsed.data.bio !== undefined) data.bio = parsed.data.bio.trim() || null;
   const user = await prisma.user.update({
     where: { id: req.user!.userId },
-    data: { name: parsed.data.name },
+    data,
     select: {
       id: true,
       email: true,
       name: true,
+      bio: true,
       role: true,
       contributorBlockedAt: true,
     },
@@ -874,6 +882,7 @@ authRouter.patch("/me", requireAuth, async (req, res) => {
     id: user.id,
     email: user.email,
     name: user.name,
+    bio: user.bio || "",
     role: user.role,
     contributorBlocked: !!user.contributorBlockedAt,
   });

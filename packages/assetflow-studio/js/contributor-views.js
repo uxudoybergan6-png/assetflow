@@ -23,6 +23,23 @@ function thumbArt(grad, dur, lg){
   return `<div class="thumb ${grad} grain" style="width:100%;height:${lg?'100%':'30px'}">
     <div class="play"><span>${ic('play')}</span></div>${dur?`<span class="dur">${dur}</span>`:''}</div>`;
 }
+// #84 (C5) — contributor ro'yxatlari HAQIQIY thumbnail ko'rsatsin. Ilgari hamma joyda
+// `thumbArt(t.grad)` — ya'ni SOXTA gradient edi: yuklovchi o'z shablonini rasmi bo'lsa
+// ham tanimasdi. Admin tarafda bu allaqachon shunday (adxModThumb) — o'sha naqsh.
+// Media yo'q bo'lsa gradient fallback qoladi.
+function cThumb(t, size){
+  const hasMedia = typeof StudioMedia !== 'undefined' && StudioMedia.hasAsset &&
+    (StudioMedia.hasAsset(t,'thumb') || StudioMedia.hasAsset(t,'preview'));
+  if (hasMedia) return StudioMedia.renderThumb(t, size || 'lg');
+  return thumbArt(t.grad || 'g1', t.dur || '', true);
+}
+/** Grid kartasi uchun: `.thumb` konteyner allaqachon bor — faqat ichki media (yoki play ikonkasi). */
+function cThumbMedia(t){
+  const hasMedia = typeof StudioMedia !== 'undefined' && StudioMedia.hasAsset &&
+    (StudioMedia.hasAsset(t,'thumb') || StudioMedia.hasAsset(t,'preview'));
+  if (!hasMedia) return `<div class="play"><span>${ic('play')}</span></div>`;
+  return `<div style="position:absolute;inset:0">${StudioMedia.renderThumb(t,'lg')}</div>`;
+}
 function kpiCard(o){
   return `<div class="kpi"><div class="kpi-top"><div class="kpi-ico" style="background:var(--${o.c}-dim);color:var(--${o.c})">${ic(o.ic)}</div><span class="kpi-label">${o.label}</span></div>
     <div class="kpi-val">${o.val}</div><div class="kpi-foot">${o.trend!=null?`<span class="trend ${o.trend>0?'up':'down'}">${ic(o.trend>0?'trendUp':'trendDn')}${Math.abs(o.trend)}%</span>`:''}<span>${o.foot||''}</span></div></div>`;
@@ -119,7 +136,7 @@ VIEWS.overview = function(){
           <div class="card-head"><div><h3>Needs attention</h3><span class="small">Soft rejects and drafts</span></div></div>
           <div class="col">
             ${needsAction.length? needsAction.map(t=>`<div class="row center gap-12" style="padding:13px 18px;border-bottom:1px solid var(--line-soft)">
-              <div class="row-thumb" style="width:54px;height:34px">${thumbArt(t.grad,'',true)}</div>
+              <div class="row-thumb" style="width:54px;height:34px">${cThumb(t)}</div>
               <div class="col grow" style="gap:3px;min-width:0"><span class="cell-strong">${esc(t.name)}</span><span class="small">${t.status==='soft'?'Soft reject \u2014 fix and resubmit':'Draft \u2014 not yet submitted'}</span></div>
               ${badge(t.status)}
               ${t.status==='draft'?`<button class="btn btn-primary btn-sm" onclick="submitDraftToModeration('${t.id}')">${ic('upload')} Submit</button>`:''}
@@ -198,7 +215,7 @@ function myTable(ts){
   return `<div class="card"><div class="table-wrap"><table class="data" style="min-width:820px">
     <thead><tr><th>Template</th><th>Status</th><th>Created</th><th class="th-num">Downloads / imports</th><th>Admin note</th><th style="width:130px"></th></tr></thead>
     <tbody>${ts.map(t=>`<tr style="cursor:pointer" onclick="openTplDrawer('${t.id}')">
-      <td><div class="tmpl-cell"><div class="row-thumb">${thumbArt(t.grad,'',true)}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${esc(t.cat)}</span></div></div></td>
+      <td><div class="tmpl-cell"><div class="row-thumb">${cThumb(t)}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${esc(t.cat)}</span></div></div></td>
       <td>${badge(t.status)}${t.status==='approved'?'<div class="small" style="color:var(--green);margin-top:3px;font-size:10.5px">Live in AE</div>':''}${scanBadge(t.packScanStatus)?`<div style="margin-top:3px">${scanBadge(t.packScanStatus)}</div>`:''}${transcodeBadge(t.previewTranscodeStatus)?`<div style="margin-top:3px">${transcodeBadge(t.previewTranscodeStatus)}</div>`:''}</td>
       <td class="cell-muted mono">${esc(t.created)}</td>
       <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}${t.imports?`<div class="small" style="font-size:10.5px;font-weight:400">${t.imports.toLocaleString()} imports</div>`:''}</td>
@@ -216,7 +233,9 @@ function myTable(ts){
 function myGrid(ts){
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:16px">
     ${ts.map(t=>`<div class="card" style="overflow:hidden;cursor:pointer" onclick="openTplDrawer('${t.id}')">
-      <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10"><div class="play"><span>${ic('play')}</span></div>${t.dur?`<span class="dur">${esc(t.dur)}</span>`:''}<div style="position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-start">${badge(t.status)}${scanBadge(t.packScanStatus)}${transcodeBadge(t.previewTranscodeStatus)}</div></div>
+      <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10">
+        ${cThumbMedia(t)}
+        ${t.dur?`<span class="dur">${esc(t.dur)}</span>`:''}<div style="position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-start">${badge(t.status)}${scanBadge(t.packScanStatus)}${transcodeBadge(t.previewTranscodeStatus)}</div></div>
       <div class="card-pad col gap-8">
         <div class="col" style="gap:2px"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span><span class="small">${esc(t.cat)} \u00b7 ${esc(t.created)}</span></div>
         <div class="row between center"><span class="small">${t.dl?t.dl.toLocaleString()+' downloads':'\u2014'}</span>
@@ -456,6 +475,107 @@ let BULK_CAT = null; // tanlangan taxon key (video-templates|luts|graphics|motio
 let BULK_FILES = []; // { file, stage: 'queued'|'uploading'|'processing'|'done'|'duplicate'|'error', pct, error, id }
 let BULK_RUNNING = false;
 let BULK_SUMMARY = null; // P3 — { done, dup, err } tugagan partiya; success card ko'rsatish uchun
+let BULK_ABORT = null; // #25 (C2) — faol partiyani bekor qilish uchun AbortController
+let BULK_BATCH_ID = null; // #26 (C3) — joriy ingest partiyasi (uzilishdan keyin tiklash uchun)
+
+/** #26 (C3) — UZILGAN PARTIYA. Sessiya tugashi (401 → login redirect), sahifa yopilishi
+ *  yoki qayta yuklanishida faol bulk butunlay yo'qolardi: fayllar bulutga chiqib
+ *  ingest navbatiga tushgan bo'lsa ham foydalanuvchi buni bilmasdi. Partiya raqamini
+ *  `localStorage`'ga yozamiz va keyingi kirishda "tekshirish" bannerini ko'rsatamiz.
+ *  (File obyektlari serializatsiya qilinmaydi — faqat nom/son saqlanadi.) */
+const BULK_RESUME_KEY = "af_bulk_resume";
+function saveBulkResume() {
+  if (!BULK_BATCH_ID) return;
+  try {
+    localStorage.setItem(
+      BULK_RESUME_KEY,
+      JSON.stringify({
+        batchId: BULK_BATCH_ID,
+        cat: BULK_CAT,
+        at: Date.now(),
+        files: BULK_FILES.filter((b) => b.stage === "processing" || b.stage === "uploading").map(
+          (b) => b.file.name
+        ),
+      })
+    );
+  } catch {
+    /* kvota/private rejim — tiklash shunchaki bo'lmaydi */
+  }
+}
+function loadBulkResume() {
+  try {
+    const raw = localStorage.getItem(BULK_RESUME_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    // 24 soatdan eski yozuv qiziq emas (ingest retention'idan ham uzoq).
+    if (!d || !d.batchId || Date.now() - (d.at || 0) > 24 * 3600 * 1000) {
+      clearBulkResume();
+      return null;
+    }
+    return d;
+  } catch {
+    return null;
+  }
+}
+function clearBulkResume() {
+  try {
+    localStorage.removeItem(BULK_RESUME_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+window.clearBulkResumeAndRender = function () {
+  clearBulkResume();
+  renderUpload();
+};
+
+/** Saqlangan partiyani serverdan tekshiradi va natijani ko'rsatadi. */
+async function checkBulkResume() {
+  const d = loadBulkResume();
+  if (!d) return;
+  const btn = document.getElementById("bulkResumeBtn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Checking…";
+  }
+  try {
+    const prog = await StudioApi.ingestProgress(d.batchId);
+    const items = (prog && prog.items) || [];
+    const done = items.filter((i) => i.status === "done").length;
+    const dup = items.filter((i) => i.status === "duplicate").length;
+    const failed = items.filter((i) => i.status === "failed").length;
+    const busy = items.length - done - dup - failed;
+    if (busy > 0) {
+      toast("Upload", `${busy} file(s) are still processing — check again in a few minutes`, "info");
+    } else {
+      toast(
+        "Upload",
+        `Batch finished: ${done} sent to moderation${dup ? `, ${dup} duplicate` : ""}${failed ? `, ${failed} failed` : ""}`,
+        done ? "success" : "warn"
+      );
+      clearBulkResume();
+    }
+    if (done) await StudioTemplates.refreshAfterUpload();
+  } catch (e) {
+    toast("Error", e.message || "Could not check the batch", "danger");
+  }
+  renderUpload();
+}
+window.checkBulkResume = checkBulkResume;
+
+// #26 — sessiya tugab login'ga otishdan oldin partiyani saqlab qolamiz.
+if (typeof StudioApi !== "undefined" && StudioApi.onSessionExpired) {
+  StudioApi.onSessionExpired(() => {
+    if (BULK_RUNNING) saveBulkResume();
+  });
+}
+// Faol yuklashda tasodifiy sahifa yopilishi — brauzer tasdig'i (+ partiyani saqlash).
+window.addEventListener("beforeunload", (e) => {
+  if (!BULK_RUNNING) return;
+  saveBulkResume();
+  e.preventDefault();
+  e.returnValue = "";
+});
 
 /** Yangi bulk yuklashni boshlaydi (edit holatini tozalaydi). "Upload" tugmalari chaqiradi. */
 function startNewUpload() {
@@ -535,22 +655,26 @@ function bulkStageLabel(b) {
   if (b.stage === "done") return "✓ Sent to moderation";
   if (b.stage === "duplicate") return `⊘ ${b.error || "Duplicate — already exists"}`;
   if (b.stage === "error") return `✗ ${b.error || "Failed"}`;
+  // #25 (C2) — kuzatuv to'xtadi, natija noma'lum (server ishlashda davom etishi mumkin).
+  if (b.stage === "unknown") return `? ${b.error || "Unknown status — check My templates"}`;
   return "";
 }
 function bulkStageColor(b) {
   if (b.stage === "done") return "var(--green,#82c341)";
-  if (b.stage === "duplicate") return "var(--amber,#f59e0b)";
+  if (b.stage === "duplicate" || b.stage === "unknown") return "var(--amber,#f59e0b)";
   if (b.stage === "error") return "var(--red,#ef4444)";
   return "var(--text-dim)";
 }
 function bulkFillColor(b) {
   if (b.stage === "error") return "var(--red,#ef4444)";
-  if (b.stage === "duplicate") return "var(--amber,#f59e0b)";
+  if (b.stage === "duplicate" || b.stage === "unknown") return "var(--amber,#f59e0b)";
   return "var(--green,#82c341)";
 }
 
 function bulkRenderRow(b, i) {
-  const removable = b.stage === "queued" || b.stage === "error" || b.stage === "duplicate";
+  // #25 — `unknown` ham o'chiriladigan: aks holda qator abadiy osilib qolardi.
+  const removable =
+    b.stage === "queued" || b.stage === "error" || b.stage === "duplicate" || b.stage === "unknown";
   return `<div class="up-prog-row" id="bulk-row-${i}" style="display:flex;flex-direction:column;gap:5px;padding:8px 0;border-bottom:1px solid var(--line,#2a2a2a)">
     <div class="row between center" style="font-size:12px;gap:8px">
       <span class="trunc" title="${esc(b.file.name)}" style="min-width:0">${ic("file")} ${esc(b.file.name)} · ${fmtMB(b.file.size)}</span>
@@ -630,6 +754,8 @@ async function startBulkIngest() {
     b.error = null;
   });
   BULK_RUNNING = true;
+  BULK_ABORT = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const signal = BULK_ABORT ? BULK_ABORT.signal : null;
   renderUpload();
   const onProg = (qi, p) => {
     const b = queued[qi];
@@ -645,14 +771,33 @@ async function startBulkIngest() {
   const noun = t.kind === "stock" ? "asset" : t.key === "luts" ? "LUT" : "template";
   try {
     // Video Templates → zip quvuri; LUTs/Stock → xom-fayl quvuri (fayl = pack).
+    const onBatchId = (id) => {
+      BULK_BATCH_ID = id;
+      saveBulkResume(); // #26 — endi partiya serverda; uzilsa ham tiklab tekshiriladi
+    };
     if (t.source === "zip") {
-      await StudioApi.bulkIngestZips(files, onProg, rights);
+      await StudioApi.bulkIngestZips(files, onProg, rights, signal, onBatchId);
     } else {
-      await StudioApi.bulkIngestAssets(t.key, files, onProg, rights);
+      await StudioApi.bulkIngestAssets(t.key, files, onProg, rights, signal, onBatchId);
     }
     const doneCount = queued.filter((b) => b.stage === "done").length;
     const dupCount = queued.filter((b) => b.stage === "duplicate").length;
     const errCount = queued.filter((b) => b.stage === "error").length;
+    const unkCount = queued.filter((b) => b.stage === "unknown").length;
+    if (signal && signal.aborted) {
+      toast(
+        "Cancelled",
+        unkCount
+          ? `Upload stopped — ${unkCount} file(s) already reached the server and keep processing`
+          : "Upload stopped",
+        "warn"
+      );
+      if (doneCount) await StudioTemplates.refreshAfterUpload();
+      return;
+    }
+    if (unkCount) {
+      toast("Upload", `${unkCount} file(s) are still processing — check My templates later`, "warn");
+    }
     if (doneCount) {
       toast("Upload", `${doneCount} ${noun}(s) sent to moderation`, "success");
       await StudioTemplates.refreshAfterUpload();
@@ -668,12 +813,31 @@ async function startBulkIngest() {
       BULK_SUMMARY = { done: doneCount, dup: dupCount, err: errCount };
     }
   } catch (e) {
-    toast("Error", e.message || "Upload failed", "danger");
+    if (!(e && e.__aborted)) toast("Error", e.message || "Upload failed", "danger");
   } finally {
     BULK_RUNNING = false;
+    BULK_ABORT = null;
+    // Partiya terminalga yetdi (yoki bekor qilindi) → tiklash yozuvi kerak emas.
+    // `unknown` qolgan bo'lsa yozuvni SAQLAYMIZ — foydalanuvchi keyin tekshiradi.
+    if (!BULK_FILES.some((b) => b.stage === "unknown")) clearBulkResume();
+    BULK_BATCH_ID = null;
     renderUpload();
   }
 }
+
+/** #25 (C2) — faol partiyani to'xtatadi: ochiq PUT'lar uziladi, navbatdagi fayllar
+ *  `queued` bo'lib qoladi, serverga yetib ulgurgan fayllar `unknown` bo'ladi
+ *  (server ularni ishlashda davom etadi — natija My templates'da ko'rinadi). */
+function bulkAbort() {
+  if (!BULK_RUNNING || !BULK_ABORT) return;
+  BULK_ABORT.abort();
+  const btn = document.getElementById("bulkAbortBtn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Stopping…";
+  }
+}
+window.bulkAbort = bulkAbort;
 
 /** Kategoriya tanlash kartalari (top-level + Stock sub). */
 function bulkCatPicker() {
@@ -721,6 +885,21 @@ function renderBulkUpload() {
     return;
   }
 
+  // #26 (C3) — uzilgan partiya banneri (sessiya tugashi / sahifa yopilishi).
+  const resume = !BULK_RUNNING ? loadBulkResume() : null;
+  const resumeCard = resume
+    ? `<div class="card card-pad row between center gap-12" style="border-color:var(--amber,#f59e0b)">
+        <div class="col" style="gap:2px;min-width:0">
+          <span class="cell-strong">A previous upload was interrupted</span>
+          <span class="small">${resume.files && resume.files.length ? `${resume.files.length} file(s)` : "Some files"} may still be processing on the server.</span>
+        </div>
+        <div class="row gap-8">
+          <button class="btn btn-ghost btn-sm" onclick="clearBulkResumeAndRender()">Dismiss</button>
+          <button class="btn btn-primary btn-sm" id="bulkResumeBtn" onclick="checkBulkResume()">${ic("refresh")} Check status</button>
+        </div>
+      </div>`
+    : "";
+
   const t = taxonByKey(BULK_CAT);
   const acceptAttr = t ? t.exts.join(",") : "";
   const dzBody = t
@@ -733,6 +912,7 @@ function renderBulkUpload() {
     <div class="row between center">
       <h2 class="h2" style="margin:0">Upload</h2>
     </div>
+    ${resumeCard}
     <div class="card card-pad col gap-16">
       ${bulkCatPicker()}
       ${t ? infoBanner(t.hint) : ""}
@@ -744,6 +924,7 @@ function renderBulkUpload() {
       <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div class="checkbox${BULK_RIGHTS ? " on" : ""}" onclick="toggleBulkRights()">${ic("check")}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
       <div class="row between center">
         <button class="btn btn-ghost" onclick="bulkClearFinished()" ${BULK_FILES.some((b) => b.stage === "done") && !BULK_RUNNING ? "" : "disabled"}>Clear finished</button>
+        ${BULK_RUNNING ? `<button class="btn btn-danger-ghost" id="bulkAbortBtn" onclick="bulkAbort()">${ic("x")} Stop</button>` : ""}
         <button class="btn btn-primary" id="bulkStartBtn" onclick="startBulkIngest()" ${BULK_CAT && BULK_RIGHTS && BULK_FILES.some((b) => b.stage === "queued" || b.stage === "error") && !BULK_RUNNING ? "" : "disabled"}>${ic("upload")} ${BULK_RUNNING ? "Processing…" : "Upload & process"}</button>
       </div>
     </div>
@@ -1516,8 +1697,11 @@ async function saveContributorProfile() {
     toast("Profile", "Enter a name", "warn");
     return;
   }
+  // #86 (C7) — bio ham saqlanadi (ilgari maydon `id`siz edi va hech qayerga bormasdi).
+  const bioEl = document.getElementById("cProfileBio");
+  const bio = bioEl ? bioEl.value.trim().slice(0, 500) : undefined;
   try {
-    await StudioApi.patchProfile({ name });
+    await StudioApi.patchProfile(bio === undefined ? { name } : { name, bio });
     const s = AssetFlowAuth.getSession();
     if (s) {
       s.name = name;
@@ -1542,7 +1726,7 @@ VIEWS.settings = function(){
       <div class="card-pad col gap-16">
         <div class="row center gap-14">${avatar(nm,56)}<div class="col gap-6"><span class="hint">Name is saved via the API</span></div></div>
         <div class="row gap-16"><div class="field grow"><label>Name</label><input id="cProfileName" class="input" value="${esc(nm)}"></div><div class="field grow"><label>Email</label><input class="input" value="${esc(em)}" readonly></div></div>
-        <div class="field"><label>Bio</label><textarea class="textarea" placeholder="A short bio about yourself…"></textarea></div>
+        <div class="field"><label>Bio</label><textarea id="cProfileBio" class="textarea" maxlength="500" placeholder="A short bio about yourself…"></textarea><span class="hint">Up to 500 characters. Saved with the Save button below.</span></div>
       </div>
     </div>
     <div class="card"><div class="card-head"><h3>Subscribers: Free vs Pro</h3><span class="small">Set by admin plans</span></div>
@@ -1559,13 +1743,25 @@ VIEWS.settings = function(){
         <div class="info-banner" style="font-size:12px">${ic('plugin')}<span>Only the admin can change plans. If you have questions, write via <a href="#" onclick="event.preventDefault();route('messages')" style="color:var(--violet-bright)">messages</a>.</span></div>
       </div>
     </div>
-    <div class="card"><div class="card-head"><h3>Earnings &amp; payouts</h3><span class="small" id="cEarnMode"></span></div>
-      <div class="card-pad col gap-14" id="cEarningsBody">
-        <p class="body" style="color:var(--tx-2)">Loading your earnings\u2026</p>
+    <!-- #83 (C4) \u2014 daromad/to'lovlar endi ALOHIDA "Earnings" ekranida (nav'da). -->
+    <div class="card"><div class="card-head"><h3>Earnings &amp; payouts</h3></div>
+      <div class="card-pad row between center gap-14 wrap">
+        <p class="body" style="color:var(--tx-2);margin:0">Your balance, total earned and payout history moved to their own screen.</p>
+        <button class="btn btn-ghost" onclick="route('earnings')">${ic('dollar')} Open Earnings</button>
       </div>
     </div>
-    <div class="card"><div class="card-head"><h3>Notifications</h3><span class="badge badge-pending"><span class="dot"></span>Coming soon</span></div>
-      <div class="card-pad"><p class="body" style="color:var(--tx-2)">Email and push notifications will be configurable here once connected. Moderation messages are currently in the <b>Messages</b> section (API).</p></div>
+    <!-- #135 (C13) — "Coming soon" placeholder O'RNIGA haqiqiy holat: bu emaillar
+         hozir HAQIQATAN yuboriladi (routes/contributor.ts review → sendEmail).
+         Soxta sozlash tugmalari qo'ymaymiz — sozlanadigan narsa hali yo'q. -->
+    <div class="card"><div class="card-head"><h3>Notifications</h3><span class="small">${esc(em)}</span></div>
+      <div class="card-pad col gap-10">
+        <p class="body" style="color:var(--tx-2)">We email you at the address above when:</p>
+        <ul class="body" style="color:var(--tx-2);padding-left:18px;line-height:1.8;margin:0">
+          <li>a template of yours is <b>approved</b> and goes live in the AE catalog;</li>
+          <li>a template is <b>sent back or rejected</b> — the moderation note is included.</li>
+        </ul>
+        <div class="info-banner" style="font-size:12px">${ic('inbox')}<span>The full conversation with the admin is in the <a href="#" onclick="event.preventDefault();route('messages')" style="color:var(--violet-bright)">Messages</a> section.</span></div>
+      </div>
     </div>
         <div class="row gap-8"><button class="btn btn-primary" onclick="saveContributorProfile()">Save</button><button class="btn btn-ghost" onclick="route('settings')">Cancel</button></div>
   </div>`;
@@ -1579,6 +1775,28 @@ function fmtUsd(cents){
 }
 window.afterRender = window.afterRender || {};
 window.afterRender.settings = async function(){
+  if (typeof StudioApi === 'undefined' || !StudioApi.token()) return;
+  // #86 (C7) — saqlangan bio'ni serverdan tortamiz (sessiya faqat name/email saqlaydi).
+  if (StudioApi.getProfile) {
+    StudioApi.getProfile().then(p => {
+      const el = document.getElementById('cProfileBio');
+      if (el && !el.value) el.value = p?.bio || '';
+    }).catch(() => { /* bio yuklanmasa maydon bo'sh qoladi — saqlash baribir ishlaydi */ });
+  }
+};
+
+/* #83 (C4) — DAROMAD ALOHIDA EKRAN. Ilgari bu blok Settings sahifasining uchinchi
+   kartasi edi: yuklovchi balansini topolmasdi. Endi nav'da o'z bo'limi bor. */
+VIEWS.earnings = function(){
+  return `<div style="max-width:900px" class="col gap-16">
+    <div class="card"><div class="card-head"><h3>Earnings &amp; payouts</h3><span class="small" id="cEarnMode"></span></div>
+      <div class="card-pad col gap-14" id="cEarningsBody">
+        <p class="body" style="color:var(--tx-2)">Loading your earnings…</p>
+      </div>
+    </div>
+  </div>`;
+};
+window.afterRender.earnings = async function(){
   const body = document.getElementById('cEarningsBody');
   if (!body || typeof StudioApi === 'undefined' || !StudioApi.token()) return;
   try {
@@ -1618,14 +1836,30 @@ window.afterRender.settings = async function(){
 /* ============================================================
    TEMPLATE DETAIL DRAWER — preview, metadata, status timeline, chat thread
    ============================================================ */
+// #85 (C6) — TARIX HAQIQIY VAQT MUHRLARIDAN. Ilgari bu funksiya faqat joriy
+// holatdan "ishonarli" tarix TO'QIRDI: har shablon "Submitted <created>" bilan
+// boshlanardi (draft ham), moderatsiya sanasi umuman ko'rsatilmasdi. Endi qatorlar
+// serverdagi maydonlardan quriladi: createdAt / reviewedAt / takedownAt / published.
+// Sana yo'q bo'lsa qator ham yo'q — soxta bosqich chizmaymiz.
 function statusTimeline(t){
-  // build a plausible history from status
-  const base=[{t:'Submitted',meta:t.created+' · PENDING_REVIEW',c:'violet',ic:'upload'}];
-  if(t.status==='soft'){ base.push({t:'Soft reject',meta:'Admin · with a reason',c:'orange',ic:'reply',note:t.reason}); }
-  if(t.status==='hard'){ base.push({t:'Hard reject',meta:'Admin · final rejection',c:'red',ic:'ban',note:t.reason}); }
-  if(t.status==='approved'){ base.push({t:'Reviewed',meta:'Admin moderation',c:'blue',ic:'eye'}); base.push({t:'Approved',meta:'Added to the AE catalog · live',c:'green',ic:'check'}); }
-  if(t.status==='draft'){ return [{t:'Draft created',meta:t.created+' · not yet submitted',c:'gray',ic:'edit'}]; }
-  return base;
+  const a=(t&&t._api)||{};
+  const when=iso=>(typeof fmtLocalDateTime==='function'?fmtLocalDateTime(iso):String(iso||'—'));
+  const rows=[{t:'Draft created',meta:when(a.createdAt)+' · uploaded to Studio',c:'gray',ic:'edit'}];
+  if(t.status==='draft') return rows;
+  // Yuborilgan payt alohida saqlanmaydi — DRAFT dan chiqqan yozuv uchun eng yaqin
+  // ma'lum belgi `reviewedAt` gacha bo'lgan oraliq. Shuning uchun "Submitted" qatori
+  // sanasiz beriladi (yolg'on sana yozgandan ko'ra ko'rsatmagan afzal).
+  rows.push({t:'Submitted for moderation',meta:t.status==='pending'?'Waiting for admin review':'Sent to the moderation queue',c:'violet',ic:'upload'});
+  if(a.reviewedAt) rows.push({t:'Reviewed',meta:when(a.reviewedAt)+' · admin moderation',c:'blue',ic:'eye'});
+  if(t.status==='soft') rows.push({t:'Sent back for changes',meta:a.reviewedAt?when(a.reviewedAt):'Admin · with a reason',c:'orange',ic:'reply',note:t.reason});
+  if(t.status==='hard') rows.push({t:'Rejected',meta:a.reviewedAt?when(a.reviewedAt)+' · final rejection':'Admin · final rejection',c:'red',ic:'ban',note:t.reason});
+  if(t.status==='approved'){
+    rows.push({t:'Approved',meta:(a.reviewedAt?when(a.reviewedAt)+' · ':'')+(a.published?'live in the AE catalog':'approved, not published yet'),c:a.published?'green':'orange',ic:'check'});
+  }
+  if(a.takedownAt) rows.push({t:'Taken down',meta:when(a.takedownAt)+' · removed from the catalog',c:'red',ic:'ban',note:a.takedownReason||''});
+  // Almashtirilgandan keyin qayta navbatga tushgan (reviewedAt bor, lekin yana pending).
+  if(t.status==='pending'&&a.reviewedAt) rows.push({t:'Back in the queue',meta:'Files or metadata were replaced after review',c:'violet',ic:'refresh'});
+  return rows;
 }
 async function renderDrawerThreadSection(t) {
   if (!(t.status === "soft" || t.status === "hard")) return "";
@@ -1712,7 +1946,7 @@ async function openTplDrawer(id){
     </div>
     <div class="drawer-foot">
       ${t.status==='soft'?`<button class="btn btn-success grow" onclick="closeDrawer();resubmit('${t.id}')">${ic('refresh')} Fix and resubmit</button><button class="btn btn-ghost" onclick="closeDrawer();openEditTemplate('${t.id}')">${ic('edit')}</button>`:''}
-      ${t.status==='draft'?`<button class="btn btn-success grow" onclick="submitDraftToModeration('${t.id}')">${ic('upload')} Submit for moderation</button><button class="btn btn-ghost" onclick="closeDrawer();route('upload')">${ic('edit')} Edit</button>`:''}
+      ${t.status==='draft'?`<button class="btn btn-success grow" onclick="submitDraftToModeration('${t.id}')">${ic('upload')} Submit for moderation</button><button class="btn btn-ghost" onclick="closeDrawer();openEditTemplate('${t.id}')">${ic('edit')} Edit</button>`:''}
       ${t.status==='approved'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close</button>`:''}
       ${t.status==='hard'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close</button>`:''}
       ${t.status==='pending'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close · in moderation</button>`:''}

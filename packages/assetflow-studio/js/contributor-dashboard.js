@@ -95,7 +95,9 @@
           '<button class="act" title="View" onclick="event.stopPropagation();openTplDrawer(\'' + t.id + '\')">' + ic("eye") + "</button>";
         return '<tr data-name="' + esc(((t.name || "") + " " + (t.cat || "")).toLowerCase()) +
           '" style="cursor:pointer" onclick="openTplDrawer(\'' + t.id + '\')">' +
-          '<td><div class="tmpl-cell"><div class="row-thumb">' + thumbArt(t.grad, "", true) +
+          // #84 (C5) — haqiqiy thumbnail (media bo'lmasa gradient fallback)
+          '<td><div class="tmpl-cell"><div class="row-thumb">' +
+          (typeof cThumb === "function" ? cThumb(t) : thumbArt(t.grad, "", true)) +
           '</div><div class="tmpl-meta"><span class="nm">' + esc(t.name) +
           '</span><span class="sub">' + esc(t.cat || "") + "</span></div></div></td>" +
           "<td>" + badge(t.status) + "</td>" +

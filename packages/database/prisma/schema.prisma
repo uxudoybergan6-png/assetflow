@@ -65,6 +65,9 @@ model User {
   deletedAt        DateTime?
   emailVerified    DateTime?
   image            String?
+  // #86 (C7) — contributor profil bio'si. Studio Settings'dagi maydon ilgari hech qayerga
+  // saqlanmasdi (id'siz textarea). Ixtiyoriy, qisqa matn (server 500 belgigacha kesadi).
+  bio              String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -330,6 +333,11 @@ model ContributorTemplate {
   fileSize      Int?
   reviewStatus  TemplateReviewStatus @default(DRAFT)
   reviewNote    String?
+  // #89 (C10) — rad etish TURI ENDI MAYDON: "soft" (tuzatib qayta yubor) | "hard" (yakuniy).
+  // Ilgari bu farq FAQAT `reviewNote` ichidagi "[hard]" matn markeriga tayanardi — admin
+  // izohni tahrirlasa yoki contributor o'sha so'zni yozsa tur o'zgarib ketardi.
+  // null = eski yozuv (legacy) yoki rad etilmagan → o'qishda matn markeriga fallback.
+  rejectKind    String?
   reviewedById  String?
   reviewedAt    DateTime?
   published     Boolean              @default(false)

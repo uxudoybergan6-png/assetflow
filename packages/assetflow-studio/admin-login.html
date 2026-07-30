@@ -168,7 +168,10 @@
     if (!ok && card) {
       const p = document.createElement("p");
       p.className = "auth-error";
-      p.textContent = "API not reachable. Run npm run studio, or separately: npm run dev:api (:4000)";
+      // #90 (C10) — lokal dev buyrug'i production foydalanuvchisiga ko'rsatilmasin.
+      p.textContent = StudioApi.isLocalApi()
+        ? "API not reachable. Run npm run studio, or separately: npm run dev:api (:4000)"
+        : "Could not reach the server right now. Please try again in a moment.";
       card.prepend(p);
     }
   }
@@ -198,6 +201,22 @@
     location.href = ASSETFLOW_STUDIO.adminUrl;
   }
 
+
+  /** #134 (C12) — submit tugmasi loading/disabled holati: ilgari sekin tarmoqda
+   *  hech qanday javob ko'rinmasdi va foydalanuvchi tugmani qayta-qayta bosardi. */
+  function busy(form, on, label) {
+    const b = form.querySelector('button[type="submit"]');
+    if (!b) return;
+    if (on) {
+      if (!b.dataset.label) b.dataset.label = b.textContent;
+      b.disabled = true;
+      b.textContent = label || "Please wait\u2026";
+    } else {
+      b.disabled = false;
+      if (b.dataset.label) b.textContent = b.dataset.label;
+    }
+  }
+
   let loginEmail = "";
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -209,7 +228,13 @@
       err.classList.remove("hidden");
       return;
     }
-    const r = await AssetFlowAuth.login(email, fd.get("password"));
+    busy(e.target, true, "Signing in\u2026");
+    let r;
+    try {
+      r = await AssetFlowAuth.login(email, fd.get("password"));
+    } finally {
+      busy(e.target, false);
+    }
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
     err.classList.add("hidden");
     if (r.twoFactorRequired) {
@@ -233,7 +258,13 @@
     const err = document.getElementById("twofaError");
     const code = document.getElementById("twofaCode").value.trim();
     if (!code) return;
-    const r = await AssetFlowAuth.verify2fa(pending2faToken, code);
+    busy(e.target, true, "Verifying\u2026");
+    let r;
+    try {
+      r = await AssetFlowAuth.verify2fa(pending2faToken, code);
+    } finally {
+      busy(e.target, false);
+    }
     if (!r.ok) {
       err.textContent = r.error;
       err.classList.remove("hidden");

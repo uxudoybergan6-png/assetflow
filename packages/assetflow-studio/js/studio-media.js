@@ -111,8 +111,11 @@ const StudioMedia = (() => {
       );
     }
     if (t.assets?.pack || t.fileName) {
+      // #87 (C8) — pack yo'li `requireAuth` + kvota bilan himoyalangan; yangi tab
+      // Authorization sarlavhasini yubora olmaydi → to'g'ridan havola HAR SAFAR 401.
+      // Shu bois imzolangan URL avval olinadi (openPackFile), keyin ochiladi.
       parts.push(
-        `<a class="pill" href="${escapeAttr(t.packUrl || assetUrl(t.id, "pack"))}" target="_blank" rel="noopener">${ic("file")} ${escapeAttr(t.fileName || "pack")}</a>`
+        `<a class="pill" href="#" onclick="event.preventDefault();event.stopPropagation();StudioMedia.openPackFile('${escapeAttr(t.id)}')">${ic("file")} ${escapeAttr(t.fileName || "pack")}</a>`
       );
     }
     if (!parts.length) {
@@ -121,10 +124,24 @@ const StudioMedia = (() => {
     return parts.join("");
   }
 
+  /** #87 (C8) — pack faylini imzolangan URL bilan ochadi (ega yoki admin). */
+  async function openPackFile(templateId) {
+    if (typeof StudioApi === "undefined" || !StudioApi.assetDownloadUrl) return;
+    try {
+      const url = await StudioApi.assetDownloadUrl(templateId, "pack");
+      window.open(url, "_blank", "noopener");
+    } catch (e) {
+      if (typeof toast === "function") {
+        toast("File", e.message || "Could not open the file", "danger");
+      }
+    }
+  }
+
   return {
     apiBase,
     assetUrl,
     hasAsset,
+    openPackFile,
     escapeHtml,
     escapeAttr,
     renderPreview,

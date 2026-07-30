@@ -271,7 +271,33 @@ const reviewSchema = z.object({
   action: z.enum(["approve", "reject"]),
   note: z.string().optional(),
   published: z.boolean().optional(),
+  // #89 (C10) — rad etish turi ENDI aniq parametr. Berilmasa eski xatti-harakat
+  // (izohdagi "[hard]" markeri) saqlanadi — eski klientlar buzilmasin.
+  hard: z.boolean().optional(),
 });
+
+/**
+ * #89 (C10) — "hard reject"ni ANIQLAYDIGAN yagona joy. Yangi yozuvlar `rejectKind`
+ * maydoniga tayanadi; matn markeri faqat maydon yo'q eski (legacy) qatorlar uchun.
+ */
+const HARD_NOTE_MARKERS = ["[hard]", "hard reject"];
+function isHardRejectNote(note?: string | null): boolean {
+  const s = (note ?? "").toLowerCase();
+  return HARD_NOTE_MARKERS.some((m) => s.includes(m));
+}
+/** `rejectKind` ustuni bo'yicha filtr + legacy (null ustun) uchun matn fallback'i. */
+function rejectKindWhere(kind: "hard" | "soft"): Prisma.ContributorTemplateWhereInput {
+  const noteMarkers: Prisma.ContributorTemplateWhereInput = {
+    OR: HARD_NOTE_MARKERS.map((m) => ({
+      reviewNote: { contains: m, mode: "insensitive" as const },
+    })),
+  };
+  const legacyHard: Prisma.ContributorTemplateWhereInput = {
+    AND: [{ rejectKind: null }, noteMarkers],
+  };
+  if (kind === "hard") return { OR: [{ rejectKind: "hard" }, legacyHard] };
+  return { NOT: { OR: [{ rejectKind: "hard" }, legacyHard] } };
+}
 
 /** PATCH'da scenes massivi yangilanganda — server boyitgan per-scene kalitlar
  *  (previewKey, mogrtKey, preview, previewKind, thumb) yangi manifestda
@@ -550,18 +576,11 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
     const published = String(req.query.published || "");
     if (published === "true") where.published = true;
     else if (published === "false") where.published = false;
-    // soft/hard rad etish faqat `reviewNote` ichida farqlanadi (klient mapStatus bilan
-    // bir xil qoida) — jadval tab'i uni serverda ajratsin, sahifa to'liq to'lsin.
+    // #89 (C10) — soft/hard endi `rejectKind` ustunidan (eski qatorlar uchun matn fallback).
     const rejectKind = String(req.query.rejectKind || "");
     if (rejectKind === "hard" || rejectKind === "soft") {
       where.reviewStatus = TemplateReviewStatus.REJECTED;
-      const hardNote: Prisma.ContributorTemplateWhereInput = {
-        OR: [
-          { reviewNote: { contains: "[hard]", mode: "insensitive" } },
-          { reviewNote: { contains: "hard reject", mode: "insensitive" } },
-        ],
-      };
-      where.AND = rejectKind === "hard" ? [hardNote] : [{ NOT: hardNote }];
+      where.AND = [rejectKindWhere(rejectKind)];
     }
   } else if (user.role === "ADMIN" && scope === "moderation") {
     where.reviewStatus = status ?? TemplateReviewStatus.PENDING_REVIEW;
@@ -614,15 +633,12 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
         where: countsWhere,
         _count: { _all: true },
       }),
-      // soft/hard farqi faqat `reviewNote` ichida (klient mapStatus bilan bir xil qoida)
+      // #89 (C10) — hard soni `rejectKind` ustunidan (legacy qatorlar matn fallback bilan)
       prisma.contributorTemplate.count({
         where: {
           ...countsWhere,
           reviewStatus: TemplateReviewStatus.REJECTED,
-          OR: [
-            { reviewNote: { contains: "[hard]", mode: "insensitive" } },
-            { reviewNote: { contains: "hard reject", mode: "insensitive" } },
-          ],
+          AND: [rejectKindWhere("hard")],
         },
       }),
     ]);
@@ -1253,6 +1269,58 @@ contributorRouter.post(
       uploads.push({ kind: f.kind, key, url, contentType: f.contentType });
     }
     res.json({ uploads });
+  }
+);
+
+/**
+ * #87 (C8) — GET /templates/:id/download-url?kind=pack|thumb|preview
+ *
+ * Studio'dagi fayl "pill" havolalari `target=_blank` bilan to'g'ridan
+ * `/api/plugin/assets/:id/pack` ga borardi — u yo'l `requireAuth` + obuna kvotasi
+ * bilan himoyalangan, brauzer esa yangi tabda Authorization sarlavhasini yubora
+ * olmaydi → yuklovchi HAR SAFAR 401 ko'rardi (o'z faylini ham ocholmasdi).
+ * Bu yerda EGA (yoki admin) qisqa muddatli imzolangan GET URL oladi: plagin
+ * kvotasi qo'llanmaydi (bu yuklab olish EMAS, o'z faylini tekshirish).
+ */
+contributorRouter.get(
+  "/templates/:id/download-url",
+  requireAuth,
+  requireContributorOrAdmin,
+  async (req, res) => {
+    const id = String(req.params.id);
+    const kind = String(req.query.kind || "pack") as "pack" | "thumb" | "preview";
+    if (!["pack", "thumb", "preview"].includes(kind)) {
+      res.status(400).json({ error: "Invalid type" });
+      return;
+    }
+    const existing = await prisma.contributorTemplate.findUnique({
+      where: { id },
+      select: { id: true, contributorId: true, fileName: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Template not found" });
+      return;
+    }
+    if (req.user!.role !== "ADMIN" && existing.contributorId !== req.user!.userId) {
+      res.status(403).json({ error: "Not authorized" });
+      return;
+    }
+    if (!isS3Configured()) {
+      res.status(503).json({ error: "Cloud storage is not configured" });
+      return;
+    }
+    const key = await resolveS3AssetKey(id, kind);
+    if (!key) {
+      res.status(404).json({ error: "File not uploaded" });
+      return;
+    }
+    // Faqat pack `attachment` bo'ladi (thumb/preview brauzerda ochilsin).
+    const url = await getSignedDownloadUrl(
+      key,
+      600,
+      kind === "pack" ? existing.fileName || `${id}.zip` : undefined
+    );
+    res.json({ url, expiresIn: 600 });
   }
 );
 
@@ -3406,10 +3474,12 @@ type ReviewOutcome =
 async function reviewOneTemplate(
   id: string,
   action: "approve" | "reject",
-  opts: { note?: string; published?: boolean },
+  opts: { note?: string; published?: boolean; hard?: boolean },
   adminId: string
 ): Promise<ReviewOutcome> {
   const { note, published } = opts;
+  // #89 (C10) — turi: aniq `hard` parametri, bo'lmasa izohdagi eski marker.
+  const isHard = action === "reject" && (opts.hard ?? isHardRejectNote(note));
 
   // #126 (T3.4) — JORIY HOLAT GATE. Ilgari review holatni umuman tekshirmasdi:
   //  · DRAFT (contributor hali submit qilmagan, tahrirlab turgan) approve bo'lib
@@ -3512,6 +3582,8 @@ async function reviewOneTemplate(
               ? TemplateReviewStatus.APPROVED
               : TemplateReviewStatus.REJECTED,
           reviewNote: note ?? null,
+          // #89 (C10) — tur maydonda saqlanadi; approve rad-turini tozalaydi.
+          rejectKind: action === "reject" ? (isHard ? "hard" : "soft") : null,
           reviewedById: adminId,
           reviewedAt: new Date(),
           published:
@@ -3526,9 +3598,7 @@ async function reviewOneTemplate(
 
       const noteText = (note ?? "").trim();
       if (action === "reject" && noteText) {
-        const hard =
-          noteText.toLowerCase().includes("[hard]") ||
-          noteText.toLowerCase().includes("hard reject");
+        const hard = isHard;
         await postTemplateModerationMessage({
           contributorId: template.contributorId,
           templateId: template.id,
@@ -3548,15 +3618,12 @@ async function reviewOneTemplate(
         });
       }
 
-      const hard =
-        noteText.toLowerCase().includes("[hard]") ||
-        noteText.toLowerCase().includes("hard reject");
       await writeAuditLog({
         actorId: adminId,
         action:
           action === "approve"
             ? "approve"
-            : hard
+            : isHard
               ? "hard_reject"
               : "soft_reject",
         targetType: "template",
@@ -3594,8 +3661,8 @@ contributorRouter.post(
       return;
     }
     const id = String(req.params.id);
-    const { action, note, published } = parsed.data;
-    const outcome = await reviewOneTemplate(id, action, { note, published }, req.user!.userId);
+    const { action, note, published, hard } = parsed.data;
+    const outcome = await reviewOneTemplate(id, action, { note, published, hard }, req.user!.userId);
     if (!outcome.ok) {
       const body: Record<string, unknown> = { error: outcome.error };
       if (outcome.code) body.code = outcome.code;
@@ -3665,6 +3732,8 @@ const bulkReviewSchema = z.object({
   // Free/Pro: per-shablon `isPro` maydoni (mavjud admin PATCH bilan bir xil). Bu ODDIY maydon —
   // kredit/quote/consume pul dvigeteli EMAS (MONEY-ZONE tegilmaydi).
   isPro: z.boolean().optional(),
+  // #89 (C10) — ommaviy rad etishda ham tur aniq beriladi (izoh markeriga tayanmaydi).
+  hard: z.boolean().optional(),
 });
 contributorRouter.post(
   "/admin/templates/bulk",
@@ -3676,7 +3745,7 @@ contributorRouter.post(
       res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid data" });
       return;
     }
-    const { ids, action, note, published, isPro } = parsed.data;
+    const { ids, action, note, published, isPro, hard } = parsed.data;
     const adminId = req.user!.userId;
     const results: Array<{ id: string; ok: boolean; error?: string; code?: string }> = [];
 
@@ -3687,7 +3756,7 @@ contributorRouter.post(
           results.push(out.ok ? { id, ok: true } : { id, ok: false, error: out.error, code: out.code });
           continue;
         }
-        const out = await reviewOneTemplate(id, action, { note, published }, adminId);
+        const out = await reviewOneTemplate(id, action, { note, published, hard }, adminId);
         if (!out.ok) {
           results.push({ id, ok: false, error: out.error, code: out.code });
           continue;

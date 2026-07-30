@@ -98,6 +98,9 @@ const NAV = [
   {id:'overview',  label:'Overview',      icon:'grid'},
   {id:'templates', label:'My templates',  icon:'layers'},
   {id:'upload',    label:'New upload',    icon:'upload'},
+  {grp:'Money'},
+  // #83 (C4) — daromad/to'lovlar Settings ichida ko'milgan edi (yuklovchi topolmasdi).
+  {id:'earnings',  label:'Earnings',      icon:'dollar'},
   {grp:'Contact'},
   {id:'messages',  label:'Messages',      icon:'inbox'},
   {id:'settings',  label:'Settings',      icon:'gear'},
@@ -106,6 +109,7 @@ const TITLES = {
   overview:['Overview','Hi'],
   templates:['My templates','Studio'],
   upload:['Upload new template','Studio'],
+  earnings:['Earnings & payouts','Money'],
   messages:['Messages','Contact'],
   settings:['Settings','Profile'],
 };
@@ -127,7 +131,13 @@ function renderNav(){
 let CONTRIB_SEARCH = "";
 function contribGlobalSearch(q) {
   CONTRIB_SEARCH = (q || "").trim().toLowerCase();
-  if (CURRENT === "templates") renderMy();
+  // #88 (C9) — qidiruv HAR ekrandan ishlasin: ilgari faqat "My templates" ochiq
+  // bo'lsa ta'sir qilardi, boshqa ekranlarda maydon butunlay o'lik ko'rinardi.
+  if (CURRENT !== "templates") {
+    if (CONTRIB_SEARCH) route("templates");
+    return;
+  }
+  renderMy();
 }
 /* Tarix boshqaruvi (#4/#6) — brauzer Orqaga/Oldinga ilova ichida yursin,
    yangilash/deep-link'da mos ekran ochilsin. Deep-link mumkin ekranlar = NAV id'lari. */

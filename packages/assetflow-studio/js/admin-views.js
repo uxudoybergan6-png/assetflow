@@ -484,7 +484,9 @@ async function bulkAction(a){
   const map = {
     'approve-free': { action:'approve', opts:{ published:true, isPro:false }, label:'Bulk approve · Free' },
     'approve-pro':  { action:'approve', opts:{ published:true, isPro:true },  label:'Bulk approve · Pro' },
-    'reject':       { action:'reject',  opts:{ note:'Bulk reject' },          label:'Bulk reject' },
+    // #89 (C10) — ommaviy rad etish SOFT (contributor tuzatib qayta yubora oladi);
+    // "hard" yakuniy qaror bo'lgani uchun faqat yakka moderatsiyada beriladi.
+    'reject':       { action:'reject',  opts:{ note:'Bulk reject', hard:false }, label:'Bulk reject' },
     'clear-pack':   { action:'clear-pack', opts:{},                            label:'Bulk clear pack' },
   };
   const m = map[a];

@@ -38,21 +38,74 @@ const AssetFlowAuth = (() => {
     return "user";
   }
 
-  function getSession() {
+  /**
+   * #136 (C14) — SESSIYA IKKI QAVATDA. Ilgari sessiya faqat `sessionStorage`da edi:
+   * havolani yangi tabda ochish (yoki brauzer qayta tiklagan tab) har safar login
+   * so'rardi. Endi `localStorage`da ham nusxa saqlanadi va yangi tab uni bir marta
+   * o'ziga ko'chirib oladi.
+   *
+   * Xavfsizlik: nusxa MUDDATLI (`at` + 12 soat) — XSS bilan o'g'irlangan token
+   * cheksiz yashamasin; server tokeni ham o'z muddatiga ega va muddati tugagach
+   * global 401 ishlovi ikkala qavatni ham tozalaydi (`clearSession`).
+   */
+  const PERSIST_MAX_AGE_MS = 12 * 3600 * 1000;
+
+  function readStore(store) {
     try {
-      const raw = sessionStorage.getItem(KEY);
+      const raw = store.getItem(KEY);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
   }
 
+  function getSession() {
+    const s = readStore(sessionStorage);
+    if (s) return s;
+    const p = readStore(localStorage);
+    if (!p) return null;
+    if (!p.at || Date.now() - p.at > PERSIST_MAX_AGE_MS) {
+      clearSession();
+      return null;
+    }
+    try {
+      sessionStorage.setItem(KEY, JSON.stringify(p));
+    } catch {
+      /* private rejim — shu tabda sessiya baribir ishlaydi */
+    }
+    return p;
+  }
+
   function setSession(session) {
     sessionStorage.setItem(KEY, JSON.stringify(session));
+    try {
+      localStorage.setItem(KEY, JSON.stringify(session));
+    } catch {
+      /* kvota/private rejim — faqat shu tabda qoladi */
+    }
   }
 
   function clearSession() {
     sessionStorage.removeItem(KEY);
+    try {
+      localStorage.removeItem(KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Bir tabda chiqilsa boshqa tablar ham sessiyani tashlasin (localStorage `storage`
+  // hodisasi FAQAT boshqa tablarda otiladi).
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", (e) => {
+      if (e.key === KEY && e.newValue === null) {
+        try {
+          sessionStorage.removeItem(KEY);
+        } catch {
+          /* ignore */
+        }
+      }
+    });
   }
 
   function sessionFromUser(data) {

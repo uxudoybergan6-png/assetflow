@@ -10,6 +10,10 @@ const StudioTemplates = (() => {
     if (rs === "PENDING_REVIEW") return "pending";
     if (rs === "DRAFT") return "draft";
     if (rs === "REJECTED") {
+      // #89 (C10) — tur endi DB maydonidan (`rejectKind`). Matn markeri faqat
+      // maydon to'ldirilmagan ESKI yozuvlar uchun zaxira.
+      if (t.rejectKind === "hard") return "hard";
+      if (t.rejectKind === "soft") return "soft";
       const note = (t.reviewNote || "").toLowerCase();
       if (note.includes("[hard]") || note.includes("hard reject")) return "hard";
       return "soft";
