@@ -67,9 +67,18 @@ export async function verifyGoogleIdTokenAndUpsertUser(credential: string): Prom
       create: { userId: user.id, type: "oauth", provider: "google", providerAccountId: googleSub },
     });
     if (!user.emailVerified) {
+      // #104 (SEC3) — pre-hijacking himoyasi: email TASDIQLANMAGAN parolli hisob
+      // hujumchi tomonidan oldindan ochilgan bo'lishi mumkin. Google emailni tasdiqlagani
+      // uchun egalik Google hisobiga o'tadi: eski parol o'chiriladi va mavjud
+      // sessiyalar (tokenVersion) bekor qilinadi. Foydalanuvchi xohlasa parolni
+      // "parolni tiklash" orqali qayta o'rnatadi.
+      const hijackRisk = Boolean(user.passwordHash);
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { emailVerified: new Date() },
+        data: {
+          emailVerified: new Date(),
+          ...(hijackRisk ? { passwordHash: null, tokenVersion: { increment: 1 } } : {}),
+        },
         include: { subscription: true },
       });
     }

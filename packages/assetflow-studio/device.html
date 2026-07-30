@@ -62,8 +62,17 @@ h1{font-family:"Space Grotesk",sans-serif;letter-spacing:-.035em}
       <span class="mail-icon" aria-hidden="true">↧</span>
       <span class="kicker">AFTER EFFECTS PLUGIN</span>
       <h1>Confirm the AE plugin.</h1>
-      <p id="deviceIntro">Sign in to approve the After Effects plugin on this device.</p>
+      <p id="deviceIntro">Enter the code shown in the After Effects plugin, then sign in to approve it.</p>
       <p class="auth-error hidden" id="deviceError" role="alert"></p>
+      <!-- (#32) Kod URL'dan AVTOMATIK to'ldirilmaydi — fishing havolasi (device.html?code=…)
+           bilan hujumchi qurbonning tokenini ololmasin. Foydalanuvchi kodni plagindan
+           ko'chirib o'zi kiritadi = "bu kodni siz kiritdingizmi?" tasdig'i. -->
+      <div class="field">
+        <label for="deviceCodeInput">PLUGIN CODE</label>
+        <input id="deviceCodeInput" type="text" inputmode="latin" autocomplete="off"
+               spellcheck="false" placeholder="XXXX-XXXX-XXXX-X"
+               style="text-align:center;letter-spacing:.12em;font-family:'JetBrains Mono',monospace;text-transform:uppercase" required>
+      </div>
       <form id="devicePasswordForm">
         <div class="field">
           <label for="deviceEmailInput">EMAIL</label>
@@ -91,8 +100,7 @@ function cycleTheme(){var o=['noir','neon','cold'];var c=document.documentElemen
 </script>
 <script>
 (function () {
-  const params = new URLSearchParams(location.search);
-  const code = params.get("code") || "";
+  const codeEl = document.getElementById("deviceCodeInput");
   const errEl = document.getElementById("deviceError");
   const introEl = document.getElementById("deviceIntro");
   const btnEl = document.getElementById("deviceGoogleBtn");
@@ -105,16 +113,21 @@ function cycleTheme(){var o=['noir','neon','cold'];var c=document.documentElemen
     errEl.classList.remove("hidden");
   }
 
-  if (!code) {
-    // Kod yo'q — hech qaysi kirish usuli (parol ham, Google ham) ishlay olmaydi,
-    // shu sabab hammasini yashiramiz (aks holda "or" chiziq osilib qoladi).
-    showError("Code not found — try again from the plugin");
-    introEl.classList.add("hidden");
-    if (formEl) formEl.classList.add("hidden");
-    if (orEl) orEl.classList.add("hidden");
-    btnEl.classList.add("hidden");
-    return;
+  /** Kiritilgan kodni server bilan bir xil shaklga keltiradi (defis, I→1, O→0). */
+  function currentCode() {
+    const raw = (codeEl?.value || "")
+      .toUpperCase()
+      .replace(/[^0-9A-Z]/g, "")
+      .replace(/[IL]/g, "1")
+      .replace(/O/g, "0");
+    return raw.replace(/(.{4})(.{4})(.{4})(.)/, "$1-$2-$3-$4");
   }
+  // Kiritilayotganda avtomatik guruhlash (o'qish oson bo'lsin).
+  codeEl?.addEventListener("input", () => {
+    const pos = codeEl.value.length === codeEl.selectionStart;
+    codeEl.value = currentCode();
+    if (pos) codeEl.setSelectionRange(codeEl.value.length, codeEl.value.length);
+  });
 
   // SC_38: lokal dev'da (localhost:3000) hardcoded prod meta emas — bo'sh baza =
   // nisbiy /api → dev-studio-server proxy'si (:4000). Production'da meta o'zgarishsiz qoladi.
@@ -129,6 +142,7 @@ function cycleTheme(){var o=['noir','neon','cold'];var c=document.documentElemen
     errEl.classList.add("hidden");
     if (formEl) formEl.classList.add("hidden");
     if (orEl) orEl.classList.add("hidden");
+    if (codeEl) codeEl.closest(".field")?.classList.add("hidden");
     document.getElementById("deviceEmail").textContent = email || "";
     doneEl.classList.remove("hidden");
   }
@@ -139,6 +153,8 @@ function cycleTheme(){var o=['noir','neon','cold'];var c=document.documentElemen
       e.preventDefault();
       const email = document.getElementById("deviceEmailInput").value.trim();
       const password = document.getElementById("devicePassInput").value;
+      const code = currentCode();
+      if (!code) { showError("Enter the code shown in the plugin"); return; }
       if (!email || !password) { showError("Enter your email and password"); return; }
       errEl.classList.add("hidden");
       if (pwBtn) { pwBtn.disabled = true; pwBtn.textContent = "Signing in…"; }
@@ -164,6 +180,8 @@ function cycleTheme(){var o=['noir','neon','cold'];var c=document.documentElemen
 
   // ── Google bilan tasdiqlash ───────────────────────────────────────────────
   async function onGoogleCredential(resp) {
+    const code = currentCode();
+    if (!code) { showError("Enter the code shown in the plugin, then sign in"); return; }
     try {
       const r = await fetch(`${apiBase}/api/plugin/device/confirm`, {
         method: "POST",

@@ -244,11 +244,19 @@ async function resolveCatalogAssets(t: TemplateRow, apiBase: string) {
   };
 }
 
+/** #105 (SEC4) — `externalId` ichki manzilni oshkor qilishi mumkin (masalan ingest
+ *  `incoming/<userId>/<fayl>` → user ID + original fayl nomi). Ommaviy katalogda
+ *  faqat "gen:<jobId>" belgisi kerak (klient AI kelib chiqishini shu bilan aniqlaydi);
+ *  qolgan hamma qiymat null qilinadi. */
+function publicExternalId(v: string | null): string | null {
+  return v && v.startsWith("gen:") ? v : null;
+}
+
 /** Karta uchun umumiy maydonlar (list + detail bir xil karta ko'rsatadi). */
 function cardBase(t: TemplateRow, a: Awaited<ReturnType<typeof resolveCatalogAssets>>) {
   return {
     id: t.id,
-    externalId: t.externalId,
+    externalId: publicExternalId(t.externalId),
     name: t.name,
     description: t.description,
     nav: t.nav,
@@ -302,8 +310,26 @@ export async function mapCatalogItem(t: TemplateRow, apiBase: string) {
   const meta = await enrichScenesAsync(rawMeta, t.id, apiBase, a.cacheBust, a.s3Keys);
   return {
     ...cardBase(t, a),
-    metaJson: meta,
+    metaJson: stripPrivatePrompt(meta),
   };
+}
+
+/**
+ * (#20) `promptPublic:false` SERVER TOMONDA majburlanadi. Explore'ga topshirishda
+ * muallif promptni yashirishni tanlashi mumkin, lekin prompt metaJson ichida
+ * saqlanardi va ochiq detal/OG endpointlari uni butunlay qaytarardi → to'liq
+ * promptlar anonim internetga oqardi. Bu YAGONA metaJson chiqish nuqtasi
+ * (detal endpoint + `/api/public/asset/:id` ikkalasi shundan o'tadi).
+ * Admin/moderatsiya yo'llari metaJson'ni to'g'ridan DB'dan o'qiydi — ta'sirlanmaydi.
+ */
+function stripPrivatePrompt(meta: Record<string, unknown>): Record<string, unknown> {
+  if (!meta || typeof meta !== "object") return meta;
+  if (meta.promptPublic === false && "prompt" in meta) {
+    const { prompt, ...rest } = meta;
+    void prompt;
+    return rest;
+  }
+  return meta;
 }
 
 export const approvedCatalogWhere = {

@@ -10,24 +10,54 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logsPath = path.join(__dirname, "../../data/system-logs.json");
 const MAX_LOGS = 500;
 
+/**
+ * (#103) Ilgari HAR POST faylni sinxron o'qib, 500 qatorli JSON'ni sinxron QAYTA
+ * yozardi → event loop bloklanardi va disk yozuvi kuchayardi. Endi ro'yxat
+ * XOTIRADA (yagona manba), diskka yozish ASINXRON va birlashtirilgan (coalesced):
+ * ketma-ket yozuvlar bitta flush'ga yig'iladi.
+ */
+let cache: LogEntry[] | null = null;
+let flushTimer: NodeJS.Timeout | null = null;
+let flushing = false;
+
 function readLogs(): LogEntry[] {
+  if (cache) return cache;
   try {
     if (fs.existsSync(logsPath)) {
-      return JSON.parse(fs.readFileSync(logsPath, "utf8")) as LogEntry[];
+      const parsed = JSON.parse(fs.readFileSync(logsPath, "utf8")) as LogEntry[];
+      cache = Array.isArray(parsed) ? parsed : [];
+    } else {
+      cache = [];
     }
   } catch {
-    /* */
+    cache = [];
   }
-  return [];
+  return cache;
 }
 
+async function flushLogs() {
+  if (flushing || !cache) return;
+  flushing = true;
+  const snapshot = cache.slice(0, MAX_LOGS);
+  try {
+    await fs.promises.mkdir(path.dirname(logsPath), { recursive: true });
+    await fs.promises.writeFile(logsPath, JSON.stringify(snapshot, null, 2), "utf8");
+  } catch (e) {
+    console.error("[logs] flush failed", e);
+  } finally {
+    flushing = false;
+  }
+}
+
+/** Xotiradagi ro'yxatni yangilaydi va diskka yozishni ~1s ga birlashtiradi. */
 function writeLogs(entries: LogEntry[]) {
-  fs.mkdirSync(path.dirname(logsPath), { recursive: true });
-  fs.writeFileSync(
-    logsPath,
-    JSON.stringify(entries.slice(0, MAX_LOGS), null, 2),
-    "utf8"
-  );
+  cache = entries.slice(0, MAX_LOGS);
+  if (flushTimer) return;
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    void flushLogs();
+  }, 1000);
+  flushTimer.unref?.();
 }
 
 type LogEntry = {
@@ -60,6 +90,20 @@ logsRouter.get("/", requireAdmin, (req, res) => {
 
 const ALLOWED_LEVELS = new Set(["error", "warn", "info", "debug"]);
 const clip = (v: unknown, n: number): string => String(v ?? "").slice(0, n);
+/** (#103) `meta` chegarasiz edi — istalgan foydalanuvchi cheksiz JSON yozardi.
+ *  2KB dan katta bo'lsa qisqartirilgan matn bilan almashtiriladi. */
+const MAX_META_BYTES = 2048;
+function clipMeta(meta: unknown): unknown {
+  if (meta == null) return null;
+  let json: string;
+  try {
+    json = JSON.stringify(meta) ?? "";
+  } catch {
+    return { truncated: true, reason: "unserializable" };
+  }
+  if (json.length <= MAX_META_BYTES) return meta;
+  return { truncated: true, bytes: json.length, preview: json.slice(0, MAX_META_BYTES) };
+}
 /** Manba SPOOF qilinmasin — autentifikatsiyalangan roldan majburlanadi
  *  (klient body'siga ishonmaymiz). Admin panelidagi saqlangan-XSS (source
  *  badge'ida escape'siz matn) va manba soxtalashtirishni ildizidan yopadi. */
@@ -76,6 +120,9 @@ const logWriteLimiter = rateLimit({
   windowMs: 60_000,
   max: 60,
   keyPrefix: "logs-write",
+  // (#103) per-USER: NAT ortidagi jamoa bir-birini bloklamasin, bitta hisob esa
+  // IP almashtirib limitni chetlab o'tolmasin.
+  keyOf: (req) => req.user?.userId,
   message: "Too many log writes — please slow down",
 });
 
@@ -98,7 +145,7 @@ logsRouter.post("/", logWriteLimiter, (req, res) => {
     message: clip(entry.message, 500),
     action: clip(entry.action, 120),
     detail: clip(entry.detail, 1000),
-    meta: entry.meta ?? null,
+    meta: clipMeta(entry.meta),
   };
   const all = readLogs();
   const idx = all.findIndex((x) => x.id === row.id);

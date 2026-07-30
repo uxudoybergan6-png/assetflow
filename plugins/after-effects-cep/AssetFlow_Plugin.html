@@ -10289,10 +10289,11 @@ async function accountLoginWithGoogle(){
     if(opened){
       // BATCH8 auth-device: bir martalik kodni ko'zga tashlanadigan mono blok sifatida ko'rsatamiz
       setStatus(
-        '<span style="display:block;margin-bottom:10px;color:var(--muted);font-size:11px">Browser opened — confirm with Google to continue…</span>'+
+        '<span style="display:block;margin-bottom:10px;color:var(--muted);font-size:11px">Browser opened — type this code there, then sign in.</span>'+
         '<span style="display:block;margin:0 0 10px;padding:14px 10px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-soft);text-align:center">'+
           '<span style="display:block;color:var(--faint);font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;margin-bottom:6px">ONE-TIME CODE</span>'+
-          '<b id="afGsigCode" style="font-family:var(--font-mono);font-size:22px;font-weight:750;letter-spacing:.14em;color:var(--accent)"></b>'+
+          '<b id="afGsigCode" style="display:block;font-family:var(--font-mono);font-size:17px;font-weight:750;letter-spacing:.1em;color:var(--accent);word-break:break-all"></b>'+
+          '<button type="button" id="afGsigCopyCode" style="margin-top:8px;cursor:pointer;font:inherit;font-size:10px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);color:var(--text)">Copy code</button>'+
         '</span>'+
         '<span style="display:block;color:var(--faint);font-size:11px;margin-bottom:4px">Didn’t see it? Copy this link into your browser:</span>'+
         '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:11px;color:var(--muted);margin-bottom:8px"></code>'+
@@ -10316,6 +10317,7 @@ async function accountLoginWithGoogle(){
     const urlEl=document.getElementById('afGsigUrl'); if(urlEl) urlEl.textContent=verificationUrl||'';
     const codeEl=document.getElementById('afGsigCode'); if(codeEl) codeEl.textContent=code||'';
     document.getElementById('afGsigCopyLink')?.addEventListener('click',()=>afCopyText(verificationUrl||''));
+    document.getElementById('afGsigCopyCode')?.addEventListener('click',()=>afCopyText(code||''));
     document.getElementById('afGsigOpen')?.addEventListener('click',()=>{
       let ok=false; try{ ok=AssetFlowAccount.openExternal(verificationUrl); }catch(e){}
       if(!ok) showToast('Still couldn’t open the browser — please copy the link','warning');

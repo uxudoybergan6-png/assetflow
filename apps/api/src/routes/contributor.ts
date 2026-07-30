@@ -1598,6 +1598,10 @@ contributorRouter.post(
     // Faqat template mahsulotlar uchun (stock media kengaytmalari null qaytaradi).
     const derivedApp = existing.kind === "template" ? appForPackExt(ext) : null;
     // Yangi pack yuklandi → skan holatini reset (eski 'clean' qolib ketmasin).
+    // (#16) Post-approval swap: tasdiqlangan shablonning pack'i almashtirilsa
+    // moderatsiya muhri BEKOR bo'ladi — skan toza chiqishi bilan yangi kontent
+    // inson ko'rigisiz jonli bo'lib qolmasin (bait-and-switch).
+    const needsReReview = existing.reviewStatus === TemplateReviewStatus.APPROVED;
     await prisma.contributorTemplate.update({
       where: { id },
       data: {
@@ -1607,8 +1611,20 @@ contributorRouter.post(
         packScanStatus: "pending",
         packScanDetail: null,
         ...(derivedApp ? { templateApp: derivedApp } : {}),
+        ...(needsReReview
+          ? { reviewStatus: TemplateReviewStatus.PENDING_REVIEW, published: false }
+          : {}),
       },
     });
+    if (needsReReview) {
+      await writeAuditLog({
+        actorId: req.user!.userId,
+        action: "template.repack",
+        targetType: "template",
+        targetId: id,
+        detail: `Pack replaced after approval → re-review required (${p.data.fileName})`,
+      }).catch(() => {});
+    }
     // Eski .aep→.zip kesh (serve-asset.ts) endi ESKI mazmunga ishora qiladi —
     // o'chiramiz, keyingi yuklab olishda yangi .aep'dan qayta quriladi.
     await deleteS3Objects([`templates/${id}/pack.dl.zip`]).catch(() => {});
@@ -3572,12 +3588,24 @@ contributorRouter.post(
   }
 );
 
-contributorRouter.get("/catalog", async (_req, res) => {
-  const items = await prisma.contributorTemplate.findMany({
+/**
+ * (#18) Ilgari: auth YO'Q + `take` YO'Q + to'liq `metaJson` → 10k shablonda ~50MB JSON
+ * (1Gi instansda OOM) va plagin katalogi ataylab yashiradigan ichki metadata sizishi.
+ * Endi: `requireAuth` · cursor paginatsiya (maks 100) · `metaJson` SELECT'dan chiqarildi
+ * (sahnalar kerak bo'lsa — `GET /api/plugin/catalog/:id` detal endpointi).
+ */
+contributorRouter.get("/catalog", requireAuth, async (req, res) => {
+  const take = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+  const cursor = typeof req.query.cursor === "string" && /^[a-z0-9]+$/i.test(req.query.cursor)
+    ? req.query.cursor
+    : null;
+  const rows = await prisma.contributorTemplate.findMany({
     // Audit §D (P2) — plugin katalogi bilan BIR XIL predikat (takedownAt:null ham):
     // takedown qilingan shablon bu ochiq ro'yxatda ham ko'rinmasin.
     where: approvedCatalogWhere,
     orderBy: { updatedAt: "desc" },
+    take: take + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
       id: true,
       externalId: true,
@@ -3595,13 +3623,14 @@ contributorRouter.get("/catalog", async (_req, res) => {
       kind: true,
       stockType: true,
       templateType: true,
-      metaJson: true,
       fileName: true,
       fileSize: true,
       updatedAt: true,
     },
   });
-  res.json({ items });
+  const hasMore = rows.length > take;
+  const items = hasMore ? rows.slice(0, take) : rows;
+  res.json({ items, nextCursor: hasMore ? items[items.length - 1]?.id ?? null : null });
 });
 
 /** CEP sync: bulk upsert from local meta.json shape */
@@ -3634,6 +3663,32 @@ contributorRouter.post(
       });
 
       if (existing) {
+        // (#15) POST-APPROVAL SWAP HIMOYASI. Ilgari bu update tasdiqlangan shablonning
+        // butun mazmunini (nom, tavsif, sahnalar, fileName) moderatsiyasiz qayta yozardi:
+        // `reviewStatus`/`published` tegilmasdi va `packScanStatus` "clean" bo'lib qolardi
+        // → contributor presigned PUT bilan yangi fayl qo'yib `fileName`ni unga qaratsa,
+        // SKANLANMAGAN kontent jonli listing ostida tarqalardi.
+        const nextFileName = d.fileName ?? null;
+        const fileChanged = nextFileName !== existing.fileName;
+        // fileName klientdan keladi — bulutda REAL borligini tasdiqlaymiz
+        // (pack-uploaded dagi HeadObject naqshi). Yo'q bo'lsa eski nomni saqlaymiz.
+        let verifiedFileName = existing.fileName;
+        let verifiedSize = existing.fileSize;
+        if (fileChanged && nextFileName) {
+          if (isS3Configured()) {
+            const key = s3UploadKeyForFile(existing.id, "pack", nextFileName);
+            const m = await getS3ObjectMeta(key).catch(() => ({ sizeBytes: null }));
+            if (m.sizeBytes != null) {
+              verifiedFileName = nextFileName;
+              verifiedSize = m.sizeBytes;
+            }
+          } else {
+            verifiedFileName = nextFileName;
+            verifiedSize = d.fileSize ?? null;
+          }
+        }
+        const packSwapped = verifiedFileName !== existing.fileName;
+        const wasApproved = existing.reviewStatus === TemplateReviewStatus.APPROVED;
         await prisma.contributorTemplate.update({
           where: { id: existing.id },
           data: {
@@ -3646,10 +3701,27 @@ contributorRouter.post(
             res: d.res ?? settings.defaultRes,
             tags: d.tags ?? [],
             metaJson: asMetaJson(meta),
-            fileName: d.fileName ?? null,
-            fileSize: d.fileSize ?? null,
+            fileName: verifiedFileName,
+            fileSize: verifiedSize,
+            // Mazmun almashdi → moderatsiya muhri bekor (qayta ko'rikka).
+            ...(wasApproved
+              ? { reviewStatus: TemplateReviewStatus.PENDING_REVIEW, published: false }
+              : {}),
+            // Pack fayli almashdi → skan holati ham reset (eski "clean" qolmasin).
+            ...(packSwapped
+              ? { packScanStatus: "pending", packScanDetail: null, packHash: null }
+              : {}),
           },
         });
+        if (wasApproved) {
+          await writeAuditLog({
+            actorId: req.user!.userId,
+            action: "template.sync-swap",
+            targetType: "template",
+            targetId: existing.id,
+            detail: `CEP sync overwrote approved template → re-review required${packSwapped ? " (pack replaced)" : ""}`,
+          }).catch(() => {});
+        }
         updated++;
       } else {
         await prisma.contributorTemplate.create({

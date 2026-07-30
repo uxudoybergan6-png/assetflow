@@ -1,21 +1,22 @@
-# Sessiya hisoboti — 2026-07-30 (BATCH 0 + BATCH 1)
+# Sessiya hisoboti — 2026-07-30 (BATCH 4 + T3.1/T3.2)
 
-**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`
+**Manba:** `docs/REJA-CLAUDE-2026-07-30.md` (BATCH 0 + 1 oldingi commitlarda)
 
-## BATCH 0 — favqulodda (bajarildi)
-- **#1 (P0)** `scripts/clear-assetflow-demo.mjs` qayta yozildi: prod-DB guard (URL belgilari), tasdiq so'rovi, `--dry-run/--yes/--all-users`, ko'lamli `where` (demo user yoki `demo-*` prefiks). `deleteMany({})` HECH QAYERDA yo'q; `CLAUDE.md` buyrug'iga ogohlantirish qo'shildi.
-- **#155** `.dockerignore` → `_to_delete`. **#115** eski `render.yaml` o'chirildi.
+## BATCH 3 (qisman)
+- **#15** `/sync` mavjud shablon: pack almashsa HeadObject bilan tasdiqlanadi, APPROVED → `PENDING_REVIEW` + `published:false`, `packScanStatus:pending`, audit `template.sync-swap`.
+- **#16** `pack-uploaded` tasdiqlangan shablonda qayta moderatsiyaga qaytaradi (audit `template.repack`).
 
-## BATCH 1 — pul oqimi (bajarildi)
-- **#5** oylik kredit reset ATOMIK (`updateMany` + `aiCreditsResetAt < start`).
-- **#6/#43** `refundAiCredits` atomik increment + ceiling/skip loglari.
-- **#8** `DELETE /gen/:jobId` — `queued|running` uchun 409 `GENERATION_ACTIVE`.
-- **#39** `generation.create` xatosida DOIM refund (P2002 yo'lida ikki marta emas).
-- **#40** `activeGenerations` hisoblagichi + `claim/releaseGenerationSlot` (3 ta terminal o'tishda release, drift o'z-o'zini tuzatadi).
-- **#41/#7/#42/#123** yagona narx yo'li `priceGeneration()` — DB `enabled` gate, provayder tannarx floor'i (faqat o'lchangan/jadval manbasi), `/gen`da server-tomon qayta narxlash → 409 `PRICE_CHANGED`.
-- **#44** kvota yonishidan OLDIN asset mavjudligi tekshiriladi (pack + mogrt).
-- **#14** 3 ta `void recordTemplateDownloadEvent` → `await` (Cloud Run throttle).
+## BATCH 4 — xavfsizlik
+- **#18** `/api/contributor/catalog` → `requireAuth` + cursor sahifalash, `metaJson` SELECT'dan olib tashlandi.
+- **#32** device-code: TTL 5 daq, 64-bit Crockford base32 kod, `?code=` URL'dan olib tashlandi (brauzerda QO'LDA kiritiladi), `/device/start` uchun alohida limit; plaginda "Kodni nusxalash".
+- **#103** `/api/logs`: xotira keshi + 1s debounce yozuv (fayl I/O poygasi yo'q), `meta` 2KB'ga kesiladi, user-kalitli 60/min limit.
+- **#20** `metaJson.promptPublic:false` → `prompt` katalog javobidan olib tashlanadi (`stripPrivatePrompt`).
+- **#149** bloklangan contributorga JWT umuman yaratilmaydi (403 `signToken`dan oldin).
+- **#150** `/2fa/disable` ishlatilgan backup kodni darhol yozadi (qolganlari saqlanadi + audit).
+- **#151** DMCA `/report` uchun alohida limit (5/soat/IP).
+- **#104** Google bilan kirishda TASDIQLANMAGAN parolli hisob bog'lansa — parol o'chiriladi + `tokenVersion++` (pre-hijacking).
+- **#105** katalogdagi `externalId` faqat `gen:` bo'lsa qaytariladi (`incoming/<userId>/<fayl>` sizmaydi).
+- **#106** avatar URL imzolangan (`<userId>.<hmac>` — enumeratsiya yo'q) + redirect faqat Google CDN hostlariga.
+- **#107** sahna preview: `sceneKey()` sanitizatsiya + nashr etilmagan shablon faqat admin/muallifga; moderatsiya uchun yangi `GET /assets/:id/scene/:key/url` (auth) va AE Admin panel shu orqali yuklaydi.
 
-**⚠️ Migratsiya kutilmoqda:** `20260730120000_active_generations_counter` — prodga men qo'llamadim.
-**Qilinmadi:** #13 (Explore earning hovuzi) — egasi qarori kerak (reja §2).
-`npm run build -w apps/api` ✓ o'tdi.
+`npm run build -w apps/api` ✓ · `npm run studio:sync` ✓ · migratsiya talab qilinmadi.

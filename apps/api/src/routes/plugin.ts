@@ -9,11 +9,12 @@ import {
   PluginAccountStatus,
   PluginPlanTier,
   TemplateReviewStatus,
+  UserRole,
   Prisma,
   prisma,
 } from "@creative-tools/database";
 import type { Request, Response } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, verifyToken } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists, resolveS3AssetKey } from "../lib/s3.js";
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
@@ -76,6 +77,14 @@ const deviceStatusLimiter = rateLimit({
   keyPrefix: "plugin-device-poll",
 });
 
+/** (#32) Kod yaratish — arzon, lekin cheksiz kod hosil qilish (fishing zaxirasi) to'siladi. */
+const deviceStartLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 6,
+  keyPrefix: "plugin-device-start",
+  message: "Too many attempts — please try again in 1 minute",
+});
+
 /** FAZA 2 (H1/H5) — pack/mogrt yuklab olish throttle: skriptli earning-farming va
  *  S3 xarajat portlashini to'sadi (normal foydalanish uchun keng — 60/daqiqa/IP). */
 const downloadLimiter = rateLimit({
@@ -85,7 +94,41 @@ const downloadLimiter = rateLimit({
   message: "Too many downloads — please slow down and try again shortly",
 });
 
-const DEVICE_CODE_TTL_MS = 10 * 60 * 1000;
+/**
+ * (#32) Device-code oqimi — fishing qattiqlashtirildi:
+ *  · TTL 10 → 5 daqiqa (o'g'irlangan havolaning yashash oynasi qisqaradi);
+ *  · kod entropiyasi 4 bayt (32 bit) → 8 bayt (64 bit);
+ *  · kod URL'da UZATILMAYDI — foydalanuvchi uni brauzerda QO'LDA kiritadi
+ *    (hujumchi `device.html?code=<o'z kodi>` havolasini yubora olmaydi);
+ *  · `/device/start` uchun alohida, qattiqroq rate-limit.
+ */
+const DEVICE_CODE_TTL_MS = 5 * 60 * 1000;
+
+/** Crockford base32 — chalkash belgilar (I, L, O, U) yo'q: qo'lda kiritish uchun. */
+const DEVICE_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/** 8 bayt (64 bit) → 13 belgi, o'qish uchun 4 lik guruhlarga bo'linadi. */
+function generateDeviceCode(): string {
+  const bytes = crypto.randomBytes(8);
+  let bits = 0n;
+  for (const b of bytes) bits = (bits << 8n) | BigInt(b);
+  let out = "";
+  for (let i = 0; i < 13; i++) {
+    out = DEVICE_CODE_ALPHABET[Number(bits & 31n)] + out;
+    bits >>= 5n;
+  }
+  return out.replace(/(.{4})(.{4})(.{4})(.)/, "$1-$2-$3-$4");
+}
+
+/** Qo'lda kiritilgan kodni saqlangan shaklga keltiradi (defis/bo'shliq, I→1, O→0). */
+function normalizeDeviceCode(raw: unknown): string {
+  return String(raw ?? "")
+    .toUpperCase()
+    .replace(/[^0-9A-Z]/g, "")
+    .replace(/[IL]/g, "1")
+    .replace(/O/g, "0")
+    .replace(/(.{4})(.{4})(.{4})(.)/, "$1-$2-$3-$4");
+}
 
 function apiPublicBase(req: { protocol: string; get: (h: string) => string | undefined }) {
   return getPublicApiUrl(req);
@@ -430,26 +473,94 @@ pluginRouter.get("/featured", async (req: Request, res: Response) => {
   });
 });
 
+/** #107 (SEC6) — sahna preview'ini so'ragan odam uni ko'rishga haqlimi.
+ *  NASHR ETILGAN + tasdiqlangan shablon → hamma uchun ochiq (<img>/<video> header
+ *  yubora olmaydi). Aks holda faqat ADMIN yoki shablon muallifi (Bearer token). */
+async function sceneViewerAllowed(req: Request, templateId: string): Promise<boolean> {
+  const t = await prisma.contributorTemplate.findUnique({
+    where: { id: templateId },
+    select: { published: true, reviewStatus: true, contributorId: true },
+  });
+  if (!t) return false;
+  if (t.published && t.reviewStatus === TemplateReviewStatus.APPROVED) return true;
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return false;
+  const viewer = await resolveBearerViewer(token);
+  if (!viewer) return false;
+  return viewer.role === UserRole.ADMIN || viewer.userId === t.contributorId;
+}
+
+/** Bearer (plugin token yoki JWT) → {userId, role}; yaroqsiz bo'lsa null. */
+async function resolveBearerViewer(
+  token: string
+): Promise<{ userId: string; role: UserRole } | null> {
+  const pluginToken = await prisma.pluginToken.findUnique({
+    where: { token },
+    include: { user: { select: { id: true, role: true } } },
+  });
+  if (pluginToken && pluginToken.expiresAt > new Date()) {
+    return { userId: pluginToken.user.id, role: pluginToken.user.role };
+  }
+  const payload = verifyToken(token);
+  return payload ? { userId: payload.userId, role: payload.role } : null;
+}
+
+/** Sahna faylining S3 kaliti → ko'rsatish URL'i (topilmasa null). */
+async function resolveSceneDisplayUrl(templateId: string, key: string): Promise<string | null> {
+  const candidates = [
+    `templates/${templateId}/scenes/${key}`,
+    `templates/${templateId}/scenes/${key}.mp4`,
+    `templates/${templateId}/scenes/${key}.mov`,
+    `templates/${templateId}/scenes/${key}.png`,
+    `templates/${templateId}/scenes/${key}.jpg`,
+    `templates/${templateId}/scenes/${key}.jpeg`,
+    `templates/${templateId}/scenes/${key}.webp`,
+  ];
+  for (const s3Key of candidates) {
+    if (await s3ObjectExists(s3Key)) return await getPublicOrSignedUrl(s3Key, 3600);
+  }
+  return null;
+}
+
+/** #107 — moderatsiya (nashr etilmagan shablon) uchun: <video>/<img> Authorization
+ *  yubora olmaydi, shuning uchun admin/muallif avval SHU JSON endpointdan imzolangan
+ *  URL oladi va uni to'g'ridan `src` qiladi. */
+pluginRouter.get(
+  "/assets/:templateId/scene/:key/url",
+  requireAuth,
+  async (req: Request, res: Response) => {
+    const templateId = String(req.params.templateId);
+    const key = sceneKey(String(req.params.key));
+    if (!/^[a-z0-9_-]+$/i.test(templateId) || !(await sceneViewerAllowed(req, templateId))) {
+      res.status(404).json({ error: "Scene preview not found" });
+      return;
+    }
+    const url = isS3Configured() ? await resolveSceneDisplayUrl(templateId, key) : null;
+    if (!url) {
+      res.status(404).json({ error: "Scene preview not found" });
+      return;
+    }
+    res.json({ url });
+  }
+);
+
 /** Per-scene preview — rasm (PNG/JPG) yoki video (MP4/MOV), Range qo'llab-quvvatlanadi */
 pluginRouter.get("/assets/:templateId/scene/:key", async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
-  const key = String(req.params.key);
+  // #107: xom kalit ishlatilmaydi — URL'lar ham sceneKey() bilan yasaladi (idempotent).
+  const key = sceneKey(String(req.params.key));
+
+  if (!/^[a-z0-9_-]+$/i.test(templateId) || !(await sceneViewerAllowed(req, templateId))) {
+    res.status(404).json({ error: "Scene preview not found" });
+    return;
+  }
 
   if (isS3Configured()) {
-    const candidates = [
-      `templates/${templateId}/scenes/${key}`,
-      `templates/${templateId}/scenes/${key}.mp4`,
-      `templates/${templateId}/scenes/${key}.mov`,
-      `templates/${templateId}/scenes/${key}.png`,
-      `templates/${templateId}/scenes/${key}.jpg`,
-      `templates/${templateId}/scenes/${key}.jpeg`,
-      `templates/${templateId}/scenes/${key}.webp`,
-    ];
-    for (const s3Key of candidates) {
-      if (await s3ObjectExists(s3Key)) {
-        res.redirect(302, await getPublicOrSignedUrl(s3Key, 3600));
-        return;
-      }
+    const url = await resolveSceneDisplayUrl(templateId, key);
+    if (url) {
+      res.redirect(302, url);
+      return;
     }
     // Bulut sozlangan — diskka tushmaymiz (Cloud Run diski ephemeral).
     res.status(404).json({ error: "Scene preview not found" });
@@ -873,16 +984,17 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
 // ochiladi, u yerda Google orqali tasdiqlangach plagin pollik qilib token oladi.
 
 /** 1) Plagin: bir martalik kod so'raydi */
-pluginRouter.post("/device/start", loginLimiter, async (_req: Request, res: Response) => {
+pluginRouter.post("/device/start", deviceStartLimiter, async (_req: Request, res: Response) => {
   await prisma.pluginDeviceCode.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 
-  const code = crypto.randomBytes(4).toString("hex");
+  const code = generateDeviceCode();
   const expiresAt = new Date(Date.now() + DEVICE_CODE_TTL_MS);
   await prisma.pluginDeviceCode.create({ data: { code, expiresAt } });
 
   res.json({
     code,
-    verificationUrl: `${getWebUrl()}/device.html?code=${code}`,
+    // (#32) Kod URL'ga QO'SHILMAYDI — foydalanuvchi uni brauzerda o'zi kiritadi.
+    verificationUrl: `${getWebUrl()}/device.html`,
     expiresIn: DEVICE_CODE_TTL_MS / 1000,
   });
 });
@@ -900,7 +1012,9 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
     return;
   }
 
-  const row = await prisma.pluginDeviceCode.findUnique({ where: { code: parsed.data.code } });
+  const row = await prisma.pluginDeviceCode.findUnique({
+    where: { code: normalizeDeviceCode(parsed.data.code) },
+  });
   if (!row) {
     res.status(404).json({ error: "Code not found" });
     return;
@@ -974,7 +1088,9 @@ pluginRouter.post("/device/confirm-password", loginLimiter, async (req: Request,
     return;
   }
 
-  const row = await prisma.pluginDeviceCode.findUnique({ where: { code: parsed.data.code } });
+  const row = await prisma.pluginDeviceCode.findUnique({
+    where: { code: normalizeDeviceCode(parsed.data.code) },
+  });
   if (!row) {
     res.status(404).json({ error: "Code not found" });
     return;
@@ -1020,7 +1136,7 @@ pluginRouter.post("/device/confirm-password", loginLimiter, async (req: Request,
 
 /** 3) Plagin: kod holatini pollik qiladi */
 pluginRouter.get("/device/poll", deviceStatusLimiter, async (req: Request, res: Response) => {
-  const code = String(req.query.code || "");
+  const code = normalizeDeviceCode(req.query.code);
   const row = code ? await prisma.pluginDeviceCode.findUnique({ where: { code } }) : null;
 
   if (!row || row.expiresAt < new Date()) {

@@ -26,6 +26,13 @@ interface RateLimitOptions {
   keyPrefix?: string;
   /** 429 javobidagi xabar */
   message?: string;
+  /**
+   * Kalit manbai (default: IP). Autentifikatsiyalangan endpoint uchun per-user
+   * limit kerak bo'lganda beriladi — bitta IP ortidagi ko'p foydalanuvchi
+   * (ofis/NAT) bir-birini bloklamasin, bitta hisob esa IP almashtirib chetlab
+   * o'tolmasin (#103).
+   */
+  keyOf?: (req: Request) => string | undefined;
 }
 
 // ── Redis klient (ixtiyoriy, YAGONA umumiy) ────────────────────────────────
@@ -72,7 +79,9 @@ function getRedis(): Promise<RedisLike | null> {
 }
 
 export function rateLimit(opts: RateLimitOptions) {
-  const { windowMs, max, keyPrefix = "rl", message } = opts;
+  const { windowMs, max, keyPrefix = "rl", message, keyOf } = opts;
+  const subject = (req: Request) =>
+    (keyOf ? keyOf(req) : undefined) || req.ip || req.socket.remoteAddress || "unknown";
   const hits = new Map<string, Bucket>();
 
   // Eskirgan bucketlarni tozalab turish (memory leak oldini olish)
@@ -95,8 +104,7 @@ export function rateLimit(opts: RateLimitOptions) {
 
   // ── In-memory yadro — JORIY xatti-harakat 1:1 (Redis yo'q yoki yiqilganda) ──
   const inMemory = (req: Request, res: Response, next: NextFunction) => {
-    const ip = req.ip || req.socket.remoteAddress || "unknown";
-    const key = `${keyPrefix}:${ip}`;
+    const key = `${keyPrefix}:${subject(req)}`;
     const now = Date.now();
 
     let bucket = hits.get(key);
@@ -126,8 +134,7 @@ export function rateLimit(opts: RateLimitOptions) {
     const client = await getRedis().catch(() => null);
     if (!client) return inMemory(req, res, next);
     try {
-      const ip = req.ip || req.socket.remoteAddress || "unknown";
-      const key = `ratelimit:${keyPrefix}:${ip}`;
+      const key = `ratelimit:${keyPrefix}:${subject(req)}`;
       const now = Date.now();
 
       const count: number = await client.incr(key);

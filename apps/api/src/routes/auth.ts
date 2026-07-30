@@ -8,7 +8,7 @@ import { signToken, requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
 import { sendEmail, isEmailConfigured, renderEmailLayout } from "../lib/email.js";
-import { getWebUrl, avatarPublicUrl } from "../lib/app-urls.js";
+import { getWebUrl, avatarPublicUrl, verifyAvatarRef } from "../lib/app-urls.js";
 import {
   isS3Configured,
   uploadBufferToS3,
@@ -232,13 +232,8 @@ authRouter.post("/login", authLimiter, async (req, res) => {
     return;
   }
 
-  const token = signToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-    tokenVersion: user.tokenVersion,
-  });
-
+  // (#149) Bloklangan contributor tekshiruvi token IMZOLASHDAN OLDIN — imzolangan
+  // JWT umuman yaratilmasin (javobda ketmasa ham, log/xato yo'lida sizib chiqmasin).
   if (user.role === UserRole.CONTRIBUTOR && user.contributorBlockedAt) {
     res.status(403).json({
       error: "Contributor account is blocked",
@@ -246,6 +241,13 @@ authRouter.post("/login", authLimiter, async (req, res) => {
     });
     return;
   }
+
+  const token = signToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    tokenVersion: user.tokenVersion,
+  });
 
   res.json({
     token,
@@ -669,8 +671,10 @@ authRouter.post("/2fa/disable", requireAuth, twofaLimiter, async (req, res) => {
   }
   const code = parsed.data.code.trim();
   let ok = false;
+  let backupRemaining: string[] | null = null;
   if (looksLikeBackupCode(code)) {
-    ok = consumeBackupCode(code, user.totpBackupCodes) !== null;
+    backupRemaining = consumeBackupCode(code, user.totpBackupCodes);
+    ok = backupRemaining !== null;
   } else {
     const secret = user.totpSecret ? decryptTotpSecret(user.totpSecret) : null;
     ok = !!secret && (await verifyTotpCode(code, secret));
@@ -678,6 +682,20 @@ authRouter.post("/2fa/disable", requireAuth, twofaLimiter, async (req, res) => {
   if (!ok) {
     res.status(401).json({ error: "Incorrect code — 2FA was not disabled", code: "TWO_FA_INVALID" });
     return;
+  }
+  if (backupRemaining) {
+    // #150: ishlatilgan backup kod darhol yoziladi — quyidagi o'chirish uzilsa ham qayta ishlatilmasin
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { totpBackupCodes: backupRemaining },
+    });
+    writeAuditLog({
+      actorId: user.id,
+      action: "2fa_backup_code_used",
+      targetType: "user",
+      targetId: user.id,
+      detail: `Backup kod ishlatildi (2FA o'chirish, qolgani: ${backupRemaining.length})`,
+    });
   }
   await prisma.user.update({
     where: { id: user.id },
@@ -777,11 +795,36 @@ authRouter.post("/avatar", requireAuth, avatarUpload.single("avatar"), async (re
   }
 });
 
-/** GET /api/auth/avatar/:userId — auth'siz redirect (plagin/web <img> uchun).
- *  Bucket private → qisqa muddatli signed URL'ga 302. */
-authRouter.get("/avatar/:userId", async (req, res) => {
+// #106 (SEC5) — tashqi rasm URL'iga redirect qilishga ruxsat etilgan hostlar.
+// Boshqa host = ochiq redirect (api.getframeflow.app/... havolasi ixtiyoriy saytga
+// olib boradi) → 404. Hozircha faqat OAuth provayder avatar CDN'lari.
+const AVATAR_REDIRECT_HOSTS = [
+  "lh3.googleusercontent.com",
+  "lh4.googleusercontent.com",
+  "lh5.googleusercontent.com",
+  "lh6.googleusercontent.com",
+];
+
+function avatarRedirectAllowed(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && AVATAR_REDIRECT_HOSTS.includes(u.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+/** GET /api/auth/avatar/:ref — auth'siz redirect (plagin/web <img> uchun).
+ *  `:ref` = `<userId>.<hmac>` (server bergan imzo) — xom ID bilan enumeratsiya
+ *  qilib bo'lmaydi. Bucket private → qisqa muddatli signed URL'ga 302. */
+authRouter.get("/avatar/:ref", async (req, res) => {
+  const userId = verifyAvatarRef(req.params.ref);
+  if (!userId) {
+    res.status(404).json({ error: "No avatar" });
+    return;
+  }
   const user = await prisma.user.findUnique({
-    where: { id: req.params.userId },
+    where: { id: userId },
     select: { image: true },
   });
   const image = user?.image;
@@ -790,6 +833,10 @@ authRouter.get("/avatar/:userId", async (req, res) => {
     return;
   }
   if (/^https?:\/\//i.test(image)) {
+    if (!avatarRedirectAllowed(image)) {
+      res.status(404).json({ error: "No avatar" });
+      return;
+    }
     res.redirect(302, image);
     return;
   }

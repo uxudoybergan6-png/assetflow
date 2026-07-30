@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@creative-tools/database";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { writeAuditLog } from "../lib/audit-log.js";
+import { rateLimit } from "../middleware/rate-limit.js";
 
 /**
  * FAZA 1d — DMCA / infringement report.
@@ -27,8 +28,16 @@ const reportSchema = z.object({
   goodFaith: z.boolean().optional(),
 });
 
+// #151: ommaviy forma — global 600/min yetarli emas, alohida tor limit (IP bo'yicha 5/soat).
+const reportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  keyPrefix: "dmca-report",
+  message: "Too many reports — please try again later",
+});
+
 /** Ommaviy: infringement/DMCA da'vosini yuborish (auth'siz — da'vo istalgan shaxsdan). */
-dmcaRouter.post("/report", async (req: Request, res: Response) => {
+dmcaRouter.post("/report", reportLimiter, async (req: Request, res: Response) => {
   const parsed = reportSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Invalid report" });
