@@ -1,18 +1,20 @@
-# Sessiya hisoboti — 2026-07-28
+# Sessiya hisoboti — 2026-07-30
 
-**Vazifa:** Seedance 2.0 Mini (BytePlus, id 3103) web + AE plagingacha E2E ulanganini TASDIQLASH; haqiqiy uzilish topilsa yopish.
+**Vazifa:** COWORK-AUDIT-2026-07-28 tahlili + to'liq mustaqil audit (16 yo'nalish, pul zonasi / zanjir / miqyos / UI-UX / xavfsizlik / plagin bozorga tayyorligi).
+**Natija:** `docs/FULL-AUDIT-2026-07-30.md` — 127 topilma (4×P0, 24×P1, 56×P2, 33×P3), har biri kodda tasdiqlangan.
 
-**Natija: 6/6 PASS — kodda uzilish YO'Q, tuzatish talab qilinmadi (hech narsa o'zgartirilmadi).**
-- Katalog: `gen-models.ts:1393` id 3103 `enabled:true`, `byteplusModel: dreamina-seedance-2-0-mini-260615` — rasmiy docs (`Model list.txt`, 480p/720p, 4–15s, multimodal ref + i2v) bilan mos. Runtime `getModelsByMode("video")` → 3103 QAYTARADI (11 ta model, tasdiqlandi `tsx` bilan).
-- Dispatch: `gen-processor.ts:1709` `provider==="byteplus"` → `runByteplusVideo` → `buildByteplusVideoBody` (`model.byteplusModel`, mediaRefs/endFrame/resolution/duration deskriptordan) — Mini uchun maxsus shart YO'Q. Boot validator `byteplus` ni PROVIDERS + VIDEO_DISPATCH da qamraydi va har byteplus modeli uchun body self-test bajaradi.
-- Narx: `provider-cost.ts:79` 3103 {480p 0.032, 720p 0.071}; runtime `estimateProviderUsd` 480p/4s=$0.128, 720p/15s=$1.065 (null EMAS). Marja 480p ≈4.7×, 720p ≈3.2× (target 2×). `assert-pricing-floors` = SOTUV kanallari poli, per-model emas → Mini'ga ta'sirsiz.
-- Web: `platform/index.html` `loadModels()` → `FFAPI.models(mode)` = `/api/studio/gen/models?mode=video`; yagona filtr `enabled!==false` + `video-upscale` ajratish. Hardcoded whitelist/dedup YO'Q.
-- Plagin: `AssetFlow_Plugin.html:14429` `ensureVgMeta()` shu endpointdan; SC_19 whitelist QAYTMAGAN (faqat `video-upscale` chetlanadi); `renderVgModelSheet` TO'LIQ ro'yxatni chizadi (slice yo'q). O'rnatilgan CEP (`com.frameflow`, 23-iyul) = manba bilan bayt-bir-xil.
-- Deploy: `deploy-cloudrun.yml` oxirgi 8 run "success"; eng so'nggi 2026-07-26, headSha `7f7a010` = joriy HEAD → prod Mini commit'idan (f74c7ee, 07-20) YANGIROQ. **Deploy KERAK EMAS.**
+**🔴 ENG MUHIM — production HOZIR ishlamayapti:** `/health` → 503 `db:"down"`, `/api/plugin/catalog` → 500.
+3 marta tekshirildi, tiklanmadi. `SENTRY_DSN` prod env'da yo'q → hech qanday ogohlantirish kelmaydi.
 
-**Topilgan 2 haqiqiy nuqta (uzilish emas, ma'lumot uchun):**
-1. Web "RECOMMENDED FOR VIDEO" tez-tanlov faqat 4 ta model ko'rsatadi (`modelPickList.slice(0,4)`) → 10 ta yoqilgan video modeldan Mini u yerga tushmaydi; to'liq "All models" modalida BOR. Bu dizayn, xato emas — Mini'ni tez-tanlovda ko'rish uchun uni **pin** qilish kifoya (pinlangan model birinchi chiqadi).
-2. Aloqasiz: 1020 "Seedream 5.0 Lite" va 1022 "Seedream 4.5" `provider-cost` yozuvisiz (`findEnabledModelsWithoutCost`) → marja hisobida $0.5 default. Pul zonasi — TEGILMADI, egasi qaroriga qoldirildi.
+**Yangi kritik topilmalar (COWORK'da yo'q):**
+1. Lemon Squeezy `Subscription` qatorini hech qachon yozmaydi → pullik mijoz plaginda "Free" bossa PRO'ga qayta olmaydi (LS pul olishda davom etadi).
+2. `/api/contributor/catalog` — auth yo'q, `take` yo'q, `metaJson` bilan → ko'p shablonda OOM + ma'lumot sizishi.
+3. `/sync` va `/pack-uploaded` APPROVED shablon kontentini moderatsiyasiz almashtiradi (`/sync` skanni ham chetlab o'tadi).
+4. Oddiy USER "Add to Explore" orqali contributor payout hovuzidan earning oladi — kod izohi aksini da'vo qiladi.
+5. `npm run demo:clear` — filtrsiz jadval o'chirish, prod-guard yo'q (CLAUDE.md'da oddiy buyruq sifatida).
+6. Windows'da zip import sinadi (`unzip` shell) — tuzatish Admin panelda bor, mijoz plaginiga ko'chirilmagan.
+7. Seedance 3102 @4K + video-ref provayder narxidan past sotiladi → 15s klipda −$2.28 zarar.
 
-**Sizning qo'lingizda qolgan yagona jonli qadam — BytePlus konsol aktivatsiyasi:**
-`.env` va `cloudrun-env.yaml` dagi `BYTEPLUS_API_KEY` **bir xil** (sha256 fingerprint `ab0afcfcc1f9`) → lokal probe = prod tekshiruvi. Ishga tushiring: `node scripts/probe-byteplus-model.mjs dreamina-seedance-2-0-mini-260615 480p 4` (~$0.13). HTTP 200 + taskId = AKTIV; `ModelNotOpen`/403 → BytePlus konsoli → ModelArk → region `ark+ap-southeast-1` → Model list → `dreamina-seedance-2-0-mini` → **Activate/Enable**.
+**COWORK auditi:** 6/7 P0 tasdiqlandi; P0-7 (`.dockerignore`) va P26 (to'lov busy-state) noto'g'ri; plagin PRO self-upgrade shubhasi ham rad etildi (fail-closed).
+**Plagin bozorga tayyorligi ~35%:** kod tayyor, marketplace metadata 16/19 maydon bo'sh, imzolangan `.zxp` va Adobe sertifikati yo'q.
+**Kutilmoqda:** prod DB tiklash + monitoring, so'ng `FULL-AUDIT` §14 tartibi (bugun / shu hafta / shu oy).
