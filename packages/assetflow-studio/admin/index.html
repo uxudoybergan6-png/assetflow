@@ -211,7 +211,8 @@ let ADMIN_GLOBAL_SEARCH = '';
 function adminGlobalSearch(q) {
   ADMIN_GLOBAL_SEARCH = (q || "").trim().toLowerCase();
   if (typeof T_SEARCH !== "undefined") T_SEARCH = ADMIN_GLOBAL_SEARCH;
-  if (CURRENT === "templates" && typeof renderTemplates === "function") renderTemplates();
+  // #68 — qidiruv endi SERVERGA ketadi (debounce tplReload ichida)
+  if (CURRENT === "templates" && typeof tplReload === "function") tplReload();
   else if (CURRENT === "contributors") route("contributors");
 }
 

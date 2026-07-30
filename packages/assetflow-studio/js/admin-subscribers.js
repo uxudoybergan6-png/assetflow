@@ -32,13 +32,31 @@ async function aiReindex() {
   }
 }
 
+// #67 — server paginatsiyasi (take/skip). Jadval filtr/qidiruvi klientda ishlaydi,
+// shuning uchun sahifalar ketma-ket yig'iladi — lekin CHEKLANGAN: SUB_MAX_ROWS dan
+// keyin to'xtaymiz (brauzerni 50k qator bilan o'ldirmaslik uchun). KPI raqamlari
+// `stats` dan keladi va u serverda BUTUN populyatsiya bo'yicha hisoblanadi.
+const SUB_PAGE_SIZE = 200;
+const SUB_MAX_ROWS = 2000;
+
 async function refreshSubscribersFromApi() {
   if (typeof StudioApi === "undefined" || !StudioApi.listPluginSubscribers) return false;
   try {
-    const data = await StudioApi.listPluginSubscribers();
+    const rows = [];
+    let stats = null;
+    let truncated = false;
+    for (let skip = 0; skip < SUB_MAX_ROWS; skip += SUB_PAGE_SIZE) {
+      const data = await StudioApi.listPluginSubscribers({ take: SUB_PAGE_SIZE, skip });
+      if (!stats) stats = data.stats || null;
+      const items = data.items || [];
+      items.forEach((s) => rows.push({ ...s }));
+      if (!data.hasMore || !items.length) break;
+      if (skip + SUB_PAGE_SIZE >= SUB_MAX_ROWS) truncated = true;
+    }
     SUBSCRIBERS.length = 0;
-    (data.items || []).forEach((s) => SUBSCRIBERS.push({ ...s }));
-    window._ASSETFLOW_SUBSCRIBER_STATS = data.stats || null;
+    rows.forEach((s) => SUBSCRIBERS.push(s));
+    window._ASSETFLOW_SUBSCRIBER_STATS = stats;
+    window._ASSETFLOW_SUBSCRIBER_TRUNCATED = truncated;
     return true;
   } catch (e) {
     console.warn("plugin-subscribers", e);
@@ -142,6 +160,7 @@ VIEWS.subscribers = function () {
   const rows = filteredSubscribers();
   return `
     ${axInfo(`<b style="color:var(--text)">AE Plugin subscribers</b> — real customers using the <b style="color:var(--text)">FrameFlow Browse</b> panel inside After Effects. Blocking = stops plugin access. Removing = takes the account out of the system.`,'info')}
+    ${window._ASSETFLOW_SUBSCRIBER_TRUNCATED ? axInfo(`<b style="color:var(--text)">Showing the ${SUB_MAX_ROWS.toLocaleString()} most recently active</b> of ${sc.total.toLocaleString()} subscribers — the table search only covers the loaded rows. The counters above are for all subscribers.`,'amber') : ''}
     <div class="adx-grid5" style="margin-bottom:16px">
       ${axStat({label:'Total subscribers',val:sc.total,ic:'users',foot:'registered'})}
       ${axStat({label:'Active',val:sc.active,ic:'check-circle',icColor:'#C2F04A',foot:'account status'})}

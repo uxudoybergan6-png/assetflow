@@ -78,8 +78,26 @@ function getRedis(): Promise<RedisLike | null> {
   return redisPromise;
 }
 
+/**
+ * #62 (T5.4) — umumiy store YO'Q bo'lganda haqiqiy limit = max × instans soni.
+ * Cloud Run `--max-instances 10` bilan `max: 5` amalda 50 bo'lardi (login/OTP brute-force
+ * limitlari 10× bo'shashardi). REDIS_URL bo'lmasa `max` instans soniga BO'LINADI —
+ * har instans o'z ulushini majburlaydi, yig'indi esa mo'ljallangan `max` atrofida qoladi.
+ * `API_MAX_INSTANCES` deploy bilan bir xil turishi kerak (deploy-cloudrun.sh: 10).
+ * 1 (yoki noto'g'ri qiymat) = bo'linish yo'q, aynan eski xatti-harakat.
+ */
+function instanceShareDivisor(): number {
+  const raw = Number(process.env.API_MAX_INSTANCES);
+  if (!Number.isFinite(raw) || raw < 1) return 1;
+  return Math.min(Math.floor(raw), 50);
+}
+
 export function rateLimit(opts: RateLimitOptions) {
-  const { windowMs, max, keyPrefix = "rl", message, keyOf } = opts;
+  const { windowMs, keyPrefix = "rl", message, keyOf } = opts;
+  // Redis bor → counter umumiy, to'liq `max`. Yo'q → instans ulushi.
+  const max = process.env.REDIS_URL
+    ? opts.max
+    : Math.max(1, Math.ceil(opts.max / instanceShareDivisor()));
   const subject = (req: Request) =>
     (keyOf ? keyOf(req) : undefined) || req.ip || req.socket.remoteAddress || "unknown";
   const hits = new Map<string, Bucket>();

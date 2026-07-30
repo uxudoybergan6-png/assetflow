@@ -324,19 +324,44 @@ const StudioApi = (() => {
    * stage: 'uploading'|'processing'|'done'|'error'. Bitta faylning muvaffaqiyatsizligi
    * qolganlarini to'xtatmaydi.
    */
-  async function bulkIngestZips(files, onFileProgress, rights) {
-    const resp = await request("/api/contributor/incoming/upload-url", {
-      method: "POST",
-      body: { files: files.map((f) => ({ fileName: f.name })) },
+  /**
+   * #69 (T5.4) — bulk yuklashning UMUMIY yadrosi.
+   * IKKI o'zgarish (ilgari ikkalasi ham muammo edi):
+   *  1) presigned URL HAR FAYL OLDIDAN olinadi — avval hammasi oldindan olinardi va
+   *     navbat uzun bo'lsa oxirgi URL'larning MUDDATI TUGARDI (403 SignatureExpired).
+   *  2) yuklash CHEKLANGAN PARALLEL (3 ta) — ilgari ketma-ket (100×200MB = soatlar).
+   * Konkurentlik 3 da qoldirildi: brauzer host-per-connection limiti va yuklash
+   * kanalini bo'lishish — bundan yuqorisi har faylni sekinlashtiradi.
+   */
+  const BULK_UPLOAD_CONCURRENCY = 3;
+
+  async function mapLimit(items, limit, fn) {
+    let next = 0;
+    const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+      for (;;) {
+        const i = next++;
+        if (i >= items.length) return;
+        await fn(items[i], i);
+      }
     });
-    const uploads = (resp && resp.uploads) || [];
+    await Promise.all(workers);
+  }
+
+  /** signOne(file, index) → {url, key, contentType} (har fayl uchun alohida so'rov). */
+  async function bulkUploadEach(files, onFileProgress, signOne, contentTypeOf) {
     const uploaded = [];
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      const u = uploads[i];
-      if (!u) {
+    await mapLimit(files, BULK_UPLOAD_CONCURRENCY, async (f, i) => {
+      let u = null;
+      try {
+        u = await signOne(f, i);
+      } catch (e) {
+        if (onFileProgress)
+          onFileProgress(i, { stage: "error", error: (e && e.message) || "No upload URL returned" });
+        return;
+      }
+      if (!u || !u.url) {
         if (onFileProgress) onFileProgress(i, { stage: "error", error: "No upload URL returned" });
-        continue;
+        return;
       }
       if (onFileProgress) onFileProgress(i, { stage: "uploading", pct: 0 });
       try {
@@ -344,7 +369,7 @@ const StudioApi = (() => {
           method: "PUT",
           url: u.url,
           body: f,
-          headers: { "Content-Type": "application/zip" },
+          headers: { "Content-Type": contentTypeOf(u, f) },
           onProg: (loaded) => {
             const pct = f.size > 0 ? Math.floor((loaded / f.size) * 100) : 100;
             if (onFileProgress) onFileProgress(i, { stage: "uploading", pct });
@@ -355,7 +380,26 @@ const StudioApi = (() => {
       } catch (e) {
         if (onFileProgress) onFileProgress(i, { stage: "error", error: e.message || "Upload failed" });
       }
-    }
+    });
+    // Ingest navbati va progress xaritasi fayl tartibiga tayanadi (parallel tugash
+    // tartibi tasodifiy) — indeks bo'yicha qayta tartiblaymiz.
+    uploaded.sort((a, b) => a.index - b.index);
+    return uploaded;
+  }
+
+  async function bulkIngestZips(files, onFileProgress, rights) {
+    const uploaded = await bulkUploadEach(
+      files,
+      onFileProgress,
+      async (f) => {
+        const resp = await request("/api/contributor/incoming/upload-url", {
+          method: "POST",
+          body: { files: [{ fileName: f.name }] },
+        });
+        return (resp && resp.uploads && resp.uploads[0]) || null;
+      },
+      () => "application/zip"
+    );
     if (!uploaded.length) return [];
     // P1 #19 — /ingest endi SINXRON ishlamaydi: navbatga qo'shadi va {batchId} qaytaradi.
     // Fon ishchisi (ingest-worker) navbatni ishlaydi; klient batchId bilan pollaydi.
@@ -431,40 +475,21 @@ const StudioApi = (() => {
    * onFileProgress(index, {stage,pct,error,id}) — bulk UI bilan bir xil kontrakt.
    */
   async function bulkIngestAssets(category, files, onFileProgress, rights) {
-    const resp = await request("/api/contributor/incoming/asset-upload-url", {
-      method: "POST",
-      body: {
-        category,
-        files: files.map((f) => ({ fileName: f.name, contentType: f.type || undefined })),
-      },
-    });
-    const uploads = (resp && resp.uploads) || [];
-    const uploaded = [];
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      const u = uploads[i];
-      if (!u) {
-        if (onFileProgress) onFileProgress(i, { stage: "error", error: "No upload URL returned" });
-        continue;
-      }
-      if (onFileProgress) onFileProgress(i, { stage: "uploading", pct: 0 });
-      try {
-        await xhrWithRetry({
-          method: "PUT",
-          url: u.url,
-          body: f,
-          headers: { "Content-Type": u.contentType || f.type || "application/octet-stream" },
-          onProg: (loaded) => {
-            const pct = f.size > 0 ? Math.floor((loaded / f.size) * 100) : 100;
-            if (onFileProgress) onFileProgress(i, { stage: "uploading", pct });
+    const uploaded = await bulkUploadEach(
+      files,
+      onFileProgress,
+      async (f) => {
+        const resp = await request("/api/contributor/incoming/asset-upload-url", {
+          method: "POST",
+          body: {
+            category,
+            files: [{ fileName: f.name, contentType: f.type || undefined }],
           },
         });
-        if (onFileProgress) onFileProgress(i, { stage: "processing", pct: 100 });
-        uploaded.push({ index: i, key: u.key });
-      } catch (e) {
-        if (onFileProgress) onFileProgress(i, { stage: "error", error: e.message || "Upload failed" });
-      }
-    }
+        return (resp && resp.uploads && resp.uploads[0]) || null;
+      },
+      (u, f) => u.contentType || f.type || "application/octet-stream"
+    );
     if (!uploaded.length) return [];
     const ingestResp = await request("/api/contributor/ingest-assets", {
       method: "POST",
@@ -537,8 +562,14 @@ const StudioApi = (() => {
     return request("/api/contributor/admin/overview");
   }
 
-  async function listPluginSubscribers() {
-    return request("/api/admin/plugin-subscribers");
+  // #67 — server endi paginatsiyalaydi (take/skip). `stats` har sahifada BUTUN
+  // populyatsiya bo'yicha keladi, shuning uchun uni birinchi sahifadan olish yetarli.
+  async function listPluginSubscribers(params) {
+    const qs = new URLSearchParams();
+    if (params && params.take) qs.set("take", String(params.take));
+    if (params && params.skip) qs.set("skip", String(params.skip));
+    const q = qs.toString();
+    return request(`/api/admin/plugin-subscribers${q ? `?${q}` : ""}`);
   }
 
   async function patchPluginSubscriber(userId, body) {

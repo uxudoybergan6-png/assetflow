@@ -24,6 +24,7 @@ import {
   GEN_REF_UPLOAD_LIMITS,
   TEMPLATE_ASSET_UPLOAD_LIMITS,
   SCENE_PREVIEW_UPLOAD_LIMITS,
+  CLOUD_RUN_REQUEST_LIMIT_BYTES,
   MAX_REF_UPLOAD_BYTES,
   MAX_FIELD_NESTING_DEPTH,
 } from "../dist/lib/upload-limits.js";
@@ -42,9 +43,11 @@ const MB = 1024 * 1024;
 // ---------------------------------------------------------------------------------------
 console.log("\n  A) Cheklov qiymatlari (imkoniyat saqlangan + himoya yoqilgan)\n");
 
-check(TEMPLATE_ASSET_UPLOAD_LIMITS.fileSize === 3300 * MB, "contributor assets: fileSize 3300MB (3GB UI limiti) o'zgarmagan");
+// #61 (T5.4): fileSize endi Cloud Run so'rov tomiga (32MiB) tenglashtirilgan — katta
+// fayllar presigned PUT bilan ketadi. `files`/`parts` imkoniyati esa o'zgarmagan.
+check(TEMPLATE_ASSET_UPLOAD_LIMITS.fileSize === CLOUD_RUN_REQUEST_LIMIT_BYTES, "contributor assets: fileSize = Cloud Run tomi (32MiB)");
 check(TEMPLATE_ASSET_UPLOAD_LIMITS.files === 3, "contributor assets: files = 3 (thumb+preview+pack)");
-check(SCENE_PREVIEW_UPLOAD_LIMITS.fileSize === 512 * MB, "scene previews: fileSize 512MB o'zgarmagan");
+check(SCENE_PREVIEW_UPLOAD_LIMITS.fileSize === CLOUD_RUN_REQUEST_LIMIT_BYTES, "scene previews: fileSize = Cloud Run tomi (32MiB)");
 check(SCENE_PREVIEW_UPLOAD_LIMITS.files === 160, "scene previews: files = 160 o'zgarmagan");
 check(AVATAR_UPLOAD_LIMITS.fileSize === 5 * MB, "avatar: fileSize 5MB o'zgarmagan");
 check(GEN_REF_UPLOAD_LIMITS.fileSize === MAX_REF_UPLOAD_BYTES && MAX_REF_UPLOAD_BYTES === 100 * MB, "gen ref: fileSize 100MB o'zgarmagan");

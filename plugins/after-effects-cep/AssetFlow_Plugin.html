@@ -10695,6 +10695,29 @@ function pubUpload(path,formData,onProgress){
   });
 }
 
+/**
+ * #61 — presigned PUT (to'g'ridan bulutga, server tanasidan o'tmasdan).
+ * Authorization YUBORILMAYDI: imzo buziladi. Faqat Content-Type.
+ */
+function pubPutSigned(url,blob,contentType,onProgress){
+  return new Promise(function(resolve,reject){
+    const xhr=new XMLHttpRequest();
+    xhr.open('PUT',url);
+    try{ xhr.setRequestHeader('Content-Type',contentType||'application/octet-stream'); }catch(e){}
+    if(onProgress&&xhr.upload){
+      xhr.upload.onprogress=function(e){ if(e.lengthComputable) onProgress(e.loaded,e.total); };
+    }
+    xhr.onload=function(){
+      if(xhr.status>=200&&xhr.status<300) resolve();
+      else reject(new Error('Upload failed (HTTP '+xhr.status+')'));
+    };
+    xhr.onerror=function(){ reject(new Error('Network error — check your internet or the API URL')); };
+    xhr.ontimeout=function(){ reject(new Error('Upload timed out')); };
+    xhr.timeout=1800000; // 30 daq — GB'lik pack sekin ulanishda
+    xhr.send(blob);
+  });
+}
+
 function fileToBlob(p,type){
   const fs=require('fs');
   const buf=fs.readFileSync(p);
@@ -10855,15 +10878,28 @@ async function publishGo(){
 
     const zipMb=(zip.size/1048576).toFixed(1);
     setStage('4/6 Uploading pack ('+zipMb+' MB)');
-    const fd=new FormData();
-    fd.append('pack', fileToBlob(zip.path,'application/zip'), path.basename(zip.path));
+    // #61 — pack endi TO'G'RIDAN bulutga (presigned PUT), multipart /assets orqali EMAS:
+    // Cloud Run so'rov tanasi 32MB bilan cheklangan, AE pack'lari esa 100MB–GB.
+    // Studio (studio-api.js uploadAssets) ham aynan shu yo'ldan boradi.
+    const packName=path.basename(zip.path);
     const firstOk=scenes.filter(function(s){return s.ok&&s.path;})[0];
-    if(firstOk) fd.append('thumb', fileToBlob(firstOk.path,'image/png'), 'thumb.png');
-    await pubUpload('/api/contributor/templates/'+id+'/assets', fd, function(loaded,total){
+    const wanted=[{kind:'pack',fileName:packName,contentType:'application/zip'}];
+    if(firstOk) wanted.push({kind:'thumb',fileName:'thumb.png',contentType:'image/png'});
+    const signed=await pubJson('/api/contributor/templates/'+id+'/upload-url',{files:wanted});
+    const ups=(signed&&signed.uploads)||[];
+    const packUp=ups.filter(function(u){return u.kind==='pack';})[0];
+    if(!packUp) throw new Error('Failed to get upload URL for pack');
+    await pubPutSigned(packUp.url, fileToBlob(zip.path,'application/zip'), packUp.contentType, function(loaded,total){
       const pct=total?Math.round(loaded/total*100):0;
       const mb=total?(' · '+(loaded/1048576).toFixed(1)+'/'+(total/1048576).toFixed(1)+' MB'):'';
       status.textContent='4/6 Uploading pack… '+pct+'%'+mb;
     });
+    const thumbUp=ups.filter(function(u){return u.kind==='thumb';})[0];
+    if(firstOk&&thumbUp){
+      await pubPutSigned(thumbUp.url, fileToBlob(firstOk.path,'image/png'), thumbUp.contentType);
+    }
+    // MAJBURIY signal: DB'ga fileName/fileSize yoziladi va .zip sahnalari FON'da ajratiladi.
+    await pubJson('/api/contributor/templates/'+id+'/pack-uploaded',{fileName:packName});
 
     const okScenes=scenes.filter(function(s){return s.ok&&s.path;});
     if(okScenes.length){

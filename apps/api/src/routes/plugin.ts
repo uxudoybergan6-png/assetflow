@@ -16,7 +16,8 @@ import {
 import type { Request, Response } from "express";
 import { requireAuth, verifyToken } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists, resolveS3AssetKey } from "../lib/s3.js";
+import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists } from "../lib/s3.js";
+import { resolveAssetKeyCached } from "../lib/asset-state.js";
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
 import { getPluginContentConfig } from "../lib/plugin-content-config.js";
@@ -755,7 +756,7 @@ pluginRouter.get("/assets/:templateId/pack", downloadLimiter, requireAuth, async
   // (#44) pack REAL mavjudmi — kvota yoqilishidan oldin (S3 kaliti yoki lokal fayl).
   const packExists = async () =>
     isS3Configured()
-      ? Boolean(await resolveS3AssetKey(templateId, "pack"))
+      ? Boolean(await resolveAssetKeyCached(templateId, "pack"))
       : Boolean(findAssetPath(templateId, "pack"));
   if (!(await guardDownloadable(req, res, templateId, packExists))) return;
   // Bosqich 4 #1: REAL yuklab olish hodisasi (#14: await — fire-and-forget Cloud Run'da yo'qoladi).

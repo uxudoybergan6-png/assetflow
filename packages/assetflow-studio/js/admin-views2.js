@@ -24,22 +24,83 @@ const esc = (s) =>
    ALL TEMPLATES — global table
    ============================================================ */
 let T_FILTER = 'all', T_SEARCH = '';
+// #68 (T5.4) — jadval endi SERVER paginatsiyasi bilan ishlaydi: butun katalog
+// klientga tortilmaydi (ilgari 100 sahifagacha = 10k qator xotirada + DOM'da).
+// Filtr/qidiruv ham serverga beriladi, tab raqamlari `counts` dan keladi.
+let T_TIER = 'all', T_TYPE = 'all', T_PUB = 'all';
+const TPL_PAGE_SIZE = 50;
+const TPL = { rows: [], counts: null, cursor: null, stack: [], page: 1, loading: false, error: '' };
+let _tplTimer = null, _tplReq = 0;
+
+function tplQueryArgs(cursor){
+  const a = { take: TPL_PAGE_SIZE, withCounts: true, cursor: cursor || null };
+  if (T_FILTER === 'approved') a.status = 'APPROVED';
+  else if (T_FILTER === 'pending') a.status = 'PENDING_REVIEW';
+  else if (T_FILTER === 'draft') a.status = 'DRAFT';
+  else if (T_FILTER === 'soft' || T_FILTER === 'hard') a.rejectKind = T_FILTER;
+  if (T_SEARCH) a.search = T_SEARCH;
+  if (T_TIER !== 'all') a.tier = T_TIER;
+  if (T_TYPE !== 'all') a.templateType = T_TYPE;
+  if (T_PUB !== 'all') a.published = T_PUB;
+  return a;
+}
+
+/** Bitta sahifani yuklaydi. dir: 'reset' | 'next' | 'same' */
+async function tplLoadPage(dir){
+  if (typeof StudioTemplates === 'undefined' || !StudioTemplates.fetchTemplatePage) return;
+  let cursor = null;
+  if (dir === 'next') cursor = TPL.cursor;
+  else if (dir === 'same') cursor = TPL.stack[TPL.stack.length - 1] || null;
+  const req = ++_tplReq;
+  TPL.loading = true; TPL.error = '';
+  renderTemplates();
+  try {
+    const data = await StudioTemplates.fetchTemplatePage(tplQueryArgs(cursor));
+    if (req !== _tplReq) return; // eskirgan javob (tez filtr almashuvi)
+    if (dir === 'reset') { TPL.stack = []; TPL.page = 1; }
+    else if (dir === 'next') { TPL.stack.push(cursor); TPL.page++; }
+    TPL.rows = data.items;
+    TPL.cursor = data.nextCursor;
+    if (data.counts) TPL.counts = data.counts;
+    // Drawer/modal kodi (openTplDrawer, openEditMeta, modDelete…) shablonni
+    // TEMPLATES globalidan topadi — sahifa qatorlarini shu yerga QO'SHAMIZ
+    // (butun katalogni yuklamasdan). Mavjud yozuv yangisi bilan almashadi.
+    if (typeof TEMPLATES !== 'undefined') {
+      data.items.forEach((t) => {
+        const i = TEMPLATES.findIndex((x) => x.id === t.id);
+        if (i >= 0) TEMPLATES[i] = t; else TEMPLATES.push(t);
+      });
+    }
+  } catch (e) {
+    if (req !== _tplReq) return;
+    TPL.error = (e && e.message) || 'Failed to load templates';
+    console.warn('templates load', e);
+  } finally {
+    if (req === _tplReq) { TPL.loading = false; renderTemplates(); }
+  }
+}
+
+/** Filtr/qidiruv o'zgarishi — debounce (har harf uchun so'rov ketmasin). */
+function tplReload(){
+  clearTimeout(_tplTimer);
+  _tplTimer = setTimeout(() => { void tplLoadPage('reset'); }, 220);
+}
+function tplSetFilter(f){ T_FILTER = f; tplReload(); }
+function tplNextPage(){ if (TPL.cursor && !TPL.loading) void tplLoadPage('next'); }
+function tplPrevPage(){
+  if (TPL.page <= 1 || TPL.loading) return;
+  TPL.stack.pop(); TPL.page--;
+  void tplLoadPage('same');
+}
+
 VIEWS.templates = function(){ return `<div id="tplRoot"></div>`; };
 window.afterRender.templates = function(){
   tplTopbarActions();
-  // P5 — to'liq katalog boot'da yuklanmaydi; jadvalga birinchi kirilganda lazily olamiz
-  // (skelet ko'rsatib turamiz, so'ng to'liq render). ensureFullCatalog qayta sahifalamaydi.
-  if (typeof StudioTemplates !== "undefined" && StudioTemplates.ensureFullCatalog) {
-    const root = document.getElementById("tplRoot");
-    if (root && !(typeof TEMPLATES !== "undefined" && TEMPLATES.length) && typeof adxSkelList === "function") {
-      root.innerHTML = '<div style="padding:8px 4px">' + adxSkelList(6) + "</div>";
-    }
-    StudioTemplates.ensureFullCatalog()
-      .catch((e) => { console.warn("templates load", e); })
-      .finally(() => { if (typeof CURRENT === "undefined" || CURRENT === "templates") renderTemplates(); });
-    return;
+  const root = document.getElementById("tplRoot");
+  if (root && !TPL.rows.length && typeof adxSkelList === "function") {
+    root.innerHTML = '<div style="padding:8px 4px">' + adxSkelList(6) + "</div>";
   }
-  renderTemplates();
+  void tplLoadPage('reset');
 };
 
 /* \u00a7G (P29) \u2014 REAL CSV eksport (ilgari "Preparing CSV\u2026" toast hech narsa qilmasdi = yolg'on).
@@ -57,14 +118,29 @@ function adxExportCsv(filename, headers, rows){
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function exportTemplatesCsv(){
-  let rows = TEMPLATES.slice();
-  if(T_FILTER!=='all') rows = rows.filter(t=>t.status===T_FILTER);
+/* #68 — jadval endi bitta sahifani ushlaydi, shuning uchun CSV joriy filtr bo'yicha
+   qatorlarni SERVERDAN sahifalab yig'adi (cheklangan: TPL_CSV_MAX). */
+const TPL_CSV_MAX = 5000;
+async function exportTemplatesCsv(){
+  if(typeof StudioTemplates==='undefined' || !StudioTemplates.fetchTemplatePage){ toast('Export','Not available','warn'); return; }
+  toast('Export','Collecting templates…','info');
+  const rows = [];
+  let cursor = null, truncated = false;
+  try{
+    while(rows.length < TPL_CSV_MAX){
+      const args = tplQueryArgs(cursor); args.take = 200; args.withCounts = false;
+      const data = await StudioTemplates.fetchTemplatePage(args);
+      data.items.forEach(t=>rows.push(t));
+      cursor = data.nextCursor;
+      if(!cursor) break;
+      if(rows.length >= TPL_CSV_MAX){ truncated = true; break; }
+    }
+  }catch(e){ toast('Error',(e&&e.message)||'Export failed','danger'); return; }
   if(!rows.length){ toast('Export','No templates to export','warn'); return; }
   adxExportCsv('templates.csv',
     ['Name','ID','Contributor','Status','Uploaded','Downloads','Pro','Category','Resolution'],
-    rows.map(t=>{ const con=cById(t.cid)||{}; return [t.name,t.id,con.email||'',t.status,t.created||'',t.dl||0,t.isPro?'Pro':'Free',t.cat||'',t.res||'']; }));
-  toast('Export',`${rows.length} templates exported`,'success');
+    rows.map(t=>{ const email=(t._con&&t._con.email)||(cById(t.cid)||{}).email||''; return [t.name,t.id,email,t.status,t.created||'',t.dl||0,t.isPro?'Pro':'Free',t.cat||'',t.res||'']; }));
+  toast('Export',`${rows.length} templates exported${truncated?` (capped at ${TPL_CSV_MAX})`:''}`, truncated?'warn':'success');
 }
 function exportContributorsCsv(){
   let list = CONTRIBUTORS.slice();
@@ -76,12 +152,31 @@ function exportContributorsCsv(){
   toast('Export',`${list.length} contributors exported`,'success');
 }
 
-/* Topbar actions (mockup e3): Filter + CSV. Search via global topbar. */
+/* Topbar actions (mockup e3): Filter + CSV. Search via global topbar.
+   #68 — "Filter" endi REAL: tur / tier / e'lon holati serverga beriladi
+   (ilgari "Advanced filter coming soon" toast'i = placeholder edi). */
+const TPL_TYPE_OPTS = [
+  ['all','All types'],
+  ['video-templates','Video templates'],
+  ['motion-graphics','Motion graphics'],
+  ['graphics','Graphics'],
+  ['luts','LUTs'],
+];
 function tplTopbarActions(){
   const tba = document.getElementById('tbActions');
   if(!tba || (typeof CURRENT!=='undefined' && CURRENT!=='templates')) return;
+  const typeLabel = (TPL_TYPE_OPTS.find(o=>o[0]===T_TYPE)||TPL_TYPE_OPTS[0])[1];
+  const tierLabel = T_TIER==='all'?'All tiers':(T_TIER==='pro'?'Pro only':'Free only');
+  const pubLabel = T_PUB==='all'?'All':(T_PUB==='true'?'Published':'Unpublished');
+  const nActive = (T_TYPE!=='all'?1:0)+(T_TIER!=='all'?1:0)+(T_PUB!=='all'?1:0);
   tba.innerHTML =
-    `<button class="adx-btn2 sm" onclick="toast('Filter','Advanced filter coming soon','info')"><i class="ph ph-funnel"></i>Filter</button>`+
+    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${typeLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>`+
+      `<select onchange="T_TYPE=this.value;tplTopbarActions();tplReload()">${TPL_TYPE_OPTS.map(([v,l])=>`<option value="${v}" ${T_TYPE===v?'selected':''}>${l}</option>`).join('')}</select></label>`+
+    `<label class="adx-sel"><span>${tierLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>`+
+      `<select onchange="T_TIER=this.value;tplTopbarActions();tplReload()"><option value="all">All tiers</option><option value="pro" ${T_TIER==='pro'?'selected':''}>Pro only</option><option value="free" ${T_TIER==='free'?'selected':''}>Free only</option></select></label>`+
+    `<label class="adx-sel"><span>${pubLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>`+
+      `<select onchange="T_PUB=this.value;tplTopbarActions();tplReload()"><option value="all">All</option><option value="true" ${T_PUB==='true'?'selected':''}>Published</option><option value="false" ${T_PUB==='false'?'selected':''}>Unpublished</option></select></label>`+
+    (nActive?`<button class="adx-btn2 sm" onclick="T_TYPE='all';T_TIER='all';T_PUB='all';tplTopbarActions();tplReload()" title="Clear filters"><i class="ph ph-x"></i>Clear (${nActive})</button>`:'')+
     `<button class="adx-btn2 sm" onclick="exportTemplatesCsv()"><i class="ph ph-export"></i>CSV</button>`;
 }
 
@@ -91,20 +186,23 @@ function shortId(id){
 }
 
 function renderTemplates(){
-  let rows = TEMPLATES.slice();
-  if(T_FILTER!=='all') rows = rows.filter(t=>t.status===T_FILTER);
-  if(T_SEARCH) rows = rows.filter(t=>(t.name+t.id+cById(t.cid).email).toLowerCase().includes(T_SEARCH.toLowerCase()));
-  const c=counts();
-  const tags = [['all','All',c.total],['approved','Approved',c.approved],['pending','Pending',c.pending],['soft','Soft',c.soft],['hard','Hard',c.hard],['draft','Draft',c.draft],['archived','Archived',c.archived]];
+  const root = document.getElementById('tplRoot');
+  if(!root) return;
+  const rows = TPL.rows;
+  // Tab raqamlari serverdan (butun to'plam bo'yicha); hali kelmagan bo'lsa "—".
+  const c = TPL.counts || {};
+  const n = (k) => (typeof c[k] === 'number' ? c[k] : '—');
+  const tags = [['all','All',n('total')],['approved','Approved',n('approved')],['pending','Pending',n('pending')],['soft','Soft',n('soft')],['hard','Hard',n('hard')],['draft','Draft',n('draft')]];
   const decision = (t) => {
     if(t.reason) return `<span style="font-size:11px;color:${t.status==='hard'?'#FF6B5E':'#FFB27C'}">${esc(t.reason)}</span>`;
     if(t.status==='approved') return `<span style="color:#5E6675">\u2014</span>`;
     return `<span style="color:#5E6675">\u2014</span>`;
   };
-  document.getElementById('tplRoot').innerHTML = `
+  root.innerHTML = `
     <div class="adx-tagrow">
-      ${tags.map(([k,l,n])=>`<button class="adx-tag ${T_FILTER===k?'on':''}" onclick="T_FILTER='${k}';renderTemplates()">${l} <span class="n">${n}</span></button>`).join('')}
+      ${tags.map(([k,l,num])=>`<button class="adx-tag ${T_FILTER===k?'on':''}" onclick="tplSetFilter('${k}')">${l} <span class="n">${num}</span></button>`).join('')}
     </div>
+    ${TPL.error?axInfo(`<b style="color:var(--text)">Could not load templates</b> — ${esc(TPL.error)} <a style="color:#C2F04A;text-decoration:underline;cursor:pointer" onclick="tplLoadPage('same')">Retry</a>`,'red'):''}
     <div class="adx-card" style="overflow:hidden">
       <div style="overflow-x:auto">
         <table class="adx-tbl" style="min-width:1000px">
@@ -112,7 +210,7 @@ function renderTemplates(){
             <th>Template</th><th>ID</th><th>Contributor</th><th>Status</th><th>Uploaded</th><th class="r">Downloads</th><th>Last decision</th><th class="r">Action</th>
           </tr></thead>
           <tbody>
-          ${rows.length ? rows.map(t=>{ const con=cById(t.cid); return `<tr>
+          ${rows.length ? rows.map(t=>{ const con=t._con||cById(t.cid)||{}; return `<tr>
             <td><div style="display:flex;align-items:center;gap:10px"><span style="width:44px;height:30px;border-radius:6px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</div><div style="font-size:10px;color:#8A93A3">${esc(t.cat)} \u00b7 ${esc(t.res)}</div></div></div></td>
             <td class="adx-num" style="font-size:10.5px;color:#8A93A3" title="${esc(t.id)}">${esc(shortId(t.id))}</td>
             <td style="font-size:11px;color:#8A93A3">${esc((con.email||'').split('@')[0])}${con.email?'@\u2026':''}</td>
@@ -126,13 +224,17 @@ function renderTemplates(){
               <button class="adx-iact" title="Edit" onclick="openEditMeta('${t.id}')"><i class="ph ph-pencil-simple"></i></button>
               <button class="adx-iact dg" title="Delete" onclick="modDelete('${t.id}')"><i class="ph ph-trash"></i></button>
             </div></td>
-          </tr>`; }).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px 20px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-weight:600;font-size:13px">No templates found</div><div style="font-size:11px;color:var(--muted2)">Change the filter or search.</div></div></td></tr>`}
+          </tr>`; }).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px 20px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-weight:600;font-size:13px">${TPL.loading?'Loading…':'No templates found'}</div><div style="font-size:11px;color:var(--muted2)">${TPL.loading?'&nbsp;':'Change the filter or search.'}</div></div></td></tr>`}
           </tbody>
         </table>
       </div>
-      <!-- §G (P29) — soxta "1 / 1" pagination olib tashlandi (jadval BARCHA qatorni ko'rsatadi, sahifalash yo'q edi) -->
-      <div style="display:flex;align-items:center;padding:12px 16px;border-top:1px solid var(--hair2)">
-        <span class="adx-num" style="font-size:11px;color:#8A93A3">${rows.length} results shown</span>
+      <!-- #68 — REAL sahifalash (server cursor'i): jadval bir sahifani ko'rsatadi -->
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--hair2)">
+        <span class="adx-num" style="font-size:11px;color:#8A93A3">Page ${TPL.page} · ${rows.length} rows${TPL.loading?' · loading…':''}</span>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button class="adx-btn2 sm" ${TPL.page<=1||TPL.loading?'disabled':''} onclick="tplPrevPage()"><i class="ph ph-caret-left"></i>Prev</button>
+          <button class="adx-btn2 sm" ${!TPL.cursor||TPL.loading?'disabled':''} onclick="tplNextPage()">Next<i class="ph ph-caret-right"></i></button>
+        </div>
       </div>
     </div>`;
 }
@@ -688,7 +790,7 @@ async function doToggleTierTpl(id, isPro){
     closeModal();
     toast('Updated', `“${nm}” moved to the ${isPro?'Pro':'Free'} tier`, isPro?'success':'info');
     if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Template tier changed',{action:'tier',detail:`${id}:${isPro?'pro':'free'}`});
-    if(CURRENT==='templates') renderTemplates();
+    if(CURRENT==='templates') void tplLoadPage('same');
     else if(CURRENT==='moderation') renderModeration();
   }catch(e){
     toast('Error', e.message || 'Failed to change tier', 'danger');
@@ -831,7 +933,7 @@ async function modDeleteConfirm(id) {
     if (MOD_SELECTED === id) MOD_SELECTED = null;
     toast("Deleted", "Template removed from the system", "danger");
     if (CURRENT === "moderation") renderModeration();
-    else if (CURRENT === "templates") renderTemplates();
+    else if (CURRENT === "templates") void tplLoadPage('same');
   } catch (e) {
     toast("Error", e.message || "Deletion failed", "danger");
   }
@@ -862,7 +964,7 @@ async function modClearPackConfirm(id) {
     }
     if (typeof CURRENT !== "undefined" && CURRENT === "moderation") renderModeration();
     else if (typeof CURRENT !== "undefined" && CURRENT === "overview") route("overview");
-    else if (typeof CURRENT !== "undefined" && CURRENT === "templates") renderTemplates();
+    else if (typeof CURRENT !== "undefined" && CURRENT === "templates") void tplLoadPage('same');
   } catch (e) {
     toast("Error", e.message || "Clear pack failed", "danger");
   }
@@ -932,7 +1034,7 @@ async function saveEditMeta(id) {
     closeModal();
     toast("Saved", "Metadata updated", "success");
     if (CURRENT === "moderation") renderModeration();
-    else if (CURRENT === "templates") renderTemplates();
+    else if (CURRENT === "templates") void tplLoadPage('same');
   } catch (e) {
     if (smBtn) { smBtn.dataset.busy = ""; smBtn.disabled = false; smBtn.classList.remove("is-busy"); }
     toast("Error", e.message || "Save failed", "danger");

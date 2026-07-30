@@ -2,8 +2,8 @@
  * P1 #19 — ALOHIDA BULK-INGEST ISHCHISI (Cloud Run job entrypoint).
  *
  * Bu skript API servisidan MUSTAQIL ishlaydi — ingest CPU foydalanuvchi trafigi bilan
- * raqobatlashmasin (P7 §8 talabi). API servisida INGEST_WORKER_INLINE=0 qilinadi,
- * bu job esa navbatni (IngestJob) uzluksiz ishlaydi.
+ * raqobatlashmasin (P7 §8 talabi). #64'dan keyin API servisida inline poller default
+ * O'CHIQ (INGEST_WORKER_INLINE o'rnatilmagan) — navbatni (IngestJob) shu job ishlaydi.
  *
  * Deploy: scripts/deploy-ingest-worker.sh (Cloud Run JOB, `--command node
  * dist/scripts/ingest-worker.js`). Job doim ishlab turadi (uzluksiz poller) yoki

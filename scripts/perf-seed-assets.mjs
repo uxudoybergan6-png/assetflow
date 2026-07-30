@@ -96,8 +96,10 @@ async function main() {
     const [w, h] = dims(orient, res);
     const tags = Array.from(new Set(Array.from({ length: 4 + Math.floor(rand() * 3) }, () => pick(TAGWORDS))));
     const sizeMB = between(c.sizeMB[0], c.sizeMB[1]);
+    const id = `perfseed${String(i).padStart(6, "0")}${Math.floor(rand() * 1e6)}`;
+    const packExt = c.kind === "stock" && c.stockType === "photo" ? "jpg" : c.templateType === "music" || c.templateType === "sfx" ? "wav" : c.templateType === "luts" ? "cube" : "aep";
     rows.push({
-      id: `perfseed${String(i).padStart(6, "0")}${Math.floor(rand() * 1e6)}`,
+      id,
       contributorId: CONTRIB_ID,
       externalId: `perf-seed-${i}`,
       name: `${pick(ADJ)} ${c.catLabel} ${pick(NOUN)} ${i}`,
@@ -116,13 +118,20 @@ async function main() {
       width: w,
       height: h,
       fps: c.dur ? pick([24, 25, 30, 60]) : null,
-      fileName: `perf_${i}.${c.kind === "stock" && c.stockType === "photo" ? "jpg" : c.templateType === "music" || c.templateType === "sfx" ? "wav" : c.templateType === "luts" ? "cube" : "aep"}`,
+      fileName: `perf_${i}.${packExt}`,
       fileSize: Math.round(sizeMB * 1024 * 1024),
       reviewStatus: "APPROVED",
       published: true,
       isPro: rand() < 0.3,
-      // Sahna/asset kalitlari keshi — real katalogda LIST call'ni oldini oladi (bo'sh massiv OK).
-      assetKeysJson: { thumb: `templates/perfseed${i}/thumb.jpg`, preview: `templates/perfseed${i}/preview.mp4`, keys: [] },
+      // #57 (T5.2) — asset kalitlari keshi PRODUCTION formatida: TO'LIQ kalitlar
+      // MASSIVI (persistTemplateAssetKeys aynan shuni yozadi). Ilgari bu yerda
+      // obyekt yozilardi → assetKeySetFromStored Array.isArray() da null qaytarardi
+      // va perf o'lchov production yo'lini (kesh o'qish + URL qurish) sinamasdi.
+      assetKeysJson: [
+        `templates/${id}/thumb.jpg`,
+        `templates/${id}/preview.mp4`,
+        `templates/${id}/pack.${packExt}`,
+      ],
     });
   }
 

@@ -14,8 +14,10 @@
  * multipart'da `fieldNameSize` UMUMAN qo'llanmaydi — shuning uchun bu yerda ular aniq
  * chekланган.
  *
- * MUHIM: `fileSize` va `files` qiymatlari mahsulot talabidir (3GB pack, 512MB sahna videosi,
- * 160 sahna fayli) — ular PASAYTIRILMAYDI.
+ * MUHIM: `files`/`fields`/`parts` qiymatlari mahsulot talabidir (160 sahna fayli) — ular
+ * PASAYTIRILMAYDI. `fileSize` esa #61 (T5.4) da HAQIQIY platforma tomiga tenglashtirildi:
+ * Cloud Run so'rov tanasi 32MiB, undan katta multipart multer'ga umuman yetib bormaydi.
+ * Katta fayllar (pack) presigned PUT bilan to'g'ridan bulutga ketadi.
  */
 
 import type { Options } from "multer";
@@ -54,11 +56,23 @@ export const GEN_REF_UPLOAD_LIMITS: MulterLimits = {
 };
 
 /**
+ * Cloud Run HTTP/1 so'rov tanasi qattiq **32 MiB** bilan cheklangan — bu bizning
+ * sozlamamiz emas, platforma limiti (undan katta multipart hech qachon multer'ga
+ * yetib bormaydi, ingress 413 qaytaradi). Shuning uchun multipart yo'llari shu
+ * ostida turadi; KATTA fayllar (pack, sahna videosi) presigned PUT bilan
+ * TO'G'RIDAN bulutga ketadi (`/templates/:id/upload-url` → `/pack-uploaded`).
+ */
+export const CLOUD_RUN_REQUEST_LIMIT_BYTES = 32 * 1024 * 1024;
+
+/**
  * POST /api/contributor/templates/:id/assets — thumb + preview + pack (har biri maxCount 1).
- * fileSize 3300MB = UI limiti 3GB + multipart overhead zaxirasi (O'ZGARMAYDI).
+ * #61 (T5.4): ilgari 3300MB e'lon qilinardi ("3GB UI limiti"), lekin Cloud Run'da
+ * 32MB'dan katta tana HECH QACHON kelmaydi — limit yolg'on xavfsizlik hissi berardi va
+ * xato faqat ingress 413'ida ko'rinardi. Endi haqiqiy platforma tomiga tenglashtirildi.
+ * Katta pack yo'li: presigned PUT (studio-api.js `uploadAssets`, plagin publish oqimi).
  */
 export const TEMPLATE_ASSET_UPLOAD_LIMITS: MulterLimits = {
-  fileSize: 3300 * 1024 * 1024,
+  fileSize: CLOUD_RUN_REQUEST_LIMIT_BYTES,
   files: 3,
   fields: 8,
   parts: 16,
@@ -67,10 +81,12 @@ export const TEMPLATE_ASSET_UPLOAD_LIMITS: MulterLimits = {
 
 /**
  * POST /api/contributor/templates/:id/scene-previews — `.any()`, sahna thumb/video fayllari.
- * 512MB × 160 fayl ish oqimi O'ZGARMAYDI; `parts` = 160 fayl + matn maydon zaxirasi.
+ * 160 fayl ish oqimi O'ZGARMAYDI; `parts` = 160 fayl + matn maydon zaxirasi.
+ * #61: per-fayl 512MB ham Cloud Run tomidan yuqori edi (butun so'rov 32MB) →
+ * platforma limitiga tenglashtirildi. Sahna thumb'lari bir necha MB, ish oqimi tegilmagan.
  */
 export const SCENE_PREVIEW_UPLOAD_LIMITS: MulterLimits = {
-  fileSize: 512 * 1024 * 1024,
+  fileSize: CLOUD_RUN_REQUEST_LIMIT_BYTES,
   files: 160,
   fields: 8,
   parts: 180,

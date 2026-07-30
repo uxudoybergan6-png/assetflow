@@ -52,3 +52,13 @@ STRIPE_PRICE_YEARLY: ""
 SENTRY_DSN: ""
 # ADMIN_NOTIFY_EMAIL (FAZA 3 E) — yangi shablon moderatsiyaga tushganda shu manzilga xat:
 ADMIN_NOTIFY_EMAIL: ""
+
+# ── Miqyos (T5.4) ───────────────────────────────────────────────────────────
+# #62 — REDIS_URL yo'q bo'lsa rate-limit counter'lari HAR INSTANSDA alohida.
+# Bu qiymat deploy'dagi --max-instances bilan BIR XIL bo'lishi kerak (hozir 10):
+# limitlar shu songa bo'linadi va yig'indi mo'ljallangan darajada qoladi.
+# REDIS_URL qo'yilsa counter umumiy bo'ladi va bu qiymat E'TIBORSIZ qoldiriladi.
+API_MAX_INSTANCES: "10"
+# #64 — ingest worker har API instansida ishlamasin (har ~4s DB polling × 10 instans →
+# scale-to-zero yo'q). Default endi o'chiq; alohida worker service uchun "true" qo'ying.
+INGEST_WORKER_INLINE: "false"

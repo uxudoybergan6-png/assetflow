@@ -382,6 +382,9 @@ model ContributorTemplate {
   @@index([published, reviewStatus, kind, templateType, updatedAt], map: "ct_pub_rev_kind_type_upd_idx")
   @@index([published, reviewStatus, stockType, updatedAt], map: "ct_pub_rev_stock_upd_idx")
   @@index([published, reviewStatus, templateApp, updatedAt], map: "ct_pub_rev_app_upd_idx")
+  // #60 (T5.3) — `sort=az|za` (ORDER BY name, id) uchun. Trigram/qisman indekslar
+  // (#58/#59) Prisma sxemasida ifodalanmaydi → migratsiyada xom SQL bilan.
+  @@index([published, reviewStatus, name, id], map: "ct_pub_rev_name_idx")
 }
 
 model StudioMessageThread {
@@ -975,6 +978,23 @@ model PluginInstaller {
 
   @@unique([releaseId, platform])
   @@index([releaseId])
+}
+
+/// #63 (T5.4) — upload progress instanslar aro. Ilgari holat FAQAT xotirada edi:
+/// SSE ulanishi (GET /templates/:id/upload-progress) yuklashni bajarayotgan
+/// instansdan boshqasiga tushsa progress bar qimirlamasdi. Yozuv throttled
+/// (~1.5s), terminal holat (done/error) doim yoziladi. FK yo'q — shablon
+/// o'chirilsa yetim qator zararsiz (TTL bilan tozalanadi).
+model UploadProgress {
+  templateId String   @id
+  stage      String
+  pct        Int      @default(0)
+  message    String   @default("")
+  error      String?
+  done       Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+
+  @@index([updatedAt])
 }
 
 // ── P1 #19 (P6 §4 / P7 §8) — QAYTA TIKLANADIGAN BULK-INGEST NAVBATI ──────────

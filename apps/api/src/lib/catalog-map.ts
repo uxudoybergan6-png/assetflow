@@ -13,11 +13,10 @@ import {
   isS3Configured,
   s3ObjectExists,
   templateAssetFlags,
-  listTemplateS3Keys,
   s3AssetKeyFromSet,
   getPublicOrSignedUrl,
 } from "./s3.js";
-import { assetKeySetFromStored, syncTemplateAssetKeys } from "./asset-state.js";
+import { assetKeySetFromStored, queueAssetKeyBackfill } from "./asset-state.js";
 
 // Thumb/preview/sahna ko'rsatish URL muddati. CDN_BASE_URL bo'lsa public URL
 // (muddatsiz), aks holda (GCS private bucket) signed URL — plain public GCS URL
@@ -184,20 +183,20 @@ function contributorAuthor(
 }
 
 /** Asset URL/bayroqlarini yechish — mapCatalogItem (to'liq) va mapCatalogCard (slim)
- *  o'rtasida umumiy. Kalitlar avval DB keshidan (assetKeysJson); kesh yo'q bo'lsa
- *  bir marta live List + DB'ga saqlab o'zini to'ldiradi (lazy backfill, eski yozuvlar
- *  uchun). Ingest endi assetKeysJson yozadi (P1 #16) — yangi yozuvlarda List CHAQIRILMAYDI. */
+ *  o'rtasida umumiy. Kalitlar FAQAT DB keshidan (assetKeysJson) o'qiladi — o'qish
+ *  yo'lida hech qachon S3 LIST yoki DB UPDATE qilinmaydi (#19). Kesh yo'q qator fon
+ *  navbatiga qo'yiladi. Ingest/mutatsiya yo'llari assetKeysJson'ni o'zi yozadi. */
 async function resolveCatalogAssets(t: TemplateRow, apiBase: string) {
   const storedKeys = assetKeySetFromStored(t.assetKeysJson);
-  const s3Keys =
-    storedKeys ??
-    (await syncTemplateAssetKeys(t.id)) ??
-    (await listTemplateS3Keys(t.id));
+  // #19 (T5.1): o'qish yo'lida S3 LIST / DB UPDATE YO'Q. Kesh yo'q qator fon
+  // navbatiga tushadi (bir necha soniyada to'ladi; restartda reconciler oladi).
+  if (!storedKeys) queueAssetKeyBackfill(t.id);
+  const s3Keys = storedKeys ?? new Set<string>();
   // Cache-bust versiyasi: shablon oxirgi yangilangan vaqt (epoch ms). R2 kalitlari
   // versiyalanmagani uchun CDN public URL'lariga ?v=<epoch> qo'shamiz.
   const cacheBust = t.updatedAt.getTime();
   const assets = await templateAssetFlags(t.id, s3Keys, {
-    confirmPack: !storedKeys, // DB keshi authoritative — HeadObject re-tasdiq shart emas
+    confirmPack: false, // DB keshi authoritative — HeadObject re-tasdiq shart emas
   });
   const hasThumb = assets.thumb;
   const hasPreview = assets.preview;

@@ -38,6 +38,9 @@ echo "▶ Artifact Registry'ga push…"
 docker push "$IMG"
 
 echo "▶ Cloud Run deploy (no-cpu-throttling + min-instances=1 — fon gen ishlashi uchun SHART)…"
+# #65 (T5.4) — --concurrency 20 (default 80 emas): instans 1 CPU / 1Gi, ffmpeg transcode
+# va ingest bir xil protsessda ishlaydi → 80 parallel so'rov OOM/CPU och qoldirardi.
+# 20 × max-instances 10 = 200 parallel so'rov sig'imi (bugungi yukdan ancha yuqori).
 # FAZA 3 (D) — health-gated rollout: startup probe /health (DB+storage HAQIQIY tekshiruv,
 # 503=degraded) — bog'liqligi buzilgan revision hech qachon trafik OLMAYDI (deploy yiqiladi,
 # eski revision jonli qoladi). Liveness /livez (arzon protsess-tirikmi) — muzlagan
@@ -45,6 +48,7 @@ echo "▶ Cloud Run deploy (no-cpu-throttling + min-instances=1 — fon gen ishl
 gcloud run deploy "$SERVICE" --image "$IMG" \
   --region "$REGION" --allow-unauthenticated \
   --no-cpu-throttling --min-instances 1 --max-instances 10 \
+  --concurrency 20 \
   --memory 1Gi --cpu 1 --timeout 600 \
   --startup-probe "httpGet.path=/health,initialDelaySeconds=5,periodSeconds=10,timeoutSeconds=5,failureThreshold=17" \
   --liveness-probe "httpGet.path=/livez,periodSeconds=30,timeoutSeconds=5,failureThreshold=3" \

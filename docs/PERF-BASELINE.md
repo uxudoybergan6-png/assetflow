@@ -53,6 +53,38 @@ frozen After Effects and an instant one.
 
 ---
 
+## Re-measurement — 2026-07-30 (audit #57 + #19)
+
+Audit #57: `perf-seed-assets.mjs` wrote `assetKeysJson` as an **object**, but production writes a
+**sorted array of full S3 keys** (`persistTemplateAssetKeys`). `assetKeySetFromStored` returns
+`null` for anything that is not an array → every seeded row counted as a **cache miss**, so the
+2026-07-14 numbers above measured a code path production never takes. The seed now emits the
+array format; #19 additionally removed the S3 LIST + DB UPDATE from the read path entirely.
+
+| Metric (p50) | 50 | 500 | 5000 | Scaling |
+|---|---|---|---|---|
+| Catalog list TTFB | 4.2 ms | 5.0 ms | 5.3 ms | flat ✅ |
+| Catalog list p95 | 43.2 ms | 40.6 ms | 40.8 ms | flat |
+| Response size (48 items) | 37.7 KB | 37.7 KB | 37.7 KB | flat ✅ |
+| Filter (`templateType=graphics`) | 1.5 ms | 4.3 ms | 8.7 ms | sub-linear |
+| Filter combo (`type+pro+orient`) | 1.4 ms | 2.3 ms | 3.8 ms | sub-linear |
+| Search (`q=cinematic`) | 2.0 ms | 6.5 ms | 5.5 ms | sub-linear ⚠️ (finding 2 stands) |
+| Detail (`/catalog/:id`) | 1.0 ms · 0.8 KB | 1.2 ms · 0.8 KB | 1.3 ms · 0.8 KB | flat ✅ |
+| Load, 20 concurrent (wall) | 36 ms · 20/20 | 33 ms · 20/20 | 31 ms · 20/20 | flat ✅ |
+| Load, 50 concurrent (wall) | 46 ms · 50/50 | 51 ms · 50/50 | 54 ms · 50/50 | flat ✅ |
+| API process RSS | 177 MB | 188 MB | 226 MB | +49 MB for 100× data ✅ |
+
+The curve is unchanged from 2026-07-14 — **the scaling conclusions above still hold with the
+correct data shape.**
+
+> ⚠️ **What this run still does NOT measure.** The local API reports
+> `[s3] isS3Configured=false` (no bucket in `.env`), so the S3 LIST branch is inert either way
+> and the #19 win (100 LIST + 100 UPDATE per 100-row page → 0) **cannot be seen in these
+> numbers**. It has to be read from R2/GCS request metrics in production. What the local run
+> does confirm: with correct `assetKeysJson`, the catalog list issues **no per-row DB write**.
+
+---
+
 ## Findings (stated, not "fixed" — per step 22 rules)
 
 1. **The catalog scales cleanly to 5000.** Response size is flat (38.2 KB/page), TTFB stays

@@ -286,29 +286,60 @@ adminRouter.put("/plan-config/:plan", async (req, res) => {
 // tashlandi — FAZA 6b to'liq (guard+audit) versiyalari fayl oxirida.)
 
 /** AE Browse obunachilari — haqiqiy DB */
-adminRouter.get("/plugin-subscribers", async (_req, res) => {
+const SUBSCRIBERS_PAGE_MAX = 500;
+const SUBSCRIBERS_PAGE_DEFAULT = 200;
+
+adminRouter.get("/plugin-subscribers", async (req, res) => {
   // N+1 tuzatish: avval har obunachi uchun `ensurePluginProfile` (oy-reset +
   // upsert + qayta o'qish) alohida chaqirilardi (~3N so'rov). Endi: BITTA batched
   // oy-reset + BITTA boyitilgan findMany. Semantika bir xil — reset atomik va
   // profil oldindan mavjud (upsert no-op edi). Reset findMany'dan OLDIN bajariladi,
   // shu sabab qaytgan downloadsMonth reset'dan keyingi qiymatni aks ettiradi.
   await resetExpiredPluginMonths();
-  const profiles = await prisma.pluginProfile.findMany({
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          image: true,
-          role: true,
-          emailVerified: true,
-          subscription: true,
+
+  // #67 (T5.4) — ilgari findMany paginatsiyasiz edi: 50k obunachida bitta javob
+  // o'nlab MB + Neon timeout. Endi take/skip. `stats` esa SAHIFADAN emas, DB
+  // agregatidan hisoblanadi — u BUTUN populyatsiya bo'yicha avtoritativ qoladi
+  // (studio/js/data.js uni shunday ishlatadi).
+  const takeRaw = Number(req.query.take);
+  const skipRaw = Number(req.query.skip);
+  const take = Number.isFinite(takeRaw) && takeRaw > 0
+    ? Math.min(Math.floor(takeRaw), SUBSCRIBERS_PAGE_MAX)
+    : SUBSCRIBERS_PAGE_DEFAULT;
+  const skip = Number.isFinite(skipRaw) && skipRaw > 0 ? Math.floor(skipRaw) : 0;
+
+  const hourAgo = new Date(Date.now() - 3_600_000);
+  const notRemoved = { status: { not: PluginAccountStatus.REMOVED } };
+  const [profiles, total, byStatus, byPlan, sums, onlineCount] = await Promise.all([
+    prisma.pluginProfile.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            role: true,
+            emailVerified: true,
+            subscription: true,
+          },
         },
       },
-    },
-    orderBy: { lastSeenAt: "desc" },
-  });
+      // `lastSeenAt` null bo'lishi mumkin → id ikkinchi kalit, sahifalar barqaror bo'lsin
+      orderBy: [{ lastSeenAt: "desc" }, { userId: "asc" }],
+      take,
+      skip,
+    }),
+    prisma.pluginProfile.count(),
+    prisma.pluginProfile.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.pluginProfile.groupBy({ by: ["plan"], where: notRemoved, _count: { _all: true } }),
+    prisma.pluginProfile.aggregate({ _sum: { downloadsTotal: true } }),
+    // Audit §C (P1) — onlayn yagona predikat (oxirgi 60 daqiqa + ACTIVE);
+    // avvalgi humanized-label regex "Hozir"ni (eng yaqinlarini) tushirib qoldirardi.
+    prisma.pluginProfile.count({
+      where: { status: PluginAccountStatus.ACTIVE, lastSeenAt: { gte: hourAgo } },
+    }),
+  ]);
 
   const userIds = profiles.map((p) => p.userId);
   const tokens = await prisma.pluginToken.findMany({
@@ -319,22 +350,29 @@ adminRouter.get("/plugin-subscribers", async (_req, res) => {
 
   const items = profiles.map((row) => mapSubscriberRow(row, tokenOk.has(row.userId)));
 
-  const active = items.filter((s) => s.status === "active");
+  const statusCount = (s: PluginAccountStatus) =>
+    byStatus.find((g) => g.status === s)?._count._all ?? 0;
+  const planCount = (p: PluginPlanTier) =>
+    byPlan.find((g) => g.plan === p)?._count._all ?? 0;
+  const paidCount = planCount(PluginPlanTier.PRO) + planCount(PluginPlanTier.STUDIO);
+
   res.json({
     items,
+    total,
+    take,
+    skip,
+    hasMore: skip + items.length < total,
     stats: {
-      total: items.length,
-      active: active.length,
-      blocked: items.filter((s) => s.status === "blocked").length,
-      removed: items.filter((s) => s.status === "removed").length,
-      // Audit §C (P1) — onlayn endi yagona predikat (mapSubscriberRow.online, 60 daqiqa);
-      // avvalgi humanized-label regex "Hozir"ni (eng yaqinlarini) tushirib qoldirardi.
-      online: active.filter((s) => s.online).length,
-      totalDownloads: items.reduce((a, s) => a + s.downloads, 0),
-      free: items.filter((s) => s.plan === "Free" && s.status !== "removed").length,
+      total,
+      active: statusCount(PluginAccountStatus.ACTIVE),
+      blocked: statusCount(PluginAccountStatus.BLOCKED),
+      removed: statusCount(PluginAccountStatus.REMOVED),
+      online: onlineCount,
+      totalDownloads: sums._sum.downloadsTotal ?? 0,
+      free: planCount(PluginPlanTier.FREE),
       // Audit §C (P2) — STUDIO ham pullik: free+pro < total bo'lib qolmasin (UI Studio'ni Pro deb ko'rsatadi)
-      pro: items.filter((s) => s.plan !== "Free" && s.status !== "removed").length,
-      studio: items.filter((s) => s.plan === "Studio" && s.status !== "removed").length,
+      pro: paidCount,
+      studio: planCount(PluginPlanTier.STUDIO),
     },
   });
 });

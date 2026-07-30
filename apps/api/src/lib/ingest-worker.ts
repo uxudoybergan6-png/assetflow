@@ -11,9 +11,9 @@
  *  - har element uchun retry (attempts < maxAttempts, faqat transient xatolarda);
  *  - progress (status maydonlari — klient batchId bilan pollaydi);
  *  - restartdan keyin davom etish (stuck 'processing' → qayta 'queued');
- *  - foydalanuvchi trafigi bilan CPU uchun RAQOBATLASHMASIN — ideal holatda alohida
- *    Cloud Run job (scripts/ingest-worker.ts), yoki API ichida INLINE poller
- *    (INGEST_WORKER_INLINE, default yoniq — kichik deploylarda ishlashi uchun).
+ *  - foydalanuvchi trafigi bilan CPU uchun RAQOBATLASHMASIN — alohida Cloud Run job
+ *    (scripts/ingest-worker.ts). API ichidagi INLINE poller #64'dan keyin default
+ *    O'CHIQ (INGEST_WORKER_INLINE=true bilan yoqiladi — lokal/bitta-servis deploy).
  *
  * Claim atomik: `UPDATE ... WHERE id=(SELECT ... FOR UPDATE SKIP LOCKED LIMIT 1)` —
  * bir nechta ishchi (inline poller × N instance + alohida job) xavfsiz raqobatlashadi

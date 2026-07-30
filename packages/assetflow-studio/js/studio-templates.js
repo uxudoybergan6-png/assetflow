@@ -144,6 +144,34 @@ const StudioTemplates = (() => {
     return loadForAdmin();
   }
 
+  /**
+   * #68 — admin "All templates" jadvali uchun BITTA sahifa (TEMPLATES globaliga
+   * TEGMAYDI — moderatsiya ko'rinishlari o'z holicha qoladi). Filtr/qidiruv
+   * serverga beriladi; `counts` butun to'plam bo'yicha (tab raqamlari uchun).
+   * → { items, nextCursor, counts }
+   */
+  async function fetchTemplatePage(opts) {
+    if (!hasToken()) return { items: [], nextCursor: null, counts: null };
+    const o = opts || {};
+    const qs = new URLSearchParams({ scope: "all", take: String(o.take || 50) });
+    if (o.status) qs.set("status", o.status);
+    if (o.search) qs.set("search", o.search);
+    if (o.contributorId) qs.set("contributorId", o.contributorId);
+    if (o.rejectKind) qs.set("rejectKind", o.rejectKind);
+    if (o.tier) qs.set("tier", o.tier);
+    if (o.templateType) qs.set("templateType", o.templateType);
+    if (o.kind) qs.set("kind", o.kind);
+    if (o.published) qs.set("published", o.published);
+    if (o.cursor) qs.set("cursor", o.cursor);
+    if (o.withCounts) qs.set("counts", "1");
+    const data = await StudioApi.listTemplates(qs.toString());
+    return {
+      items: (data.items || []).map(mapApiItem),
+      nextCursor: data.nextCursor || null,
+      counts: data.counts || null,
+    };
+  }
+
   async function loadModerationOnly() {
     if (!hasToken()) return false;
     const items = await listAllTemplatePages("scope=moderation");
@@ -328,6 +356,7 @@ const StudioTemplates = (() => {
     loadForContributor,
     loadForAdmin,
     ensureFullCatalog,
+    fetchTemplatePage,
     loadModerationOnly,
     refreshAfterUpload,
     refreshAfterReview,

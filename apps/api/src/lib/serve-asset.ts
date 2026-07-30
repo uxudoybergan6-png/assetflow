@@ -15,13 +15,13 @@ import {
   getSignedDownloadUrl,
   getS3ObjectMeta,
   isS3Configured,
-  resolveS3AssetKey,
   s3ObjectExists,
   createS3RangeStream,
   readS3ObjectRange,
   uploadStreamToS3,
   deleteS3Objects,
 } from "./s3.js";
+import { resolveAssetKeyCached } from "./asset-state.js";
 
 const MIME: Record<TemplateAssetKind, string> = {
   thumb: "image/jpeg",
@@ -141,7 +141,9 @@ export async function serveTemplateAsset(
   templateId: string,
   kind: TemplateAssetKind
 ) {
-  const s3Key = await resolveS3AssetKey(templateId, kind);
+  // #19 (T5.1): avval DB kalit keshi (1 HEAD) — to'liq probe 27 tagacha ketma-ket
+  // HeadObject qilardi (pack yuklab olishda sezilarli kechikish).
+  const s3Key = await resolveAssetKeyCached(templateId, kind);
   if (s3Key) {
     let downloadKey = s3Key;
     let filename: string | undefined;

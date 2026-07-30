@@ -87,6 +87,7 @@ import {
   setUploadProgress,
   getUploadProgress,
   subscribeUploadProgress,
+  readPersistedUploadProgress,
 } from "../lib/upload-progress.js";
 import { postTemplateModerationMessage } from "../lib/studio-messages.js";
 import { writeAuditLog } from "../lib/audit-log.js";
@@ -531,16 +532,37 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
   const contributorId = req.query.contributorId as string | undefined;
   const search = (req.query.search as string | undefined)?.trim();
 
-  const where: {
-    contributorId?: string;
-    reviewStatus?: TemplateReviewStatus;
-    name?: { contains: string; mode: "insensitive" };
-  } = {};
+  const where: Prisma.ContributorTemplateWhereInput = {};
 
   if (user.role === "ADMIN" && scope === "all") {
     if (status) where.reviewStatus = status;
     if (contributorId) where.contributorId = contributorId;
     if (search) where.name = { contains: search, mode: "insensitive" };
+    // #68 (T5.4) — admin "All templates" jadvali endi filtrni SERVERGA beradi
+    // (ilgari butun katalog klientga tortilib, u yerda filtrlanardi).
+    const tier = String(req.query.tier || "");
+    if (tier === "pro") where.isPro = true;
+    else if (tier === "free") where.isPro = false;
+    const templateType = String(req.query.templateType || "");
+    if (templateType) where.templateType = templateType;
+    const kind = String(req.query.kind || "");
+    if (kind === "template" || kind === "stock") where.kind = kind;
+    const published = String(req.query.published || "");
+    if (published === "true") where.published = true;
+    else if (published === "false") where.published = false;
+    // soft/hard rad etish faqat `reviewNote` ichida farqlanadi (klient mapStatus bilan
+    // bir xil qoida) — jadval tab'i uni serverda ajratsin, sahifa to'liq to'lsin.
+    const rejectKind = String(req.query.rejectKind || "");
+    if (rejectKind === "hard" || rejectKind === "soft") {
+      where.reviewStatus = TemplateReviewStatus.REJECTED;
+      const hardNote: Prisma.ContributorTemplateWhereInput = {
+        OR: [
+          { reviewNote: { contains: "[hard]", mode: "insensitive" } },
+          { reviewNote: { contains: "hard reject", mode: "insensitive" } },
+        ],
+      };
+      where.AND = rejectKind === "hard" ? [hardNote] : [{ NOT: hardNote }];
+    }
   } else if (user.role === "ADMIN" && scope === "moderation") {
     where.reviewStatus = status ?? TemplateReviewStatus.PENDING_REVIEW;
   } else if (user.role === "ADMIN" && !req.query.mine) {
@@ -550,25 +572,9 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
     if (status) where.reviewStatus = status;
   }
 
-  // Audit §D (P2) — stale transcode sweep: fon transcode (Cloud Run throttle) muzlab
-  // qolsa status abadiy "pending" ko'rinardi ("Compressing…" badge hech ketmasdi).
-  // 20 daqiqadan oshgan pending'lar halol "failed" bo'ladi — original preview baribir
-  // xizmat qilinadi; contributor preview'ni qayta yuklab retry qila oladi.
-  try {
-    await prisma.contributorTemplate.updateMany({
-      where: {
-        previewTranscodeStatus: "pending",
-        updatedAt: { lt: new Date(Date.now() - 20 * 60 * 1000) },
-      },
-      data: {
-        previewTranscodeStatus: "failed",
-        previewTranscodeError:
-          "Background transcode stalled — original preview is served; re-upload the preview to retry",
-      },
-    });
-  } catch (e) {
-    console.warn("[templates] stale transcode sweep xato (fail-safe):", e);
-  }
+  // #58 (T5.3) — stale transcode supurishi BU YERDAN OLIB TASHLANDI: har
+  // `GET /templates` da `updateMany` ishlardi (indekssiz to'liq skan + yozuv, listing
+  // TTFB'ga kiradi). Endi cron'da: `sweepStaleTranscodes()` — lib/template-reconcile.ts.
 
   // FAZA 5 (A1) — take+cursor pagination (backward-compatible: param'siz birinchi
   // sahifa, default 100; javobga additive `nextCursor`). Klientlar sahifalab oladi.
@@ -593,9 +599,51 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
   // Bosqich 4 #1: download/import sonini REAL hodisalardan olamiz (forgeable Int emas).
   const rows = await Promise.all(page.map(withAssetFlags));
   const counts = await realTemplateCounts(rows.map((r) => r.id));
+
+  // #68 (T5.4) — `?counts=1` (faqat admin scope=all): holat bo'yicha JAMI sonlar.
+  // Jadval endi bitta sahifani ko'rsatadi, tab raqamlari esa butun to'plamdan
+  // kelishi kerak. Status filtri chiqarib tashlanadi (tab'lar o'zaro to'ldiruvchi).
+  let statusCounts: Record<string, number> | undefined;
+  if (user.role === "ADMIN" && scope === "all" && String(req.query.counts) === "1") {
+    const countsWhere: Prisma.ContributorTemplateWhereInput = { ...where };
+    delete countsWhere.reviewStatus;
+    delete countsWhere.AND; // rejectKind (soft/hard) ham status filtri — tab raqamlariga kirmaydi
+    const [byStatus, hardCount] = await Promise.all([
+      prisma.contributorTemplate.groupBy({
+        by: ["reviewStatus"],
+        where: countsWhere,
+        _count: { _all: true },
+      }),
+      // soft/hard farqi faqat `reviewNote` ichida (klient mapStatus bilan bir xil qoida)
+      prisma.contributorTemplate.count({
+        where: {
+          ...countsWhere,
+          reviewStatus: TemplateReviewStatus.REJECTED,
+          OR: [
+            { reviewNote: { contains: "[hard]", mode: "insensitive" } },
+            { reviewNote: { contains: "hard reject", mode: "insensitive" } },
+          ],
+        },
+      }),
+    ]);
+    const of = (s: TemplateReviewStatus) =>
+      byStatus.find((g) => g.reviewStatus === s)?._count._all ?? 0;
+    const rejected = of(TemplateReviewStatus.REJECTED);
+    statusCounts = {
+      total: byStatus.reduce((a, g) => a + g._count._all, 0),
+      approved: of(TemplateReviewStatus.APPROVED),
+      pending: of(TemplateReviewStatus.PENDING_REVIEW),
+      draft: of(TemplateReviewStatus.DRAFT),
+      hard: hardCount,
+      soft: rejected - hardCount,
+      archived: 0,
+    };
+  }
+
   res.json({
     items: rows.map((r) => applyRealCounts(r, counts)),
     nextCursor: hasMore ? page[page.length - 1].id : null,
+    ...(statusCounts ? { counts: statusCounts } : {}),
   });
 });
 
@@ -673,8 +721,12 @@ contributorRouter.get("/templates/:id/upload-progress", uploadProgressLimiter, (
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders?.();
 
+  // #63: eng oxirgi yuborilgan holat vaqti — lokal listener va DB polli bir xil
+  // kadrni ikki marta yubormasin (ikkalasi ham shu `send`ga tushadi).
+  let lastSentAt = 0;
   const send = (p: ReturnType<typeof getUploadProgress>) => {
-    if (!p) return;
+    if (!p || p.updatedAt <= lastSentAt) return;
+    lastSentAt = p.updatedAt;
     res.write(
       `data: ${JSON.stringify({
         stage: p.stage,
@@ -688,6 +740,13 @@ contributorRouter.get("/templates/:id/upload-progress", uploadProgressLimiter, (
 
   send(getUploadProgress(id));
   const unsub = subscribeUploadProgress(id, send);
+  // #63 (T5.4) — yuklashni BOSHQA instans bajarayotgan bo'lsa lokal pub/sub jim
+  // qoladi. DB polli (2s) shu holatni oladi; bir instansli deployda esa lokal
+  // listener allaqachon yuborgan bo'ladi va `updatedAt` tekshiruvi dublni to'xtatadi.
+  const poll = setInterval(() => {
+    void readPersistedUploadProgress(id).then(send);
+  }, 2_000);
+  poll.unref?.();
   const ping = setInterval(() => res.write(": ping\n\n"), 25_000);
   let closed = false;
   req.on("close", () => {
@@ -695,6 +754,7 @@ contributorRouter.get("/templates/:id/upload-progress", uploadProgressLimiter, (
     closed = true;
     openProgressStreams = Math.max(0, openProgressStreams - 1);
     clearInterval(ping);
+    clearInterval(poll);
     unsub();
   });
 });

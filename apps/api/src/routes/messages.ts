@@ -261,23 +261,41 @@ messagesRouter.post(
       select: { id: true },
     });
 
-    let sent = 0;
-    for (const c of contributors) {
-      await prisma.studioMessageThread.create({
-        data: {
+    // #66 (T5.4) — ilgari HAR contributor uchun alohida `create` (nested message bilan)
+    // ketma-ket ishlardi: 500 contributor = 1000 ketma-ket INSERT round-trip'i (Neon
+    // cross-region'da daqiqalar + HTTP timeout). Endi ikki `createMany`.
+    // Thread id'lari Prisma default'i (cuid) bilan serverda yaratiladi, shuning uchun
+    // ular xabar yozishdan oldin QAYTA O'QILADI — `lastMessageAt` shu chaqiruv uchun
+    // biz belgilagan aniq belgidan (marker) foydalanamiz (DB soatiga tayanmaydi).
+    const marker = new Date();
+    const subjectLine = `📢 ${subject}`;
+    const CHUNK = 500;
+    for (let i = 0; i < contributors.length; i += CHUNK) {
+      await prisma.studioMessageThread.createMany({
+        data: contributors.slice(i, i + CHUNK).map((c) => ({
           contributorId: c.id,
-          subject: `📢 ${subject}`,
+          subject: subjectLine,
           isBroadcast: true,
-          messages: {
-            create: {
-              senderId: req.user!.userId,
-              body,
-            },
-          },
-        },
+          lastMessageAt: marker,
+        })),
       });
-      sent++;
     }
+    const createdThreads = contributors.length
+      ? await prisma.studioMessageThread.findMany({
+          where: { isBroadcast: true, subject: subjectLine, lastMessageAt: marker },
+          select: { id: true },
+        })
+      : [];
+    for (let i = 0; i < createdThreads.length; i += CHUNK) {
+      await prisma.studioMessage.createMany({
+        data: createdThreads.slice(i, i + CHUNK).map((t) => ({
+          threadId: t.id,
+          senderId: req.user!.userId,
+          body,
+        })),
+      });
+    }
+    const sent = createdThreads.length;
 
     await writeAuditLog({
       actorId: req.user!.userId,

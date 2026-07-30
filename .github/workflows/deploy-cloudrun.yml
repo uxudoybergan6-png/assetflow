@@ -108,12 +108,15 @@ jobs:
       # tekshiruv) — bog'liqligi buzilgan revision trafik olmaydi, deploy yiqiladi va
       # ESKI revision jonli qoladi. Liveness /livez — muzlagan konteyner restart.
       # Rollback tartibi: docs/ROLLBACK-RUNBOOK.md
+      # #65 (T5.4) — --concurrency 20: instans 1 CPU / 1Gi va ffmpeg/ingest bir xil
+      # protsessda → Cloud Run default 80 parallel so'rov OOM xavfi. 20 × 10 instans = 200.
       - name: Deploy to Cloud Run
         run: |
           IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api:${GITHUB_SHA}"
           gcloud run deploy "$SERVICE" --image "$IMG" \
             --region "$REGION" --allow-unauthenticated \
             --no-cpu-throttling --min-instances 1 --max-instances 10 \
+            --concurrency 20 \
             --memory 1Gi --cpu 1 --timeout 600 \
             --startup-probe "httpGet.path=/health,initialDelaySeconds=5,periodSeconds=10,timeoutSeconds=5,failureThreshold=17" \
             --liveness-probe "httpGet.path=/livez,periodSeconds=30,timeoutSeconds=5,failureThreshold=3" \
