@@ -23,6 +23,7 @@ const { reconcilePluginPlans } = await import(
 
 const r = await reconcilePluginPlans();
 console.log(
-  `Reconcile tugadi: ${r.total} profil tekshirildi, ${r.changed} ta plan Stripe holatiga moslashtirildi.`
+  `Reconcile tugadi: ${r.total} profil tekshirildi, ${r.changed} ta plan Stripe holatiga moslashtirildi` +
+    `, ${r.skipped ?? 0} ta Stripe'siz (LS/admin) pullik hisob TEGILMADI.`
 );
 process.exit(0);

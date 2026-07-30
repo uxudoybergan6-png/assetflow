@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma, PluginPlanTier } from "@creative-tools/database";
+import { prisma, PluginPlanTier, SubscriptionStatus } from "@creative-tools/database";
 import {
   verifyWebhookSignature,
   webhookDedupeKey,
@@ -10,7 +10,7 @@ import {
   grantAiCreditsTopup,
   clawbackTopupCredits,
 } from "../lib/plugin-profile.js";
-import { lsAmountCents, recordRevenueEvent } from "../lib/revenue.js";
+import { lsAmountCents, lsTestMode, recordRevenueEvent } from "../lib/revenue.js";
 import {
   sendSubscriptionActiveEmail,
   sendPaymentReceivedEmail,
@@ -29,7 +29,9 @@ import {
  *     (unique kalit). P2002 → allaqachon ishlangan/parallel yetkazish → skip.
  *     Bu ADDITIVE kredit grant'ini parallel takror yetkazishda ham EXACTLY-ONCE
  *     qiladi (Stripe check-then-create naqshidan farqli — chunki topup atomik EMAS
- *     idempotent). Ishlov XATO bersa claim o'chiriladi → LS retry qayta ishlaydi.
+ *     idempotent). B3 (#11): xatoda claim ENDI O'CHIRILMAYDI — har pul harakati
+ *     o'z `sourceKey`'i bilan idempotent (CreditLedger/RevenueEvent unique), shu
+ *     sabab qisman bajarilgan ishlov retry'da 2× grant bermaydi.
  *   • order_created uchun kalit = `ls:order:<orderId>` (har order bir marta grant);
  *     subscription_* uchun kalit = raw-body sha256 (literal retry deduped, haqiqiy
  *     holat o'zgarishi qayta ishlanadi — applyBillingPlan baribir idempotent).
@@ -95,7 +97,56 @@ async function setBillingIssue(userId: string, issue: string | null): Promise<vo
   }
 }
 
-async function handleSubscriptionEvent(userId: string, attrs: Record<string, any>) {
+/** LS status → bizning SubscriptionStatus. `cancelled` grace davrida hali ACTIVE
+    (kirish `subscriptionActive` bilan bir xil mantiqda). */
+function lsSubscriptionStatus(attrs: Record<string, any>): SubscriptionStatus {
+  const status = String(attrs?.status ?? "");
+  if (status === "on_trial") return SubscriptionStatus.TRIALING;
+  if (status === "active") return SubscriptionStatus.ACTIVE;
+  if (status === "past_due" || status === "unpaid") return SubscriptionStatus.PAST_DUE;
+  if (status === "cancelled" && subscriptionActive(attrs)) return SubscriptionStatus.ACTIVE;
+  return SubscriptionStatus.CANCELED;
+}
+
+/** B4 (#12) — billing davri kaliti: LS `renews_at` (pause→resume da o'zgarmaydi). */
+function lsPeriodKey(attrs: Record<string, any>): string | null {
+  const raw = attrs?.renews_at ?? attrs?.ends_at;
+  if (!raw) return null;
+  const t = Date.parse(String(raw));
+  return Number.isFinite(t) ? new Date(t).toISOString() : null;
+}
+
+/**
+ * B1 (audit #9) — LS obunasini `Subscription` qatoriga yozadi. Ilgari faqat
+ * `PluginProfile.plan` yozilardi → `subscriptionIsPro()` har LS mijozi uchun false
+ * qaytarardi (Pro-only oqimlar yopiq qolardi). `provider="lemonsqueezy"` (#45) —
+ * Stripe reconciler bu qatorlarga tegmaydi; `testMode` (#47) jonli tushumdan ajratadi.
+ * Best-effort: yozuv yiqilsa webhook ishlovini bloklamaydi (plan baribir qo'llangan).
+ */
+async function upsertLsSubscription(userId: string, attrs: Record<string, any>, lsId: string) {
+  const status = lsSubscriptionStatus(attrs);
+  const endsRaw = attrs?.ends_at ?? attrs?.renews_at;
+  const endsAt = endsRaw ? Date.parse(String(endsRaw)) : NaN;
+  const data = {
+    status,
+    currentPeriodEnd: Number.isFinite(endsAt) ? new Date(endsAt) : null,
+    cancelAtPeriodEnd: String(attrs?.status ?? "") === "cancelled",
+    provider: "lemonsqueezy",
+    lsSubscriptionId: lsId || null,
+    testMode: attrs?.test_mode === true,
+  };
+  try {
+    await prisma.subscription.upsert({
+      where: { userId },
+      create: { userId, ...data },
+      update: data,
+    });
+  } catch (e) {
+    console.warn("[ls-webhook] Subscription yozilmadi:", e);
+  }
+}
+
+async function handleSubscriptionEvent(userId: string, attrs: Record<string, any>, lsId = "") {
   // Plan payload'dan (product_name/variant_name) — variant xaritasiga BOG'LIQ EMAS.
   const classified = classifyVariant(
     String(attrs?.product_name ?? ""),
@@ -113,7 +164,9 @@ async function handleSubscriptionEvent(userId: string, attrs: Record<string, any
     console.warn("[ls-webhook] obuna varianti tanilmadi, PRO baseline:", attrs?.product_name);
     target = PluginPlanTier.PRO;
   }
-  await applyBillingPlan(userId, target);
+  // B4 (#12): kredit to'ldirish faqat YANGI billing davrida (pause→resume da emas).
+  await applyBillingPlan(userId, target, { periodKey: lsPeriodKey(attrs) });
+  await upsertLsSubscription(userId, attrs, lsId);
   // FAZA 4 (B) — dunning ko'rsatkichi: past_due/unpaid → belgi; faol → toza.
   const status = String(attrs?.status ?? "");
   if (status === "past_due" || status === "unpaid") {
@@ -149,6 +202,22 @@ async function handleOrderRefunded(
     String(item?.variant_id ?? "")
   );
 
+  // B3 (#11) dan keyin webhook claim'i xatoda O'CHIRILMAYDI → PUL harakati
+  // (clawback/downgrade) accounting yozuvidan OLDIN bajariladi: accounting
+  // yiqilsa ham kredit qaytarib olingan bo'ladi.
+  let creditsClawed = 0;
+  let downgraded = false;
+  if (classified?.kind === "credit") {
+    // Partial refund → proportsional kredit (floor); to'liq → butun paket.
+    const want = fullRefund || totalCents <= 0
+      ? classified.credits
+      : Math.floor((classified.credits * refundedCents) / totalCents);
+    creditsClawed = (await clawbackTopupCredits(userId, want)).clawed;
+  } else if (classified?.kind === "subscription" && fullRefund) {
+    await applyBillingPlan(userId, PluginPlanTier.FREE);
+    downgraded = true;
+  }
+
   if (refundedCents > 0) {
     await recordRevenueEvent({
       sourceKey: `rev:order:${orderId}:refund`,
@@ -162,39 +231,30 @@ async function handleOrderRefunded(
       currency: String(attrs?.currency ?? "USD"),
       lsOrderId: orderId,
       eventName: "order_refunded",
+      testMode: lsTestMode(attrs),
       occurredAt: lsOccurredAt(attrs),
     });
-  }
-
-  let creditsClawed = 0;
-  let downgraded = false;
-  if (classified?.kind === "credit") {
-    // Partial refund → proportsional kredit (floor); to'liq → butun paket.
-    const want = fullRefund || totalCents <= 0
-      ? classified.credits
-      : Math.floor((classified.credits * refundedCents) / totalCents);
-    creditsClawed = (await clawbackTopupCredits(userId, want)).clawed;
-  } else if (classified?.kind === "subscription" && fullRefund) {
-    await applyBillingPlan(userId, PluginPlanTier.FREE);
-    downgraded = true;
   }
   return { creditsClawed, downgraded, refundedCents };
 }
 
 /**
  * FAZA 4 (B) — obuna to'lovi refundi (subscription_payment_refunded):
- * manfiy RevenueEvent + FREE'ga tushirish (policy). Obuna to'lovi top-up kredit
- * BERMAGAN — clawback yo'q (bepul oylik ulushga tegilmaydi; FREE cap'ini
- * applyBillingPlan o'zi idempotent bajaradi).
+ * manfiy RevenueEvent + TO'LIQ refundda FREE'ga tushirish (policy). Obuna to'lovi
+ * top-up kredit BERMAGAN — clawback yo'q (bepul oylik ulushga tegilmaydi).
+ * B8 (audit #48): QISMAN refund endi kirishni O'CHIRMAYDI — mijoz pulining bir
+ * qismini qaytardi, obuna esa hali faol (LS statusni alohida webhook bilan beradi).
  */
 async function handleInvoiceRefunded(
   userId: string,
   invoiceId: string,
   attrs: Record<string, any>
-): Promise<{ refundedCents: number }> {
+): Promise<{ refundedCents: number; downgraded: boolean }> {
   const refundedRaw = lsAmountCents(attrs, "refunded_amount");
   const totalCents = lsAmountCents(attrs, "total");
   const refundedCents = refundedRaw > 0 ? Math.min(refundedRaw, totalCents || refundedRaw) : totalCents;
+  const fullRefund = totalCents > 0 ? refundedCents >= totalCents : true;
+  if (fullRefund) await applyBillingPlan(userId, PluginPlanTier.FREE);
   if (refundedCents > 0) {
     await recordRevenueEvent({
       sourceKey: `rev:invoice:${invoiceId}:refund`,
@@ -206,11 +266,11 @@ async function handleInvoiceRefunded(
       lsInvoiceId: invoiceId,
       lsSubscriptionId: attrs?.subscription_id != null ? String(attrs.subscription_id) : null,
       eventName: "subscription_payment_refunded",
+      testMode: lsTestMode(attrs),
       occurredAt: lsOccurredAt(attrs),
     });
   }
-  await applyBillingPlan(userId, PluginPlanTier.FREE);
-  return { refundedCents };
+  return { refundedCents, downgraded: fullRefund };
 }
 
 /** LS payload'idan hodisa vaqti (created_at) — bo'lmasa hozir. */
@@ -230,7 +290,12 @@ async function handleOrderCreated(userId: string, orderId: string, attrs: Record
     String(item?.variant_id ?? "")
   );
   if (classified?.kind === "credit") {
-    await grantAiCreditsTopup(userId, classified.credits, { reason: "topup" });
+    // B3 (#11): grant order ID bo'yicha IDEMPOTENT (CreditLedger.sourceKey unique) —
+    // webhook claim qatori o'chirilsa/LS retry kelsa ham 2× kredit berilmaydi.
+    await grantAiCreditsTopup(userId, classified.credits, {
+      reason: "topup",
+      sourceKey: `ls:order:${orderId}:credits`,
+    });
     // FAZA 4 (A) — kredit-paket tushumi. Obuna orderlari BU YERDA yozilmaydi
     // (subscription_payment_success invoice'i yozadi — double-count bo'lmasin).
     await recordRevenueEvent({
@@ -242,6 +307,7 @@ async function handleOrderCreated(userId: string, orderId: string, attrs: Record
       currency: String(attrs?.currency ?? "USD"),
       lsOrderId: orderId,
       eventName: "order_created",
+      testMode: lsTestMode(attrs),
       occurredAt: lsOccurredAt(attrs),
     });
   }
@@ -281,6 +347,7 @@ async function recordSubscriptionInvoiceRevenue(
     lsInvoiceId: invoiceId,
     lsSubscriptionId: attrs?.subscription_id != null ? String(attrs.subscription_id) : null,
     eventName: "subscription_payment_success",
+    testMode: lsTestMode(attrs),
     occurredAt: lsOccurredAt(attrs),
   });
 }
@@ -398,7 +465,7 @@ export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
         case "subscription_expired":
         case "subscription_paused":
         case "subscription_unpaused":
-          await handleSubscriptionEvent(userId, attrs);
+          await handleSubscriptionEvent(userId, attrs, dataId);
           break;
         case "order_created":
           await handleOrderCreated(userId, dataId, attrs);
@@ -435,7 +502,7 @@ export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
           if (u?.email) {
             sendRefundProcessedEmail(u.email, {
               amountLabel: r.refundedCents > 0 ? `$${(r.refundedCents / 100).toFixed(2)}` : undefined,
-              downgraded: true,
+              downgraded: r.downgraded,
             });
           }
           break;
@@ -453,6 +520,7 @@ export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
                 grossCents: -total,
                 currency: String(attrs?.currency ?? "USD"),
                 eventName,
+                testMode: lsTestMode(attrs),
                 occurredAt: lsOccurredAt(attrs),
               });
             }
@@ -466,11 +534,12 @@ export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
       await notifyPaymentEvent(userId, eventName, attrs);
     }
   } catch (err) {
-    // Ishlov xato berdi → claim'ni bekor qilamiz (LS retry qayta ishlasin,
-    // grant yo'qolmasin). Best-effort delete.
-    await prisma.webhookEvent
-      .deleteMany({ where: { stripeEventId: dedupeKey } })
-      .catch(() => {});
+    // B3 (#11): claim ENDI O'CHIRILMAYDI. Ilgari xatoda claim o'chirilardi —
+    // qisman bajarilgan ishlov (kredit berilgan, keyin email/revenue yiqilgan)
+    // LS retry'da QAYTA bajarilib 2× grant berardi. Endi har pul harakati o'z
+    // sourceKey'i bilan idempotent (CreditLedger/RevenueEvent unique), shuning
+    // uchun claim qoladi va retry side-effect takrorlamaydi.
+    console.error("[ls-webhook] ishlov xatosi (claim saqlanadi):", dedupeKey, err);
     throw err;
   }
 

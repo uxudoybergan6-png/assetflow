@@ -6,7 +6,7 @@ import {
 } from "@creative-tools/database";
 import { isEmailConfigured } from "./email.js";
 import { avatarPublicUrl } from "./app-urls.js";
-import { writeCreditLedger } from "./ledger.js";
+import { writeCreditLedger, claimCreditGrant } from "./ledger.js";
 
 const FREE_DOWNLOAD_LIMIT = 15;
 const FREE_IMPORT_LIMIT = 10;
@@ -222,11 +222,33 @@ export async function setPluginPlan(userId: string, plan: PluginPlanTier) {
   }
 
   if (plan === PluginPlanTier.PRO) {
+    // B1 (#9) dan keyin bu tekshiruv LS obunalarini ham ko'radi (Subscription qatori
+    // provider="lemonsqueezy" bilan yoziladi) — LS mijozi endi PRO'ga qaytara oladi.
     const stripePro = await subscriptionIsPro(userId);
     if (!proSwitchAllowed(stripePro)) {
       return {
         ok: false as const,
         error: "PRO requires a Stripe subscription (or admin approval)",
+      };
+    }
+  }
+
+  // B2 (audit #10) — faol pullik obuna bo'lsa QO'LDA FREE'ga tushirishga yo'l qo'ymaymiz:
+  // plan tushadi, lekin provayder pul olishda davom etadi. Bekor qilish — billing portali.
+  if (plan === PluginPlanTier.FREE && profile.plan !== PluginPlanTier.FREE) {
+    const activeSub = await prisma.subscription.findUnique({
+      where: { userId },
+      select: { status: true, provider: true },
+    });
+    const stillPaid =
+      activeSub?.status === SubscriptionStatus.ACTIVE ||
+      activeSub?.status === SubscriptionStatus.TRIALING;
+    if (stillPaid) {
+      return {
+        ok: false as const,
+        error:
+          "Obunangiz faol — bekor qilish uchun hisob sahifasidagi \"Obunani boshqarish\" bo'limiga o'ting.",
+        code: "SUBSCRIPTION_ACTIVE" as const,
       };
     }
   }
@@ -289,19 +311,35 @@ export async function syncPluginPlanFromStripe(userId: string, isActive: boolean
  * dedup'i literal retry'larni to'sadi; bu funksiya genuine-but-spurious
  * update'larga qo'shimcha himoya beradi.
  */
-export async function applyBillingPlan(userId: string, plan: PluginPlanTier) {
+export async function applyBillingPlan(
+  userId: string,
+  plan: PluginPlanTier,
+  // B4 (audit #12) — joriy billing davri kaliti (LS `renews_at` / Stripe davr oxiri).
+  // Berilsa: kredit to'ldirish faqat kalit O'ZGARGANDA bo'ladi → pause→resume
+  // (bir xil davr) to'lovsiz reset bermaydi. Berilmasa — eski xatti-harakat.
+  opts: { periodKey?: string | null } = {}
+) {
   const profile = await ensurePluginProfile(userId);
   const changingPlan = profile.plan !== plan;
-  const data: { plan: PluginPlanTier; aiCredits?: number } = { plan };
+  const data: {
+    plan: PluginPlanTier;
+    aiCredits?: number;
+    billingPeriodKey?: string | null;
+  } = { plan };
+
+  const periodKey = opts.periodKey ?? null;
+  // Yangi billing davrimi? Kalit berilmagan bo'lsa (Stripe/eski chaqiruvlar) — HA deb qaraymiz.
+  const newPeriod = !periodKey || profile.billingPeriodKey !== periodKey;
 
   // Bosqich 4 #5: sotib olingan TOP-UP har plan o'zgarishida saqlanadi.
   if (plan === PluginPlanTier.FREE) {
     const freeAllot = aiMonthlyAllotment(PluginPlanTier.FREE) + profile.aiCreditsTopup;
     if (profile.aiCredits > freeAllot) data.aiCredits = freeAllot;
-  } else if (changingPlan) {
+  } else if (changingPlan && newPeriod) {
     const allot = aiMonthlyAllotment(plan) + profile.aiCreditsTopup;
     if (profile.aiCredits < allot) data.aiCredits = allot;
   }
+  if (periodKey && plan !== PluginPlanTier.FREE) data.billingPeriodKey = periodKey;
 
   await prisma.pluginProfile.update({ where: { userId }, data });
   await recordPlanChange(userId, profile.plan, plan, "billing");
@@ -322,22 +360,42 @@ export async function applyBillingPlan(userId: string, plan: PluginPlanTier) {
 export async function grantAiCreditsTopup(
   userId: string,
   amount: number,
-  opts: { reason?: string } = {}
+  opts: { reason?: string; sourceKey?: string | null } = {}
 ) {
   if (!Number.isFinite(amount) || amount <= 0) return { balance: null as number | null };
   await ensurePluginProfile(userId);
+  const delta = Math.floor(amount);
+  const reason = opts.reason ?? "topup";
+  // B3 (#11) — sourceKey berilgan bo'lsa grant CLAIM-FIRST: bir order bir marta.
+  // Webhook layer'idagi dedup buzilsa/qayta yetkazilsa ham kredit 2× berilmaydi.
+  if (opts.sourceKey) {
+    const claimed = await claimCreditGrant({ userId, delta, reason, sourceKey: opts.sourceKey });
+    if (!claimed) {
+      console.warn("[credits] topup allaqachon berilgan, o'tkazib yuborildi:", opts.sourceKey);
+      return { balance: null as number | null, duplicate: true as const };
+    }
+    const updated = await prisma.pluginProfile.update({
+      where: { userId },
+      data: { aiCredits: { increment: delta }, aiCreditsTopup: { increment: delta } },
+      select: { aiCredits: true },
+    });
+    await prisma.creditLedger
+      .updateMany({ where: { sourceKey: opts.sourceKey }, data: { balanceAfter: updated.aiCredits } })
+      .catch(() => {});
+    return { balance: updated.aiCredits };
+  }
   const updated = await prisma.pluginProfile.update({
     where: { userId },
     data: {
-      aiCredits: { increment: Math.floor(amount) },
-      aiCreditsTopup: { increment: Math.floor(amount) },
+      aiCredits: { increment: delta },
+      aiCreditsTopup: { increment: delta },
     },
     select: { aiCredits: true },
   });
   await writeCreditLedger({
     userId,
-    delta: Math.floor(amount),
-    reason: opts.reason ?? "topup",
+    delta,
+    reason,
     balanceAfter: updated.aiCredits,
   });
   return { balance: updated.aiCredits };
@@ -400,15 +458,31 @@ export async function reconcilePluginPlans() {
     select: { userId: true, plan: true },
   });
   let changed = 0;
+  let skipped = 0;
   for (const p of profiles) {
-    const isActive = await subscriptionIsPro(p.userId);
+    const sub = await prisma.subscription.findUnique({
+      where: { userId: p.userId },
+      select: { status: true, provider: true },
+    });
+    // B5 (audit #45) — FAIL-SAFE: bu skript FAQAT Stripe qatorlarini bilardi.
+    // Stripe'siz (LS / admin granti / obuna qatori yo'q) pullik hisobni FREE'ga
+    // tushirib yuborardi. Endi: provider "stripe" bo'lmasa yoki qator yo'q bo'lsa —
+    // TEGMAYMIZ (LS holatini o'z webhook'i boshqaradi).
+    if (!sub || sub.provider !== "stripe") {
+      if (p.plan !== PluginPlanTier.FREE) skipped++;
+      continue;
+    }
+    const isActive =
+      sub.status === SubscriptionStatus.ACTIVE || sub.status === SubscriptionStatus.TRIALING;
+    // STUDIO — PRO'dan yuqori tarif; faol obunada uni PRO'ga "tuzatib" tushirmaymiz.
+    if (isActive && p.plan === PluginPlanTier.STUDIO) continue;
     const target = isActive ? PluginPlanTier.PRO : PluginPlanTier.FREE;
     if (p.plan !== target) {
       await syncPluginPlanFromStripe(p.userId, isActive);
       changed++;
     }
   }
-  return { total: profiles.length, changed };
+  return { total: profiles.length, changed, skipped };
 }
 
 export function serializePluginUser(

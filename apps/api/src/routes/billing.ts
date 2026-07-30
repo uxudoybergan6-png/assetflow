@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { prisma, PluginPlanTier } from "@creative-tools/database";
+import { prisma, PluginPlanTier, SubscriptionStatus } from "@creative-tools/database";
 import { requireAuth } from "../middleware/auth.js";
 import { getWebUrl } from "../lib/app-urls.js";
 import {
@@ -54,6 +54,24 @@ billingRouter.post("/checkout", requireAuth, async (req, res) => {
   if (!user) {
     res.status(404).json({ error: "User not found" });
     return;
+  }
+
+  // B6 (audit #46) — DUBLIKAT OBUNA to'sig'i: faol obunasi bor foydalanuvchi
+  // ikkinchi obunani sotib olsa LS ikki marta pul oladi (tarif almashtirish LS
+  // portali orqali bo'lishi kerak). Kredit paketlari — cheklanmaydi.
+  if (parsed.data.plan) {
+    const sub = await prisma.subscription.findUnique({
+      where: { userId: user.id },
+      select: { status: true },
+    });
+    if (sub?.status === SubscriptionStatus.ACTIVE || sub?.status === SubscriptionStatus.TRIALING) {
+      res.status(409).json({
+        error:
+          "Sizda faol obuna bor — tarifni o'zgartirish yoki bekor qilish uchun obuna boshqaruvidan foydalaning.",
+        code: "SUBSCRIPTION_ACTIVE",
+      });
+      return;
+    }
   }
 
   try {

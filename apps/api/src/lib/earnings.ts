@@ -250,9 +250,18 @@ export async function getContributorEarningsSummary(contributorId: string) {
 }
 
 /**
- * Admin payout qaydi: joriy to'lanmagan earninglarni bitta payout'ga bog'laydi va
+ * Admin payout qaydi: to'lanmagan earninglarni bitta payout'ga bog'laydi va
  * ContributorPayout qatori yaratadi. Earning amountlari O'ZGARMAYDI (faqat payoutId
- * o'rnatiladi). Atomik tranzaksiya. amountCents = bog'langan earninglar yig'indisi.
+ * o'rnatiladi). amountCents = bog'langan earninglar yig'indisi.
+ *
+ * B9 (audit #49) — PAYOUT HOLD MAJBURIY: hold davridan YOSH earninglar
+ * bog'lanmaydi (ilgari hold faqat ko'rsatkich edi — pul chiqish nuqtasida
+ * tekshirilmasdi). `allowHeld: true` — admin ataylab bekor qilsa.
+ *
+ * B10 (audit #124) — PARALLEL TO'LOVGA QARSHI: ilgari read-then-write edi
+ * (ikki parallel so'rov bir xil earninglarni ikki payout'ga yozib, 2× to'lov
+ * berardi). Endi earninglar ATOMIK `updateMany` + `payoutId: null` guard bilan
+ * "band qilinadi" — ikkinchi so'rov 0 qator oladi va rad etiladi.
  */
 export async function recordContributorPayout(input: {
   contributorId: string;
@@ -260,20 +269,22 @@ export async function recordContributorPayout(input: {
   reference?: string;
   note?: string;
   createdById?: string;
+  allowHeld?: boolean;
 }) {
+  const holdDays = payoutHoldDays();
+  const holdCutoff = new Date(Date.now() - holdDays * 86_400_000);
+  const claimWhere = {
+    contributorId: input.contributorId,
+    payoutId: null,
+    ...(input.allowHeld ? {} : { createdAt: { lt: holdCutoff } }),
+  };
+
   return prisma.$transaction(async (tx) => {
-    const unpaid = await tx.contributorEarning.findMany({
-      where: { contributorId: input.contributorId, payoutId: null },
-      select: { id: true, amountCents: true },
-    });
-    const amountCents = unpaid.reduce((a, e) => a + e.amountCents, 0);
-    if (amountCents <= 0) {
-      return { ok: false as const, error: "No unpaid earnings" };
-    }
+    // 1) Payout qobig'i (amount keyin aniqlanadi) — claim uchun ID kerak.
     const payout = await tx.contributorPayout.create({
       data: {
         contributorId: input.contributorId,
-        amountCents,
+        amountCents: 0,
         currency: "USD",
         method: input.method ?? "manual",
         reference: input.reference,
@@ -282,10 +293,34 @@ export async function recordContributorPayout(input: {
         createdById: input.createdById,
       },
     });
-    await tx.contributorEarning.updateMany({
-      where: { id: { in: unpaid.map((e) => e.id) } },
+    // 2) ATOMIK claim: faqat hali to'lanmagan (va hold o'tgan) earninglar.
+    const claimed = await tx.contributorEarning.updateMany({
+      where: claimWhere,
       data: { payoutId: payout.id },
     });
-    return { ok: true as const, payout, linkedEarnings: unpaid.length };
+    if (claimed.count === 0) {
+      // Hech nima bog'lanmadi → qobiqni olib tashlaymiz (bo'sh payout qolmasin).
+      await tx.contributorPayout.delete({ where: { id: payout.id } });
+      const held = input.allowHeld
+        ? 0
+        : await tx.contributorEarning.count({
+            where: { contributorId: input.contributorId, payoutId: null },
+          });
+      return {
+        ok: false as const,
+        error: held > 0 ? `Earnings are still in the ${holdDays}-day hold window` : "No unpaid earnings",
+      };
+    }
+    // 3) Haqiqiy summa — claim qilingan qatorlardan.
+    const sum = await tx.contributorEarning.aggregate({
+      where: { payoutId: payout.id },
+      _sum: { amountCents: true },
+    });
+    const amountCents = sum._sum.amountCents ?? 0;
+    const finalPayout = await tx.contributorPayout.update({
+      where: { id: payout.id },
+      data: { amountCents },
+    });
+    return { ok: true as const, payout: finalPayout, linkedEarnings: claimed.count };
   });
 }

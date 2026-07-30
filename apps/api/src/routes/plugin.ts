@@ -1218,7 +1218,9 @@ pluginRouter.patch("/plan", requireAuth, async (req: Request, res: Response) => 
     parsed.data.plan === "pro" ? PluginPlanTier.PRO : PluginPlanTier.FREE;
   const result = await setPluginPlan(req.user!.userId, tier);
   if (!result.ok) {
-    res.status(400).json({ error: result.error });
+    // B2 (#10) — faol obuna bilan FREE'ga tushirish 409 (konflikt), kod bilan.
+    const code = (result as { code?: string }).code;
+    res.status(code === "SUBSCRIPTION_ACTIVE" ? 409 : 400).json({ error: result.error, code });
     return;
   }
   const profile = await ensurePluginProfile(req.user!.userId);

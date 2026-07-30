@@ -33,7 +33,14 @@ export type RevenueEventInput = {
   lsInvoiceId?: string | null;
   eventName?: string | null;
   occurredAt?: Date | null;
+  /** B7 (#47) — LS test-mode to'lovi (jonli tushumdan ajratiladi). */
+  testMode?: boolean;
 };
+
+/** LS payload'idagi test-mode belgisi (`data.attributes.test_mode`). */
+export function lsTestMode(attrs: Record<string, unknown> | undefined): boolean {
+  return attrs?.test_mode === true;
+}
 
 /**
  * LS payload'idan cent qiymatini o'qiydi: avval `<field>_usd` (LS USD'ga
@@ -73,6 +80,7 @@ export async function recordRevenueEvent(input: RevenueEventInput): Promise<bool
           lsSubscriptionId: input.lsSubscriptionId ?? null,
           lsInvoiceId: input.lsInvoiceId ?? null,
           eventName: input.eventName ?? null,
+          testMode: input.testMode === true,
           occurredAt: input.occurredAt ?? new Date(),
         },
       ],
@@ -90,8 +98,11 @@ export async function recordRevenueEvent(input: RevenueEventInput): Promise<bool
 type Range = { since?: Date; until?: Date };
 
 function occurredAtWhere(range: Range) {
-  if (!range.since && !range.until) return {};
+  // B7 (#47): test-mode qatorlari HAR QANDAY moliyaviy xulosadan chiqariladi.
+  const base = { testMode: false } as const;
+  if (!range.since && !range.until) return base;
   return {
+    ...base,
     occurredAt: {
       ...(range.since ? { gte: range.since } : {}),
       ...(range.until ? { lt: range.until } : {}),

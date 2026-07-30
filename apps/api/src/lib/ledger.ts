@@ -12,6 +12,7 @@ export async function writeCreditLedger(entry: {
   delta: number; // manfiy = consume, musbat = refund
   reason: string; // "consume" | "refund"
   balanceAfter?: number | null;
+  sourceKey?: string | null; // B3 (#11) — idempotentlik kaliti (unique)
 }): Promise<void> {
   try {
     await prisma.creditLedger.create({
@@ -21,10 +22,40 @@ export async function writeCreditLedger(entry: {
         delta: entry.delta,
         reason: entry.reason,
         balanceAfter: entry.balanceAfter ?? null,
+        sourceKey: entry.sourceKey ?? null,
       },
     });
   } catch (e) {
     console.error("writeCreditLedger", e);
+  }
+}
+
+/**
+ * B3 (audit #11) — kredit grantini ATOMIK "band qilish". sourceKey unique bo'lgani
+ * uchun bir xil kalit bilan ikkinchi urinish P2002 beradi → chaqiruvchi grantni
+ * O'TKAZIB YUBORADI. (Claim-first: pul harakati QILINMASDAN OLDIN yoziladi —
+ * webhook layer'idagi dedup qatori o'chirilsa/retry kelsa ham 2× grant bo'lmaydi.)
+ * @returns true — claim bizniki (grant qilish kerak); false — allaqachon berilgan.
+ */
+export async function claimCreditGrant(entry: {
+  userId: string;
+  delta: number;
+  reason: string;
+  sourceKey: string;
+}): Promise<boolean> {
+  try {
+    await prisma.creditLedger.create({
+      data: {
+        userId: entry.userId,
+        delta: entry.delta,
+        reason: entry.reason,
+        sourceKey: entry.sourceKey,
+      },
+    });
+    return true;
+  } catch (e) {
+    if ((e as { code?: string })?.code === "P2002") return false;
+    throw e;
   }
 }
 

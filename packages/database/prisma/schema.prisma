@@ -123,6 +123,10 @@ model PluginProfile {
   // (plan/status) mavjud oqimlarda hal bo'ladi, bu ustun hech narsani bloklamaydi.
   billingIssue   String?
   billingIssueAt DateTime?
+  // B4 (audit #12) — oxirgi marta plan o'zgarishida kredit to'ldirilgan BILLING DAVRI
+  // kaliti (LS `renews_at` / Stripe `current_period_end`). pause→resume sikli bir xil
+  // kalit bilan qaytadi → kredit QAYTA TO'LDIRILMAYDI (to'lovsiz reset yo'q).
+  billingPeriodKey String?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
@@ -176,6 +180,14 @@ model Subscription {
   status               SubscriptionStatus @default(INCOMPLETE)
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean            @default(false)
+  // B1 (audit #9) — to'lov provayderi: "stripe" | "lemonsqueezy". LS webhook ham shu
+  // qatorni yozadi (ilgari faqat PluginProfile.plan yozilardi → subscriptionIsPro()
+  // har LS mijozi uchun false edi). B5 (#45): reconcile faqat "stripe" qatorlarga tegadi.
+  provider             String             @default("stripe")
+  /// LS obuna ID'si (provider="lemonsqueezy" bo'lganda)
+  lsSubscriptionId     String?            @unique
+  /// LS test-mode buyurtmasi (B7/#47) — jonli tushumdan ajratish uchun
+  testMode             Boolean            @default(false)
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -589,6 +601,9 @@ model CreditLedger {
   delta        Int      // manfiy = consume, musbat = refund
   reason       String   // "consume" | "refund"
   balanceAfter Int?
+  /// B3 (audit #11) — grant/clawback idempotentlik kaliti (masalan "ls:order:<id>").
+  /// Unique: LS retry qayta yetkazsa kredit IKKI MARTA berilmaydi.
+  sourceKey    String?  @unique
   createdAt    DateTime @default(now())
 
   @@index([userId])
@@ -714,6 +729,9 @@ model RevenueEvent {
   lsSubscriptionId String?
   lsInvoiceId      String?
   eventName        String?  // xom LS event nomi (diagnostika)
+  /// B7 (audit #47) — LS test-mode to'lovi. Moliyaviy xulosalar (revenueSummary,
+  /// pool bazasi) bu qatorlarni HISOBGA OLMAYDI — jonli tushumga aralashmasin.
+  testMode         Boolean  @default(false)
   occurredAt       DateTime @default(now())
   createdAt        DateTime @default(now())
 

@@ -486,6 +486,8 @@ const payoutSchema = z.object({
   method: z.string().optional(),
   reference: z.string().optional(),
   note: z.string().optional(),
+  /** B9 (#49) — hold oynasini ataylab chetlab o'tish (audit logga tushadi). */
+  allowHeld: z.boolean().optional(),
 });
 contributorRouter.post("/admin/payouts", requireAuth, requireAdmin, async (req, res) => {
   const parsed = payoutSchema.safeParse(req.body);
@@ -499,6 +501,7 @@ contributorRouter.post("/admin/payouts", requireAuth, requireAdmin, async (req, 
     reference: parsed.data.reference,
     note: parsed.data.note,
     createdById: req.user!.userId,
+    allowHeld: parsed.data.allowHeld === true,
   });
   if (!result.ok) {
     res.status(400).json({ error: result.error });
@@ -509,8 +512,14 @@ contributorRouter.post("/admin/payouts", requireAuth, requireAdmin, async (req, 
     action: "contributor.payout.create",
     targetType: "contributor",
     targetId: parsed.data.contributorId,
-    detail: `Payout ${(result.payout.amountCents / 100).toFixed(2)} ${result.payout.currency}`,
-    meta: { payoutId: result.payout.id, linkedEarnings: result.linkedEarnings },
+    detail:
+      `Payout ${(result.payout.amountCents / 100).toFixed(2)} ${result.payout.currency}` +
+      (parsed.data.allowHeld ? " (hold oynasi chetlab o'tildi)" : ""),
+    meta: {
+      payoutId: result.payout.id,
+      linkedEarnings: result.linkedEarnings,
+      allowHeld: parsed.data.allowHeld === true,
+    },
   });
   res.json({ ok: true, payout: result.payout, linkedEarnings: result.linkedEarnings });
 });

@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { PluginPlanTier } from "@creative-tools/database";
+import { prisma, PluginPlanTier } from "@creative-tools/database";
 
 /**
  * Lemon Squeezy (Merchant-of-Record) API klienti — Bosqich 3 to'lov integratsiyasi.
@@ -173,14 +173,47 @@ export async function getVariantMap(force = false): Promise<VariantMapping[]> {
   return list;
 }
 
-/** Obuna plan (PRO/STUDIO) uchun variantni topadi (birinchi mos keluvchi). */
+/**
+ * Obuna plan (PRO/STUDIO) uchun variantni topadi.
+ * B11 (audit #125) — admin panelidagi "LS VARIANT (MONTHLY)" maydoni ilgari
+ * FAQAT yozilardi, hech kim o'qimasdi. Endi u USTUVOR: PlanConfig'da variant id
+ * ko'rsatilgan bo'lsa o'sha ishlatiladi (nomdan taxmin qilish — zaxira).
+ */
 export async function findSubscriptionVariant(
   plan: PluginPlanTier
 ): Promise<VariantMapping | null> {
   const list = await getVariantMap();
+  const configured = await configuredVariantId(plan);
+  if (configured) {
+    const exact = list.find((v) => v.variantId === configured);
+    if (exact) return exact;
+    // Do'kon ro'yxatida topilmadi (yangi variant / kesh eski) — baribir ishlatamiz.
+    return {
+      kind: "subscription",
+      plan,
+      variantId: configured,
+      productName: String(plan),
+      variantName: "configured",
+    };
+  }
   return (
     list.find((v) => v.kind === "subscription" && v.plan === plan) ?? null
   );
+}
+
+/** PlanConfig.lsVariantMonthly — admin bog'lagan variant (bo'lmasa null). */
+async function configuredVariantId(plan: PluginPlanTier): Promise<string | null> {
+  try {
+    const row = await prisma.planConfig.findUnique({
+      where: { plan },
+      select: { lsVariantMonthly: true },
+    });
+    const id = row?.lsVariantMonthly?.trim();
+    return id || null;
+  } catch (e) {
+    console.warn("[ls] PlanConfig variant o'qilmadi:", e);
+    return null;
+  }
 }
 
 /** Aniq kredit miqdori uchun paket variantini topadi (masalan 500/1500/5000). */
