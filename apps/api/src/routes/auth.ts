@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import multer from "multer";
 import { z } from "zod";
 import { prisma, Prisma, UserRole } from "@creative-tools/database";
-import { signToken, requireAuth } from "../middleware/auth.js";
+import { signToken, requireAuth, suspensionMessage } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import { getStripe, isStripeConfigured } from "../lib/stripe.js";
 import { sendEmail, isEmailConfigured, renderEmailLayout } from "../lib/email.js";
@@ -221,6 +221,16 @@ authRouter.post("/login", authLimiter, async (req, res) => {
     return;
   }
 
+  // #95 (A7) — hisob TO'XTATILGAN bo'lsa hech qanday sessiya ochilmaydi (2FA
+  // oqimidan ham OLDIN: pending token ham berilmasin).
+  {
+    const susp = suspensionMessage(user);
+    if (susp) {
+      res.status(403).json({ error: susp, code: "ACCOUNT_SUSPENDED" });
+      return;
+    }
+  }
+
   // ADMIN 2FA: parol TO'G'RI, lekin 2FA yoqilgan — to'liq JWT BERILMAYDI.
   // Qisqa muddatli (5 daqiqa) pending token qaytadi; sessiya faqat
   // POST /api/auth/2fa/verify (TOTP yoki backup kod) dan keyin ochiladi.
@@ -301,6 +311,14 @@ authRouter.post("/2fa/verify", twofaLimiter, async (req, res) => {
     res.status(401).json({ error: "Sign-in step expired — enter your password again", code: "PENDING_EXPIRED" });
     return;
   }
+  // #95 (A7) — parol bosqichidan keyin to'xtatilgan bo'lsa ham sessiya ochilmaydi.
+  {
+    const susp = suspensionMessage(user);
+    if (susp) {
+      res.status(403).json({ error: susp, code: "ACCOUNT_SUSPENDED" });
+      return;
+    }
+  }
 
   const code = parsed.data.code.trim();
   let ok = false;
@@ -376,6 +394,15 @@ authRouter.post("/google", authLimiter, async (req, res) => {
     sendWelcomeEmail(user.email, user.name);
     // PROBLEM 14 — faqat YANGI hisob yaratilganda (returning-login'da emas).
     notifyAdminNewUser({ email: user.email, name: user.name, source: "google-web" });
+  }
+
+  // #95 (A7) — to'xtatilgan hisob Google orqali ham kira olmaydi.
+  {
+    const susp = suspensionMessage(user);
+    if (susp) {
+      res.status(403).json({ error: susp, code: "ACCOUNT_SUSPENDED" });
+      return;
+    }
   }
 
   // ADMIN 2FA: Google orqali kirish ham TOTP bosqichini chetlab O'TMAYDI

@@ -25,6 +25,18 @@ function axRole(role){
   return `<span class="adx-bdg" style="background:${m[0]};color:${m[1]}">${esc(role)}</span>`;
 }
 
+/** #95 (A7) — "Status" ilgari FAQAT contributor-blokni ko'rsatardi ("blocked"),
+ *  hisobning o'zi esa ochiq qolardi. Endi ikkalasi ajratilgan:
+ *  Suspended = butun hisob yopiq · Upload blocked = faqat contributor yuklashi. */
+function uStatusCell(u){
+  if(u.suspended){
+    const why = u.suspendedReason ? `<div style="font-size:10px;color:#8A93A3;margin-top:3px">${esc(u.suspendedReason)}</div>` : '';
+    return `<span class="adx-bdg adx-bdg-hard">Suspended</span>${why}`;
+  }
+  if(u.blocked) return `<span class="adx-bdg" style="background:rgba(255,178,124,.14);color:#FFB27C">Upload blocked</span>`;
+  return axStatus('active');
+}
+
 VIEWS.users = function(){ return `<div id="usersRoot">${uLoading()}</div>`; };
 
 window.afterRender.users = async function(){
@@ -91,12 +103,12 @@ function renderAdminUsers(){
         <label class="adx-inp" style="width:230px;height:32px"><i class="ph ph-magnifying-glass" style="font-size:13px"></i><input id="uSearchInp" placeholder="Search email or name…" value="${esc(U_SEARCH)}" onkeydown="if(event.key==='Enter'){U_SEARCH=this.value.trim();refreshAdminUsers()}"></label>
       </div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:860px">
-        <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Verified</th><th>Joined</th><th class="r">Change role</th></tr></thead>
+        <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Verified</th><th>Joined</th><th class="r">Change role</th><th class="r">Account</th></tr></thead>
         <tbody>
         ${U_LIST.length ? U_LIST.map(u=>`<tr>
           <td><div class="adx-who">${axAv(u.name||u.email,u.email,32)}<div style="min-width:0"><div class="nm">${esc(u.name||'—')}</div><div class="em">${esc(u.email)}</div></div></div></td>
           <td>${axRole(u.role)}${u.contributorRequestedAt&&u.role==='USER'?' <span class="adx-bdg" style="background:rgba(255,178,124,.14);color:#FFB27C">requested</span>':''}</td>
-          <td>${axStatus(u.blocked?'blocked':'active')}</td>
+          <td>${uStatusCell(u)}</td>
           <td style="font-size:11.5px;color:${u.emailVerified?'#C2F04A':'#8A93A3'}">${u.emailVerified?'Yes':'No'}</td>
           <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(String(u.createdAt||'').slice(0,10))}</td>
           <td class="r"><label class="adx-sel" style="margin-left:auto"><span>${esc(u.role)}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="onRoleSelect('${u.id}',this)">
@@ -104,7 +116,10 @@ function renderAdminUsers(){
             <option value="CONTRIBUTOR" ${u.role==='CONTRIBUTOR'?'selected':''}>CONTRIBUTOR</option>
             <option value="ADMIN" ${u.role==='ADMIN'?'selected':''}>ADMIN</option>
           </select></label></td>
-        </tr>`).join('') : `<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-users"></i></span><div style="font-weight:600;font-size:13px">No users found</div><div style="font-size:11px;color:var(--muted2)">Change the search or filter.</div></div></td></tr>`}
+          <td class="r">${u.suspended
+            ? `<button class="adx-btn2 sm adx-btn-ok" onclick="openSuspendUser('${u.id}',false)"><i class="ph ph-lock-open"></i>Reactivate</button>`
+            : `<button class="adx-btn2 sm adx-btn-dghost" onclick="openSuspendUser('${u.id}',true)"><i class="ph ph-prohibit"></i>Suspend</button>`}</td>
+        </tr>`).join('') : `<tr><td colspan="7"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-users"></i></span><div style="font-weight:600;font-size:13px">No users found</div><div style="font-size:11px;color:var(--muted2)">Change the search or filter.</div></div></td></tr>`}
         </tbody>
       </table></div>
     </div>`;
@@ -149,6 +164,50 @@ async function doRoleChange(id, newRole){
     await StudioApi.setUserRole(id, newRole);
     closeModal();
     toast('Role updated', `${u?u.email:''} → ${newRole}`, 'success');
+    await refreshAdminUsers();
+  }catch(e){
+    toast('Error', e.message || 'API', 'danger');
+  }
+}
+
+/** #95 (A7) — umumiy hisob to'xtatish / tiklash. */
+function openSuspendUser(id, suspend){
+  const u = uById(id);
+  if(!u) return;
+  openModal(suspend ? `
+    <div class="modal-head">
+      <div class="modal-ico" style="background:var(--red-dim);color:var(--red)">${ic('ban')}</div>
+      <div><h3>Suspend account</h3><p>${esc(u.name||u.email)} · ${esc(u.email)}</p></div>
+    </div>
+    <div class="modal-body col gap-12">
+      <div class="info-banner danger">${ic('alert')}<span>All access is closed immediately — Studio, website and the AE plugin. Open sessions and plugin tokens are revoked.</span></div>
+      <label class="adx-flab" for="suspReason">REASON (SHOWN TO THE USER AT SIGN-IN)</label>
+      <input id="suspReason" class="adx-input" maxlength="300" placeholder="e.g. Repeated copyright violations">
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="doSuspendUser('${id}',true)">Suspend</button>
+    </div>` : `
+    <div class="modal-head">
+      <div class="modal-ico" style="background:var(--limedim);color:var(--lime)">${ic('check')}</div>
+      <div><h3>Reactivate account</h3><p>${esc(u.name||u.email)} · ${esc(u.email)}</p></div>
+    </div>
+    <div class="modal-body">
+      <div class="info-banner">${ic('alert')}<span>The user can sign in again. They must sign in from scratch — earlier sessions stay revoked.</span></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="doSuspendUser('${id}',false)">Reactivate</button>
+    </div>`);
+}
+
+async function doSuspendUser(id, suspend){
+  const u = uById(id);
+  const reason = suspend ? (document.getElementById('suspReason')?.value || '').trim() : '';
+  try{
+    await StudioApi.setUserSuspended(id, suspend, reason);
+    closeModal();
+    toast(suspend?'Account suspended':'Account reactivated', u?u.email:'', suspend?'warn':'success');
     await refreshAdminUsers();
   }catch(e){
     toast('Error', e.message || 'API', 'danger');

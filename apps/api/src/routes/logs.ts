@@ -1,64 +1,25 @@
 import { Router } from "express";
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import { prisma } from "@creative-tools/database";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const logsPath = path.join(__dirname, "../../data/system-logs.json");
-const MAX_LOGS = 500;
-
 /**
- * (#103) Ilgari HAR POST faylni sinxron o'qib, 500 qatorli JSON'ni sinxron QAYTA
- * yozardi → event loop bloklanardi va disk yozuvi kuchayardi. Endi ro'yxat
- * XOTIRADA (yagona manba), diskka yozish ASINXRON va birlashtirilgan (coalesced):
- * ketma-ket yozuvlar bitta flush'ga yig'iladi.
+ * (#94 / A6) Tizim loglari endi DB'da (`SystemLog`).
+ *
+ * Ilgari `apps/api/data/system-logs.json` fayli ishlatilardi. Cloud Run'da bu
+ * ishonchsiz: konteyner o'chishi bilan loglar yo'qolardi, ko'p instansiyada esa
+ * har biri O'Z faylini ko'rardi — admin panelida loglar tasodifiy "yo'qolib"
+ * turardi. DB barcha instansiya uchun yagona va chidamli manba.
+ *
+ * (#103) Yozuv oqimi hali ham arzon bo'lishi kerak: POST javobni bloklamaydi,
+ * yozuv fon rejimida bajariladi va xatolar yutiladi (log yozuvi asosiy oqimni
+ * hech qachon buzmasligi kerak).
  */
-let cache: LogEntry[] | null = null;
-let flushTimer: NodeJS.Timeout | null = null;
-let flushing = false;
 
-function readLogs(): LogEntry[] {
-  if (cache) return cache;
-  try {
-    if (fs.existsSync(logsPath)) {
-      const parsed = JSON.parse(fs.readFileSync(logsPath, "utf8")) as LogEntry[];
-      cache = Array.isArray(parsed) ? parsed : [];
-    } else {
-      cache = [];
-    }
-  } catch {
-    cache = [];
-  }
-  return cache;
-}
-
-async function flushLogs() {
-  if (flushing || !cache) return;
-  flushing = true;
-  const snapshot = cache.slice(0, MAX_LOGS);
-  try {
-    await fs.promises.mkdir(path.dirname(logsPath), { recursive: true });
-    await fs.promises.writeFile(logsPath, JSON.stringify(snapshot, null, 2), "utf8");
-  } catch (e) {
-    console.error("[logs] flush failed", e);
-  } finally {
-    flushing = false;
-  }
-}
-
-/** Xotiradagi ro'yxatni yangilaydi va diskka yozishni ~1s ga birlashtiradi. */
-function writeLogs(entries: LogEntry[]) {
-  cache = entries.slice(0, MAX_LOGS);
-  if (flushTimer) return;
-  flushTimer = setTimeout(() => {
-    flushTimer = null;
-    void flushLogs();
-  }, 1000);
-  flushTimer.unref?.();
-}
+const MAX_LOGS = 500; // bitta o'qishda qaytariladigan maksimal qator
+const RETENTION_ROWS = 20_000; // shu chegaradan oshsa eng eskilari o'chiriladi
+const TRIM_EVERY = 200; // har N yozuvda bir marta trim
 
 type LogEntry = {
   id: string;
@@ -72,20 +33,53 @@ type LogEntry = {
   meta?: unknown;
 };
 
+function rowToEntry(r: {
+  id: string;
+  ts: Date;
+  level: string;
+  source: string;
+  sourceLabel: string | null;
+  message: string;
+  action: string | null;
+  detail: string | null;
+  metaJson: unknown;
+}): LogEntry {
+  return {
+    id: r.id,
+    ts: r.ts.toISOString(),
+    level: r.level,
+    source: r.source,
+    sourceLabel: r.sourceLabel ?? r.source,
+    message: r.message,
+    action: r.action ?? "",
+    detail: r.detail ?? "",
+    meta: r.metaJson ?? null,
+  };
+}
+
 export const logsRouter = Router();
 
 // Yozish — har qanday autentifikatsiyalangan manba (admin/contributor/AE plagin)
 // o'z faoliyat logini yuborishi mumkin. O'qish/tozalash — faqat admin.
 logsRouter.use(requireAuth);
 
-logsRouter.get("/", requireAdmin, (req, res) => {
+logsRouter.get("/", requireAdmin, async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 200, MAX_LOGS);
   const source = req.query.source as string | undefined;
-  let items = readLogs();
-  if (source && source !== "all") {
-    items = items.filter((e) => e.source === source);
+  const where = source && source !== "all" ? { source } : {};
+  try {
+    const rows = await prisma.systemLog.findMany({
+      where,
+      orderBy: { ts: "desc" },
+      take: limit,
+    });
+    res.json({ items: rows.map(rowToEntry) });
+  } catch (e) {
+    // Migratsiya hali qo'llanmagan bo'lsa (jadval yo'q) — admin ekrani
+    // yiqilmasin, bo'sh ro'yxat + sabab qaytadi.
+    console.error("[logs] read failed", e);
+    res.json({ items: [], degraded: true });
   }
-  res.json({ items: items.slice(0, limit) });
 });
 
 const ALLOWED_LEVELS = new Set(["error", "warn", "info", "debug"]);
@@ -114,8 +108,7 @@ function sourceFromRole(role?: string): string {
 }
 
 // FAZA 2 (L4) — yozuv per-IP rate-limit: har autentifikatsiyalangan manba log yuborishi
-// mumkin, lekin flood (har POST 500-qatorli faylni qayta yozadi = disk write amplifikatsiyasi)
-// cheklanadi. Store allaqachon bounded (MAX_LOGS=500). O'qish/tozalash — faqat admin (yuqorida).
+// mumkin, lekin flood cheklanadi. O'qish/tozalash — faqat admin (yuqorida).
 const logWriteLimiter = rateLimit({
   windowMs: 60_000,
   max: 60,
@@ -126,18 +119,36 @@ const logWriteLimiter = rateLimit({
   message: "Too many log writes — please slow down",
 });
 
-logsRouter.post("/", logWriteLimiter, (req, res) => {
+let writesSinceTrim = 0;
+
+/** Eng eski qatorlarni supuradi (RETENTION_ROWS dan oshgani). Best-effort. */
+async function trimOldLogs() {
+  const total = await prisma.systemLog.count();
+  if (total <= RETENTION_ROWS) return;
+  const cutoffRow = await prisma.systemLog.findMany({
+    orderBy: { ts: "desc" },
+    skip: RETENTION_ROWS,
+    take: 1,
+    select: { ts: true },
+  });
+  const cutoff = cutoffRow[0]?.ts;
+  if (!cutoff) return;
+  await prisma.systemLog.deleteMany({ where: { ts: { lte: cutoff } } });
+}
+
+logsRouter.post("/", logWriteLimiter, async (req, res) => {
   const entry = req.body;
   if (!entry?.message) {
     res.status(400).json({ error: "message is required" });
     return;
   }
   const source = sourceFromRole(req.user?.role);
-  const ts = typeof entry.ts === "string" && !Number.isNaN(Date.parse(entry.ts))
-    ? entry.ts
-    : new Date().toISOString();
-  const row: LogEntry = {
-    id: clip(entry.id, 80) || crypto.randomUUID(),
+  const ts =
+    typeof entry.ts === "string" && !Number.isNaN(Date.parse(entry.ts))
+      ? new Date(entry.ts)
+      : new Date();
+  const id = clip(entry.id, 80) || crypto.randomUUID();
+  const data = {
     ts,
     level: ALLOWED_LEVELS.has(entry.level) ? entry.level : "info",
     source,
@@ -145,17 +156,31 @@ logsRouter.post("/", logWriteLimiter, (req, res) => {
     message: clip(entry.message, 500),
     action: clip(entry.action, 120),
     detail: clip(entry.detail, 1000),
-    meta: clipMeta(entry.meta),
+    metaJson: clipMeta(entry.meta) as never,
+    userId: req.user?.userId ?? null,
   };
-  const all = readLogs();
-  const idx = all.findIndex((x) => x.id === row.id);
-  if (idx >= 0) all[idx] = row;
-  else all.unshift(row);
-  writeLogs(all);
-  res.json({ ok: true, id: row.id });
+  try {
+    // Klient bir xil `id` bilan qayta yuborishi mumkin (retry) → upsert.
+    await prisma.systemLog.upsert({ where: { id }, update: data, create: { id, ...data } });
+    if (++writesSinceTrim >= TRIM_EVERY) {
+      writesSinceTrim = 0;
+      // Cloud Run javobdan keyin CPU'ni to'xtatadi — trim'ni ham kutamiz.
+      await trimOldLogs().catch((e) => console.error("[logs] trim failed", e));
+    }
+    res.json({ ok: true, id });
+  } catch (e) {
+    // Log yozuvi hech qachon chaqiruvchini buzmasligi kerak.
+    console.error("[logs] write failed", e);
+    res.json({ ok: false, id, degraded: true });
+  }
 });
 
-logsRouter.delete("/", requireAdmin, (_req, res) => {
-  writeLogs([]);
-  res.json({ ok: true });
+logsRouter.delete("/", requireAdmin, async (_req, res) => {
+  try {
+    await prisma.systemLog.deleteMany({});
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("[logs] clear failed", e);
+    res.status(500).json({ error: "Failed to clear logs" });
+  }
 });

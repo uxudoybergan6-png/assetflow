@@ -834,6 +834,14 @@ const StudioApi = (() => {
     if (take) qs.push(`take=${encodeURIComponent(take)}`);
     return request(`/api/admin/users/${encodeURIComponent(userId)}/generations${qs.length ? `?${qs.join("&")}` : ""}`);
   }
+  /* #137 (A8) — bitta generatsiya uchun QO'LDA kredit qaytarish (idempotent: server
+     ikkinchi urinishda 409 ALREADY_REFUNDED beradi). */
+  async function refundGeneration(userId, genId) {
+    return request(
+      `/api/admin/users/${encodeURIComponent(userId)}/generations/${encodeURIComponent(genId)}/refund`,
+      { method: "POST" }
+    );
+  }
   async function getAdminActivity(type) {
     return request(`/api/admin/activity${type && type !== "all" ? `?type=${encodeURIComponent(type)}` : ""}`);
   }
@@ -931,6 +939,43 @@ const StudioApi = (() => {
   async function dismissContributorRequest(id) {
     return request(`/api/admin/users/${id}/contributor-request`, { method: "DELETE" });
   }
+  /* #95 (A7) — umumiy hisob to'xtatish/tiklash (contributor blokdan alohida). */
+  async function setUserSuspended(id, suspended, reason) {
+    return request(`/api/admin/users/${id}/suspend`, {
+      method: "PATCH",
+      body: { suspended: !!suspended, ...(reason ? { reason } : {}) },
+    });
+  }
+  /* #91 (A3) — read-only platforma konfiguratsiyasi (limitlar/retention). */
+  async function getPlatformConfig() {
+    return request("/api/admin/platform-config");
+  }
+
+  /* #28 (A2) — DMCA / mualliflik huquqi da'volari (admin) + takedown/restore.
+     Backend allaqachon bor edi, faqat admin UI yo'q edi. */
+  async function listInfringementReports(status) {
+    const s = status || "pending";
+    return request(`/api/dmca/admin/reports?status=${encodeURIComponent(s)}`);
+  }
+  async function resolveInfringementReport(id, status, resolutionNote) {
+    return request(`/api/dmca/admin/reports/${encodeURIComponent(id)}/resolve`, {
+      method: "POST",
+      body: resolutionNote ? { status, resolutionNote } : { status },
+    });
+  }
+  async function takedownTemplate(id, reason) {
+    return request(`/api/contributor/admin/templates/${encodeURIComponent(id)}/takedown`, {
+      method: "POST",
+      body: { reason },
+    });
+  }
+  async function restoreTemplate(id, republish) {
+    return request(`/api/contributor/admin/templates/${encodeURIComponent(id)}/restore`, {
+      method: "POST",
+      body: { republish: !!republish },
+    });
+  }
+
   async function requestContributorAccess(apiToken) {
     return request(`/api/users/contributor-request`, {
       method: "POST",
@@ -991,6 +1036,7 @@ const StudioApi = (() => {
     getAdminFinance,
     getAdminGenSpend,
     getUserGenerations,
+    refundGeneration,
     getAdminActivity,
     getAdminEarnings,
     getMyEarnings,
@@ -1015,6 +1061,12 @@ const StudioApi = (() => {
     listAdminUsers,
     setUserRole,
     dismissContributorRequest,
+    setUserSuspended,
+    getPlatformConfig,
+    listInfringementReports,
+    resolveInfringementReport,
+    takedownTemplate,
+    restoreTemplate,
     requestContributorAccess,
     healthCheck,
     baseUrl,

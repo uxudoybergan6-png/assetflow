@@ -489,11 +489,41 @@ VIEWS.analytics = function(){
    ============================================================ */
 window.afterRender.settings = function(){
   const tba = document.getElementById('tbActions');
+  // #91 (A3) — "Save" tugmasi OLIB TASHLANDI: u hech narsa saqlamasdi, faqat
+  // "Saved" deb ko'rsatardi. Bu ekrandagi qiymatlar server konfiguratsiyasi.
   if(tba && CURRENT==='settings') tba.innerHTML =
-    `<button class="adx-btn2 sm" onclick="route('settings')">Cancel</button>`+
-    `<button class="adx-btn sm" onclick="toast('Saved','Settings saved in the browser (server sync in a future version)','success')"><i class="ph ph-check"></i>Save</button>`;
+    `<button class="adx-btn2 sm" onclick="route('settings')"><i class="ph ph-arrow-clockwise"></i>Refresh</button>`;
   renderTwofaCard();
+  renderPlatformConfig();
 };
+
+/** #91 (A3) — HAQIQIY server limitlari/retention (read-only). */
+async function renderPlatformConfig(){
+  const el = document.getElementById('platformCfgBody');
+  if(!el) return;
+  const mb = (b) => b >= 1073741824 ? (b/1073741824).toFixed(b%1073741824?1:0)+' GB' : Math.round(b/1048576)+' MB';
+  const row = (lab, val, note) => `<div style="display:flex;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--hair)">
+    <span style="flex:1;font-size:11.5px;color:var(--muted2)">${esc(lab)}</span>
+    <span class="adx-mono" style="font-size:12px;color:#B7C0CE">${esc(val)}</span>
+  </div>${note?`<div style="font-size:10px;color:#5E6675;margin:-2px 0 4px">${esc(note)}</div>`:''}`;
+  try{
+    const c = await StudioApi.getPlatformConfig();
+    const lim = c.limits || {}; const am = lim.assetMaxBytes || {}; const ret = c.retention || {};
+    el.innerHTML =
+      row('Platform name', c.platformName || 'FrameFlow') +
+      row('Max video / project file', am.video ? mb(am.video) : '—', 'Uploaded straight to cloud storage with a presigned URL') +
+      row('Max audio file', am.audio ? mb(am.audio) : '—') +
+      row('Max image file', am.image ? mb(am.image) : '—') +
+      row('Max LUT file', am.lut ? mb(am.lut) : '—') +
+      row('Max API request body', lim.requestBodyMaxBytes ? mb(lim.requestBodyMaxBytes) : '—', 'Cloud Run platform limit — larger files never reach the API') +
+      row('Max AI reference upload', lim.genRefUploadMaxBytes ? mb(lim.genRefUploadMaxBytes) : '—') +
+      row('Ingest job history kept', (ret.ingestJobDays ?? '—') + ' days') +
+      row('Orphan upload cleanup', (ret.incomingOrphanDays ?? '—') + ' days') +
+      row('Generated asset retention', ret.genAssetDays ? ret.genAssetDays + ' days' : 'off (quota-based only)');
+  }catch(e){
+    el.innerHTML = `<div style="font-size:11.5px;color:var(--amber)">Could not load configuration: ${esc((e && e.message) || 'API')}</div>`;
+  }
+}
 
 /* ── SECURITY — ADMIN 2FA (TOTP) ─────────────────────────────────────────── */
 async function renderTwofaCard(){
@@ -607,18 +637,19 @@ VIEWS.settings = function(){
   return `
     <div class="adx-card" id="twofaCard" style="padding:18px 20px;margin-bottom:16px"></div>
     <div class="adx-grid2">
+      <!-- #91 (A3) — ilgari bu yerda TAHRIRLANADIGAN maydonlar turardi, lekin hech
+           qayerga saqlanmasdi (qiymatlar ham noto'g'ri edi). Endi HAQIQIY server
+           konfiguratsiyasi read-only ko'rsatiladi (GET /api/admin/platform-config). -->
       <div class="adx-card" style="padding:18px 20px">
-        <div class="adx-h16" style="font-size:14px;margin-bottom:14px">Marketplace settings</div>
-        <div class="adx-flab">PLATFORM NAME</div><input class="adx-input" value="FrameFlow" style="margin-bottom:12px">
-        <div class="adx-flab">MAX FILE SIZE (.aep PACK)</div><input class="adx-input mono" value="200 MB" style="margin-bottom:12px">
-        <div class="adx-flab">PREVIEW MAX DURATION</div><input class="adx-input mono" value="30 s" style="margin-bottom:12px">
-        <div class="adx-flab">AUTO-ARCHIVE (INACTIVE DAYS)</div><input class="adx-input mono" value="90 days">
-        <div style="font-size:10.5px;color:#5E6675;margin-top:6px">Drafts that are not approved are archived after this period. <span style="color:#FFB27C">Server sync in a future version</span>.</div>
+        <div class="adx-h16" style="font-size:14px;margin-bottom:6px">Platform configuration</div>
+        <div style="font-size:10.5px;color:#5E6675;margin-bottom:14px">Read-only — these limits come from the server code and environment, not from this screen.</div>
+        <div id="platformCfgBody"><div style="font-size:11.5px;color:var(--muted2)">Loading…</div></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="adx-card" style="padding:18px 20px">
           <div style="display:flex;align-items:center;margin-bottom:12px"><span class="adx-h16" style="font-size:14px">Categories</span><span style="flex:1"></span><button class="adx-btn2 sm" onclick="toast('Category','Adding categories coming in a future version','info')"><i class="ph ph-check"></i>Add</button></div>
-          <div style="display:flex;flex-wrap:wrap;gap:7px">${cats.length?cats.map(c=>`<span class="adx-tag">${esc(c)}<i class="ph ph-x" style="font-size:11px;margin-left:2px;cursor:pointer"></i></span>`).join(''):'<span style="font-size:11px;color:var(--muted2)">No categories</span>'}</div>
+          <!-- #91 — "x" ikonkasi hech narsa qilmasdi (soxta boshqaruv) → olib tashlandi. -->
+          <div style="display:flex;flex-wrap:wrap;gap:7px">${cats.length?cats.map(c=>`<span class="adx-tag">${esc(c)}</span>`).join(''):'<span style="font-size:11px;color:var(--muted2)">No categories</span>'}</div>
         </div>
         <div class="adx-card" style="padding:18px 20px">
           <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Moderation rules</div>

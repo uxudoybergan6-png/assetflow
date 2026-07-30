@@ -171,6 +171,7 @@ const StudioTemplates = (() => {
     if (o.templateType) qs.set("templateType", o.templateType);
     if (o.kind) qs.set("kind", o.kind);
     if (o.published) qs.set("published", o.published);
+    if (o.takedown) qs.set("takedown", o.takedown);
     if (o.cursor) qs.set("cursor", o.cursor);
     if (o.withCounts) qs.set("counts", "1");
     const data = await StudioApi.listTemplates(qs.toString());

@@ -112,10 +112,28 @@ export async function requireAuth(
   next();
 }
 
-/** Markaziy block tekshiruvi: contributor bloklangan YOKI plugin hisobi BLOCKED. */
+/** #95 (A7) — hisob to'xtatilgan bo'lsa foydalanuvchiga ko'rsatiladigan matn,
+ *  aks holda null. Har LOGIN yo'li (web, Google, plagin, device-code) shundan
+ *  foydalanadi — yangi sessiya umuman ochilmasin. */
+export function suspensionMessage(
+  user: { suspendedAt?: Date | null; suspendedReason?: string | null }
+): string | null {
+  if (!user.suspendedAt) return null;
+  return user.suspendedReason
+    ? `Account is suspended: ${user.suspendedReason}`
+    : "Account is suspended — contact an admin";
+}
+
+/** Markaziy block tekshiruvi: hisob to'xtatilgan (#95), contributor bloklangan
+ *  YOKI plugin hisobi BLOCKED. */
 function isBlocked(
-  user: { contributorBlockedAt: Date | null; pluginProfile?: { status: string } | null }
+  user: {
+    contributorBlockedAt: Date | null;
+    suspendedAt?: Date | null;
+    pluginProfile?: { status: string } | null;
+  }
 ): boolean {
+  if (user.suspendedAt != null) return true; // #95 (A7) — umumiy to'xtatish
   if (user.contributorBlockedAt != null) return true;
   if (user.pluginProfile?.status === "BLOCKED") return true;
   return false;

@@ -49,6 +49,12 @@ model User {
   passwordHash     String?
   role                 UserRole  @default(USER)
   contributorBlockedAt DateTime?
+  // #95 (A7) — UMUMIY hisob to'xtatish. `contributorBlockedAt` faqat contributor
+  // yuklashini to'xtatadi; bu maydon esa hisobning HAR qanday kirishini (Studio,
+  // web, AE plagin) yopadi. To'xtatishda tokenVersion oshiriladi + plagin
+  // tokenlari o'chiriladi, ya'ni ochiq sessiyalar ham darhol uziladi.
+  suspendedAt          DateTime?
+  suspendedReason      String?
   // FAZA 6b — contributor onboarding: USER "Become a contributor" so'rovi.
   // Admin rol berganda (yoki rad etganda) null'ga qaytadi.
   contributorRequestedAt DateTime?
@@ -444,6 +450,27 @@ model StudioAuditLog {
   @@index([action])
   @@index([createdAt])
   @@index([actorId])
+}
+
+/// #94 (A6) — tizim loglari. Ilgari `apps/api/data/system-logs.json` faylida
+/// saqlanardi: Cloud Run konteyneri o'chganda yoki yangi instansiya ko'tarilganda
+/// loglar yo'qolardi va har instansiya o'z faylini ko'rardi. Endi DB — barcha
+/// instansiya uchun yagona, chidamli manba.
+model SystemLog {
+  id          String   @id
+  ts          DateTime @default(now())
+  level       String
+  source      String
+  sourceLabel String?
+  message     String   @db.Text
+  action      String?
+  detail      String?  @db.Text
+  metaJson    Json?
+  userId      String?
+
+  @@index([ts])
+  @@index([source, ts])
+  @@index([level, ts])
 }
 
 enum AiGenerationType {

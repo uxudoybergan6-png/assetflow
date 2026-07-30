@@ -85,8 +85,10 @@ function avatar(name, size){
 function toast(title, msg, kind){
   let wrap=document.querySelector('.toast-wrap');
   if(!wrap){ wrap=document.createElement('div'); wrap.className='toast-wrap'; document.body.appendChild(wrap); }
-  const map={success:['green','checkCircle'],danger:['red','xCircle'],warn:['orange','alert'],info:['violet','bell']};
-  const [c,i]=map[kind||'success'];
+  const map={success:['green','checkCircle'],danger:['red','xCircle'],error:['red','xCircle'],warn:['orange','alert'],info:['violet','bell']};
+  // Noma'lum kind bilan chaqirilsa ilgari destructuring TypeError berardi va toast UMUMAN
+  // ko'rinmasdi (2FA ekranlarida 'error' aynan shunday edi) — endi 'error' alias + zaxira.
+  const [c,i]=map[kind||'success']||map.success;
   const el=document.createElement('div'); el.className='toast';
   // title/msg ko'pincha server matni (xato, contributor nomi) — XSS oldini olish uchun escape
   const esc=(s)=>(window.StudioMedia&&StudioMedia.escapeHtml?StudioMedia.escapeHtml(s):String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])));

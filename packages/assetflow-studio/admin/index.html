@@ -122,6 +122,7 @@ html.ff-iconfont-dead .ph-fill::before { content: "\00B7" !important; font-famil
 <script src="js/studio-stats.js"></script>
 <script src="js/admin-views.js"></script>
 <script src="js/admin-views2.js"></script>
+<script src="js/admin-dmca.js"></script>
 <script src="js/admin-subscribers.js"></script>
 <script src="js/admin-users.js"></script>
 <script src="js/admin-plans.js"></script>
@@ -150,6 +151,7 @@ const NAV = [
   {grp:'WORKSPACE'},
   {id:'overview',     label:'Overview',           icon:'squares-four'},
   {id:'moderation',   label:'Moderation',         icon:'shield-check'},
+  {id:'dmca',         label:'Copyright claims',   icon:'scales'},
   {id:'templates',    label:'All templates',      icon:'stack'},
   {id:'website',      label:'Website',            icon:'globe'},
   {id:'plugincms',    label:'Plugin CMS',         icon:'app-window'},
@@ -178,6 +180,7 @@ const NAV = [
 const TITLES = {
   overview:['Overview','Platform status'],
   moderation:['Moderation queue','Review new templates'],
+  dmca:['Copyright claims','DMCA reports & takedowns'],
   templates:['All templates','Global catalog'],
   website:['Website / Landing','Public landing content & theme'],
   plugincms:['Plugin CMS','AE plugin texts & background media'],
@@ -220,6 +223,8 @@ function navBadge(n){
   if(n.id==='moderation') return {badge:String(tByStatus('pending').length), badgeCls:'warn'};
   if(n.id==='subscribers') return {badge:String(subscriberCounts().active), badgeCls:'brand'};
   if(n.id==='users' && window._AF_ROLE_PENDING) return {badge:String(window._AF_ROLE_PENDING), badgeCls:'warn'};
+  // #28 (A2) — kutayotgan mualliflik huquqi da'volari (huquqiy muddat bor, ko'rinib tursin)
+  if(n.id==='dmca' && window._AF_DMCA_PENDING) return {badge:String(window._AF_DMCA_PENDING), badgeCls:'warn'};
   if(n.id==='messaging') {
     const nMsg = window._STUDIO_MSG_UNREAD || 0;
     if (nMsg) return {badge:String(nMsg), badgeCls:'brand'};
@@ -351,8 +356,16 @@ window.addEventListener('af-theme-change', (e) => {
     const p = await StudioApi.listAdminUsers({ pending: true });
     window._AF_ROLE_PENDING = (p.items || []).length;
   })();
+  // #28 (A2) — kutayotgan mualliflik huquqi da'volari rozetkasi boot'da yuklanadi
+  // (huquqiy javob muddati bor — admin ekranga kirmasa ham ko'rinsin).
+  const dmcaJob = (async () => {
+    if (!StudioApi.listInfringementReports) return;
+    const r = await StudioApi.listInfringementReports("pending");
+    window._AF_DMCA_PENDING = (r.reports || []).length;
+  })();
   await Promise.allSettled([
     tplJob,
+    dmcaJob,
     StudioTemplates.loadAdminContributors(),
     StudioTemplates.loadPluginAnalytics(),
     StudioTemplates.loadAuditLogs(),

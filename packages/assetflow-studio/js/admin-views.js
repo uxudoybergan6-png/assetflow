@@ -268,8 +268,8 @@ function modTopbarActions(){
         <option value="old" ${MOD_SORT==='old'?'selected':''}>Oldest \u2192 newest</option>
       </select></label>`;
 }
-function setModType(v){ MOD_TYPE=v; MOD_SELECTED=null; MOD_CHECKED=new Set(); renderModeration(); }
-function setModCon(v){ MOD_CON=v; MOD_SELECTED=null; MOD_CHECKED=new Set(); renderModeration(); }
+function setModType(v){ MOD_TYPE=v; modResetSelection(); renderModeration(); }
+function setModCon(v){ MOD_CON=v; modResetSelection(); renderModeration(); }
 window.setModType = setModType; window.setModCon = setModCon;
 
 function renderModeration(){
@@ -442,8 +442,12 @@ function initialsOf(name){
   return String(name||'').trim().split(/\s+/).map(w=>w[0]||'').join('').toUpperCase().slice(0,2) || '?';
 }
 
+/** #27 (A1) — filtr o'zgarganda tanlov TOZALANADI. Aks holda ko'rinmayotgan
+ *  (boshqa filtrda tanlangan) shablonlar ommaviy amalga tushib ketardi. */
+function modResetSelection(){ MOD_SELECTED=null; MOD_CHECKED=new Set(); }
+
 function setModFilter(f){
-  MOD_FILTER=f; MOD_SELECTED=null;
+  MOD_FILTER=f; modResetSelection();
   if (typeof StudioTemplates !== "undefined") {
     // Audit §C (P1) — Soft/All rad etilganlarni scope=all bilan oladi (avval bu
     // filtrlar hech qachon yangilanmasdan bo'sh/stale ma'lumot ko'rsatardi).
@@ -455,7 +459,7 @@ function setModFilter(f){
   }
   renderModeration();
 }
-function setModCat(v){ MOD_CAT=v||'all'; renderModeration(); }
+function setModCat(v){ MOD_CAT=v||'all'; modResetSelection(); renderModeration(); }
 function setModSort(v){ MOD_SORT=v==='old'?'old':'new'; renderModeration(); }
 function selectMod(id){ MOD_SELECTED=id; renderModeration(); }
 function toggleCheck(id){ MOD_CHECKED.has(id)?MOD_CHECKED.delete(id):MOD_CHECKED.add(id); renderModeration(); }
@@ -475,11 +479,15 @@ function navMod(dir){
 // ishlanadi (bitta yomon element partiyani to'xtatmaydi). a: approve-free | approve-pro |
 // reject | clear-pack. Karantin gate saqlanadi (clear-pack → so'ng approve).
 async function bulkAction(a){
-  const ids=[...MOD_CHECKED]; const n=ids.length;
-  if(!n) return;
+  // #27 (A1) — FAQAT joriy filtrda KO'RINAYOTGAN elementlar. Tanlov filtr almashganda
+  // tozalanadi, lekin ro'yxat fonda yangilanishi mumkin — shuning uchun kesishma ham olinadi.
+  const visible = modQueueItems();
+  const visibleIds = new Set(visible.map(t=>t.id));
+  const dropped = [...MOD_CHECKED].filter(id=>!visibleIds.has(id)).length;
+  const items = visible.filter(t=>MOD_CHECKED.has(t.id));
+  const ids = items.map(t=>t.id); const n = ids.length;
+  if(!n){ if(dropped) toast('Bulk action','Selected templates are no longer in this queue','warn'); return; }
   if(!StudioApi.token()){ toast('Bulk action','Sign in as admin first','warn'); return; }
-  // P4 3(b) — reject qaytarilmasi qiyin, boshqa amallar (approve/clear-pack) darhol bajariladi.
-  if(a==='reject' && !confirm(`Reject ${n} template${n===1?'':'s'}?`)) return;
 
   const map = {
     'approve-free': { action:'approve', opts:{ published:true, isPro:false }, label:'Bulk approve · Free' },
@@ -491,6 +499,16 @@ async function bulkAction(a){
   };
   const m = map[a];
   if(!m) return;
+
+  // #27 (A1) — HAR ommaviy amal (approve ham!) tasdiq so'raydi va AYNAN qaysi
+  // shablonlar ta'sirlanishini ko'rsatadi. Approve = katalogda darhol jonli bo'ladi.
+  const names = items.slice(0,8).map(t=>'• '+(t.name||t.id));
+  if(items.length>8) names.push(`… and ${items.length-8} more`);
+  const warn = a==='clear-pack'
+    ? '\n\nThis clears the security quarantine flag — only do it after checking the pack.'
+    : (a==='reject' ? '' : '\n\nApproved templates go live in the AE catalog immediately.');
+  const extra = dropped ? `\n\n(${dropped} previously selected template${dropped===1?'':'s'} no longer in this filter — skipped.)` : '';
+  if(!confirm(`${m.label}\n\n${n} template${n===1?'':'s'}:\n${names.join('\n')}${warn}${extra}`)) return;
 
   let resp;
   try{

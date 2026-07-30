@@ -14,6 +14,7 @@ import {
   resetExpiredPluginMonths,
   refreshPlanConfigCache,
   recordPlanChange,
+  refundAiCredits,
 } from "../lib/plugin-profile.js";
 import {
   getSignedUploadUrl,
@@ -23,6 +24,10 @@ import {
   sha256OfS3Object,
 } from "../lib/s3.js";
 import { writeAuditLog } from "../lib/audit-log.js";
+// #91 (A3) — admin Settings ekrani uchun HAQIQIY limitlar/retention (read-only ko'rsatiladi).
+import { CLOUD_RUN_REQUEST_LIMIT_BYTES, MAX_REF_UPLOAD_BYTES } from "../lib/upload-limits.js";
+import { DONE_RETENTION_DAYS, INCOMING_RETENTION_DAYS } from "../lib/ingest-worker.js";
+import { ASSET_MAX_BYTES } from "./contributor.js";
 import { sendEmail, renderEmailLayout } from "../lib/email.js";
 import { diagnoseSizeBytes, backfillSizeBytes } from "../lib/backfill-sizebytes.js";
 import { getModelById } from "../lib/gen-models.js";
@@ -138,6 +143,35 @@ adminRouter.post("/upload-url", async (req, res) => {
 
   const uploadUrl = await getSignedUploadUrl(key, contentType);
   res.json({ uploadUrl, key, publicUrl: getPublicUrl(key) });
+});
+
+/**
+ * GET /api/admin/platform-config — #91 (A3): HAQIQIY platforma konfiguratsiyasi (READ-ONLY).
+ *
+ * Ilgari admin "Settings" ekrani tahrirlanadigan maydonlarni ko'rsatardi, ammo hech
+ * qayerga saqlamasdi (va qiymatlari ham noto'g'ri edi — masalan "200 MB"). Bu qiymatlar
+ * kod/env bilan belgilanadi, shuning uchun ular UI'dan TAHRIRLANMAYDI — faqat ko'rsatiladi.
+ */
+adminRouter.get("/platform-config", async (_req, res) => {
+  res.json({
+    platformName: "FrameFlow",
+    limits: {
+      // Katta fayllar presigned PUT bilan to'g'ridan bulutga ketadi (per-media-sinf shipi).
+      assetMaxBytes: ASSET_MAX_BYTES,
+      // API orqali (multipart) o'tadigan eng katta so'rov tanasi — Cloud Run platforma limiti.
+      requestBodyMaxBytes: CLOUD_RUN_REQUEST_LIMIT_BYTES,
+      genRefUploadMaxBytes: MAX_REF_UPLOAD_BYTES,
+    },
+    retention: {
+      ingestJobDays: DONE_RETENTION_DAYS,
+      incomingOrphanDays: INCOMING_RETENTION_DAYS,
+      genAssetDays: (() => {
+        const v = Number(process.env.GEN_ASSET_RETENTION_DAYS);
+        return Number.isFinite(v) && v > 0 ? v : 0; // 0 = o'chiq
+      })(),
+    },
+    source: "env + code (not editable from the admin UI)",
+  });
 });
 
 // ── Landing CMS (admin "Website" tab) ────────────────────────────────────────
@@ -1198,6 +1232,55 @@ adminRouter.get("/users/:id/generations", async (req, res) => {
   });
 });
 
+/** #137 (A8) — POST /api/admin/users/:id/generations/:genId/refund — bitta generatsiya
+ *  uchun QO'LDA kredit qaytarish. Ilgari admin muvaffaqiyatsiz/nuqsonli genni ko'rardi-yu
+ *  hech narsa qila olmasdi (refund faqat provayder xatosida avtomatik ishlardi) — obunachi
+ *  shikoyat qilsa admin uchun hech qanday yo'l yo'q edi.
+ *
+ *  Idempotentlik `refundAiCredits`ning atomik `refunded=false→true` claim'idan keladi:
+ *  ikki marta bosilsa ikkinchisi 409 qaytaradi, kredit IKKI marta berilmaydi. */
+adminRouter.post("/users/:id/generations/:genId/refund", async (req, res) => {
+  const userId = String(req.params.id);
+  const genId = String(req.params.genId);
+  const gen = await prisma.generation.findUnique({
+    where: { id: genId },
+    select: { id: true, userId: true, cost: true, refunded: true, status: true, modelId: true },
+  });
+  if (!gen || gen.userId !== userId) {
+    res.status(404).json({ error: "Generation not found" });
+    return;
+  }
+  if (gen.refunded) {
+    res.status(409).json({ error: "Already refunded", code: "ALREADY_REFUNDED" });
+    return;
+  }
+  if (gen.cost <= 0) {
+    res.status(400).json({ error: "Nothing to refund — this generation cost 0 credits" });
+    return;
+  }
+  // Atomik claim ichkarida; claim yutmasa (parallel refund) kredit berilmaydi.
+  await refundAiCredits(userId, gen.cost, { generationId: gen.id });
+  const after = await prisma.generation.findUnique({
+    where: { id: gen.id },
+    select: { refunded: true },
+  });
+  if (!after?.refunded) {
+    res.status(409).json({ error: "Already refunded", code: "ALREADY_REFUNDED" });
+    return;
+  }
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "generation.refund",
+    targetType: "generation",
+    targetId: gen.id,
+    detail: `${gen.cost} cr · ${gen.modelId} · status=${gen.status}`,
+  });
+  const profile = await prisma.pluginProfile
+    .findUnique({ where: { userId }, select: { aiCredits: true } })
+    .catch(() => null);
+  res.json({ ok: true, refunded: gen.cost, aiCredits: profile?.aiCredits ?? null });
+});
+
 /** GET /api/admin/activity[?type=gen|download|import&limit=] — birlashgan foydalanuvchi faoliyati oqimi. */
 adminRouter.get("/activity", async (req, res) => {
   const type = String(req.query.type || "all");
@@ -1609,6 +1692,9 @@ adminRouter.get("/users", async (req, res) => {
         emailVerified: true,
         contributorBlockedAt: true,
         contributorRequestedAt: true,
+        // #95 (A7) — umumiy to'xtatish holati (contributor-blokdan ALOHIDA).
+        suspendedAt: true,
+        suspendedReason: true,
       },
     }),
     prisma.user.count({
@@ -1624,7 +1710,12 @@ adminRouter.get("/users", async (req, res) => {
       role: u.role,
       createdAt: u.createdAt,
       emailVerified: !!u.emailVerified,
+      // `blocked` = contributor yuklashi bloklangan (eski maydon, o'z ma'nosida qoldi).
       blocked: !!u.contributorBlockedAt,
+      // #95 (A7) — butun hisob to'xtatilgan (kirish umuman yopiq).
+      suspended: !!u.suspendedAt,
+      suspendedAt: u.suspendedAt,
+      suspendedReason: u.suspendedReason,
       contributorRequestedAt: u.contributorRequestedAt,
     })),
     pendingCount,
@@ -1682,6 +1773,84 @@ adminRouter.patch("/users/:id/role", async (req, res) => {
   res.json({
     item: { id: updated.id, email: updated.email, name: updated.name, role: updated.role },
   });
+});
+
+const suspendSchema = z.object({
+  suspended: z.boolean(),
+  reason: z.string().max(300).optional(),
+});
+
+/** PATCH /api/admin/users/:id/suspend — UMUMIY hisob to'xtatish/tiklash (#95 / A7).
+ *  `contributorBlockedAt` faqat yuklashni to'xtatadi; bu esa hisobning HAR qanday
+ *  kirishini (Studio, web, AE plagin) yopadi va ochiq sessiyalarni ham uzadi. */
+adminRouter.patch("/users/:id/suspend", async (req, res) => {
+  const parsed = suspendSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: "suspended must be true or false" });
+    return;
+  }
+  const { suspended } = parsed.data;
+  const reason = (parsed.data.reason ?? "").trim().slice(0, 300);
+
+  const target = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!target) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  if (target.id === req.user!.userId) {
+    res.status(400).json({ error: "You cannot suspend your own account" });
+    return;
+  }
+  if (!!target.suspendedAt === suspended) {
+    res.status(400).json({
+      error: suspended ? "Account is already suspended" : "Account is not suspended",
+    });
+    return;
+  }
+
+  if (suspended) {
+    // Oxirgi admin himoyasi — rol o'zgarishidagi kabi (0 ta faol admin qolmasin).
+    const updated = await prisma.$transaction(async (tx) => {
+      if (target.role === UserRole.ADMIN) {
+        const activeAdmins = await tx.user.count({
+          where: { role: UserRole.ADMIN, suspendedAt: null },
+        });
+        if (activeAdmins <= 1) return null;
+      }
+      const u = await tx.user.update({
+        where: { id: target.id },
+        data: {
+          suspendedAt: new Date(),
+          suspendedReason: reason || null,
+          // Ochiq JWT sessiyalar darhol bekor bo'ladi (requireAuth tokenVersion tekshiradi).
+          tokenVersion: { increment: 1 },
+        },
+      });
+      // AE plagin tokenlari JWT emas — alohida o'chiriladi.
+      await tx.pluginToken.deleteMany({ where: { userId: target.id } });
+      return u;
+    });
+    if (!updated) {
+      res.status(409).json({ error: "Cannot suspend the last remaining admin" });
+      return;
+    }
+  } else {
+    await prisma.user.update({
+      where: { id: target.id },
+      data: { suspendedAt: null, suspendedReason: null },
+    });
+  }
+
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: suspended ? "user.suspended" : "user.unsuspended",
+    targetType: "user",
+    targetId: target.id,
+    detail: suspended ? `${target.email} to'xtatildi${reason ? `: ${reason}` : ""}` : `${target.email} tiklandi`,
+    meta: { suspended, reason: reason || null },
+  });
+
+  res.json({ item: { id: target.id, email: target.email, suspended } });
 });
 
 /** DELETE /api/admin/users/:id/contributor-request — pending so'rovni rad etish. */

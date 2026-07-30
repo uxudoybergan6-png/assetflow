@@ -14,7 +14,7 @@ import {
   prisma,
 } from "@creative-tools/database";
 import type { Request, Response } from "express";
-import { requireAuth, verifyToken } from "../middleware/auth.js";
+import { requireAuth, verifyToken, suspensionMessage } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
 import {
   isS3Configured,
@@ -994,6 +994,13 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
 
   if (!(await checkPluginAdminTotp(user, parsed.data.totpCode, res))) return;
 
+  // #95 (A7) — umumiy to'xtatish plaginda ham amal qiladi.
+  const suspended = suspensionMessage(user);
+  if (suspended) {
+    res.status(403).json({ error: suspended, code: "ACCOUNT_SUSPENDED" });
+    return;
+  }
+
   const profile = await ensurePluginProfile(user.id);
 
   if (profile.status === PluginAccountStatus.BLOCKED) {
@@ -1088,6 +1095,14 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
     return;
   }
 
+  // #95 (A7) — to'xtatilgan hisob device-code oqimida ham rad etiladi.
+  const suspended = suspensionMessage(user);
+  if (suspended) {
+    await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
+    res.status(403).json({ error: suspended, code: "ACCOUNT_SUSPENDED" });
+    return;
+  }
+
   const profile = await ensurePluginProfile(user.id);
   if (profile.status === PluginAccountStatus.BLOCKED) {
     await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
@@ -1150,6 +1165,14 @@ pluginRouter.post("/device/confirm-password", loginLimiter, async (req: Request,
   }
 
   if (!(await checkPluginAdminTotp(user, parsed.data.totpCode, res))) return;
+
+  // #95 (A7) — to'xtatilgan hisob device-code oqimida ham rad etiladi.
+  const suspended = suspensionMessage(user);
+  if (suspended) {
+    await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
+    res.status(403).json({ error: suspended, code: "ACCOUNT_SUSPENDED" });
+    return;
+  }
 
   const profile = await ensurePluginProfile(user.id);
   if (profile.status === PluginAccountStatus.BLOCKED) {

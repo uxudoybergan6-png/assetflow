@@ -178,20 +178,9 @@ let PLUGIN_PLANS = [
   },
 ];
 
-/** Discount / promo code for the Pro plan (managed by admin) */
-let PLUGIN_PROMO = {
-  enabled: false,
-  code: '',
-  label: '',
-  type: 'percent',
-  value: 0,
-  appliesTo: 'both',
-  validFrom: '',
-  validUntil: '',
-  bannerText: '',
-  maxUses: null,
-  usedCount: 0,
-};
+/* #92 (A4) — PLUGIN_PROMO olib tashlandi. Chegirma faqat Lemon Squeezy
+   checkout'ida amal qiladi; localStorage'dagi promo hech qanday to'lovga
+   ta'sir qilmasdi, lekin UI'da "chegirmali narx" ko'rsatib chalg'itardi. */
 
 function loadPluginPlans() {
   const defaults = PLUGIN_PLANS.slice();
@@ -203,7 +192,7 @@ function loadPluginPlans() {
       PLUGIN_PLANS = data;
     } else {
       if (data.plans) PLUGIN_PLANS = data.plans;
-      if (data.promo) PLUGIN_PROMO = { ...PLUGIN_PROMO, ...data.promo };
+      // data.promo (eski yozuvlar) ataylab e'tiborsiz qoldiriladi — #92 (A4)
     }
     // §C — eski localStorage'da studio bo'lmasa default'dan qo'shamiz (yo'qolib qolmasin)
     for (const d of defaults) {
@@ -216,41 +205,7 @@ function loadPluginPlans() {
 }
 
 function savePluginPlans() {
-  localStorage.setItem(
-    'af_plugin_plans',
-    JSON.stringify({ plans: PLUGIN_PLANS, promo: PLUGIN_PROMO })
-  );
-}
-
-function promoAppliesTo(period) {
-  if (!PLUGIN_PROMO.enabled) return false;
-  const a = PLUGIN_PROMO.appliesTo || 'both';
-  if (a === 'both') return true;
-  return a === period;
-}
-
-function applyPromoPrice(base) {
-  if (!PLUGIN_PROMO.enabled || base <= 0) return base;
-  const v = Number(PLUGIN_PROMO.value) || 0;
-  if (PLUGIN_PROMO.type === 'fixed') return Math.max(0, base - v);
-  return Math.max(0, Math.round(base * (1 - v / 100) * 100) / 100);
-}
-
-function getProPrices() {
-  const p = planById('pro');
-  const monthly = p.priceMonthly;
-  const yearly = p.priceYearly;
-  const has =
-    PLUGIN_PROMO.enabled &&
-    (promoAppliesTo('monthly') || promoAppliesTo('yearly'));
-  return {
-    monthly,
-    yearly,
-    monthlyFinal: promoAppliesTo('monthly') ? applyPromoPrice(monthly) : monthly,
-    yearlyFinal: promoAppliesTo('yearly') ? applyPromoPrice(yearly) : yearly,
-    hasDiscount: has,
-    promo: PLUGIN_PROMO,
-  };
+  localStorage.setItem('af_plugin_plans', JSON.stringify({ plans: PLUGIN_PLANS }));
 }
 
 function formatMoney(n, currency) {
@@ -261,20 +216,11 @@ function formatMoney(n, currency) {
 /** Admin + Contributor — show Pro/Free price */
 function planPriceLabel(p) {
   if (!p || p.id === 'free') return 'Free';
-  const pr = getProPrices();
-  if (pr.hasDiscount && promoAppliesTo('monthly')) {
-    return `${formatMoney(pr.monthlyFinal)}/mo · discount`;
-  }
   return `${formatMoney(p.priceMonthly)}/mo`;
 }
 
 function formatProPriceForContributor() {
-  const pr = getProPrices();
-  const p = planById('pro');
-  if (pr.hasDiscount && PLUGIN_PROMO.enabled) {
-    return `<span style="text-decoration:line-through;color:var(--tx-3)">${formatMoney(pr.monthly)}</span> <b style="color:var(--green)">${formatMoney(pr.monthlyFinal)}</b> <span class="pill" style="font-size:10px">${PLUGIN_PROMO.code}</span>`;
-  }
-  return `${formatMoney(p.priceMonthly)}/mo`;
+  return `${formatMoney(planById('pro').priceMonthly)}/mo`;
 }
 
 function planById(id) {

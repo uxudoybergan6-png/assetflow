@@ -576,6 +576,10 @@ contributorRouter.get("/templates", requireAuth, async (req, res) => {
     const published = String(req.query.published || "");
     if (published === "true") where.published = true;
     else if (published === "false") where.published = false;
+    // #28 (A2) — admin DMCA ekrani: faqat takedown qilingan yozuvlar (tiklash ro'yxati).
+    const takedown = String(req.query.takedown || "");
+    if (takedown === "true") where.takedownAt = { not: null };
+    else if (takedown === "false") where.takedownAt = null;
     // #89 (C10) — soft/hard endi `rejectKind` ustunidan (eski qatorlar uchun matn fallback).
     const rejectKind = String(req.query.rejectKind || "");
     if (rejectKind === "hard" || rejectKind === "soft") {
@@ -2337,7 +2341,7 @@ async function isAdminUser(userId: string): Promise<boolean> {
 }
 
 /** P5.7 — per-media-sinf hajm shipi (bayt). Video katta (3GB), audio/rasm/lut kichik. */
-const ASSET_MAX_BYTES: Record<string, number> = {
+export const ASSET_MAX_BYTES: Record<string, number> = {
   video: 3 * 1024 * 1024 * 1024,
   image: 64 * 1024 * 1024,
   audio: 256 * 1024 * 1024,

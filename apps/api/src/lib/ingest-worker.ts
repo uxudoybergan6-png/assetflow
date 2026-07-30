@@ -63,9 +63,9 @@ export function registerIngestProcessor(fn: IngestProcessor): void {
 const WORKER_CONCURRENCY = intEnv("INGEST_WORKER_CONCURRENCY", 2, 1, 8);
 const IDLE_POLL_MS = intEnv("INGEST_WORKER_IDLE_MS", 4000, 500, 60_000);
 const STUCK_MINUTES = intEnv("INGEST_WORKER_STUCK_MIN", 15, 2, 240);
-const DONE_RETENTION_DAYS = intEnv("INGEST_JOB_RETENTION_DAYS", 14, 1, 180);
+export const DONE_RETENTION_DAYS = intEnv("INGEST_JOB_RETENTION_DAYS", 14, 1, 180);
 /** #50 — shu yoshdan katta `incoming/` obyekt yetim deb hisoblanadi (navbatda bo'lmasa). */
-const INCOMING_RETENTION_DAYS = intEnv("INGEST_INCOMING_RETENTION_DAYS", 7, 1, 90);
+export const INCOMING_RETENTION_DAYS = intEnv("INGEST_INCOMING_RETENTION_DAYS", 7, 1, 90);
 
 function intEnv(name: string, def: number, min: number, max: number): number {
   const v = Number(process.env[name]);

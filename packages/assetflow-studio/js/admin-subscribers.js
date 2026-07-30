@@ -254,7 +254,13 @@ VIEWS["subscriber-detail"] = function (id) {
 };
 
 /* P2: bitta userning generatsiyalari (done/FAILED/running) — status badge + refund + cost + prompt
-   + media thumb. FAQAT O'QISH. afterRender'da yuklanadi (view sinxron; media imzo async). */
+   + media thumb. afterRender'da yuklanadi (view sinxron; media imzo async).
+   #137 (A8): ilgari qattiq `take:40` edi va davomi umuman ko'rinmasdi (server allaqachon
+   cursor sahifalashini beradi) + refund faqat AVTOMATIK (provayder xatosi) yo'l bilan
+   bo'lardi, ya'ni obunachi shikoyat qilsa admin qo'lida hech narsa yo'q edi. Endi
+   "Load more" + har element uchun "Refund" bor. */
+const SUB_GEN = { userId: null, cursor: null, loading: false, items: [] };
+const SUB_GEN_PAGE = 30;
 function subGenStatusBadge(st) {
   if (st === "done") return `<span class="adx-bdg adx-bdg-approved">Done</span>`;
   if (st === "failed") return `<span class="adx-bdg adx-bdg-blocked">Failed</span>`;
@@ -275,14 +281,82 @@ function subGenCard(g) {
     ? `<div style="position:relative;width:52px;height:52px;flex:none;border-radius:8px;overflow:hidden;background:#0c0f14;cursor:pointer"${openClick}><img src="${esc(thumb)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.style.display='none'">${isVideo?'<i class="ph ph-play-circle" style="position:absolute;inset:0;margin:auto;width:18px;height:18px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 3px rgba(0,0,0,.6)"></i>':''}</div>`
     : `<div style="width:52px;height:52px;flex:none;border-radius:8px;background:#0c0f14;display:flex;align-items:center;justify-content:center;color:${a&&a.url?'#7CC4FF;cursor:pointer':'#3a4150'}"${openClick}><i class="ph ph-${isAudio||g.mode==='audio'?'waveform':(isVideo||g.mode==='video'?'film-slate':'image')}"></i></div>`;
   const when = g.createdAt ? new Date(g.createdAt).toLocaleString() : "";
-  return `<div style="display:flex;gap:11px;padding:9px 10px;border-top:1px solid var(--hair);align-items:flex-start">
+  // #137 (A8) — refund tugmasi faqat haqiqatan qaytariladigan holatda: hali qaytarilmagan
+  // va narxi > 0. Aks holda tugma bosilsa server 400/409 qaytarardi (soxta imkoniyat).
+  const canRefund = !g.refunded && (g.cost || 0) > 0;
+  const act = canRefund
+    ? `<button class="adx-btn2 sm" id="subGenRf_${esc(g.id)}" onclick="openRefundGen('${esc(g.id)}')" style="flex:none">Refund</button>`
+    : "";
+  return `<div style="display:flex;gap:11px;padding:9px 10px;border-top:1px solid var(--hair);align-items:flex-start" id="subGenRow_${esc(g.id)}">
     ${media}
     <div style="flex:1;min-width:0">
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${subGenStatusBadge(g.status)}<span style="font-size:10.5px;color:#8A93A3">${esc(g.model||'')}</span><span style="font-size:10.5px;color:#6b7280">· ${g.cost||0} cr</span>${g.refunded?'<span class="adx-bdg" style="background:rgba(124,196,255,.14);color:#7CC4FF">Refunded</span>':''}</div>
       <div style="font-size:11.5px;color:#B7C0CE;margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(g.prompt||'—')}</div>
       <div style="font-size:10px;color:var(--muted2);margin-top:2px">${esc(when)}</div>
     </div>
+    ${act}
   </div>`;
+}
+
+/** #137 (A8) — qo'lda refund tasdiqi. Kredit qaytarish pul harakati, shu bois
+ *  bir bosishda emas — avval nimani qaytarayotgani ko'rsatiladi. */
+function openRefundGen(genId) {
+  const g = (SUB_GEN.items || []).find((x) => x.id === genId);
+  if (!g) return;
+  openModal(`
+    <div class="modal-head">
+      <div class="modal-ico" style="background:var(--violet-dim);color:var(--violet-bright)">${ic("refresh")}</div>
+      <div><h3>Refund ${g.cost} credits</h3><p>${esc(g.model || g.modelId || "")} \xb7 ${esc(String(g.status || ""))}</p></div>
+    </div>
+    <div class="modal-body">
+      <div class="info-banner">${ic("alert")}<span>${g.cost} credits will be returned to the subscriber's balance. This generation is then marked <b>Refunded</b> and cannot be refunded again.</span></div>
+      <div style="font-size:11.5px;color:#B7C0CE;margin-top:10px;line-height:1.5">${esc(g.prompt || "—")}</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="doRefundGen('${esc(genId)}')">Refund ${g.cost} cr</button>
+    </div>`);
+}
+
+async function doRefundGen(genId) {
+  closeModal();
+  try {
+    const r = await StudioApi.refundGeneration(SUB_GEN.userId, genId);
+    const g = (SUB_GEN.items || []).find((x) => x.id === genId);
+    if (g) g.refunded = true;
+    const row = document.getElementById(`subGenRow_${genId}`);
+    if (row && g) row.outerHTML = subGenCard(g);
+    toast(
+      "Refunded",
+      `${r && r.refunded ? r.refunded : g ? g.cost : ""} credits returned${r && typeof r.aiCredits === "number" ? ` · balance ${r.aiCredits} cr` : ""}`,
+      "success"
+    );
+    // Xulosa (total/refunded/net) serverdan qayta o'qiladi — hisob mos qolsin.
+    if (SUB_GEN.userId) refreshSubGenSummary(SUB_GEN.userId);
+  } catch (e) {
+    // Tarmoq uzilishida StudioApi POST'ni QAYTA yuboradi — birinchi urinish o'tgan bo'lsa
+    // ikkinchisi 409 ALREADY_REFUNDED beradi. Bu xato emas: kredit qaytarilgan.
+    if (e && (e.status === 409 || (e.data && e.data.code === "ALREADY_REFUNDED"))) {
+      const g = (SUB_GEN.items || []).find((x) => x.id === genId);
+      if (g) g.refunded = true;
+      const row = document.getElementById(`subGenRow_${genId}`);
+      if (row && g) row.outerHTML = subGenCard(g);
+      toast("Already refunded", "These credits were already returned", "info");
+      if (SUB_GEN.userId) refreshSubGenSummary(SUB_GEN.userId);
+      return;
+    }
+    toast("Refund failed", (e && e.message) || "unknown error", "danger");
+  }
+}
+
+async function refreshSubGenSummary(userId) {
+  const sumEl = document.getElementById("subGenSummary");
+  if (!sumEl) return;
+  try {
+    const d = await StudioApi.getUserGenerations(userId, { take: 10 });
+    const su = d.summary || {};
+    sumEl.textContent = `${su.total||0} total · ${su.failed||0} failed · ${su.refunded||0} refunded · ${su.creditsNet||0} cr net`;
+  } catch { /* xulosa yangilanmasa ham refund allaqachon amalga oshdi */ }
 }
 function subGenPreview(url, kind, downloadUrl) {
   if (!url) return;
@@ -304,18 +378,47 @@ function subGenPreview(url, kind, downloadUrl) {
 }
 async function loadSubGenerations(userId) {
   const body = document.getElementById("subGenBody");
-  const sumEl = document.getElementById("subGenSummary");
   if (!body) return;
+  SUB_GEN.userId = userId;
+  SUB_GEN.cursor = null;
+  SUB_GEN.items = [];
+  body.innerHTML = `<div id="subGenList"></div><div id="subGenMore" style="padding:10px 12px"><span style="font-size:11.5px;color:#8A93A3">Loading generations…</span></div>`;
+  await loadMoreSubGenerations();
+}
+
+/** #137 (A8) — keyingi sahifa (server `nextCursor` beradi). Sahifa qo'shiladi, qayta
+ *  yuklanmaydi — allaqachon imzolangan media URL'lari yo'qolmasin. */
+async function loadMoreSubGenerations() {
+  if (SUB_GEN.loading || !SUB_GEN.userId) return;
+  const list = document.getElementById("subGenList");
+  const more = document.getElementById("subGenMore");
+  const sumEl = document.getElementById("subGenSummary");
+  if (!list || !more) return;
+  SUB_GEN.loading = true;
+  more.innerHTML = `<span style="font-size:11.5px;color:#8A93A3">Loading…</span>`;
   try {
-    const d = await StudioApi.getUserGenerations(userId, { take: 40 });
+    const d = await StudioApi.getUserGenerations(SUB_GEN.userId, {
+      take: SUB_GEN_PAGE,
+      cursor: SUB_GEN.cursor || undefined,
+    });
     const items = d.items || [];
     const su = d.summary || {};
     if (sumEl) sumEl.textContent = `${su.total||0} total · ${su.failed||0} failed · ${su.refunded||0} refunded · ${su.creditsNet||0} cr net`;
-    body.innerHTML = items.length
-      ? items.map(subGenCard).join("")
-      : `<div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:#8A93A3">No generations yet.</div>`;
+    SUB_GEN.items = SUB_GEN.items.concat(items);
+    SUB_GEN.cursor = d.nextCursor || null;
+    if (!SUB_GEN.items.length) {
+      list.innerHTML = `<div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:#8A93A3">No generations yet.</div>`;
+      more.innerHTML = "";
+      return;
+    }
+    list.insertAdjacentHTML("beforeend", items.map(subGenCard).join(""));
+    more.innerHTML = SUB_GEN.cursor
+      ? `<button class="adx-btn2 sm" onclick="loadMoreSubGenerations()">Load more (${SUB_GEN.items.length} of ${su.total||SUB_GEN.items.length})</button>`
+      : `<span style="font-size:10.5px;color:var(--muted2)">All ${SUB_GEN.items.length} generations shown.</span>`;
   } catch (e) {
-    body.innerHTML = `<div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:#8A93A3">Couldn’t load generations${e&&e.message?` — ${esc(e.message)}`:''}.</div>`;
+    more.innerHTML = `<span style="font-size:11.5px;color:#8A93A3">Couldn’t load generations${e&&e.message?` — ${esc(e.message)}`:''}. </span><button class="adx-btn2 sm" onclick="loadMoreSubGenerations()">Retry</button>`;
+  } finally {
+    SUB_GEN.loading = false;
   }
 }
 function subActMenu(s) {

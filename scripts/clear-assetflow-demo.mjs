@@ -168,9 +168,10 @@ async function main() {
   await rmDir(uploadsDir);
   console.log(`✓ Yuklamalar papkasi tozalandi`);
 
-  fs.mkdirSync(path.dirname(logsFile), { recursive: true });
-  fs.writeFileSync(logsFile, "[]\n", "utf8");
-  console.log(`✓ Tizim loglari tozalandi`);
+  // #94 (A6) — loglar endi DB'da; eski fayl qolgan bo'lsa u ham tozalanadi.
+  if (fs.existsSync(logsFile)) fs.rmSync(logsFile, { force: true });
+  const sysLogs = await prisma.systemLog.deleteMany({});
+  console.log(`✓ Tizim loglari tozalandi (${sysLogs.count} qator)`);
 
   const users = await prisma.user.deleteMany({
     where: { email: { in: DEMO_EMAILS } },

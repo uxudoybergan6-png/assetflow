@@ -94,16 +94,23 @@ function clearLogs() {
 }
 
 async function doClearLogs() {
+  // #93 (A5) — ilgari xom `fetch` ishlatilardi (Authorization header YO'Q) → server
+  // 401 qaytarardi, xato yutilardi va baribir "Logs deleted" ko'rsatilardi. Endi
+  // StudioApi (token bilan) va HAQIQIY natija ko'rsatiladi.
   AssetFlowLog.clear();
+  let serverOk = false;
+  let serverErr = "";
   try {
-    const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "https://api.getframeflow.app");
-    await fetch(`${apiBase}/api/logs`, { method: "DELETE" });
-  } catch {
-    /* */
+    if (typeof StudioApi === "undefined") throw new Error("API is not available");
+    await StudioApi.request("/api/logs", { method: "DELETE" });
+    serverOk = true;
+  } catch (e) {
+    serverErr = (e && e.message) || "unknown error";
   }
   closeModal();
   refreshLogs();
-  toast("Cleared", "Logs deleted", "success");
+  if (serverOk) toast("Cleared", "Browser and server logs deleted", "success");
+  else toast("Partially cleared", `Browser logs deleted · server logs NOT deleted: ${serverErr}`, "warn");
 }
 
 function exportLogs() {
