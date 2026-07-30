@@ -14,7 +14,14 @@ import {
   ExploreError,
   RIGHTS_TERMS_VERSION,
 } from "../lib/explore-submit.js";
-import { consumeAiCredits, refundAiCredits, ensurePluginProfile, isPaidPlan } from "../lib/plugin-profile.js";
+import {
+  consumeAiCredits,
+  refundAiCredits,
+  ensurePluginProfile,
+  isPaidPlan,
+  claimGenerationSlot,
+  releaseGenerationSlot,
+} from "../lib/plugin-profile.js";
 import { isStorageOverQuota, getUserUsedBytes, storageQuotaBytes } from "../lib/storage-quota.js";
 import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
 import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
@@ -53,7 +60,6 @@ import {
   getModelsByMode,
   getModelById,
   isModelEnabled,
-  computeGenCost,
   getReferenceMode,
   modelAcceptsReference,
   firstReferenceModel,
@@ -64,7 +70,7 @@ import {
   suggestRealFaceAlternative,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
-import { resolvePricedModel } from "../lib/model-pricing.js";
+import { priceGeneration } from "../lib/model-pricing.js";
 import { writeProviderSpend } from "../lib/ledger.js";
 import { estimateProviderUsd } from "../lib/provider-cost.js";
 import {
@@ -909,8 +915,14 @@ studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
   }
   // NARX DVIGATELI (Bosqich 3.4): narx DB'dan (ModelPricing) — qator yo'q bo'lsa statik
   // gen-models.ts qiymatiga qaytadi. computeGenCost + imzo O'ZGARMAYDI (nusxaga qo'llanadi).
-  const priced = await resolvePricedModel(model);
-  const price = computeGenCost(priced, params); // video: cost(/s) × duration; boshqa: sobit
+  // M7 (#41): DB `enabled:false` → model o'chirilgan, quote berilmaydi.
+  // M3/M8 (#7/#42): xarajat poli — provayder narxidan past sotilmaydi.
+  const quoted = await priceGeneration(model, params);
+  if (!quoted.enabled) {
+    res.status(400).json({ error: "This model is currently disabled", code: "MODEL_DISABLED" });
+    return;
+  }
+  const price = quoted.price; // video: cost(/s) × duration; boshqa: sobit
   const ph = genParamsHash(model.id, model.mode, params);
   const signature = signCostQuote({ modelId: model.id, mode: model.mode, price, ph });
   res.json({
@@ -1488,6 +1500,25 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     return;
   }
 
+  // M10 (#123) — imzo YETARLI EMAS: narx SERVER tomonda QAYTA hisoblanadi. Imzo faqat
+  // "bu narxni biz bergan"ni tasdiqlaydi; agar narx quote'dan keyin o'zgargan bo'lsa
+  // (admin PATCH, xarajat poli, DB narx yangilanishi) eski imzo hali ham amal qilardi →
+  // foydalanuvchi arzon eski narxda generatsiya qilardi. Endi farq bo'lsa rad etamiz va
+  // klient yangi quote oladi. M7 (#41): DB `enabled:false` shu yerda ham to'sadi.
+  const repriced = await priceGeneration(model, params);
+  if (!repriced.enabled) {
+    res.status(400).json({ error: "This model is currently disabled", code: "MODEL_DISABLED" });
+    return;
+  }
+  if (repriced.price !== price) {
+    res.status(409).json({
+      error: "Price has changed — please try again",
+      code: "PRICE_CHANGED",
+      price: repriced.price,
+    });
+    return;
+  }
+
   // 3) Per-user kunlik /gen cap (ADMIN ozod) — bitta hisob orqali portlashni to'sadi.
   // Imzo tekshiruvidan KEYIN (muddati o'tgan/soxta quote hisoblagichni oshirmasin), lekin
   // kredit yechishdan OLDIN (reject → charge yo'q).
@@ -1516,25 +1547,32 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // bir vaqtda 5 ishgacha ruxsat beradi (kurtuazi); bu SERVER kafolati (P20.2 abuz oldini oladi:
   // 20 video navbatga qo'yib provayder rate-limit / spend-guard'ni portlatmasin). Imzo va daily-cap'dan
   // KEYIN, lekin consume'dan OLDIN — reject → charge yo'q. ADMIN ozod. Faol = queued|running.
+  //
+  // M6 (#40): ATOMIK slot claim (`claimGenerationSlot`) — avvalgi `count()` → `create()`
+  // check-then-act naqshi parallel so'rovlarda cheklovni chetlab o'tardi.
   const MAX_ACTIVE_GENERATIONS = Math.max(1, Number(process.env.MAX_ACTIVE_GENERATIONS) || 5);
-  if (req.user!.role !== "ADMIN") {
-    const activeCount = await prisma.generation.count({
-      where: { userId: req.user!.userId, status: { in: ["queued", "running"] } },
-    });
-    if (activeCount >= MAX_ACTIVE_GENERATIONS) {
+  const needsSlot = req.user!.role !== "ADMIN";
+  if (needsSlot) {
+    const slot = await claimGenerationSlot(req.user!.userId, MAX_ACTIVE_GENERATIONS);
+    if (!slot.ok) {
       res.status(429).json({
         error: `Too many generations running at once (max ${MAX_ACTIVE_GENERATIONS}) — wait for one to finish`,
         code: "TOO_MANY_ACTIVE_GENERATIONS",
-        active: activeCount,
+        active: slot.active,
         max: MAX_ACTIVE_GENERATIONS,
       });
       return;
     }
   }
+  /** Slot band qilingan bo'lsa bo'shatadi — job yaratilmagan HAR QANDAY chiqish yo'lida. */
+  const releaseSlot = async () => {
+    if (needsSlot) await releaseGenerationSlot(req.user!.userId);
+  };
 
   // Kredit zaxiraga olinadi (atomik). failed bo'lsa 1c qaytaradi.
   const gate = await consumeAiCredits(req.user!.userId, price);
   if (!gate.ok) {
+    await releaseSlot();
     res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
     return;
   }
@@ -1559,12 +1597,16 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     // mikrosoniya oldin yaratdi (unique (userId, idempotencyKey) → P2002). Biz endigina
     // yechgan kreditni QAYTARAMIZ (mavjud refund primitivi) va yutgan job'ni qaytaramiz —
     // ikkinchi charge/job bo'lmasin. Money math o'zgarmaydi (aynan yechilган miqdor qaytadi).
+    let refunded = false;
     if ((e as { code?: string })?.code === "P2002" && idempotencyKey) {
       await refundAiCredits(req.user!.userId, price).catch(() => {});
+      refunded = true;
       const existing = await prisma.generation.findFirst({
         where: { userId: req.user!.userId, idempotencyKey },
       });
       if (existing) {
+        // Bizning job yaratilmadi → slot bizga tegishli emas (mavjud job o'z slotini ushlab turadi).
+        await releaseSlot();
         const prof = await ensurePluginProfile(req.user!.userId);
         res.status(200).json({
           jobId: existing.id,
@@ -1575,6 +1617,17 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
         return;
       }
     }
+    // M5 (#39) — HAR QANDAY boshqa xato (DB uzilishi, constraint, timeout) ham kreditni
+    // qaytarishi SHART: kredit ALLAQACHON atomik yechilgan, lekin `Generation` qatori yo'q →
+    // uni keyin refund qiladigan hech narsa qolmaydi (`generationId` yo'q → jimgina yo'qolish).
+    // Bu yerda `generationId` bermaymiz (qator yaratilmagan) → refund idempotent EMAS, shu
+    // sabab `refunded` bayrog'i P2002 yo'lida ikki marta qaytarishni to'sadi.
+    if (!refunded) {
+      await refundAiCredits(req.user!.userId, price).catch((err) =>
+        console.error("[studio-gen] create-xatosidan keyin refund muvaffaqiyatsiz:", err)
+      );
+    }
+    await releaseSlot(); // job yaratilmadi → slot bo'shatiladi (aks holda abadiy band)
     throw e;
   }
 
@@ -2023,6 +2076,19 @@ studioGenRouter.delete("/gen/:jobId", async (req: Request, res: Response) => {
   });
   if (!gen || gen.userId !== req.user!.userId) {
     res.status(404).json({ error: "Generation not found" });
+    return;
+  }
+  // M4 (#8) — HOLAT GUARD: uchayotgan job'ni o'chirish IKKI buzilishga olib keladi:
+  //   (a) `MAX_ACTIVE_GENERATIONS` konkurentlik cheklovi chetlab o'tiladi (qator yo'q → active=0);
+  //   (b) job keyin fail bo'lganda refund `updateMany({ id, refunded:false })` 0 qator topadi →
+  //       kredit HECH QACHON qaytarilmaydi (jimgina pul yo'qolishi).
+  // Faqat YAKUNLANGAN job o'chiriladi; faol job avval bekor qilinishi kerak.
+  if (gen.status === "queued" || gen.status === "running") {
+    res.status(409).json({
+      error: "This generation is still running — cancel it first",
+      code: "GENERATION_ACTIVE",
+      status: gen.status,
+    });
     return;
   }
   // Avval R2'dan asset fayllarni o'chiramiz (resultKey + video poster thumbKey + P4 wm nusxa).

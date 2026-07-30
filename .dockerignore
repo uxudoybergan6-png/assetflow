@@ -8,6 +8,7 @@
 .env.*
 scratchpad
 cloudrun-env.yaml
+_to_delete
 
 # API uchun kerak emas — npm install sekinlashtiradi
 packages/assetflow-studio

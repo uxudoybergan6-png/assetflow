@@ -590,17 +590,33 @@ export async function consumeAiCredits(userId: string, cost: number) {
   // Bosqich 4 #5: reset balansni allotment + QOLGAN TOP-UP ga tiklaydi (avval faqat
   // allotment edi → sotib olingan sarflanmagan top-up yo'qolardi). aiCreditsTopup
   // (top-up ulushi tracker'i) o'zgarmaydi — u reset'da SAQLANADI.
+  //
+  // ⚠️ M1 (audit #5): reset ATOMIK bo'lishi SHART. Avval shartsiz absolyut yozuv edi
+  // (`update` + `aiCredits: allotment + topup`) → oy boshida N ta parallel so'rov har biri
+  // balansni to'liq ulushga qaytarardi (sarflanganini ham) → bepul kredit ZARB qilinadi.
+  // Naqsh `resetMonthIfNeeded` (139-qator) bilan bir xil: guard WHERE'da, count===0 bo'lsa
+  // reset boshqa so'rov tomonidan allaqachon bajarilgan → balansni QAYTA o'qiymiz.
   const start = monthStart();
   let available = profile.aiCredits;
   if (profile.aiCreditsResetAt < start) {
-    const reset = await prisma.pluginProfile.update({
-      where: { userId },
+    const reset = await prisma.pluginProfile.updateMany({
+      where: { userId, aiCreditsResetAt: { lt: start } },
       data: {
         aiCredits: aiMonthlyAllotment(profile.plan) + profile.aiCreditsTopup,
         aiCreditsResetAt: start,
       },
     });
-    available = reset.aiCredits;
+    if (reset.count > 0) {
+      available = aiMonthlyAllotment(profile.plan) + profile.aiCreditsTopup;
+    } else {
+      // Boshqa parallel so'rov reset qildi → haqiqiy balansni qayta o'qi (eski
+      // `profile.aiCredits` reset'dan OLDINGI qiymat, ishlatib bo'lmaydi).
+      const fresh = await prisma.pluginProfile.findUnique({
+        where: { userId },
+        select: { aiCredits: true },
+      });
+      available = fresh?.aiCredits ?? profile.aiCredits;
+    }
   }
 
   if (available < cost) {
@@ -648,6 +664,64 @@ export async function consumeAiCredits(userId: string, cost: number) {
 }
 
 /**
+ * M6 (audit #40) — faol generatsiya SLOTINI atomik band qiladi.
+ *
+ * Ilgari `/gen` `count()` → `create()` qilardi (check-then-act): bir vaqtda kelgan N so'rov
+ * hammasi bir xil `activeCount` ni ko'rib limitdan o'tib ketardi. Endi naqsh `consumeDownload`
+ * bilan bir xil — guard WHERE ichida, `count === 0` → rad.
+ *
+ * DRIFT O'ZINI TUZATADI: hisoblagich (kutilmagan crash/qo'lda DB tahriri tufayli) haqiqatdan
+ * yuqori bo'lib qolsa foydalanuvchi abadiy bloklanardi. Shu sabab claim rad etilganda
+ * `Generation` jadvalidagi HAQIQIY faol sonni o'qiymiz: hisoblagich yuqori bo'lsa to'g'rilaymiz
+ * va BIR marta qayta urinamiz.
+ */
+export async function claimGenerationSlot(
+  userId: string,
+  max: number
+): Promise<{ ok: true } | { ok: false; active: number }> {
+  const tryClaim = () =>
+    prisma.pluginProfile.updateMany({
+      where: { userId, activeGenerations: { lt: max } },
+      data: { activeGenerations: { increment: 1 } },
+    });
+
+  let res = await tryClaim();
+  if (res.count > 0) return { ok: true };
+
+  // Rad etildi — hisoblagich haqiqatga mos keladimi? (drift rekonsiliatsiyasi)
+  const real = await prisma.generation.count({
+    where: { userId, status: { in: ["queued", "running"] } },
+  });
+  const prof = await prisma.pluginProfile.findUnique({
+    where: { userId },
+    select: { activeGenerations: true },
+  });
+  const counter = prof?.activeGenerations ?? 0;
+  if (counter > real) {
+    console.warn(
+      `[gen-slots] hisoblagich drifti tuzatildi: user=${userId} counter=${counter} real=${real}`
+    );
+    await prisma.pluginProfile.updateMany({
+      where: { userId, activeGenerations: counter },
+      data: { activeGenerations: real },
+    });
+    res = await tryClaim();
+    if (res.count > 0) return { ok: true };
+  }
+  return { ok: false, active: Math.max(real, counter) };
+}
+
+/** M6 — slotni bo'shatadi (terminal holat yoki `create` xatosidan keyin). 0 dan pastga tushmaydi. */
+export async function releaseGenerationSlot(userId: string): Promise<void> {
+  await prisma.pluginProfile
+    .updateMany({
+      where: { userId, activeGenerations: { gt: 0 } },
+      data: { activeGenerations: { decrement: 1 } },
+    })
+    .catch((e) => console.error("[gen-slots] release xato:", e));
+}
+
+/**
  * Provayder xato bersa sarflangan kreditni qaytaradi (foydalanuvchi bekorga to'lamasin).
  *
  * (#2.3) IKKI himoya:
@@ -683,24 +757,49 @@ export async function refundAiCredits(
   // Oy-chegarasi cap: refund allotment + TOP-UP dan oshirmaydi (Bosqich 4 #5 — top-up'dan
   // moliyalangan gen refund'i allotment'gacha qirqilmasin), lekin mavjud balansni kamaytirmaydi.
   // Refund faqat aiCredits'ni oshiradi → invariant (aiCreditsTopup <= aiCredits) saqlanadi.
+  //
+  // ⚠️ M2 (audit #6): yozuv ATOMIK `increment` bo'lishi SHART. Avval eski o'qishdan
+  // hisoblangan absolyut qiymat yozilardi (`aiCredits: newBalance`) → refund bilan bir
+  // vaqtda ketgan `consumeAiCredits` sarfini O'CHIRIB yuborardi (foydalanuvchi tekin
+  // kredit oladi). Cap invariantini saqlash uchun guard WHERE'da: natija ceiling'dan
+  // oshmasligi tekshiriladi, sarf tufayli balans tushgan bo'lsa increment baribir o'tadi.
   const allot = aiMonthlyAllotment(prof.plan);
   const ceiling = Math.max(allot + prof.aiCreditsTopup, prof.aiCredits);
-  const newBalance = Math.min(prof.aiCredits + cost, ceiling);
-  const credited = newBalance - prof.aiCredits;
+  const credited = Math.max(0, Math.min(cost, ceiling - prof.aiCredits));
+  let applied = credited;
   if (credited > 0) {
     // updateMany → profil yo'q bo'lsa no-op (update P2025 throw EMAS).
-    await prisma.pluginProfile.updateMany({
-      where: { userId },
-      data: { aiCredits: newBalance },
+    const res = await prisma.pluginProfile.updateMany({
+      where: { userId, aiCredits: { lte: ceiling - credited } },
+      data: { aiCredits: { increment: credited } },
     });
+    if (res.count === 0) {
+      // Guard o'tmadi — parallel refund balansni ceiling'ga ko'targan. Kredit berilmadi.
+      applied = 0;
+      console.warn(
+        `[credits] refund guard skipped: user=${userId} cost=${cost} ceiling=${ceiling} gen=${opts.generationId ?? "-"}`
+      );
+    }
+  }
+  // M9 (audit #43): oylararo ceiling refundni JIMGINA 0 ga tushirishi mumkin —
+  // buni yutmaslik kerak, aks holda "refund qilindi" deb hisoblanadi-yu pul qaytmaydi.
+  if (applied < cost) {
+    console.warn(
+      `[credits] refund capped: user=${userId} requested=${cost} credited=${applied} ` +
+        `balance=${prof.aiCredits} allot=${allot} topup=${prof.aiCreditsTopup} ceiling=${ceiling} ` +
+        `gen=${opts.generationId ?? "-"}`
+    );
   }
   // Moliyaviy izi (#2.6) — haqiqiy qaytarilgan miqdor (cap tufayli cost'dan kam bo'lishi mumkin).
+  const after = await prisma.pluginProfile
+    .findUnique({ where: { userId }, select: { aiCredits: true } })
+    .catch(() => null);
   await writeCreditLedger({
     userId,
     generationId: opts.generationId ?? null,
-    delta: credited,
+    delta: applied,
     reason: "refund",
-    balanceAfter: newBalance,
+    balanceAfter: after?.aiCredits ?? prof.aiCredits + applied,
   });
 }
 

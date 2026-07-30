@@ -87,7 +87,7 @@ import { vertexSubmitVideo, vertexPollVideo, vertexGcsUriToKey } from "./ai/vert
 import { omniGenerateVideo } from "./ai/vertex-omni.js";
 import { vertexImage, vertexImageEdit, vertexImageUpscale } from "./ai/vertex-image.js";
 import { googleTtsSynthesize } from "./ai/google-tts.js";
-import { refundAiCredits } from "./plugin-profile.js";
+import { refundAiCredits, releaseGenerationSlot } from "./plugin-profile.js";
 import { fetchSafe } from "./fetch-safe.js";
 import { moderateContent, moderateOutputsEnabled } from "./moderation.js";
 import { writeAuditLog } from "./audit-log.js";
@@ -1385,6 +1385,8 @@ export async function processGeneration(genId: string): Promise<void> {
     });
     await clearProviderJob(genId);
     if (upd.count > 0) {
+      // M6 (#40) — terminal holat → faol-gen SLOTI bo'shatiladi (atomik cheklov hisoblagichi).
+      await releaseGenerationSlot(gen.userId);
       await refundAiCredits(gen.userId, gen.cost, { generationId: genId });
       // P19.6 — YETIM FAYL: provayder yetkazgan bo'lishi mumkin (case C / moderation-block: asset
       // yaratilib keyin o'chirilgan) — bu obyektlar hech ko'rsatilmaydi, ammo omborni band qiladi.
@@ -1759,7 +1761,10 @@ export async function processGeneration(genId: string): Promise<void> {
     // ATOMIK: faqat hali running bo'lsa done qil. Agar reconcile (10 daq) jobni failed+refund qilған
     // bo'lsa → count=0 → failed→done QILMAYMIZ (refund saqlanadi; assetlar history'да ko'rinmaydi —
     // "bepul gen" oldini olamiz). Double-refund race fix (audit 2026-06-26).
-    await prisma.generation.updateMany({ where: { id: genId, status: "running" }, data: { status: "done" } });
+    const doneUpd = await prisma.generation.updateMany({ where: { id: genId, status: "running" }, data: { status: "done" } });
+    // M6 (#40) — terminal holat → slot bo'shatiladi. count===0 bo'lsa jobni boshqa yo'l
+    // (reconcile) allaqachon terminal qilган va slotni O'SHA bo'shatgan → qayta bo'shatmaymiz.
+    if (doneUpd.count > 0) await releaseGenerationSlot(gen.userId);
 
     // Storage retention (Bosqich 4 #4) — yangi asset joylashgach kvotadan oshsa, eng
     // eski o'z assetlarni o'chirib joy bo'shatadi (best-effort; genni buzmaydi).
@@ -1914,6 +1919,8 @@ async function settleStuckGeneration(g: {
     data: { status: "failed", error: reason },
   });
   if (upd.count > 0) {
+    // M6 (#40) — terminal holat → slot bo'shatiladi.
+    await releaseGenerationSlot(g.userId);
     await refundAiCredits(g.userId, g.cost, { generationId: g.id });
     // P19.6 — YETIM FAYL: provayder yetkazib, biz saqlagan bo'lsak-da gen refund bo'ldi → hech
     // ko'rsatilmaydigan obyektlar omborni band qiladi. Terminal refunddan KEYIN prefiks bo'yicha

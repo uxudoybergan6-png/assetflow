@@ -112,6 +112,7 @@ model PluginProfile {
   aiCredits      Int                  @default(50)
   aiCreditsTopup Int                  @default(0)  // Bosqich 4 #5: aiCredits ichidagi sotib olingan TOP-UP ulushi (oylik reset'da SAQLANADI). Invariant: 0 <= aiCreditsTopup <= aiCredits.
   aiCreditsResetAt DateTime           @default(now())
+  activeGenerations Int                @default(0)  // M6 (audit #40): faol (queued/running) gen slot hisoblagichi — MAX_ACTIVE_GENERATIONS'ni ATOMIK majburlaydi (consumeDownload naqshi). Drift bo'lsa claim rad etilganda `Generation` haqiqiy sonidan tuzatiladi.
   lastSeenAt     DateTime?
   deviceLabel    String?
   aeVersion      String?

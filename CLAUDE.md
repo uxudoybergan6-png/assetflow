@@ -141,7 +141,9 @@ API_URL=https://assetflow-rqbq.onrender.com node scripts/verify-pipeline.mjs
 npm run studio:sync
 bash plugins/after-effects-cep/scripts/install-cep.sh
 npm run migrate:deploy -w @creative-tools/database
-npm run demo:clear   # demo shablonlar + xabarlar tozalash
+npm run demo:clear -- --dry-run   # ⚠️ FAQAT LOKAL DB. Avval --dry-run bilan tekshir.
+                                  # Prod DATABASE_URL bilan script o'zini to'xtatadi.
+                                  # Tasdiqsiz ishlatish: `-- --yes`
 ```
 
 ## Kod uslubi

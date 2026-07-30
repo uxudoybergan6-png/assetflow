@@ -1,22 +1,21 @@
-# Sessiya hisoboti — 2026-07-30
+# Sessiya hisoboti — 2026-07-30 (BATCH 0 + BATCH 1)
 
-**Vazifa:** COWORK-AUDIT-2026-07-28 tahlili + to'liq mustaqil audit (16 yo'nalish, pul zonasi / zanjir / miqyos / UI-UX / xavfsizlik / plagin bozorga tayyorligi).
-**Natija:** `docs/FULL-AUDIT-2026-07-30.md` (batafsil) + `docs/MUAMMOLAR-2026-07-30.md` (aniq raqamlangan ro'yxat 1–157).
-**157 muammo:** 4×P0, 34×P1, 84×P2, 35×P3 — har biri kodda tasdiqlangan.
+**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`
 
-**🔴 ENG MUHIM — production HOZIR ishlamayapti:** `/health` → 503 `db:"down"`, `/api/plugin/catalog` → 500.
-3 marta tekshirildi, tiklanmadi. `SENTRY_DSN` prod env'da yo'q → hech qanday ogohlantirish kelmaydi.
+## BATCH 0 — favqulodda (bajarildi)
+- **#1 (P0)** `scripts/clear-assetflow-demo.mjs` qayta yozildi: prod-DB guard (URL belgilari), tasdiq so'rovi, `--dry-run/--yes/--all-users`, ko'lamli `where` (demo user yoki `demo-*` prefiks). `deleteMany({})` HECH QAYERDA yo'q; `CLAUDE.md` buyrug'iga ogohlantirish qo'shildi.
+- **#155** `.dockerignore` → `_to_delete`. **#115** eski `render.yaml` o'chirildi.
 
-**Yangi kritik topilmalar (COWORK'da yo'q):**
-1. Lemon Squeezy `Subscription` qatorini hech qachon yozmaydi → pullik mijoz plaginda "Free" bossa PRO'ga qayta olmaydi (LS pul olishda davom etadi).
-2. `/api/contributor/catalog` — auth yo'q, `take` yo'q, `metaJson` bilan → ko'p shablonda OOM + ma'lumot sizishi.
-3. `/sync` va `/pack-uploaded` APPROVED shablon kontentini moderatsiyasiz almashtiradi (`/sync` skanni ham chetlab o'tadi).
-4. Oddiy USER "Add to Explore" orqali contributor payout hovuzidan earning oladi — kod izohi aksini da'vo qiladi.
-5. `npm run demo:clear` — filtrsiz jadval o'chirish, prod-guard yo'q (CLAUDE.md'da oddiy buyruq sifatida).
-6. Windows'da zip import sinadi (`unzip` shell) — tuzatish Admin panelda bor, mijoz plaginiga ko'chirilmagan.
-7. Seedance 3102 @4K + video-ref provayder narxidan past sotiladi → 15s klipda −$2.28 zarar.
+## BATCH 1 — pul oqimi (bajarildi)
+- **#5** oylik kredit reset ATOMIK (`updateMany` + `aiCreditsResetAt < start`).
+- **#6/#43** `refundAiCredits` atomik increment + ceiling/skip loglari.
+- **#8** `DELETE /gen/:jobId` — `queued|running` uchun 409 `GENERATION_ACTIVE`.
+- **#39** `generation.create` xatosida DOIM refund (P2002 yo'lida ikki marta emas).
+- **#40** `activeGenerations` hisoblagichi + `claim/releaseGenerationSlot` (3 ta terminal o'tishda release, drift o'z-o'zini tuzatadi).
+- **#41/#7/#42/#123** yagona narx yo'li `priceGeneration()` — DB `enabled` gate, provayder tannarx floor'i (faqat o'lchangan/jadval manbasi), `/gen`da server-tomon qayta narxlash → 409 `PRICE_CHANGED`.
+- **#44** kvota yonishidan OLDIN asset mavjudligi tekshiriladi (pack + mogrt).
+- **#14** 3 ta `void recordTemplateDownloadEvent` → `await` (Cloud Run throttle).
 
-**COWORK auditi:** 6/7 P0 tasdiqlandi; P0-7 (`.dockerignore`) va P26 (to'lov busy-state) noto'g'ri; plagin PRO self-upgrade shubhasi ham rad etildi (fail-closed).
-**Plagin bozorga tayyorligi ~35%:** kod tayyor, marketplace metadata 16/19 maydon bo'sh, imzolangan `.zxp` va Adobe sertifikati yo'q.
-**Ikki reja ajratildi:** `docs/REJA-SIZ-2026-07-30.md` (faqat egasi qila oladigan: prod DB, Sentry DSN, Adobe sertifikat/listing, 5 biznes qarori, LS konsoli, yurist) va `docs/REJA-CLAUDE-2026-07-30.md` (o'zi-yetarli ijro rejasi: BATCH 0–11, `/clear` dan keyin beriladi).
-**Kutilmoqda:** prod DB tiklash + monitoring; egasidan 11 ta qaror (REJA-SIZ §7); so'ng BATCH 0 dan boshlash.
+**⚠️ Migratsiya kutilmoqda:** `20260730120000_active_generations_counter` — prodga men qo'llamadim.
+**Qilinmadi:** #13 (Explore earning hovuzi) — egasi qarori kerak (reja §2).
+`npm run build -w apps/api` ✓ o'tdi.

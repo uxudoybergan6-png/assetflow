@@ -18,6 +18,12 @@ import { prisma, Prisma } from "@creative-tools/database";
 import type { GenModel } from "./gen-models.js";
 import { GEN_MODELS, getModelById, computeGenCost } from "./gen-models.js";
 import { estimateProviderUsd } from "./provider-cost.js";
+import {
+  resolveProviderUsd,
+  getMeasuredProviderUsd,
+  type MeasuredCost,
+  type ProviderCostSource,
+} from "./measured-cost.js";
 
 // Kredit qiymat langari: PRO $19 / 1000 kredit = $0.019/kredit (plugin-profile.ts allotment).
 const DEFAULT_CREDIT_USD = 0.019;
@@ -143,6 +149,96 @@ function applyRow(model: GenModel, row?: ModelPricingRow): GenModel {
 export async function resolvePricedModel(model: GenModel): Promise<GenModel> {
   const map = await loadCache();
   return applyRow(model, map.get(model.id));
+}
+
+/**
+ * YAGONA NARX YO'LI — `/gen/cost-quote` VA `/gen` ikkalasi SHUNI chaqiradi (M3/M7/M8/M10).
+ *
+ * Uch ishni bir joyda bajaradi:
+ *  1. **DB narxi** — `resolvePricedModel` + `computeGenCost` (mavjud mantiq, o'zgarmagan).
+ *  2. **`ModelPricing.enabled` gate (#41/M7)** — admin modelni o'chirgan bo'lsa `enabled:false`
+ *     qaytaradi. Ilgari bu bayroq saqlanardi/PATCH qilinardi, lekin generatsiyada HECH QACHON
+ *     tekshirilmasdi → "o'chirilgan" model ishlayverardi.
+ *  3. **Xarajat POLI (#7/M3 + #42/M8)** — sotuv narxi provayder xarajatidan PAST bo'lsa
+ *     (Seedance 3102 @4K + video-ref chegirmasi = −$2.28/15s; SFX 4001 maksimal davomiylikda)
+ *     narx break-even polga KO'TARILADI va ogohlantirish yoziladi. Bu bitta model uchun
+ *     patch emas — HAR QANDAY kelajakdagi model/param kombinatsiyasi uchun himoya.
+ *
+ * Pol FAQAT ishonchli xarajat manbasi bo'lganda (statik jadval yoki o'lchangan median)
+ * qo'llanadi — `source === "estimate"` ($0.50 fail-safe default) bo'lsa narxga TEGILMAYDI,
+ * aks holda jadvalsiz modellar bekordan qimmatlashib ketardi.
+ */
+export type GenerationPrice = {
+  /** Yakuniy kredit narxi (pol qo'llangandan keyin) — imzo SHU qiymatni qamraydi. */
+  price: number;
+  /** Pol qo'llanishidan oldingi (computeGenCost) narx. */
+  basePrice: number;
+  /** Pol ishlaganmi (narx ko'tarilganmi). */
+  floored: boolean;
+  /** Provayder xarajati (USD) va manbasi — log/diagnostika uchun. */
+  providerUsd: number | null;
+  providerSource: ProviderCostSource | null;
+  /** DB (`ModelPricing.enabled`) + statik katalog bo'yicha model yoqilganmi. */
+  enabled: boolean;
+};
+
+// Pol hisobida o'lchangan xarajat (ProviderSpend medianasi) uchun qisqa TTL kesh — `/gen` va
+// `/gen/cost-quote` issiq yo'lida har chaqiruvda DB so'rovi bo'lmasin. Xarajat medianasi
+// soatlar bo'yicha o'zgaradi → 60s kesh ta'sirsiz.
+const MEASURED_TTL_MS = 60_000;
+const measuredCache = new Map<number, { at: number; val: MeasuredCost | null }>();
+
+async function cachedMeasured(modelId: number): Promise<MeasuredCost | null> {
+  const hit = measuredCache.get(modelId);
+  const now = Date.now();
+  if (hit && now - hit.at < MEASURED_TTL_MS) return hit.val;
+  const val = await getMeasuredProviderUsd(modelId);
+  measuredCache.set(modelId, { at: now, val });
+  return val;
+}
+
+export async function priceGeneration(
+  model: GenModel,
+  params: Record<string, unknown>
+): Promise<GenerationPrice> {
+  const map = await loadCache();
+  const row = map.get(model.id);
+  const priced = applyRow(model, row);
+  const basePrice = computeGenCost(priced, params);
+  const enabled = (row?.enabled ?? true) && model.enabled !== false;
+
+  let price = basePrice;
+  let floored = false;
+  let providerUsd: number | null = null;
+  let providerSource: ProviderCostSource | null = null;
+
+  try {
+    const cfg = await getPricingConfig();
+    const resolved = await resolveProviderUsd(priced, params, {
+      measured: await cachedMeasured(model.id),
+    });
+    providerUsd = resolved.usd;
+    providerSource = resolved.source;
+    // "estimate" = aniq ma'lumot yo'q (DEFAULT_PROVIDER_USD) → polga ISHONMAYMIZ.
+    if (resolved.source !== "estimate" && resolved.usd > 0 && cfg.creditUsdValue > 0) {
+      const floor = Math.ceil(resolved.usd / cfg.creditUsdValue);
+      if (floor > price) {
+        console.warn(
+          `[pricing] COST FLOOR applied: model=${model.id} (${model.label}) ` +
+            `base=${price}cr floor=${floor}cr providerUsd=$${resolved.usd.toFixed(4)} ` +
+            `(${resolved.source}) creditUsd=$${cfg.creditUsdValue}`
+        );
+        price = floor;
+        floored = true;
+      }
+    }
+  } catch (e) {
+    // Pol hisobi BEST-EFFORT: xato bo'lsa mavjud narx yo'li buzilmasin (fail-open bo'yicha
+    // faqat OGOHLANTIRISH yo'qoladi — narx computeGenCost qiymatida qoladi).
+    console.error("[pricing] cost floor hisobida xato (base narx ishlatiladi):", e);
+  }
+
+  return { price, basePrice, floored, providerUsd, providerSource, enabled };
 }
 
 /** modelId bo'yicha DB narx qatori (yo'q → null). Admin GET/PATCH uchun. */

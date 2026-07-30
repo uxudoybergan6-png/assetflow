@@ -15,7 +15,7 @@ import {
 import type { Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rate-limit.js";
-import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists } from "../lib/s3.js";
+import { isS3Configured, getPublicOrSignedUrl, getSignedDownloadUrl, s3ObjectExists, resolveS3AssetKey } from "../lib/s3.js";
 import { getAdminUrl, getPublicApiUrl, getWebUrl } from "../lib/app-urls.js";
 import { verifyGoogleIdTokenAndUpsertUser } from "../lib/google-auth.js";
 import { getPluginContentConfig } from "../lib/plugin-content-config.js";
@@ -33,6 +33,7 @@ import { approvedCatalogWhere, mapCatalogItem, mapCatalogCard } from "../lib/cat
 import { recordTemplateDownloadEvent, downloadAuditFromReq } from "../lib/download-events.js";
 import {
   type TemplateAssetKind,
+  findAssetPath,
   findScenePreview,
   findMogrtFile,
   sceneKey,
@@ -510,7 +511,13 @@ pluginRouter.get("/assets/:templateId/scene/:key", async (req: Request, res: Res
 async function guardDownloadable(
   req: Request,
   res: Response,
-  templateId: string
+  templateId: string,
+  /**
+   * (#44) Asset REAL mavjudmi — kvota yoqilishidan OLDIN tekshiriladi. Fayl
+   * yo'q bo'lsa 404 qaytadi va Free foydalanuvchining oylik yuklab olishidan
+   * biri bekorga yonmaydi (klient retry bilan 2× yonardi).
+   */
+  assetExists?: () => Promise<boolean>
 ): Promise<boolean> {
   if (!/^[a-z0-9]+$/i.test(templateId)) {
     res.status(400).json({ error: "Invalid template ID" });
@@ -566,6 +573,21 @@ async function guardDownloadable(
       return false;
     }
   }
+  // (#44) Kvotani yoqishdan OLDIN fayl bor-yo'qligini tekshiramiz — yo'q asset
+  // uchun 404 qaytadi, hisoblagich TEGILMAYDI. Tekshiruvning o'zi yiqilsa
+  // (tarmoq/S3 xatosi) yuklab olishni bloklamaymiz — pastdagi serve 404 beradi.
+  if (assetExists) {
+    let exists = true;
+    try {
+      exists = await assetExists();
+    } catch (e) {
+      console.error("[download] asset existence check failed", templateId, e);
+    }
+    if (!exists) {
+      res.status(404).json({ error: "File not found" });
+      return false;
+    }
+  }
   // Limitni baytlarni berishdan OLDIN ATOMIK majburlaymiz: consumeDownload
   // hisoblagichni shu yerda oshiradi, shu sabab klient ixtiyoriy
   // /usage/download call'ni tashlab ketsa ham limit chetlab o'tilmaydi.
@@ -580,11 +602,16 @@ async function guardDownloadable(
 /** M2: tanlangan sahnaning yakka .mogrt fayli — butun ZIP'siz yuklab olish */
 pluginRouter.get("/assets/:templateId/mogrt/:slug", downloadLimiter, requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
-  if (!(await guardDownloadable(req, res, templateId))) return;
-  // Bosqich 4 #1: yakka MOGRT ham yuklab olish hodisasi (non-blocking).
-  // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
-  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req) });
   const slug = sceneKey(String(req.params.slug));
+  // (#44) kvota yonishidan oldin fayl bor-yo'qligi tekshiriladi.
+  const mogrtExists = async () =>
+    isS3Configured()
+      ? await s3ObjectExists(`templates/${templateId}/mogrt/${slug}.mogrt`)
+      : Boolean(findMogrtFile(templateId, slug));
+  if (!(await guardDownloadable(req, res, templateId, mogrtExists))) return;
+  // Bosqich 4 #1: yakka MOGRT ham yuklab olish hodisasi (#14: await — Cloud Run javobdan keyin CPU'ni throttle qiladi).
+  // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
+  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req) });
 
   if (isS3Configured()) {
     const s3Key = `templates/${templateId}/mogrt/${slug}.mogrt`;
@@ -614,10 +641,15 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", downloadLimiter, requireAuth
     route'dan OLDIN ro'yxatdan o'tadi, shu sabab "pack" shu yerga tushadi). */
 pluginRouter.get("/assets/:templateId/pack", downloadLimiter, requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
-  if (!(await guardDownloadable(req, res, templateId))) return;
-  // Bosqich 4 #1: REAL yuklab olish hodisasi (non-blocking — fayl berishni to'smaydi).
+  // (#44) pack REAL mavjudmi — kvota yoqilishidan oldin (S3 kaliti yoki lokal fayl).
+  const packExists = async () =>
+    isS3Configured()
+      ? Boolean(await resolveS3AssetKey(templateId, "pack"))
+      : Boolean(findAssetPath(templateId, "pack"));
+  if (!(await guardDownloadable(req, res, templateId, packExists))) return;
+  // Bosqich 4 #1: REAL yuklab olish hodisasi (#14: await — fire-and-forget Cloud Run'da yo'qoladi).
   // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
-  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req) });
+  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req) });
   await serveTemplateAsset(req, res, templateId, "pack");
 });
 
@@ -1119,8 +1151,8 @@ pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Reques
     return;
   }
   await bumpTemplateCounter(templateId, "importsCount");
-  // Bosqich 4 #1: REAL import hodisasi (non-blocking).
-  void recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "import", source: "plugin", audit: downloadAuditFromReq(req) });
+  // Bosqich 4 #1: REAL import hodisasi (#14: await — Cloud Run javobdan keyin CPU'ni throttle qiladi).
+  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "import", source: "plugin", audit: downloadAuditFromReq(req) });
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ user: serializePluginUser(profile) });
 });
