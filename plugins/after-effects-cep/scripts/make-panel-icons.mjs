@@ -10,7 +10,7 @@
  * qilinadi. Sabab: (a) manba shakl va rang tokeni kod bilan bir joyda turadi (brend lime
  * `--accent:#d8ff3e`, css/tokens.css), (b) test PNG baytlarini generator chiqishi bilan
  * solishtira oladi (postinstall skriptidagi bilan bir xil naqsh), (c) tashqi rasm asbobi
- * yoki bog'liqlik kerak emas — faqat Node `zlib`.
+ * yoki bog'liqlik kerak emas — PNG shu yerda, standart kutubxonasiz yoziladi.
  *
  * Shakl: app-bar'dagi brend belgisi (chaqmoq) — AssetFlow_Plugin.html `#afHomeBtn` svg'si
  * bilan bir xil siluet, 23×23 px (Adobe CEP tavsiyasi) shaffof fonda.
@@ -19,7 +19,6 @@
  *   node scripts/make-panel-icons.mjs write     # icons/ ga yozadi
  *   node scripts/make-panel-icons.mjs check     # diskdagi fayllar generatorga mos-mi
  */
-import { deflateSync } from "node:zlib";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -107,6 +106,44 @@ function crc32(buf) {
   return (c ^ -1) >>> 0;
 }
 
+/** Adler-32 — zlib oqimining yakuniy nazorat summasi. */
+function adler32(buf) {
+  let a = 1;
+  let b = 0;
+  for (let i = 0; i < buf.length; i++) {
+    a = (a + buf[i]) % 65521;
+    b = (b + a) % 65521;
+  }
+  return ((b << 16) | a) >>> 0;
+}
+
+/**
+ * zlib oqimi — SIQILMAGAN ("stored") bloklar bilan, qo'lda.
+ *
+ * Nega `zlib.deflateSync` EMAS: uning chiqishi zlib kutubxona versiyasiga bog'liq.
+ * Ikonalar lokalda (Node 25 / zlib 1.2.x) yozilgan, CI esa Node 22'da yuradi — o'sha
+ * baytlar mos kelmadi va "generatordan bayt-ba-bayt bir xil" testi kod to'g'ri bo'la
+ * turib qizil bo'ldi. "Stored" blok formatning o'zi bilan belgilanadi → HAR QANDAY
+ * Node/zlib'da AYNAN bir xil bayt chiqadi, ya'ni tekshiruv haqiqatan takrorlanadigan.
+ * Narxi — ikona ~2KB (siqilganda ~0.2KB); 5 ta fayl uchun ahamiyatsiz.
+ */
+function storedDeflate(raw) {
+  const MAX = 0xffff;
+  const parts = [Buffer.from([0x78, 0x01])]; // CMF/FLG (0x7801 % 31 === 0)
+  for (let off = 0; off < raw.length || off === 0; off += MAX) {
+    const len = Math.min(MAX, raw.length - off);
+    const head = Buffer.alloc(5);
+    head[0] = off + len >= raw.length ? 1 : 0; // BFINAL, BTYPE=00 (stored)
+    head.writeUInt16LE(len, 1);
+    head.writeUInt16LE(~len & 0xffff, 3);
+    parts.push(head, raw.subarray(off, off + len));
+  }
+  const sum = Buffer.alloc(4);
+  sum.writeUInt32BE(adler32(raw));
+  parts.push(sum);
+  return Buffer.concat(parts);
+}
+
 function chunk(type, data) {
   const len = Buffer.alloc(4);
   len.writeUInt32BE(data.length);
@@ -131,7 +168,7 @@ function encodePng(size, rgba) {
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk("IHDR", ihdr),
-    chunk("IDAT", deflateSync(raw, { level: 9 })),
+    chunk("IDAT", storedDeflate(raw)),
     chunk("IEND", Buffer.alloc(0)),
   ]);
 }

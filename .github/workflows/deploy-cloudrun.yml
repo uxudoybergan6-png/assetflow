@@ -18,6 +18,7 @@ on:
       - ".github/workflows/deploy-cloudrun.yml"
       # Migratsiya qadami shu skriptga bog'liq — o'zgarsa deploy yo'li qayta sinalsin.
       - "scripts/cloudsql-proxy.sh"
+      - "scripts/check-db-url.mjs"
   workflow_dispatch: {}
 
 concurrency:
@@ -85,6 +86,17 @@ jobs:
       # DATABASE_URL O'ZGARISHSIZ ishlatiladi:
       #   · URL qayta yozilmaydi → maxsus belgili parolni qayta kodlash xatosi YO'Q;
       #   · migratsiya AYNAN production connection string'ini sinaydi (TCP taxminini emas).
+      # Sirdagi URL grammatikasi — proxy va migratsiyadan OLDIN (qiymat chop etilmaydi).
+      # Kodlanmagan `#`/`?` parolda bo'lsa Prisma faqat "P1013 invalid port number" deydi
+      # va bu xato jonli konteynerni ham yiqitadi — sababini shu yerda aniq aytamiz.
+      - name: Validate DB URL (qiymatsiz)
+        run: |
+          set -euo pipefail
+          DB_URL="$(grep -E '^DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//')"
+          DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DIRECT_DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//' || true)"
+          node scripts/check-db-url.mjs "$DB_URL" DATABASE_URL
+          if [ -n "$DIRECT_URL" ]; then node scripts/check-db-url.mjs "$DIRECT_URL" DIRECT_DATABASE_URL; fi
+
       - name: Start Cloud SQL Auth Proxy (migratsiya uchun)
         run: |
           set -euo pipefail

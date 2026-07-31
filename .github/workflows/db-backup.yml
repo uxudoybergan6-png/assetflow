@@ -90,6 +90,11 @@ jobs:
           echo "DATABASE_URL=$DUMP_URL" >> "$GITHUB_ENV"
           rm -f cloudrun-env.yaml
 
+      # URL grammatikasi (qiymat chop etilmaydi) — parolda kodlanmagan `#`/`?` bo'lsa
+      # pg_dump tushunarsiz xato beradi; sababni shu yerda aniq aytamiz.
+      - name: Validate DB URL (qiymatsiz)
+        run: node scripts/check-db-url.mjs "$DATABASE_URL" DATABASE_URL
+
       # Socket URL bo'lsa Auth Proxy ko'tariladi; TCP URL bo'lsa skript o'zi hech nima qilmaydi.
       - name: Start Cloud SQL Auth Proxy (pg_dump uchun)
         run: bash scripts/cloudsql-proxy.sh "$DATABASE_URL"

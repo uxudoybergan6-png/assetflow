@@ -58,6 +58,11 @@ else
   fi
   DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DIRECT_DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//' || true)"
 
+  # Sirdagi URL grammatikasi (qiymat chop etilmaydi): parolda kodlanmagan `#`/`?` bo'lsa
+  # Prisma faqat "P1013 invalid port number" deydi — sababni shu yerda aniq aytamiz.
+  node scripts/check-db-url.mjs "$DB_URL" DATABASE_URL
+  [ -z "$DIRECT_URL" ] || node scripts/check-db-url.mjs "$DIRECT_URL" DIRECT_DATABASE_URL
+
   # Cloud SQL ko'chishi (2026-07-31): DATABASE_URL Unix socket'ga qaraydi
   # (…?host=/cloudsql/<INSTANCE>). Cloud Run'da uni --add-cloudsql-instances mount
   # qiladi, lekin BU YERDA (Cloud Shell / lokal mashina) mount YO'Q — shuning uchun
