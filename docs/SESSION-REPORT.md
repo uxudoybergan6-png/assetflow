@@ -1,30 +1,26 @@
-# Sessiya hisoboti — 2026-07-31 (BATCH 10 — INFRA / DEPLOY / RELIABILITY)
+# Sessiya hisoboti — 2026-07-31 (BATCH 11 — HUQUQ / OMMAVIY DA'VOLAR)
 
-**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`, 8-bosqich. **Bajarildi 13/13.** Yangi migratsiya YO'Q.
+**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`, 8-bosqich. **Bajarildi 6/10** (4 tasi egasi qaroriga
+bog'liq — §2: #38, #118, #121, #156 boshlanmadi). Yangi migratsiya YO'Q.
 
-- **Runtime:** #34 `SIGTERM`/`SIGINT` graceful shutdown (`/health` darhol 503 "draining" → LB chiqaradi,
-  `server.close` + Prisma disconnect, 10s qattiq shift) · #111 `/health` 5s kesh + umumiy `in-flight`
-  promise (probe stampede tugadi) · #108 productionда `SENTRY_DSN` yo'qligi endi boot ogohlantirishi.
-- **Atomiklik (migratsiyasiz — mavjud ustunlar ijara sifatida):** #109 `running` generatsiyalar `updatedAt`
-  ijarasi bilan egallanadi + heartbeat (ikki instans bir jobni ikki marta ishlamaydi) · #110 transcode va
-  embedding rekonsileri `find-then-touch` emas, shartli `updateMany` (10 instans = 10 ffmpeg tugadi) ·
-  #154 oylik narx rekonsiliatsiyasi absolyut UTC 03:00 ga bog'landi + `SystemLog.id` bilan oyiga bir marta
-  (ilgari boot-drift tufayli HECH QACHON ishlamasdi; xatoda claim qaytariladi).
-- **Deploy:** #33 `deploy-cloudrun.sh` — migratsiya gate + o'zgarmas commit-SHA teg + qo'lda-deploy
-  ogohlantirishi · #153 `deploy-ingest-worker.sh` `--env-vars-file` + `--set-env-vars` (o'zaro inkor →
-  job hech qachon yaratilmasdi) vaqtinchalik yaml nusxasi bilan tuzatildi · #113 Docker `npm install`
-  → `npm ci` (soxta stub manifestlar olindi, `.dockerignore` haqiqiy `package.json`larni kiritadi) ·
-  #114 Node 20 (EOL) → **Node 22**: Dockerfile, `ci.yml` ×2, `deploy-cloudrun.yml`, `engines`.
-- **CI:** #36 ilgari 8 ta `test:*` dan faqat 1 tasi ishlardi → qolgan 7 tasi + yangi `test:dep-floors`
-  qadaldi · #112 yangi `deploy-cdn-worker.yml` (`public-keys.ts` yoki Worker o'zgarsa avto-deploy,
-  secret yo'q bo'lsa fail-closed) · #152 `migration_lock.toml` allaqachon bor va git'da — ish kerak emas.
-- **#35** `verify-pipeline.mjs` endi lokal bo'lmagan API'ni BLOKLAYDI (`--allow-remote` shart) va test
-  shablon + hisobni oxirida (xatoda ham) tozalaydi; hujjatlardagi buyruq yangilandi.
-- **Testlar:** 7 ta paket testi ✓ (installers 262 · preflight 100 · package 59 · updater 118 ·
-  release 110 · responsive · download-state) · dep-floors ✓ · `npm run build -w apps/api` ✓ ·
-  cdn-proxy `typecheck` ✓ · `npm ci --dry-run` lockfile sinxron ✓.
+- **#119** — 4 ta huquqiy + help sahifasining OCHIQ HTML manbasidagi 8 ta "needs lawyer review" /
+  LEGAL-TODO izohi olindi (ular mijoz brauzeriga yetkazilardi = nizoda mijoz foydasiga dalil);
+  matni yo'qolmasin uchun `docs/LEGAL-TODO.md` ga sahifa-ba-sahifa jadval sifatida ko'chirildi.
+- **#120** — `help.html` 4K importni Pro imtiyozi deb yozardi; gate allaqachon olib tashlangan →
+  matn haqiqatga moslandi (to'liq kutubxona, har qanday o'lchamda; Free faqat SONI bilan cheklangan).
+- **#117** — landing'dagi 4 ta AI narxi hech bir modelga mos emasdi; SFX **3** deb e'lon qilinib
+  **4** olinardi (mijozdan ko'proq). `gen-models.ts` yoqilgan modellaridan hisoblandi: rasm
+  `from 2`, video `from 3 credits/sec`, ovoz/SFX `from 4`. Server CMS + klient fallback sinxron.
+- **#116** — `verify-public-copy.mjs` endi `terms/privacy/refund/dmca/help` ni ham skanerlaydi,
+  #119 izohlarining qaytishini va #117 narxlarining `gen-models` bilan mosligini qadaydi
+  (136 tekshiruv ✓). Yangi `npm run test:public-copy` + CI'da "Build API" dan KEYIN.
+- **#122** — server chegarasi bor (#82), lekin plagin har xatoni "Failed to create project" derdi →
+  endi server sababi (`PROJECT_LIMIT`) ko'rsatiladi. **AE testi kutilmoqda.**
+- **#157** — 6 ta ochiq sahifaga `description` + canonical + OG/Twitter teglari; CF Pages build
+  endi `robots.txt` (shaxsiy ekranlar Disallow) va `sitemap.xml` (9 ochiq yo'l) chiqaradi.
+  `og:image` ATAYLAB yo'q — brend rasm asseti hali yo'q (**egasidan kerak**).
 
-⚠️ **Egasidan kerak:** `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` repo secretlari (aks holda CDN
-Worker workflow'i ataylab yiqiladi) va `SENTRY_DSN`. Docker build lokal daemon yo'qligi sababli
-sinalmadi — `npm ci` mosligi `--dry-run` bilan tekshirildi.
+**Testlar:** `test:public-copy` 136/136 ✓ · `test:plugin-package` 59 ✓ · `test:plugin-responsive` ✓ ·
+`npm run build -w apps/api` ✓ · CF Pages build ✓ · plagin inline-skript sintaksisi baseline bilan bir xil.
+
 ⚠️ **Migratsiya kutilmoqda** (oldingi batchlardan, prod'ga QO'LLANMAGAN, 8 ta — `20260730160000…20260730240000`).

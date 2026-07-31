@@ -16286,6 +16286,16 @@ window.afGallery=(function(){
     projectRemoveItem:function(id,itemId){ return studioDelete('/api/studio/projects/'+encodeURIComponent(id)+'/items/'+encodeURIComponent(itemId)); }
   };
 
+  // #122 (L8) — loyiha yaratish xatosi SABABI ko'rsatiladi. Server Free rejada
+  // `403 PROJECT_LIMIT` qaytaradi (`routes/projects.ts`), lekin plagin har qanday
+  // xatoni "Failed to create project" deb ko'rsatardi: Free foydalanuvchi nega
+  // bo'lmayotganini ham, yechimni (Pro) ham bilmasdi. Server matni tayyor va aniq.
+  function afProjErr(e){
+    var m=e&&e.message?String(e.message):'';
+    if(!m||/^HTTP \d+$/.test(m))return 'Failed to create project';
+    return m;
+  }
+
   // ── Markaziy modal: nom kiritish (yaratish/rename) ──
   var nameOv=null;
   window.afNameModal=function(title,initial,cb){
@@ -16343,7 +16353,7 @@ window.afGallery=(function(){
     var cr=pickOv.querySelector('#afPpCreate');
     var ncr=cr.cloneNode(true); cr.parentNode.replaceChild(ncr,cr);
     ncr.addEventListener('click',function(){ var v=inp.value.trim(); if(!v){ toast('Enter a project name','warning'); return; }
-      api.projectCreate(v).then(function(p){ doAdd(p.id); }).catch(function(e){ toast('Failed to create project','error'); }); });
+      api.projectCreate(v).then(function(p){ doAdd(p.id); }).catch(function(e){ toast(afProjErr(e),'error'); }); });
     pickOv.classList.add('on');
   };
 
@@ -16604,7 +16614,7 @@ window.afGallery=(function(){
   });
   var lr=$('spLibRow'); if(lr)lr.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('history'); });
   var np=$('spNewProj'); if(np)np.addEventListener('click',function(){
-    window.afNameModal('New project','',function(v){ api.projectCreate(v).then(function(){ sp.pLoaded=false; loadProjects(true); toast('Project created','success'); }).catch(function(){ toast('Failed to create project','error'); }); });
+    window.afNameModal('New project','',function(v){ api.projectCreate(v).then(function(){ sp.pLoaded=false; loadProjects(true); toast('Project created','success'); }).catch(function(e){ toast(afProjErr(e),'error'); }); });
   });
   // P11: Select toggle + bulk bar tugmalari (Sessions + Projects)
   var ssb=$('spSessSelBtn'); if(ssb)ssb.addEventListener('click',function(){ toggleSessSelect(); });

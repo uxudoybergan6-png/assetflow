@@ -6,6 +6,24 @@
 <meta name="turnstile-site-key" content="0x4AAAAAAADvCAW2JrGu92omA">
 <title>FrameFlow — Creative Assets & AI Generation Platform</title>
 
+<!-- #157 (L10) — SEO/OG. Kanonik domen: https://getframeflow.app (app-urls.ts DEFAULT_WEB_URL).
+     ⚠️ Bu SPA: /stock, /pricing, /plugin va asset sahifalari SHU faylni oladi, ya'ni bu yerdagi
+     canonical/og:url SAYT DARAJASIDAGI qiymat. Har-asset ulashish preview'i (og:image bilan)
+     server render talab qiladi — hozircha YO'Q, alohida ish.
+     og:image ATAYLAB yo'q — hozircha brend rasm asseti yo'q; mavjud bo'lmagan faylga
+     ishora qilish preview'ni buzardi. Rasm tayyor bo'lganda og:image + twitter:card=
+     summary_large_image qo'shiladi. -->
+<meta name="description" content="FrameFlow — ready-made motion templates plus AI image, video, voice and SFX generation. Work in the browser or right inside After Effects.">
+<link rel="canonical" href="https://getframeflow.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FrameFlow">
+<meta property="og:url" content="https://getframeflow.app/">
+<meta property="og:title" content="FrameFlow — Creative Assets &amp; AI Generation Platform">
+<meta property="og:description" content="Ready-made motion templates plus AI image, video, voice and SFX generation. Work in the browser or right inside After Effects.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="FrameFlow — Creative Assets &amp; AI Generation Platform">
+<meta name="twitter:description" content="Ready-made motion templates plus AI image, video, voice and SFX generation. Work in the browser or right inside After Effects.">
+
 <!-- BATCH6 tema: FOUC oldini olish — birinchi bo'yoqdan oldin html[data-theme] o'rnatiladi.
      #80 (X6): kalit butun domen bo'ylab YAGONA — `ff-theme` ∈ {noir,neon,cold,light}.
      Ommaviy webda yorug' palitra yo'q, shuning uchun `light` bu yerda noir'ga tushadi. -->
@@ -18441,10 +18459,12 @@ class Component extends DCLogic {
   brands = ['NOVA', 'PixelHaus', 'Lumen', 'ORBIT', 'Kadr', 'Vizor'];
 
   studioCards = [
-    { t: 'Image generation', d: 'High-quality visuals from text. In seconds.', icon: 'image', cost: '5 credits', tool: 'Rasm yaratish', h: 262 },
-    { t: 'Video generation', d: 'Moving scenes and clips from a prompt.', icon: 'video-camera', cost: '40 credits', tool: 'Video yaratish', h: 200 },
-    { t: 'Voice (Voiceover)', d: 'Natural-sounding voice from text — 30+ languages.', icon: 'microphone', cost: '8 credits', tool: 'Voiceover', h: 330 },
-    { t: 'SFX', d: 'Generate effects and sounds that match your scene.', icon: 'waveform', cost: '3 credits', tool: 'SFX', h: 160 },
+    // #117 (L3) — narx satrlari `apps/api/src/lib/landing-config.ts` bilan QO'LDA sinxron
+    // (server CMS yetib kelmasa shu qiymatlar ko'rinadi). O'zgartirsangiz IKKALASINI ham.
+    { t: 'Image generation', d: 'High-quality visuals from text. In seconds.', icon: 'image', cost: 'from 2 credits', tool: 'Rasm yaratish', h: 262 },
+    { t: 'Video generation', d: 'Moving scenes and clips from a prompt.', icon: 'video-camera', cost: 'from 3 credits/sec', tool: 'Video yaratish', h: 200 },
+    { t: 'Voice (Voiceover)', d: 'Natural-sounding voice from text — 30+ languages.', icon: 'microphone', cost: 'from 4 credits', tool: 'Voiceover', h: 330 },
+    { t: 'SFX', d: 'Generate effects and sounds that match your scene.', icon: 'waveform', cost: 'from 4 credits', tool: 'SFX', h: 160 },
   ];
 
   plans = [
@@ -18515,10 +18535,10 @@ class Component extends DCLogic {
       desc: 'Images, video, voice and effects — from prompt to result in seconds. All in the browser.',
       ctaLabel: 'Try it with 50 credits',
       cards: [
-        { title: 'Image generation', desc: 'High-quality visuals from text. In seconds.', cost: '5 credits' },
-        { title: 'Video generation', desc: 'Moving scenes and clips from a prompt.', cost: '40 credits' },
-        { title: 'Voice (Voiceover)', desc: 'Natural-sounding voice from text — 30+ languages.', cost: '8 credits' },
-        { title: 'SFX', desc: 'Generate effects and sounds that match your scene.', cost: '3 credits' },
+        { title: 'Image generation', desc: 'High-quality visuals from text. In seconds.', cost: 'from 2 credits' },
+        { title: 'Video generation', desc: 'Moving scenes and clips from a prompt.', cost: 'from 3 credits/sec' },
+        { title: 'Voice (Voiceover)', desc: 'Natural-sounding voice from text — 30+ languages.', cost: 'from 4 credits' },
+        { title: 'SFX', desc: 'Generate effects and sounds that match your scene.', cost: 'from 4 credits' },
       ],
       typingPrompts: [
         'A neon-lit city, rain reflections, cinematic shot…',

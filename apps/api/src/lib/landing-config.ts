@@ -167,10 +167,17 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     desc: "Images, video, voice and effects — from prompt to result in seconds. All in the browser.",
     ctaLabel: "Try it with 50 credits",
     cards: [
-      { title: "Image generation", desc: "High-quality visuals from text. In seconds.", cost: "5 credits" },
-      { title: "Video generation", desc: "Moving scenes and clips from a prompt.", cost: "40 credits" },
-      { title: "Voice (Voiceover)", desc: "Natural-sounding voice from text — 30+ languages.", cost: "8 credits" },
-      { title: "SFX", desc: "Generate effects and sounds that match your scene.", cost: "3 credits" },
+      // #117 (L3) — narxlar `gen-models.ts` dagi YOQILGAN modellarning eng arzonidan
+      // hisoblanadi (`scripts/verify-public-copy.mjs` buni qadab qo'ygan). Ilgari
+      // yozilgan qiymatlar (5 / 40 / 8 / 3) hech bir modelga mos emas edi; SFX ayniqsa
+      // xavfli xato edi — e'lon 3 kredit, haqiqiy yagona model (ElevenLabs SFX) 4 kredit,
+      // ya'ni mijozdan e'lon qilinganidan KO'PROQ olinardi.
+      // Rasm: gemini-3.1-flash-lite-image = 2 · Video: veo-3.1-lite = 3 kr/sek ·
+      // Ovoz: chirp3-hd = 4 · SFX: elevenlabs/sound-effects = 4.
+      { title: "Image generation", desc: "High-quality visuals from text. In seconds.", cost: "from 2 credits" },
+      { title: "Video generation", desc: "Moving scenes and clips from a prompt.", cost: "from 3 credits/sec" },
+      { title: "Voice (Voiceover)", desc: "Natural-sounding voice from text — 30+ languages.", cost: "from 4 credits" },
+      { title: "SFX", desc: "Generate effects and sounds that match your scene.", cost: "from 4 credits" },
     ],
     typingPrompts: [
       "A neon-lit city, rain reflections, cinematic shot…",

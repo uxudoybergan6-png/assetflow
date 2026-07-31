@@ -95,6 +95,13 @@ jobs:
       - name: Bog'liqlik xavfsizlik pollari (package-lock minimal versiyalar)
         run: npm run test:dep-floors
 
+      # #116 (L2) — ochiq sahifa matni regressiyasi: qo'llab-quvvatlanmaydigan da'volar,
+      # soxta testimonial, lawyer-review izohlari va AI kredit narxlarining `gen-models.ts`
+      # bilan sinxronligi. ATAYLAB "Build API" dan KEYIN: narx tekshiruvi `apps/api/dist`
+      # ni o'qiydi (bo'lmasa jimgina o'tkazib yuborardi).
+      - name: Ochiq sahifa matni (da'volar, huquqiy izohlar, AI narxlari)
+        run: npm run test:public-copy
+
   windows-installer:
     name: Windows installer (real MSI build + per-user install/uninstall)
     runs-on: windows-latest

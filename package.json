@@ -25,6 +25,7 @@
     "test:plugin-responsive": "node plugins/after-effects-cep/scripts/test-panel-responsive.mjs",
     "test:release-contract": "node apps/api/scripts/test-plugin-release-contract.mjs",
     "test:plugin-download-state": "node packages/assetflow-studio/scripts/test-plugin-download-state.mjs",
+    "test:public-copy": "node scripts/verify-public-copy.mjs",
     "check:stack": "node scripts/check-stack.mjs",
     "studio:open": "open http://localhost:3000/studio/hub.html",
     "build": "npm run build --workspaces --if-present",

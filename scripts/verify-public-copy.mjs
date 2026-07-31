@@ -20,11 +20,17 @@
 //      "ReferenceError: axMediaError is not defined" berardi. Funksiya ta'rifi mavjudligini
 //      tekshirish buni USHLAMAYDI (false-positive), shuning uchun atribut kontrakti tekshiriladi;
 //   7) FF-MEDIA-DELEGATION blokini JONLI manbadan ajratib olib, soxta DOM ustida HAQIQATAN
-//      BAJARADI: skeleton olinishi, 1 martalik cache-bust retry, "Media unavailable" qoplama.
-// Ishlatish: node scripts/verify-public-copy.mjs
+//      BAJARADI: skeleton olinishi, 1 martalik cache-bust retry, "Media unavailable" qoplama;
+//   8) [#116 / L2, 2026-07-31] OCHIQ HUQUQIY/YORDAM sahifalarini (terms · privacy · refund ·
+//      dmca · help) ham skanerlaydi — ilgari ular butunlay tekshiruvsiz edi — va #119
+//      regressiyasini qadaydi: "needs lawyer review" izohlari ochiq HTML'ga QAYTMASIN;
+//   9) [#117 / L3] landing'dagi 4 ta AI kartasi narxi `gen-models.ts` dagi yoqilgan
+//      modellarning eng arzoniga mos ekanini tekshiradi (server manbasi + qo'lda sinxron
+//      klient fallback nusxasi ikkalasi ham). `apps/api/dist` yo'q bo'lsa o'tkazib yuboriladi.
+// Ishlatish: npm run test:public-copy   (yoki node scripts/verify-public-copy.mjs)
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const LANDING_CONFIG = path.join(ROOT, "apps/api/src/lib/landing-config.ts");
@@ -376,6 +382,85 @@ if (delegMatch) {
   otherHost.appendChild(other);
   fire("error", other);
   check("'.va-media' bo'lmagan element tegilmaydi", !otherHost.querySelector(".va-mediaerr") && other.style.display !== "none");
+}
+
+// ── 8) OCHIQ HUQUQIY/YORDAM SAHIFALARI (#116 / L2) ──
+// Ilgari bu skript FAQAT landing-config.ts + platform/index.html'ni ko'rardi, ya'ni
+// terms/privacy/refund/dmca/help sahifalari HECH QANDAY regressiya tekshiruvisiz edi —
+// ular ham bir xil ochiq domenda turadi va bir xil marketing/da'vo qoidalariga bo'ysunadi.
+const LEGAL_PAGES = ["terms.html", "privacy.html", "refund.html", "dmca.html", "help.html"].map((f) =>
+  path.join(ROOT, "packages/assetflow-studio/platform", f)
+);
+
+console.log("\n── Ochiq huquqiy/yordam sahifalari (terms · privacy · refund · dmca · help) ──");
+for (const file of LEGAL_PAGES) {
+  if (!fs.existsSync(file)) { check(`${path.relative(ROOT, file)} mavjud`, false, "fayl topilmadi"); continue; }
+  scanFileForPatterns(file, PROHIBITED_PATTERNS);
+  scanFileForPatterns(file, FABRICATED_NAMES);
+}
+
+// #119 (L5) regressiyasi — "huquqshunos ko'rib chiqsin" izohlari OCHIQ HTML'ga qaytmasin.
+// Ular mijoz brauzeriga yetkaziladi ("View source") va nizoda kompaniyaning o'z hujjatiga
+// ishonmasligi dalili bo'ladi. Ochiq bandlar joyi — `docs/LEGAL-TODO.md`.
+const LAWYER_COMMENT = /needs lawyer review|LEGAL-TODO|TODO\(FF\)/i;
+for (const file of [...LEGAL_PAGES, PLATFORM_HTML]) {
+  if (!fs.existsSync(file)) continue;
+  const rel = path.relative(ROOT, file);
+  // faqat HTML izohlari ichida qidiriladi (matn/skriptdagi tasodifiy so'z emas)
+  const comments = readSource(file).match(/<!--[\s\S]*?-->/g) || [];
+  // platform/index.html — muhandislik TODO(FF) izohlari ATAYLAB qoldirilgan (huquqiy emas),
+  // shuning uchun u yerda faqat lawyer-review naqshi taqiqlanadi.
+  const re = file === PLATFORM_HTML ? /needs lawyer review|LEGAL-TODO/i : LAWYER_COMMENT;
+  const hit = comments.find((c) => re.test(c));
+  check(
+    `${rel}: lawyer-review izohi ochiq HTML'da yo'q (#119)`,
+    !hit,
+    hit ? `topildi: ${hit.slice(0, 80).replace(/\s+/g, " ")}…` : undefined
+  );
+}
+
+// ── 9) AI KREDIT NARXLARI KOD BILAN SINXRON (#117 / L3) ──
+// Landing'dagi 4 ta AI kartasi narxi `gen-models.ts` dagi YOQILGAN modellarning eng
+// arzonidan kelib chiqishi SHART. Ilgari yozilgan qiymatlar hech bir modelga mos emas edi
+// va SFX e'lon qilinganidan qimmatroq edi (mijozdan ko'proq olinardi) — bu tekshiruv shuni
+// qaytib kelishiga yo'l qo'ymaydi. `dist` yo'q bo'lsa (build qilinmagan) — o'tkazib yuboriladi.
+const GEN_MODELS_DIST = path.join(ROOT, "apps/api/dist/lib/gen-models.js");
+console.log("\n── AI kredit narxlari (landing ↔ gen-models.ts) ──");
+if (!fs.existsSync(GEN_MODELS_DIST)) {
+  console.log("NOTE  apps/api/dist/lib/gen-models.js yo'q — narx sinxronligi o'tkazib yuborildi (`npm run build -w apps/api`).");
+} else {
+  const { GEN_MODELS } = await import(pathToFileURL(GEN_MODELS_DIST).href);
+  const minCost = (feature) =>
+    Math.min(
+      ...GEN_MODELS.filter((m) => m.enabled !== false && m.feature === feature && m.pricing !== "per-generation").map(
+        (m) => m.cost
+      )
+    );
+  // karta sarlavhasi → [feature, qo'shimcha birlik]
+  const CARD_FEATURE = [
+    ["Image generation", "text-to-image", ""],
+    ["Video generation", "text-to-video", "/sec"], // video narxi SONIYA uchun (computeGenCost: rate × duration)
+    ["Voice (Voiceover)", "text-to-speech", ""],
+    ["SFX", "text-to-sfx", ""],
+  ];
+  const landingSrc = readSource(LANDING_CONFIG);
+  const clientSrc = readSource(PLATFORM_HTML);
+  for (const [title, feature, unit] of CARD_FEATURE) {
+    const expected = `from ${minCost(feature)} credits${unit}`;
+    // landing-config.ts (server CMS manbasi)
+    const row = landingSrc.match(new RegExp(`\\{ title: "${title.replace(/[()]/g, "\\$&")}"[^}]*\\}`));
+    check(
+      `landing-config.ts "${title}" narxi = "${expected}"`,
+      !!row && row[0].includes(`cost: "${expected}"`),
+      row ? `topildi: ${(row[0].match(/cost: "[^"]*"/) || ["yo'q"])[0]}` : "karta topilmadi"
+    );
+    // platform/index.html — server CMS yetib kelmasa ko'rinadigan QO'LDA sinxron nusxa
+    check(
+      `platform/index.html "${title}" fallback narxi = "${expected}"`,
+      (clientSrc.match(new RegExp(`'${expected.replace(/[/]/g, "\\/")}'`, "g")) || []).length >= 1,
+      `kutilgan: '${expected}'`
+    );
+  }
 }
 
 console.log(`\n${checks - fails}/${checks} tekshiruv o'tdi.`);

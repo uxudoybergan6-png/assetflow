@@ -210,6 +210,43 @@ const redirects = `\
 `;
 fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 
+// robots.txt + sitemap.xml — #157 (L10).
+// Ilgari IKKALASI HAM yo'q edi: qidiruv botlari SPA fallback tufayli /dashboard, /account,
+// /projects kabi shaxsiy ekranlarni ham (index.html qobig'ini) indekslashga urinardi va
+// ochiq sahifalar uchun hech qanday indekslash yo'riqnomasi yo'q edi.
+// Kanonik domen — `apps/api/src/lib/app-urls.ts` DEFAULT_WEB_URL bilan bir xil.
+const ORIGIN = "https://getframeflow.app";
+// Faqat OCHIQ (auth talab qilmaydigan) yo'llar. Auth ortidagi ekranlar — Disallow.
+const PUBLIC_ROUTES = ["/", "/stock", "/pricing", "/plugin", "/terms", "/privacy", "/refund", "/dmca", "/help"];
+fs.writeFileSync(
+  path.join(dist, "robots.txt"),
+  `User-agent: *
+Allow: /
+${["/dashboard", "/account", "/projects", "/aistudio", "/auth", "/login", "/device", "/verify-email", "/reset-password", "/admin/", "/studio/", "/contributor/"]
+  .map((p) => `Disallow: ${p}`)
+  .join("\n")}
+
+Sitemap: ${ORIGIN}/sitemap.xml
+`
+);
+{
+  // lastmod — build sanasi (YYYY-MM-DD). Har deploy'da yangilanadi.
+  const lastmod = new Date().toISOString().slice(0, 10);
+  const urls = PUBLIC_ROUTES.map(
+    (p) =>
+      `  <url><loc>${ORIGIN}${p}</loc><lastmod>${lastmod}</lastmod><changefreq>${p === "/" || p === "/stock" ? "daily" : "monthly"}</changefreq><priority>${p === "/" ? "1.0" : p === "/stock" || p === "/pricing" ? "0.8" : "0.4"}</priority></url>`
+  ).join("\n");
+  fs.writeFileSync(
+    path.join(dist, "sitemap.xml"),
+    `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`
+  );
+  console.log(`  robots.txt + sitemap.xml (${PUBLIC_ROUTES.length} ta ochiq yo'l)`);
+}
+
 // _headers — xavfsizlik (#17 v3 CSP) + cache (#6) sozlamalari.
 //
 // CSP — ENFORCE (2 tur Report-Only test toza o'tdi → endi bloklaydi). Sabab:

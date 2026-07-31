@@ -4,8 +4,12 @@
 > moslandi. Quyidagi bandlar esa **biznes/huquqiy qaror** talab qiladi va uni **egasi +
 > huquqshunos** hal qilishi kerak. Bu fayl aynan nimani hal qilish kerakligini ro'yxatlaydi.
 >
-> ⚠️ **needs lawyer review:** hujjatlardagi tegishli joylar `<!-- ⚠️ needs lawyer review ... -->`
-> HTML-comment'lari bilan belgilangan (foydalanuvchiga ko'rinmaydi).
+> ⚠️ **#119 (L5) — 2026-07-31:** belgilar ilgari ochiq sahifalarning HTML manbasida
+> `<!-- ⚠️ needs lawyer review ... -->` izohlari sifatida turardi. "Foydalanuvchiga ko'rinmaydi"
+> degani ochiq emas degani EMAS: izohlar mijoz brauzeriga yetkazilardi va "View source" qilgan
+> har kim (yoki skreyper/LLM) kompaniya o'z huquqiy hujjatlariga ishonmasligini o'qiy olardi —
+> nizoda bevosita mijoz foydasiga dalil. Izohlar **olib tashlandi**, matni quyida.
+> **Ochiq HTML'ga qayta yozmang** — shu faylga yozing.
 
 **Yangilangan: 2026-07-08** — faktik holat quyidagi KOD manbalariga tekshirildi:
 - To'lov: `apps/api/src/lib/lemonsqueezy.ts`, `apps/api/src/routes/billing.ts` (FAOL yo'l = Lemon Squeezy).
@@ -16,6 +20,24 @@ Manba fayllar (MANBA — bu yerga edit qiling, `dist/` build artefakti; `platfor
 - `packages/assetflow-studio/platform/terms.html`
 - `packages/assetflow-studio/platform/privacy.html`
 - `packages/assetflow-studio/platform/refund.html`
+- `packages/assetflow-studio/platform/dmca.html`
+- `packages/assetflow-studio/platform/help.html`
+
+### Sahifa-ba-sahifa ochiq bandlar (HTML izohlaridan ko'chirildi — #119)
+
+| Sahifa | Yakunlanmagan band |
+|---|---|
+| `terms.html` (umumiy) | Aniq soliq yurisdiksiyalari, isteʼmolchi huquqi, yakuniy so'zlashuv |
+| `terms.html` §3 | MoR/soliq: Lemon Squeezy VAT/sales tax'ni o'zi hisoblaydi (`lemonsqueezy.ts`, `billing.ts`); yurisdiksiya + invoice talablari |
+| `terms.html` §4 | Kredit paketi amal qilish muddati / qaytarish sharti (`aiCreditsTopup` reset'da saqlanadi) |
+| `privacy.html` | Protsessorlar ro'yxati + saqlash (retention) bandlari |
+| `refund.html` | 14 kunlik oyna, "substantial portion" chegarasi, mahalliy isteʼmolchi huquqi |
+| `refund.html` (paketlar) | "Ishlatilmagan" chegarasi va paket qaytarish shartlari |
+| `dmca.html` | Tayinlangan agent kontakti; notice/counter-notice tartibi; O'zbekiston + DMCA 17 U.S.C. §512 muvofiqligi (hozirgi matn — umumiy ramka) |
+| `help.html` | Operatsion (huquqiy emas): `support@getframeflow.app` pochta qutisi sozlanganini tasdiqlash (C7). Contributor'lar uchun Studio Messages allaqachon ishlaydi |
+
+⚠️ **Marketingda taqiq:** aniq "14-day money-back guarantee" iborasi ommaviy marketing matnida
+ISHLATILMAYDI (shart yakunlanmagan) — `scripts/verify-public-copy.mjs` buni qadab qo'ygan.
 
 ---
 
@@ -67,7 +89,8 @@ moslang. DMCA public policy sahifasi qo'shildi (`platform/dmca.html`).
 1. MoR soliq yurisdiksiyasini tasdiqlang (1) — bu invoice/soliq matnini belgilaydi.
 2. Qaytarish shartlarini Lemon Squeezy + iste'molchi qonuni bilan moslang (2, 3).
 3. Til qarorini qabul qiling (4).
-4. Barcha `<!-- ⚠️ needs lawyer review ... -->` comment'larini hal bo'lgach o'chiring.
+4. Hal bo'lgan bandni yuqoridagi jadvaldan o'chiring (HTML'da izoh YO'Q — #119).
 5. Huquqshunosdan yakuniy tekshiruv (5).
 
-*Dastlab: 2026-07-04 (Bosqich 2) · Yangilandi: 2026-07-08 (FAZA 1 — kodga moslash + GDPR + DMCA).*
+*Dastlab: 2026-07-04 (Bosqich 2) · Yangilandi: 2026-07-08 (FAZA 1 — kodga moslash + GDPR + DMCA)
+· 2026-07-31 (BATCH 11 / #119 — ochiq HTML'dan lawyer-review izohlari olindi).*
