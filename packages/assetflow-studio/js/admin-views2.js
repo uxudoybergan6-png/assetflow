@@ -170,11 +170,11 @@ function tplTopbarActions(){
   const pubLabel = T_PUB==='all'?'All':(T_PUB==='true'?'Published':'Unpublished');
   const nActive = (T_TYPE!=='all'?1:0)+(T_TIER!=='all'?1:0)+(T_PUB!=='all'?1:0);
   tba.innerHTML =
-    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${typeLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>`+
+    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${typeLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i>`+
       `<select onchange="T_TYPE=this.value;tplTopbarActions();tplReload()">${TPL_TYPE_OPTS.map(([v,l])=>`<option value="${v}" ${T_TYPE===v?'selected':''}>${l}</option>`).join('')}</select></label>`+
-    `<label class="adx-sel"><span>${tierLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>`+
+    `<label class="adx-sel"><span>${tierLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i>`+
       `<select onchange="T_TIER=this.value;tplTopbarActions();tplReload()"><option value="all">All tiers</option><option value="pro" ${T_TIER==='pro'?'selected':''}>Pro only</option><option value="free" ${T_TIER==='free'?'selected':''}>Free only</option></select></label>`+
-    `<label class="adx-sel"><span>${pubLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>`+
+    `<label class="adx-sel"><span>${pubLabel}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i>`+
       `<select onchange="T_PUB=this.value;tplTopbarActions();tplReload()"><option value="all">All</option><option value="true" ${T_PUB==='true'?'selected':''}>Published</option><option value="false" ${T_PUB==='false'?'selected':''}>Unpublished</option></select></label>`+
     (nActive?`<button class="adx-btn2 sm" onclick="T_TYPE='all';T_TIER='all';T_PUB='all';tplTopbarActions();tplReload()" title="Clear filters"><i class="ph ph-x"></i>Clear (${nActive})</button>`:'')+
     `<button class="adx-btn2 sm" onclick="exportTemplatesCsv()"><i class="ph ph-export"></i>CSV</button>`;
@@ -195,14 +195,14 @@ function renderTemplates(){
   const tags = [['all','All',n('total')],['approved','Approved',n('approved')],['pending','Pending',n('pending')],['soft','Soft',n('soft')],['hard','Hard',n('hard')],['draft','Draft',n('draft')]];
   const decision = (t) => {
     if(t.reason) return `<span style="font-size:11px;color:${t.status==='hard'?'#FF6B5E':'#FFB27C'}">${esc(t.reason)}</span>`;
-    if(t.status==='approved') return `<span style="color:#5E6675">\u2014</span>`;
-    return `<span style="color:#5E6675">\u2014</span>`;
+    if(t.status==='approved') return `<span style="color:var(--muted2)">\u2014</span>`;
+    return `<span style="color:var(--muted2)">\u2014</span>`;
   };
   root.innerHTML = `
     <div class="adx-tagrow">
       ${tags.map(([k,l,num])=>`<button class="adx-tag ${T_FILTER===k?'on':''}" onclick="tplSetFilter('${k}')">${l} <span class="n">${num}</span></button>`).join('')}
     </div>
-    ${TPL.error?axInfo(`<b style="color:var(--text)">Could not load templates</b> — ${esc(TPL.error)} <a style="color:#C2F04A;text-decoration:underline;cursor:pointer" onclick="tplLoadPage('same')">Retry</a>`,'red'):''}
+    ${TPL.error?axInfo(`<b style="color:var(--text)">Could not load templates</b> — ${esc(TPL.error)} <a style="color:var(--lime);text-decoration:underline;cursor:pointer" onclick="tplLoadPage('same')">Retry</a>`,'red'):''}
     <div class="adx-card" style="overflow:hidden">
       <div style="overflow-x:auto">
         <table class="adx-tbl" style="min-width:1000px">
@@ -211,11 +211,11 @@ function renderTemplates(){
           </tr></thead>
           <tbody>
           ${rows.length ? rows.map(t=>{ const con=t._con||cById(t.cid)||{}; return `<tr>
-            <td><div style="display:flex;align-items:center;gap:10px"><span style="width:44px;height:30px;border-radius:6px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</div><div style="font-size:10px;color:#8A93A3">${esc(t.cat)} \u00b7 ${esc(t.res)}</div></div></div></td>
-            <td class="adx-num" style="font-size:10.5px;color:#8A93A3" title="${esc(t.id)}">${esc(shortId(t.id))}</td>
-            <td style="font-size:11px;color:#8A93A3">${esc((con.email||'').split('@')[0])}${con.email?'@\u2026':''}</td>
+            <td><div style="display:flex;align-items:center;gap:10px"><span style="width:44px;height:30px;border-radius:6px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</div><div style="font-size:10px;color:var(--muted)">${esc(t.cat)} \u00b7 ${esc(t.res)}</div></div></div></td>
+            <td class="adx-num" style="font-size:10.5px;color:var(--muted)" title="${esc(t.id)}">${esc(shortId(t.id))}</td>
+            <td style="font-size:11px;color:var(--muted)">${esc((con.email||'').split('@')[0])}${con.email?'@\u2026':''}</td>
             <td>${axTplStatus(t.status)}</td>
-            <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(t.created||'\u2014')}</td>
+            <td class="adx-num" style="font-size:11px;color:var(--muted)">${esc(t.created||'\u2014')}</td>
             <td class="r adx-num">${t.dl?t.dl.toLocaleString():'\u2014'}</td>
             <td>${decision(t)}</td>
             <td class="r"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
@@ -230,7 +230,7 @@ function renderTemplates(){
       </div>
       <!-- #68 — REAL sahifalash (server cursor'i): jadval bir sahifani ko'rsatadi -->
       <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--hair2)">
-        <span class="adx-num" style="font-size:11px;color:#8A93A3">Page ${TPL.page} · ${rows.length} rows${TPL.loading?' · loading…':''}</span>
+        <span class="adx-num" style="font-size:11px;color:var(--muted)">Page ${TPL.page} · ${rows.length} rows${TPL.loading?' · loading…':''}</span>
         <div style="margin-left:auto;display:flex;gap:6px">
           <button class="adx-btn2 sm" ${TPL.page<=1||TPL.loading?'disabled':''} onclick="tplPrevPage()"><i class="ph ph-caret-left"></i>Prev</button>
           <button class="adx-btn2 sm" ${!TPL.cursor||TPL.loading?'disabled':''} onclick="tplNextPage()">Next<i class="ph ph-caret-right"></i></button>
@@ -248,7 +248,7 @@ window.afterRender.contributors = function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='contributors'){
     tba.innerHTML =
-      `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${C_STATUS_FILTER==='all'?'All statuses':(C_STATUS_FILTER==='active'?'Active':'Blocked')}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="C_STATUS_FILTER=this.value;route('contributors')"><option value="all">All statuses</option><option value="active" ${C_STATUS_FILTER==='active'?'selected':''}>Active</option><option value="blocked" ${C_STATUS_FILTER==='blocked'?'selected':''}>Blocked</option></select></label>`+
+      `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${C_STATUS_FILTER==='all'?'All statuses':(C_STATUS_FILTER==='active'?'Active':'Blocked')}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i><select onchange="C_STATUS_FILTER=this.value;route('contributors')"><option value="all">All statuses</option><option value="active" ${C_STATUS_FILTER==='active'?'selected':''}>Active</option><option value="blocked" ${C_STATUS_FILTER==='blocked'?'selected':''}>Blocked</option></select></label>`+
       `<button class="adx-btn2 sm" onclick="exportContributorsCsv()"><i class="ph ph-export"></i>CSV</button>`;
   }
 };
@@ -266,7 +266,7 @@ VIEWS.contributors = function(){
   return `
     <div class="adx-grid4" style="margin-bottom:18px">
       ${axStat({label:'Total contributors',val:CONTRIBUTORS.length,ic:'users-three',icColor:'#7CC4FF',foot:'registered'})}
-      ${axStat({label:'Active',val:CONTRIBUTORS.filter(c=>c.status==='active').length,ic:'check-circle',icColor:'#C2F04A',foot:'uploading content'})}
+      ${axStat({label:'Active',val:CONTRIBUTORS.filter(c=>c.status==='active').length,ic:'check-circle',icColor:'var(--lime)',foot:'uploading content'})}
       ${axStat({label:'Blocked',val:CONTRIBUTORS.filter(c=>c.status==='blocked').length,ic:'prohibit',icColor:'#FF6B5E',foot:'access restricted'})}
       ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'crown',foot:appr!=null?'approved / rejected':'no decisions yet'})}
     </div>
@@ -278,10 +278,10 @@ VIEWS.contributors = function(){
           <td><div class="adx-who">${axAv(c.name,c.email,32)}<div style="min-width:0"><div class="nm">${esc(c.name)}</div><div class="em">${esc(c.email)}</div></div></div></td>
           <td>${axStatus(c.status==='blocked'?'blocked':'active')}</td>
           <td class="r adx-num">${total}</td>
-          <td class="r adx-num" style="color:#C2F04A">${ap}</td>
+          <td class="r adx-num" style="color:var(--lime)">${ap}</td>
           <td class="r adx-num" style="color:#FFB27C">${pe||'—'}</td>
           <td class="r adx-num" style="color:#FF6B5E">${re||'—'}</td>
-          <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(c.joined||'—')}</td>
+          <td class="adx-num" style="font-size:11px;color:var(--muted)">${esc(c.joined||'—')}</td>
           <td class="r" onclick="event.stopPropagation()"><div style="display:flex;gap:6px;justify-content:flex-end">
             <button class="adx-iact" title="Message" onclick="openMessage('${c.id}')"><i class="ph ph-chat-circle"></i></button>
             ${c.status==='active'?`<button class="adx-iact dg" title="Block" onclick="openBlock('${c.id}')"><i class="ph ph-prohibit"></i></button>`:`<button class="adx-iact" title="Unblock" onclick="unblock('${c.id}')"><i class="ph ph-check-circle"></i></button>`}
@@ -307,7 +307,7 @@ VIEWS['contributor-detail'] = function(id){
     <div class="adx-card" style="padding:18px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       ${axAv(c.name,c.email,56)}
       <div style="flex:1;min-width:220px"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="adx-h18">${esc(c.name)}</span>${axStatus(blocked?'blocked':'active')}</div>
-        <div style="font-size:11.5px;color:#8A93A3;margin-top:3px">${esc(c.email)}${c.country?' · '+esc(c.country):''}${c.joined?' · Registered: '+esc(c.joined):''}</div></div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:3px">${esc(c.email)}${c.country?' · '+esc(c.country):''}${c.joined?' · Registered: '+esc(c.joined):''}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="adx-btn2 sm" onclick="openMessage('${c.id}')"><i class="ph ph-chat-circle"></i>Send message</button>
         ${blocked?`<button class="adx-btn2 sm adx-btn-ok" onclick="unblock('${c.id}')"><i class="ph ph-check-circle"></i>Unblock</button>`:`<button class="adx-btn-danger adx-btn-dghost sm" onclick="openBlock('${c.id}')"><i class="ph ph-prohibit"></i>Block</button>`}
@@ -315,21 +315,21 @@ VIEWS['contributor-detail'] = function(id){
     </div>
     <div class="adx-grid4" style="margin-top:16px">
       ${axStat({label:'Total templates',val:ts.length,ic:'stack'})}
-      ${axStat({label:'Approved',val:ap,ic:'check-circle',icColor:'#C2F04A',foot:'live in AE'})}
+      ${axStat({label:'Approved',val:ap,ic:'check-circle',icColor:'var(--lime)',foot:'live in AE'})}
       ${axStat({label:'Pending',val:pe,ic:'clock-countdown',icColor:'#FFB27C'})}
       ${axStat({label:'Rejected',val:re,ic:'x-circle',icColor:'#FF6B5E',foot:'soft + hard'})}
     </div>
     <div class="adx-card" style="overflow:hidden;margin-top:16px">
-      <div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Uploaded templates</span><span style="flex:1"></span><span style="font-size:11px;color:#8A93A3">${ts.length} item${ts.length===1?"":"s"}</span>
+      <div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Uploaded templates</span><span style="flex:1"></span><span style="font-size:11px;color:var(--muted)">${ts.length} item${ts.length===1?"":"s"}</span>
         ${pe?`<button class="adx-btn2 sm" style="margin-left:10px" onclick="route('moderation')"><i class="ph ph-shield-check"></i>${pe} pending</button>`:''}</div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:760px">
         <thead><tr><th>Template</th><th>Status</th><th>Category</th><th class="r">Downloads</th><th>Date</th><th class="r"></th></tr></thead>
         <tbody>
         ${ts.length?ts.map(t=>`<tr>
-          <td><div style="display:flex;align-items:center;gap:9px"><span style="width:38px;height:26px;border-radius:5px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12px;color:var(--text)">${esc(t.name)}</div><div class="adx-num" style="font-size:9.5px;color:#8A93A3">${esc(shortId(t.id))}</div></div></div></td>
-          <td>${axTplStatus(t.status,true)}</td><td style="font-size:11.5px;color:#B7C0CE">${esc(t.cat)}</td>
+          <td><div style="display:flex;align-items:center;gap:9px"><span style="width:38px;height:26px;border-radius:5px;flex:none;overflow:hidden;display:block;background:var(--media)">${adxModThumb(t)}</span><div style="min-width:0"><div style="font-weight:600;font-size:12px;color:var(--text)">${esc(t.name)}</div><div class="adx-num" style="font-size:9.5px;color:var(--muted)">${esc(shortId(t.id))}</div></div></div></td>
+          <td>${axTplStatus(t.status,true)}</td><td style="font-size:11.5px;color:var(--text2)">${esc(t.cat)}</td>
           <td class="r adx-num">${t.dl?t.dl.toLocaleString():'—'}</td>
-          <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(t.created||'—')}</td>
+          <td class="adx-num" style="font-size:11px;color:var(--muted)">${esc(t.created||'—')}</td>
           <td class="r"><button class="adx-iact" onclick="openTplDrawer('${t.id}')"><i class="ph ph-eye"></i></button></td>
         </tr>`).join('')
         :`<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-stack"></i></span><div style="font-size:12px;color:var(--muted2)">No templates yet</div></div></td></tr>`}
@@ -417,15 +417,15 @@ async function renderMessaging(){
           ${ADMIN_THREADS.map((t,i)=>{const cc=cById(t.cid); const nm = t.contributorName || cc.name; const sel=i===MSG_SEL; return `<button style="display:flex;gap:10px;padding:12px 14px;width:100%;text-align:left;font-family:inherit;color:inherit;cursor:pointer;border:0;border-left:2px solid ${sel?'var(--lime)':'transparent'};background:${sel?'var(--surface2)':'none'}" onclick="selectAdminThread(${i})">
             ${axAv(nm,t.cid,34)}
             <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cc.name)}</span>${t.unread?'<span style="width:6px;height:6px;border-radius:50%;background:#C2F04A;margin-left:auto;flex:none"></span>':`<span style="margin-left:auto;font-size:10px;color:#8A93A3;flex:none">${esc(t.t||'')}</span>`}</div>
-              <div style="font-size:11px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.sub||'')}</div>
-              <div style="font-size:10.5px;color:#8A93A3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.last||'')}</div>
+              <div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cc.name)}</span>${t.unread?'<span style="width:6px;height:6px;border-radius:50%;background:var(--lime);margin-left:auto;flex:none"></span>':`<span style="margin-left:auto;font-size:10px;color:var(--muted);flex:none">${esc(t.t||'')}</span>`}</div>
+              <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.sub||'')}</div>
+              <div style="font-size:10.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.last||'')}</div>
             </div>
           </button>`;}).join('')}
         </div>
       </div>
       <div style="flex:1;display:flex;flex-direction:column;min-width:0">
-        <div class="adx-cardhd" style="border-bottom:1px solid var(--hair)">${axAv(c.name,th.cid,32)}<div><div style="font-weight:600;font-size:13px">${esc(c.name)}</div><div class="adx-num" style="font-size:10px;color:#8A93A3">${th.tid?'Template: '+esc(shortId(th.tid)):'General conversation'}</div></div><span style="flex:1"></span><button class="adx-btn2 sm" onclick="route('contributor-detail','${c.id}')"><i class="ph ph-user"></i>Profile</button></div>
+        <div class="adx-cardhd" style="border-bottom:1px solid var(--hair)">${axAv(c.name,th.cid,32)}<div><div style="font-weight:600;font-size:13px">${esc(c.name)}</div><div class="adx-num" style="font-size:10px;color:var(--muted)">${th.tid?'Template: '+esc(shortId(th.tid)):'General conversation'}</div></div><span style="flex:1"></span><button class="adx-btn2 sm" onclick="route('contributor-detail','${c.id}')"><i class="ph ph-user"></i>Profile</button></div>
         <div class="adx-chatwrap">
           ${ADMIN_THREAD_MESSAGES.length ? ADMIN_THREAD_MESSAGES.map((m) => {
             const isMe = m.sender?.isMe;
@@ -444,7 +444,7 @@ async function renderMessaging(){
    ============================================================ */
 window.afterRender.analytics = function(){
   const tba = document.getElementById('tbActions');
-  if(tba && CURRENT==='analytics') tba.innerHTML = `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>Last 30 days</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i></span>`;
+  if(tba && CURRENT==='analytics') tba.innerHTML = `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>Last 30 days</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i></span>`;
 };
 VIEWS.analytics = function(){
   const usage = typeof window !== "undefined" ? window._ASSETFLOW_PLUGIN_ANALYTICS?.usage : null;
@@ -454,33 +454,33 @@ VIEWS.analytics = function(){
   const contribRank = CONTRIBUTORS.map(c=>{const ts=tByContributor(c.id);const dl=ts.reduce((a,t)=>a+t.dl,0);const ap=ts.filter(t=>t.status==='approved').length;return {c,dl,ap,total:ts.length,rate:ts.length?Math.round(ap/ts.length*100):0};}).sort((a,b)=>b.dl-a.dl);
   const maxDl = contribRank[0]?.dl || 1;
   const rejectBlock = REJECT_REASONS.length > 0
-    ? REJECT_REASONS.map(r=>{const tot=r.soft+r.hard; const s=tot?r.soft/tot*100:0; const h=tot?r.hard/tot*100:0; return `<div><div style="display:flex;font-size:11.5px;margin-bottom:5px"><span style="flex:1;color:var(--text)">${esc(r.nm)}</span><span class="adx-num" style="color:#8A93A3">${tot}</span></div><div style="height:7px;border-radius:99px;overflow:hidden;display:flex">${s?`<span style="width:${s}%;background:#FFB27C"></span>`:''}${h?`<span style="width:${h}%;background:#FF6B5E"></span>`:''}</div></div>`;}).join('')
+    ? REJECT_REASONS.map(r=>{const tot=r.soft+r.hard; const s=tot?r.soft/tot*100:0; const h=tot?r.hard/tot*100:0; return `<div><div style="display:flex;font-size:11.5px;margin-bottom:5px"><span style="flex:1;color:var(--text)">${esc(r.nm)}</span><span class="adx-num" style="color:var(--muted)">${tot}</span></div><div style="height:7px;border-radius:99px;overflow:hidden;display:flex">${s?`<span style="width:${s}%;background:#FFB27C"></span>`:''}${h?`<span style="width:${h}%;background:#FF6B5E"></span>`:''}</div></div>`;}).join('')
     : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-check-circle"></i></span><div style="font-size:11px;color:var(--muted2)">No rejection reasons yet</div></div>`;
   const barMax = typeof chartMax === "function" ? chartMax(DL_30) : Math.max(...DL_30, 1);
-  const rankColors = ['#C2F04A','#8A93A3','#8A93A3','#8A93A3'];
+  const rankColors = ['var(--lime)','var(--muted)','var(--muted)','var(--muted)'];
   return `
     <div class="adx-grid4" style="margin-bottom:18px">
       ${axStat({label:'Total downloads',val:axNum(totalDl),ic:'download-simple',foot:'plugin count'})}
       ${axStat({label:'Average / approved',val:counts().approved?String(avgDl):'—',ic:'chart-bar',foot:'downloads / template'})}
-      ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'check-circle',icColor:'#C2F04A',foot:'from DB'})}
+      ${axStat({label:'Approval rate',val:appr!=null?appr+'%':'—',ic:'check-circle',icColor:'var(--lime)',foot:'from DB'})}
       ${axStat({label:'Audit (30 days)',val:DL_30.reduce((a,b)=>a+b,0),ic:'shield-check',icColor:'#7CC4FF',foot:'moderation and system'})}
     </div>
     <div class="adx-grid2">
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Contributor leaderboard</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">BY DOWNLOADS</span></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Contributor leaderboard</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">BY DOWNLOADS</span></div>
         <div style="padding:12px 16px;display:flex;flex-direction:column;gap:11px">
-          ${contribRank.length? contribRank.slice(0,6).map((r,i)=>`<div style="display:flex;align-items:center;gap:11px"><span class="adx-num" style="font-size:11px;color:${rankColors[i]||'#8A93A3'};width:16px">${i+1}</span>${axAv(r.c.name,r.c.email,28)}<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.c.name)}</div><div class="adx-prog" style="margin-top:5px"><div class="pb" style="width:${maxDl?r.dl/maxDl*100:0}%"></div></div></div><span class="adx-num" style="font-size:11.5px;color:#B7C0CE">${axNum(r.dl)}</span><span class="adx-num" style="font-size:9.5px;color:#8A93A3;width:34px;text-align:right">${r.rate}%</span></div>`).join('') : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-users-three"></i></span><div style="font-size:11px;color:var(--muted2)">No data yet</div></div>`}
+          ${contribRank.length? contribRank.slice(0,6).map((r,i)=>`<div style="display:flex;align-items:center;gap:11px"><span class="adx-num" style="font-size:11px;color:${rankColors[i]||'var(--muted)'};width:16px">${i+1}</span>${axAv(r.c.name,r.c.email,28)}<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.c.name)}</div><div class="adx-prog" style="margin-top:5px"><div class="pb" style="width:${maxDl?r.dl/maxDl*100:0}%"></div></div></div><span class="adx-num" style="font-size:11.5px;color:var(--text2)">${axNum(r.dl)}</span><span class="adx-num" style="font-size:9.5px;color:var(--muted);width:34px;text-align:right">${r.rate}%</span></div>`).join('') : `<div class="adx-empty" style="border:0;padding:20px"><span class="ei"><i class="ph ph-users-three"></i></span><div style="font-size:11px;color:var(--muted2)">No data yet</div></div>`}
         </div>
       </div>
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Rejection reasons</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">SOFT VS HARD</span></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Rejection reasons</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">SOFT VS HARD</span></div>
         <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
           ${rejectBlock}
-          <div style="display:flex;gap:14px;margin-top:2px"><span style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#FFB27C"></span>Soft reject</span><span style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#FF6B5E"></span>Hard reject</span></div>
+          <div style="display:flex;gap:14px;margin-top:2px"><span style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted)"><span style="width:9px;height:9px;border-radius:3px;background:#FFB27C"></span>Soft reject</span><span style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted)"><span style="width:9px;height:9px;border-radius:3px;background:#FF6B5E"></span>Hard reject</span></div>
         </div>
       </div>
     </div>
-    <div class="adx-card" style="margin-top:16px"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Audit trend</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">LAST 30 DAYS · EVENTS PER DAY</span></div>
+    <div class="adx-card" style="margin-top:16px"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Audit trend</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">LAST 30 DAYS · EVENTS PER DAY</span></div>
       <div style="padding:16px 18px"><div class="adx-bars">${DL_30.map((v,i)=>`<div class="b ${i===DL_30.length-1?'sel':''}" style="height:${Math.max(4,(v/barMax)*100)}%" title="${v} event${v===1?'':'s'}"></div>`).join('')}</div>
-      <div style="display:flex;justify-content:space-between;margin-top:10px"><span style="font-size:10px;color:#8A93A3">-30 days</span><span style="font-size:10px;color:#8A93A3">today</span></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px"><span style="font-size:10px;color:var(--muted)">-30 days</span><span style="font-size:10px;color:var(--muted)">today</span></div></div>
     </div>`;
 };
 
@@ -504,8 +504,8 @@ async function renderPlatformConfig(){
   const mb = (b) => b >= 1073741824 ? (b/1073741824).toFixed(b%1073741824?1:0)+' GB' : Math.round(b/1048576)+' MB';
   const row = (lab, val, note) => `<div style="display:flex;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--hair)">
     <span style="flex:1;font-size:11.5px;color:var(--muted2)">${esc(lab)}</span>
-    <span class="adx-mono" style="font-size:12px;color:#B7C0CE">${esc(val)}</span>
-  </div>${note?`<div style="font-size:10px;color:#5E6675;margin:-2px 0 4px">${esc(note)}</div>`:''}`;
+    <span class="adx-mono" style="font-size:12px;color:var(--text2)">${esc(val)}</span>
+  </div>${note?`<div style="font-size:10px;color:var(--muted2);margin:-2px 0 4px">${esc(note)}</div>`:''}`;
   try{
     const c = await StudioApi.getPlatformConfig();
     const lim = c.limits || {}; const am = lim.assetMaxBytes || {}; const ret = c.retention || {};
@@ -642,7 +642,7 @@ VIEWS.settings = function(){
            konfiguratsiyasi read-only ko'rsatiladi (GET /api/admin/platform-config). -->
       <div class="adx-card" style="padding:18px 20px">
         <div class="adx-h16" style="font-size:14px;margin-bottom:6px">Platform configuration</div>
-        <div style="font-size:10.5px;color:#5E6675;margin-bottom:14px">Read-only — these limits come from the server code and environment, not from this screen.</div>
+        <div style="font-size:10.5px;color:var(--muted2);margin-bottom:14px">Read-only — these limits come from the server code and environment, not from this screen.</div>
         <div id="platformCfgBody"><div style="font-size:11.5px;color:var(--muted2)">Loading…</div></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
@@ -655,13 +655,13 @@ VIEWS.settings = function(){
           <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Moderation rules</div>
           <!-- §G (P29) — toggle'lar READ-ONLY: server tomonda majburlanmaydi, shu bois jonli/interaktiv ko'rinmasin (soxta boshqaruv yo'q). -->
           ${rules.map(([l,on],i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;font-size:12px;${i?'border-top:1px solid var(--hair)':''}"><span style="flex:1">${l}</span><button class="adx-tog ${on?'on':'off'}" disabled title="Read-only — server enforcement coming soon" style="opacity:.55;cursor:not-allowed"><i></i></button></div>`).join('')}
-          <div style="font-size:10.5px;color:#5E6675;margin-top:10px">Rules reflect current server defaults — editable server-side enforcement in a future version.</div>
+          <div style="font-size:10.5px;color:var(--muted2);margin-top:10px">Rules reflect current server defaults — editable server-side enforcement in a future version.</div>
         </div>
         <div class="adx-card" style="padding:18px 20px">
           <div class="adx-h16" style="font-size:14px;margin-bottom:12px">Maintenance</div>
           <div style="display:flex;align-items:center;gap:10px">
             <button class="adx-btn2 sm" id="recomputeStorageBtn" onclick="recomputeStorage()"><i class="ph ph-arrow-clockwise"></i>Recompute storage</button>
-            <span style="font-size:10.5px;color:#5E6675">Backfills missing sizeBytes on generated assets/references from real object storage.</span>
+            <span style="font-size:10.5px;color:var(--muted2)">Backfills missing sizeBytes on generated assets/references from real object storage.</span>
           </div>
         </div>
       </div>
@@ -746,10 +746,10 @@ function renderAuditTable() {
             const isMe = actor.includes('(you)');
             const nm = actor.replace(' (you)','');
             return `<tr>
-              <td class="adx-num" style="font-size:11px;color:#8A93A3;white-space:nowrap">${esc(a.t)}</td>
-              <td><div class="adx-who">${isMe?'<span class="adx-av" style="width:26px;height:26px;font-size:9px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>':axAv(nm,nm,26)}<span class="nm" style="font-size:12px">${esc(nm)}${isMe?' <span style="color:#5E6675;font-weight:400">(you)</span>':''}</span></div></td>
+              <td class="adx-num" style="font-size:11px;color:var(--muted);white-space:nowrap">${esc(a.t)}</td>
+              <td><div class="adx-who">${isMe?'<span class="adx-av" style="width:26px;height:26px;font-size:9px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">AD</span>':axAv(nm,nm,26)}<span class="nm" style="font-size:12px">${esc(nm)}${isMe?' <span style="color:var(--muted2);font-weight:400">(you)</span>':''}</span></div></td>
               <td>${axAuditBadge(a.action)}</td>
-              <td class="adx-num" style="font-size:10.5px;color:#8A93A3">${esc(a.target)}</td>
+              <td class="adx-num" style="font-size:10.5px;color:var(--muted)">${esc(a.target)}</td>
             </tr>`;
           }).join("") : `<tr><td colspan="4"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-clipboard-text"></i></span><div style="font-weight:600;font-size:13px">No entries yet</div><div style="font-size:11px;color:var(--muted2)">Moderation actions will appear here.</div></div></td></tr>`
         }</tbody>

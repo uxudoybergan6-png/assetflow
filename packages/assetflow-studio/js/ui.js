@@ -169,7 +169,49 @@ function openModal(html){
   document.addEventListener('keydown', escClose);
   _focusPanel(o.querySelector('.modal'));
 }
-function closeModal(){ const o=document.getElementById('__modal'); if(o){ o.remove(); _restoreFocus(); } document.removeEventListener('keydown', escClose); }
+function closeModal(){
+  const o=document.getElementById('__modal'); if(o){ o.remove(); _restoreFocus(); }
+  document.removeEventListener('keydown', escClose);
+  // Ochiq afConfirm bo'lsa — yopilish = BEKOR (Cancel/Esc/scrim/boshqa modal ochilishi).
+  if(_confirmResolve){ const r=_confirmResolve; _confirmResolve=null; r(false); }
+}
+
+/* D6 (#12) — TASDIQ MODALI. Ilgari bu joylarda brauzerning xom `confirm()` OT dialogi
+   ishlatilardi: dizayn tizimidan tashqarida (o'z shrifti/rangi), `\n` bilan formatlangan,
+   ikonsiz, admin qobig'ining Esc/fokus tutqichiga bog'lanmagan va Safari'da ketma-ket
+   chaqirilsa bloklanadi. `afConfirm` AYNAN shu boolean semantikasini saqlaydi —
+   `if (!(await afConfirm({...}))) return;` — lekin `openModal` markupini ishlatadi.
+   Etalon markup: `admin-views2.js` modXxx modallari (modal-head/body/foot + info-banner). */
+let _confirmResolve = null;
+function afConfirm(opt){
+  const o = opt || {};
+  const tone = o.tone || 'danger';                       // danger | warn | success
+  const icon = o.icon || (tone === 'success' ? 'checkCircle' : 'alert');
+  const btnCls = tone === 'success' ? 'btn-success' : (tone === 'warn' ? 'btn-warn' : 'btn-danger');
+  const e = (s)=>(window.StudioMedia&&StudioMedia.escapeHtml?StudioMedia.escapeHtml(s):String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])));
+  // Matn XOM keladi (model nomi, contributor matni) — escape shu yerda, yagona nuqtada.
+  // Bo'sh qatorlar bilan ajratilgan bloklar alohida paragraf; ichidagi qatorlar saqlanadi.
+  const paras = String(o.body||'').split(/\n{2,}/).filter(p=>p.trim())
+    .map(p=>`<p style="margin:0;font-size:13px;line-height:1.6;color:var(--tx-1);white-space:pre-line">${e(p)}</p>`).join('');
+  const html = `
+    <div class="modal-head"><div class="modal-ico" style="background:var(--${tone==='success'?'green':tone==='warn'?'yellow':'red'}-dim);color:var(--${tone==='success'?'green':tone==='warn'?'yellow':'red'})">${ic(icon)}</div>
+      <div><h3>${e(o.title||'Are you sure?')}</h3>${o.sub?`<p>${e(o.sub)}</p>`:''}</div></div>
+    <div class="modal-body col gap-12">
+      ${o.warn?`<div class="info-banner ${tone==='success'?'':tone}">${ic('alert')}<span>${e(o.warn)}</span></div>`:''}
+      ${paras}
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">${e(o.cancelLabel||'Cancel')}</button>
+      <button class="btn ${btnCls}" onclick="__afConfirmYes()">${ic(icon)} ${e(o.okLabel||'Continue')}</button>
+    </div>`;
+  openModal(html);   // openModal → closeModal → oldingi kutilayotgan afConfirm false bilan yopiladi
+  return new Promise(res => { _confirmResolve = res; });
+}
+function __afConfirmYes(){
+  const r=_confirmResolve; _confirmResolve=null;   // closeModal false qaytarmasligi uchun avval bo'shatamiz
+  closeModal();
+  if(r) r(true);
+}
 function escClose(e){ if(e.key==='Escape'){ closeModal(); closeDrawer(); } }
 
 function openDrawer(html){

@@ -11,7 +11,7 @@ window.afterRender = window.afterRender || {};
 function bizUsd(n){ n = Number(n)||0; const a=Math.abs(n); return "$" + (a>=1000 ? n.toLocaleString(undefined,{maximumFractionDigits:0}) : n.toFixed(a>0&&a<1?3:2)); }
 function bizUsdCents(c){ return "$" + ((Number(c)||0)/100).toFixed(2); }
 /** Margin percentage color: ≥60 lime · 30–60 amber · <30 red. */
-function bizMarginColor(pct){ if(pct==null) return "#5E6675"; if(pct>=60) return "#C2F04A"; if(pct>=30) return "#FFB27C"; return "#FF6B5E"; }
+function bizMarginColor(pct){ if(pct==null) return "var(--muted2)"; if(pct>=60) return "var(--lime)"; if(pct>=30) return "#FFB27C"; return "#FF6B5E"; }
 function bizErr(msg){ return `<div class="adx-empty" style="max-width:440px;margin:50px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Failed to load data</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">${esc(msg||'Could not connect to the API. Sign in as admin and check that the API is running.')}</div></div>`; }
 function bizLoading(){ return `<div style="display:flex;align-items:center;justify-content:center;padding:80px 0"><span class="adx-spin" style="font-size:22px;color:var(--lime)"><i class="ph ph-arrow-clockwise"></i></span></div>`; }
 function bizModeBadge(mode){
@@ -45,7 +45,7 @@ window.afterRender.pricing = async function(){
 /** R4_06 — provider xarajat manbai badge'i: measured (yashil) / table / estimate (amber, ma'lumot yo'q). */
 function providerCostBadge(m){
   const src = m.providerCostSource || 'estimate';
-  if(src==='measured') return `<span class="adx-bdg" style="color:#C2F04A;background:rgba(194,240,74,.14)" title="Measured from ${m.measuredSamples||1} real generation(s)">measured (${m.measuredSamples||1})</span>`;
+  if(src==='measured') return `<span class="adx-bdg" style="color:var(--lime);background:var(--limedim)" title="Measured from ${m.measuredSamples||1} real generation(s)">measured (${m.measuredSamples||1})</span>`;
   if(src==='table') return `<span class="adx-bdg adx-bdg-soft" title="From the provider-cost.ts price table">table</span>`;
   return `<span class="adx-bdg" style="color:#FFB27C;background:rgba(255,178,124,.14)" title="No cost data yet — $0.50 fail-safe. Click Measure cost to calibrate.">estimate</span>`;
 }
@@ -65,7 +65,13 @@ async function applyMarginAll(){
   if(!(mt>0)){ toast('Error','Enter a positive margin, e.g. 1.5 or 2','danger'); return; }
   // P25 — 1.0× dan past = provider cost'dan ARZON sotish (loss-leader). Bloklamaymiz, lekin
   // ANIQ tasdiq so'raymiz (owner ataylab xohlashi mumkin).
-  if(mt < 1.0 && !confirm(`At ${mt}× you will LOSE money on every generation (selling below provider cost). Continue?`)) return;
+  // D6 (#12) — xom confirm() o'rniga dizayn tizimidagi tasdiq modali (afConfirm, ui.js)
+  if(mt < 1.0 && !(await afConfirm({
+    title: `Apply ${mt}× margin?`,
+    warn: 'At this margin you will LOSE money on every generation — the credit price sells below the provider cost.',
+    body: 'Pinned (product-priced) models are skipped. Prices can go down as well as up.',
+    okLabel: `Apply ${mt}×`,
+  }))) return;
   try {
     const res = await StudioApi.applyAdminPricingMargin({ marginTarget: mt });
     const r = res && res.report;
@@ -78,7 +84,14 @@ async function applyMarginAll(){
     // sakramasin). Aniq tasdiq bilan ularni ham qo'llash mumkin (confirmModelIds).
     if(rose.length){
       const names = rose.map(s=>`• ${s.label}  ($${(s.staticUsd||0).toFixed(3)} → measured $${(s.measuredUsd||0).toFixed(3)})`).join('\n');
-      if(confirm(`${rose.length} model(s) have a MEASURED cost higher than their table cost, so Apply skipped them to avoid silently raising subscriber prices:\n\n${names}\n\nRe-apply INCLUDING these — this raises their credit price to (measured cost × margin)?`)){
+      if(await afConfirm({
+        title: `Re-apply to ${rose.length} risen-cost model(s)?`,
+        sub: 'Apply skipped these to avoid silently raising subscriber prices.',
+        tone: 'warn',
+        warn: 'Their credit price rises to (measured cost × margin) — subscribers pay more per generation.',
+        body: names,
+        okLabel: 'Re-apply including these',
+      })){
         await StudioApi.applyAdminPricingMargin({ marginTarget: mt, confirmModelIds: rose.map(s=>s.modelId) });
         toast('Applied with confirm', `${rose.length} risen-cost model(s) repriced to measured cost`, 'success');
       }
@@ -103,7 +116,14 @@ async function measureRowCost(modelId){
   const m = PRICING_DATA && PRICING_DATA.models.find(x=>x.modelId===modelId);
   if(!m) return;
   const est = m.mode==='video' ? '~$0.03–0.20 and up to a minute to finish' : '~$0.02–0.09';
-  if(!confirm(`Measure "${m.label}" by generating ONE ${m.mode} at its lowest tier.\n\nThis spends a small REAL provider cost (${est}) — no subscriber credits are used. The result calibrates this model's cost/margin. Continue?`)) return;
+  if(!(await afConfirm({
+    title: `Measure "${m.label}"?`,
+    sub: `Generates ONE ${m.mode} at this model's lowest tier.`,
+    tone: 'warn',
+    warn: `This spends a small REAL provider cost (${est}). No subscriber credits are used.`,
+    body: "The result calibrates this model's cost and margin.",
+    okLabel: 'Measure cost',
+  }))) return;
   MEASURING.add(modelId); renderPricing();
   try {
     const res = await StudioApi.measureAdminPricingCost(modelId);
@@ -124,7 +144,14 @@ async function measureAllMissing(){
   if(!PRICING_DATA) return;
   const targets = pricingRows().filter(m=> isMeasurable(m) && m.providerCostSource!=='measured' && !MEASURING.has(m.modelId));
   if(!targets.length){ toast('Nothing to measure','Every visible BytePlus model already has a measured cost','info'); return; }
-  if(!confirm(`Measure ${targets.length} model(s) that have no measured cost yet?\n\nEach runs ONE real low-tier generation (small provider cost, no subscriber credits). Video models take up to a minute each. They run one at a time.`)) return;
+  if(!(await afConfirm({
+    title: `Measure ${targets.length} model(s)?`,
+    sub: 'Every enabled model that has no measured cost yet.',
+    tone: 'warn',
+    warn: 'Each one runs ONE real low-tier generation (small provider cost, no subscriber credits).',
+    body: 'Video models take up to a minute each. They run one at a time.',
+    okLabel: `Measure ${targets.length} model(s)`,
+  }))) return;
   let done=0, failed=0;
   for(const m of targets){
     MEASURING.add(m.modelId); renderPricing();
@@ -194,7 +221,7 @@ function renderPricing(){
           const costStr = cost!=null ? bizUsd(cost) : '—';
           const credStr = rep!=null ? '✦ '+rep : '—';
           const subStr = subUsd!=null ? bizUsd(subUsd) : '—';
-          const perSecHint = perSec ? '<div style="font-size:9px;color:#5E6675">per second</div>' : '';
+          const perSecHint = perSec ? '<div style="font-size:9px;color:var(--muted2)">per second</div>' : '';
           const measuring = MEASURING.has(m.modelId);
           const riseChip = (!off && m.needsConfirm) ? ` <span class="adx-bdg" style="color:#FFB27C;background:rgba(255,178,124,.14);margin-left:5px" title="Measured cost ($${(m.measuredUsd||0).toFixed(3)}) is HIGHER than the table cost — review before it raises subscriber prices">cost rose — review</span>` : '';
           const badges = (off?' <span class="adx-bdg adx-bdg-draft" style="margin-left:5px">Disabled</span>':'')
@@ -207,11 +234,11 @@ function renderPricing(){
           return `<tr ${off?'style="opacity:.45"':(m.belowTarget?'style="background:rgba(255,107,94,.05)"':'')}>
             <td style="color:var(--text);font-weight:600">${esc(m.label)}${!off&&m.belowTarget?' <i class="ph ph-warning" style="color:#FF6B5E;font-size:12px" title="Margin below target"></i>':''}${badges}${riseChip}</td>
             <td>${bizModeBadge(m.mode)}</td>
-            <td style="font-size:11.5px;color:#B7C0CE">${esc(m.provider)}</td>
+            <td style="font-size:11.5px;color:var(--text2)">${esc(m.provider)}</td>
             <td class="r adx-num" style="color:#7CC4FF">${off?'—':`${costStr}<div style="margin-top:2px">${providerCostBadge(m)}</div>`}</td>
             <td class="r adx-num" style="color:var(--text)">${credStr}${perSecHint}</td>
             <td class="r adx-num">${off?'—':subStr}</td>
-            <td class="r adx-num" style="color:${off?'#5E6675':bizMarginColor(marginPct)}">${off?'not charged':(marginPct!=null?marginPct+'%':'—')}</td>
+            <td class="r adx-num" style="color:${off?'var(--muted2)':bizMarginColor(marginPct)}">${off?'not charged':(marginPct!=null?marginPct+'%':'—')}</td>
             <td class="r" style="white-space:nowrap">${off?'':measureBtn+`<button class="adx-iact" title="Auto — set to target margin (${marginT}×)" onclick="autoPriceRow(${m.modelId})"><i class="ph ph-magic-wand"></i></button> `}<button class="adx-iact" title="Edit price" onclick="openPriceEdit(${m.modelId})"><i class="ph ph-pencil-simple"></i></button></td>
           </tr>`;
         }).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-currency-circle-dollar"></i></span><div style="font-size:12px;color:var(--muted2)">No models of this type</div></div></td></tr>`}</tbody>
@@ -228,7 +255,7 @@ function openPriceEdit(modelId){
   const host = document.getElementById('bizEditPanel');
   const cur = m.price.representative ?? m.price.cost ?? 0;
   host.innerHTML = `<div class="adx-editpanel"><div style="padding:16px 18px">
-    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-pencil-simple" style="color:#C2F04A"></i><span style="font-weight:700;font-size:13.5px">${esc(m.label)} — price</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
+    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-pencil-simple" style="color:var(--lime)"></i><span style="font-weight:700;font-size:13.5px">${esc(m.label)} — price</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
     <div class="adx-flab" style="margin-top:14px">CREDIT PRICE (✦)${perSec?' / SECOND':''}</div>
     <input class="adx-input mono" id="priceEditVal" type="number" min="1" step="1" value="${cur}" oninput="updatePriceMarginPreview(${modelId})">
     <div id="priceEditPreview" style="margin-top:10px"></div>
@@ -250,7 +277,7 @@ function updatePriceMarginPreview(modelId){
   const warn = marginPct!=null && marginPct<30;
   box.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:9px 11px;background:${warn?'var(--reddim)':'var(--surface2)'};border:1px solid ${warn?'rgba(255,107,94,.25)':'var(--hair2)'};border-radius:9px">
     <i class="ph ph-${warn?'warning':'chart-pie-slice'}" style="color:${col};font-size:14px"></i>
-    <span style="font-size:10.5px;color:#B7C0CE">Margin <b style="color:${col}">${marginPct!=null?marginPct+'%':'—'}</b> — cost ${cost!=null?bizUsd(cost):'—'}, subscriber ${bizUsd(subUsd)}.</span></div>`;
+    <span style="font-size:10.5px;color:var(--text2)">Margin <b style="color:${col}">${marginPct!=null?marginPct+'%':'—'}</b> — cost ${cost!=null?bizUsd(cost):'—'}, subscriber ${bizUsd(subUsd)}.</span></div>`;
 }
 
 async function savePriceEdit(modelId){
@@ -272,8 +299,8 @@ function openPricingConfig(){
   const curM = PRICING_DATA ? PRICING_DATA.marginTarget : 2;
   const host = document.getElementById('bizEditPanel');
   host.innerHTML = `<div class="adx-editpanel"><div style="padding:16px 18px">
-    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-currency-circle-dollar" style="color:#C2F04A"></i><span style="font-weight:700;font-size:13.5px">Credit value &amp; target margin</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
-    <div style="font-size:10.5px;color:#8A93A3;margin-top:6px;line-height:1.5">Credit value = how many $ one credit (✦) is worth. Target margin drives "Apply target margin" and the below-target warnings.</div>
+    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-currency-circle-dollar" style="color:var(--lime)"></i><span style="font-weight:700;font-size:13.5px">Credit value &amp; target margin</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5">Credit value = how many $ one credit (✦) is worth. Target margin drives "Apply target margin" and the below-target warnings.</div>
     <div class="adx-flab" style="margin-top:12px">1 ✦ = $</div>
     <input class="adx-input mono" id="creditUsdVal" type="number" min="0.001" step="0.001" value="${cur}">
     <div class="adx-flab" style="margin-top:10px">TARGET MARGIN (×)</div>
@@ -322,12 +349,12 @@ async function loadFinance(){
 }
 
 function financeDonut(providers){
-  const colors = ['#C2F04A','#7CC4FF','#FFB27C','rgba(255,255,255,.14)','#b794f6'];
+  const colors = ['var(--lime)','#7CC4FF','#FFB27C','rgba(255,255,255,.14)','#b794f6'];
   const total = providers.reduce((a,p)=>a+p.estimatedUsd,0) || 1;
   let acc=0; const stops=[];
   providers.forEach((p,i)=>{ const from=acc/total*360; acc+=p.estimatedUsd; const to=acc/total*360; stops.push(`${colors[i%colors.length]} ${from}deg ${to}deg`); });
   const grad = stops.length ? `conic-gradient(${stops.join(',')})` : 'var(--f2)';
-  return `<div class="adx-donut" style="background:${grad}"><div class="hole"><span class="adx-num" style="font-size:16px;font-weight:600">${bizUsd(total)}</span><span style="font-size:9px;color:#8A93A3">total</span></div></div>`;
+  return `<div class="adx-donut" style="background:${grad}"><div class="hole"><span class="adx-num" style="font-size:16px;font-weight:600">${bizUsd(total)}</span><span style="font-size:9px;color:var(--muted)">total</span></div></div>`;
 }
 
 function renderFinance(){
@@ -344,7 +371,7 @@ function renderFinance(){
   const mrr = (d.mrrCents||0)/100;                 // real: current-month subscription net
   const netAfterAi = netUsd - providerCost;
   const grossMarginPct = netUsd>0 ? Math.round(netAfterAi/netUsd*100) : null;
-  const colors = ['#C2F04A','#7CC4FF','#FFB27C','rgba(255,255,255,.35)','#b794f6'];
+  const colors = ['var(--lime)','#7CC4FF','#FFB27C','rgba(255,255,255,.35)','#b794f6'];
   const maxBar = Math.max(netUsd, providerCost, ...providers.map(p=>Math.max(p.revenueUsd,p.estimatedUsd)), 1);
   return renderFinanceHtml(root, {d,rev,providers,providerCost,grossUsd,netUsd,refundsUsd,grossMarginPct,netAfterAi,mrr,colors,maxBar});
 }
@@ -361,55 +388,55 @@ function financePoolPreview(){
   const lbl = document.getElementById('poolShareLbl');
   const out = document.getElementById('poolShareOut');
   if(lbl) lbl.textContent = Math.round(share*100)+'%';
-  if(out) out.innerHTML = `${bizUsd(pool)} <span style="font-size:10px;color:#8A93A3">= (${bizUsd(subNet)} subscription net − ${bizUsd(providerCost)} AI cost − ${bizUsd(infra)} infra) × ${Math.round(share*100)}%</span>`;
+  if(out) out.innerHTML = `${bizUsd(pool)} <span style="font-size:10px;color:var(--muted)">= (${bizUsd(subNet)} subscription net − ${bizUsd(providerCost)} AI cost − ${bizUsd(infra)} infra) × ${Math.round(share*100)}%</span>`;
 }
 
 function renderFinanceHtml(root, m){
   const {d,rev,providers,providerCost,grossUsd,netUsd,refundsUsd,grossMarginPct,netAfterAi,mrr,colors,maxBar}=m;
   const byKind = rev.byKind||{};
-  const kindRow = (key,label)=>{ const k=byKind[key]; if(!k) return ''; return `<div style="display:flex;align-items:center;gap:7px;font-size:11.5px"><span style="color:#B7C0CE">${label}</span><span style="flex:1"></span><span class="adx-num" style="color:${(k.netCents||0)<0?'#FF6B5E':'#B7C0CE'}">${bizUsdCents(k.netCents)}</span><span class="adx-num" style="font-size:10px;color:#5E6675">${k.events}×</span></div>`; };
-  const planRows = (rev.byPlan||[]).map(p=>`<div style="display:flex;align-items:center;gap:7px;font-size:11.5px">${axPlan(p.plan)}<span style="flex:1"></span><span class="adx-num" style="color:#C2F04A">${bizUsdCents(p.netCents)}</span><span class="adx-num" style="font-size:10px;color:#5E6675">${p.events}×</span></div>`).join('');
+  const kindRow = (key,label)=>{ const k=byKind[key]; if(!k) return ''; return `<div style="display:flex;align-items:center;gap:7px;font-size:11.5px"><span style="color:var(--text2)">${label}</span><span style="flex:1"></span><span class="adx-num" style="color:${(k.netCents||0)<0?'#FF6B5E':'var(--text2)'}">${bizUsdCents(k.netCents)}</span><span class="adx-num" style="font-size:10px;color:var(--muted2)">${k.events}×</span></div>`; };
+  const planRows = (rev.byPlan||[]).map(p=>`<div style="display:flex;align-items:center;gap:7px;font-size:11.5px">${axPlan(p.plan)}<span style="flex:1"></span><span class="adx-num" style="color:var(--lime)">${bizUsdCents(p.netCents)}</span><span class="adx-num" style="font-size:10px;color:var(--muted2)">${p.events}×</span></div>`).join('');
   const shareDefault = Math.round(((d.poolShare!=null?d.poolShare:0.3))*100);
   root.innerHTML = `
     <div class="adx-grid4">
-      ${axStat({label:'MRR (real, this month)',val:bizUsd(mrr),ic:'trend-up',icColor:'#C2F04A',foot:'subscription net · RevenueEvent'})}
-      ${axStat({label:'Gross revenue',val:bizUsd(grossUsd),ic:'currency-circle-dollar',icColor:'#C2F04A',foot:(rev.events||0)+' payment events'})}
+      ${axStat({label:'MRR (real, this month)',val:bizUsd(mrr),ic:'trend-up',icColor:'var(--lime)',foot:'subscription net · RevenueEvent'})}
+      ${axStat({label:'Gross revenue',val:bizUsd(grossUsd),ic:'currency-circle-dollar',icColor:'var(--lime)',foot:(rev.events||0)+' payment events'})}
       ${axStat({label:'Net revenue',val:bizUsd(netUsd),ic:'wallet',icColor:'#7CC4FF',foot:refundsUsd<0?bizUsd(refundsUsd)+' refunds included':'no refunds',footCls:refundsUsd<0?'adx-down':''})}
       ${axStat({label:'Payout (pending)',val:bizUsdCents(d.payoutPendingCents),ic:'hand-coins',icColor:'#FFB27C',foot:'contributor payouts'})}
     </div>
     <div class="adx-grid4" style="margin-top:12px">
       ${axStat({label:'AI provider cost',val:bizUsd(providerCost),ic:'coins',icColor:'#7CC4FF',foot:'fal · vertex · elevenlabs'})}
       ${axStat({label:'Margin (net − AI cost)',val:grossMarginPct!=null?grossMarginPct+'%':'—',ic:'chart-bar',icColor:bizMarginColor(grossMarginPct),foot:bizUsd(netAfterAi)+' after AI cost',footCls:netAfterAi>=0?'adx-up':'adx-down'})}
-      ${axStat({label:'Subscription net (pool base)',val:bizUsdCents(d.poolBaseCents),ic:'arrows-clockwise',icColor:'#C2F04A',foot:'after subscription refunds'})}
+      ${axStat({label:'Subscription net (pool base)',val:bizUsdCents(d.poolBaseCents),ic:'arrows-clockwise',icColor:'var(--lime)',foot:'after subscription refunds'})}
       ${axStat({label:'Credit packs net',val:bizUsdCents(rev.creditPackNetCents),ic:'stack-plus',icColor:'#b794f6',foot:'top-up orders'})}
     </div>
     <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px" class="biz-fin-grid">
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Contributor pool <span class="adx-bdg ${d.payoutMode==='pool'?'adx-bdg-approved':'adx-bdg-draft'}" style="margin-left:6px">${d.payoutMode==='pool'?'POOL mode':'per-download mode'}</span></span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">CONTRIBUTOR_POOL_SHARE</span></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Contributor pool <span class="adx-bdg ${d.payoutMode==='pool'?'adx-bdg-approved':'adx-bdg-draft'}" style="margin-left:6px">${d.payoutMode==='pool'?'POOL mode':'per-download mode'}</span></span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">CONTRIBUTOR_POOL_SHARE</span></div>
         <div style="padding:14px 18px">
           <div style="display:flex;align-items:center;gap:12px"><input id="poolShareKnob" type="range" min="0" max="100" step="5" value="${shareDefault}" style="flex:1" oninput="financePoolPreview()"><span id="poolShareLbl" class="adx-num" style="width:38px;text-align:right;color:var(--text);font-weight:600">${shareDefault}%</span></div>
-          <div id="poolShareOut" class="adx-num" style="margin-top:10px;font-size:15px;font-weight:600;color:#C2F04A"></div>
-          <div style="font-size:10px;color:#5E6675;margin-top:8px;line-height:1.5">Pool = (subscription net revenue − AI provider cost) × share, distributed by legitimate-download share. Configured via <b>CONTRIBUTOR_POOL_SHARE</b> env (current ${shareDefault}%) — the slider is a what-if preview only. Compute &amp; write on the Payouts screen.</div>
+          <div id="poolShareOut" class="adx-num" style="margin-top:10px;font-size:15px;font-weight:600;color:var(--lime)"></div>
+          <div style="font-size:10px;color:var(--muted2);margin-top:8px;line-height:1.5">Pool = (subscription net revenue − AI provider cost) × share, distributed by legitimate-download share. Configured via <b>CONTRIBUTOR_POOL_SHARE</b> env (current ${shareDefault}%) — the slider is a what-if preview only. Compute &amp; write on the Payouts screen.</div>
         </div>
       </div>
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Revenue breakdown</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">NET · ${esc(FINANCE_MONTH||'ALL TIME')}</span></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Revenue breakdown</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">NET · ${esc(FINANCE_MONTH||'ALL TIME')}</span></div>
         <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
           ${kindRow('subscription_initial','New subscriptions')||''}
           ${kindRow('renewal','Renewals')||''}
           ${kindRow('credit_pack','Credit packs')||''}
           ${kindRow('refund','Refunds')||''}
           ${kindRow('chargeback','Chargebacks')||''}
-          ${planRows?`<div style="border-top:1px solid var(--hair2);margin:4px 0 2px"></div><div style="font-size:9.5px;color:#8A93A3;letter-spacing:.4px">BY PLAN (SUBSCRIPTION NET)</div>${planRows}`:''}
+          ${planRows?`<div style="border-top:1px solid var(--hair2);margin:4px 0 2px"></div><div style="font-size:9.5px;color:var(--muted);letter-spacing:.4px">BY PLAN (SUBSCRIPTION NET)</div>${planRows}`:''}
           ${!(rev.events>0)?'<span style="font-size:11px;color:var(--muted2)">No revenue events yet — they are recorded from Lemon Squeezy webhooks.</span>':''}
         </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px" class="biz-fin-grid">
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">AI credit revenue vs cost</span><span style="flex:1"></span><span style="display:flex;gap:12px"><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#C2F04A"></span>Credit revenue (proxy)</span><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#8A93A3"><span style="width:9px;height:9px;border-radius:3px;background:#7CC4FF"></span>Cost</span></span></div>
-        <div style="padding:16px 18px">${providers.length?`<div style="display:flex;align-items:flex-end;gap:12px;height:170px">${providers.slice(0,8).map(p=>`<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:100%" title="${esc(p.provider)}: revenue ${bizUsd(p.revenueUsd)}, cost ${bizUsd(p.estimatedUsd)}"><div style="height:${Math.max(3,p.revenueUsd/maxBar*100)}%;background:linear-gradient(180deg,#C2F04A,rgba(194,240,74,.3));border-radius:4px 4px 0 0"></div><div style="height:${Math.max(2,p.estimatedUsd/maxBar*100)}%;background:linear-gradient(180deg,#7CC4FF,rgba(124,196,255,.3))"></div></div>`).join('')}</div><div style="display:flex;gap:12px;margin-top:8px">${providers.slice(0,8).map(p=>`<span style="flex:1;text-align:center;font-size:9px;color:#5E6675;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.provider)}</span>`).join('')}</div>`:`<div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-chart-bar"></i></span><div style="font-size:11px;color:var(--muted2)">No gen spend yet</div></div>`}</div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">AI credit revenue vs cost</span><span style="flex:1"></span><span style="display:flex;gap:12px"><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted)"><span style="width:9px;height:9px;border-radius:3px;background:var(--lime)"></span>Credit revenue (proxy)</span><span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--muted)"><span style="width:9px;height:9px;border-radius:3px;background:#7CC4FF"></span>Cost</span></span></div>
+        <div style="padding:16px 18px">${providers.length?`<div style="display:flex;align-items:flex-end;gap:12px;height:170px">${providers.slice(0,8).map(p=>`<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:100%" title="${esc(p.provider)}: revenue ${bizUsd(p.revenueUsd)}, cost ${bizUsd(p.estimatedUsd)}"><div style="height:${Math.max(3,p.revenueUsd/maxBar*100)}%;background:linear-gradient(180deg,var(--lime),var(--glow));border-radius:4px 4px 0 0"></div><div style="height:${Math.max(2,p.estimatedUsd/maxBar*100)}%;background:linear-gradient(180deg,#7CC4FF,rgba(124,196,255,.3))"></div></div>`).join('')}</div><div style="display:flex;gap:12px;margin-top:8px">${providers.slice(0,8).map(p=>`<span style="flex:1;text-align:center;font-size:9px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.provider)}</span>`).join('')}</div>`:`<div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-chart-bar"></i></span><div style="font-size:11px;color:var(--muted2)">No gen spend yet</div></div>`}</div>
       </div>
-      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Cost breakdown</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">PROVIDER</span></div>
+      <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:14px">Cost breakdown</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">PROVIDER</span></div>
         <div style="padding:14px 16px;display:flex;align-items:center;gap:16px">${financeDonut(providers)}
-          <div style="flex:1;display:flex;flex-direction:column;gap:8px;font-size:11.5px">${providers.length?providers.slice(0,5).map((p,i)=>`<div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:3px;background:${colors[i%colors.length]}"></span>${esc(p.provider)}<span style="flex:1"></span><span class="adx-num" style="color:#B7C0CE">${bizUsd(p.estimatedUsd)}</span></div>`).join(''):'<span style="font-size:11px;color:var(--muted2)">No data</span>'}</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;font-size:11.5px">${providers.length?providers.slice(0,5).map((p,i)=>`<div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:3px;background:${colors[i%colors.length]}"></span>${esc(p.provider)}<span style="flex:1"></span><span class="adx-num" style="color:var(--text2)">${bizUsd(p.estimatedUsd)}</span></div>`).join(''):'<span style="font-size:11px;color:var(--muted2)">No data</span>'}</div>
         </div>
       </div>
     </div>
@@ -421,7 +448,7 @@ function renderFinanceHtml(root, m){
           <td class="r adx-num">${(p.gens||0).toLocaleString()}</td>
           <td class="r adx-num">${(p.credits||0).toLocaleString()}</td>
           <td class="r adx-num" style="color:#7CC4FF">${bizUsd(p.estimatedUsd)}</td>
-          <td class="r adx-num" style="color:#C2F04A">${bizUsd(p.revenueUsd)}</td>
+          <td class="r adx-num" style="color:var(--lime)">${bizUsd(p.revenueUsd)}</td>
           <td class="r adx-num" style="color:${bizMarginColor(mp)}">${mp!=null?mp+'%':'—'}</td>
         </tr>`;}).join(''):`<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-coins"></i></span><div style="font-size:11px;color:var(--muted2)">No provider spend recorded yet</div></div></td></tr>`}</tbody>
       </table></div>
@@ -453,12 +480,12 @@ function renderGenSpend(){
   const t = d.totals||{gens:0,credits:0,costUsd:0,negative:0};
   root.innerHTML = `
     <div class="adx-grid4" style="margin-bottom:16px">
-      ${axStat({label:'Total generations',val:(t.gens||0).toLocaleString(),ic:'gauge',icColor:'#C2F04A',foot:'selected period'})}
+      ${axStat({label:'Total generations',val:(t.gens||0).toLocaleString(),ic:'gauge',icColor:'var(--lime)',foot:'selected period'})}
       ${axStat({label:'Credits spent',val:(t.credits||0).toLocaleString(),ic:'coins',foot:'✦ total'})}
       ${axStat({label:'Provider cost',val:bizUsd(t.costUsd),ic:'coins',icColor:'#7CC4FF',foot:'real cost'})}
       ${axStat({label:'Loss-making',val:t.negative||0,ic:'warning',icColor:'#FF6B5E',foot:'margin < 0 user'})}
     </div>
-    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Top users — AI spend</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">BY SPEND</span></div>
+    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Top users — AI spend</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">BY SPEND</span></div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:920px">
         <thead><tr><th>User</th><th>Plan</th><th class="r">Generations</th><th class="r">Spent ✦</th><th class="r">Provider cost</th><th class="r">Credit balance</th><th class="r">Margin</th></tr></thead>
         <tbody>${rows.length ? rows.map(r=>`<tr>
@@ -527,16 +554,16 @@ function renderPoolPanel(){
   const box = document.getElementById('poolPanelBody');
   if(!box) return;
   const p = POOL_PREVIEW;
-  if(!p){ box.innerHTML = `<div style="padding:10px 0;font-size:11px;color:#8A93A3">Pick a month and press Preview to compute the pool distribution.</div>`; return; }
+  if(!p){ box.innerHTML = `<div style="padding:10px 0;font-size:11px;color:var(--muted)">Pick a month and press Preview to compute the pool distribution.</div>`; return; }
   const rows = (p.contributors||[]);
   box.innerHTML = `
     <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;margin-bottom:10px">
-      <span>Subscription net <b class="adx-num" style="color:#C2F04A">${bizUsdCents(p.netSubscriptionCents)}</b></span>
+      <span>Subscription net <b class="adx-num" style="color:var(--lime)">${bizUsdCents(p.netSubscriptionCents)}</b></span>
       <span>AI cost <b class="adx-num" style="color:#7CC4FF">−${bizUsdCents(p.providerCostCents)}</b></span>
-      <span>Infra <b class="adx-num" style="color:${p.infraPresent?'#FFB27C':'#5E6675'}">−${bizUsdCents(p.infraCents||0)}</b>${p.infraPresent?'':' <span style="color:#5E6675;font-size:9.5px">(not entered)</span>'}</span>
+      <span>Infra <b class="adx-num" style="color:${p.infraPresent?'#FFB27C':'var(--muted2)'}">−${bizUsdCents(p.infraCents||0)}</b>${p.infraPresent?'':' <span style="color:var(--muted2);font-size:9.5px">(not entered)</span>'}</span>
       <span>× share <b class="adx-num">${Math.round((p.poolShare||0)*100)}%</b></span>
-      <span>= pool <b class="adx-num" style="color:#C2F04A">${bizUsdCents(p.poolCents)}</b></span>
-      <span style="color:#8A93A3">${(p.totalLegitimateDownloads||0).toLocaleString()} legitimate downloads</span>
+      <span>= pool <b class="adx-num" style="color:var(--lime)">${bizUsdCents(p.poolCents)}</b></span>
+      <span style="color:var(--muted)">${(p.totalLegitimateDownloads||0).toLocaleString()} legitimate downloads</span>
       ${p.persisted?`<span class="adx-bdg adx-bdg-approved">written: ${p.written}</span>`:''}
     </div>
     ${p.poolNegative?`<div style="margin-bottom:10px;padding:8px 11px;background:rgba(255,107,94,.12);border:1px solid rgba(255,107,94,.28);border-radius:9px;font-size:10.5px;color:#FF6B5E;line-height:1.5"><i class="ph ph-warning"></i> Pool base is <b>negative</b> (AI + infra exceed subscription revenue) — clamped to $0. Contributors earn nothing this period (P26.7).</div>`:''}
@@ -545,13 +572,13 @@ function renderPoolPanel(){
       <tbody>${rows.slice(0,50).map(r=>{
         const who = (PAYOUT_DATA&&(PAYOUT_DATA.contributors||[]).find(c=>c.contributorId===r.contributorId))||{};
         const sh = p.totalLegitimateDownloads>0?Math.round(r.downloads/p.totalLegitimateDownloads*1000)/10:0;
-        return `<tr><td style="font-size:12px">${esc(who.name||who.email||r.contributorId)}</td><td class="r adx-num">${r.downloads.toLocaleString()}</td><td class="r adx-num">${sh}%</td><td class="r adx-num" style="color:#C2F04A">${bizUsdCents(r.amountCents)}</td></tr>`;
+        return `<tr><td style="font-size:12px">${esc(who.name||who.email||r.contributorId)}</td><td class="r adx-num">${r.downloads.toLocaleString()}</td><td class="r adx-num">${sh}%</td><td class="r adx-num" style="color:var(--lime)">${bizUsdCents(r.amountCents)}</td></tr>`;
       }).join('')}</tbody></table>`:`<div style="font-size:11px;color:var(--muted2);padding:6px 0">No legitimate downloads in this period.</div>`}`;
 }
 
 /* Step 20 (P26.4) — SYBIL / self-dealing paneli (READ; payout xavfsizligi). */
 function sybilScoreBadge(s, suspicious){
-  const col = suspicious ? '#FF6B5E' : (s>=25 ? '#FFB27C' : '#8A93A3');
+  const col = suspicious ? '#FF6B5E' : (s>=25 ? '#FFB27C' : 'var(--muted)');
   const bg  = suspicious ? 'rgba(255,107,94,.14)' : (s>=25 ? 'rgba(255,178,124,.14)' : 'rgba(255,255,255,.06)');
   return `<span class="adx-bdg" style="color:${col};background:${bg}">${suspicious?'<i class="ph ph-warning" style="font-size:10px"></i>':''}risk ${s}</span>`;
 }
@@ -565,26 +592,26 @@ function renderSybilPanel(){
   const hold = s.holdDays!=null?s.holdDays:30;
   return `
     <div class="adx-card" style="margin-bottom:16px"><div class="adx-cardhd">
-        <span class="adx-h16" style="font-size:13.5px"><i class="ph ph-shield-warning" style="color:${flagged.length?'#FF6B5E':'#8A93A3'};margin-right:6px"></i>Trust &amp; safety — sybil / self-dealing</span>
+        <span class="adx-h16" style="font-size:13.5px"><i class="ph ph-shield-warning" style="color:${flagged.length?'#FF6B5E':'var(--muted)'};margin-right:6px"></i>Trust &amp; safety — sybil / self-dealing</span>
         <span style="flex:1"></span>
         <span class="adx-bdg ${flagged.length?'adx-bdg-pending':'adx-bdg-approved'}">${flagged.length} flagged</span></div>
       <div style="padding:10px 18px 14px">
-        <div style="font-size:10.5px;color:#8A93A3;line-height:1.6;margin-bottom:10px">Downloads are clustered by network (IP subnet), account-age proximity, exclusivity and fresh-account activity over the last ${s.sinceDays||90} days. A contributor scoring ≥ ${s.flagScore||50} is flagged for <b style="color:var(--text)">mandatory manual review before payout</b>. Earnings younger than <b style="color:var(--text)">${hold} days</b> are <b style="color:var(--text)">held</b>. This only surfaces signal — it never changes any earning or pool amount.</div>
+        <div style="font-size:10.5px;color:var(--muted);line-height:1.6;margin-bottom:10px">Downloads are clustered by network (IP subnet), account-age proximity, exclusivity and fresh-account activity over the last ${s.sinceDays||90} days. A contributor scoring ≥ ${s.flagScore||50} is flagged for <b style="color:var(--text)">mandatory manual review before payout</b>. Earnings younger than <b style="color:var(--text)">${hold} days</b> are <b style="color:var(--text)">held</b>. This only surfaces signal — it never changes any earning or pool amount.</div>
         ${shown.length?`<table class="adx-tbl"><thead><tr><th>Contributor</th><th class="r">Risk</th><th class="r">Downloaders</th><th>Signals</th><th></th></tr></thead>
           <tbody>${shown.map(r=>{
             const open = !!SYBIL_EXPANDED[r.contributorId];
             const sig = r.signals||{};
-            const reasons = (r.reasons||[]).length ? r.reasons.map(x=>`<div style="font-size:10.5px;color:#B7C0CE;line-height:1.5">• ${esc(x)}</div>`).join('') : '<span style="font-size:10.5px;color:#5E6675">no strong signal</span>';
+            const reasons = (r.reasons||[]).length ? r.reasons.map(x=>`<div style="font-size:10.5px;color:var(--text2);line-height:1.5">• ${esc(x)}</div>`).join('') : '<span style="font-size:10.5px;color:var(--muted2)">no strong signal</span>';
             const main = `<tr>
-              <td style="font-size:12px">${esc(r.name||r.email||r.contributorId)}<div style="font-size:9.5px;color:#5E6675">${esc(r.confidence)} confidence</div></td>
+              <td style="font-size:12px">${esc(r.name||r.email||r.contributorId)}<div style="font-size:9.5px;color:var(--muted2)">${esc(r.confidence)} confidence</div></td>
               <td class="r">${sybilScoreBadge(r.score,r.suspicious)}</td>
-              <td class="r adx-num">${sig.downloaders||0}<div style="font-size:9px;color:#5E6675">${sig.distinctNetworks||0} nets</div></td>
+              <td class="r adx-num">${sig.downloaders||0}<div style="font-size:9px;color:var(--muted2)">${sig.distinctNetworks||0} nets</div></td>
               <td style="max-width:340px">${reasons}</td>
               <td class="r"><button class="adx-btn2 sm" onclick="toggleSybilRow('${r.contributorId}')">${open?'Hide':'Events'}</button></td>
             </tr>`;
             const detail = open ? `<tr><td colspan="5" style="background:rgba(255,255,255,.02);padding:0">
               <div style="padding:8px 14px">
-                <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:#8A93A3;margin-bottom:6px">
+                <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--muted);margin-bottom:6px">
                   <span>exclusive ${Math.round((sig.exclusiveRatio||0)*100)}%</span>
                   <span>top network ${Math.round((sig.topNetworkShare||0)*100)}%</span>
                   <span>age cluster ${Math.round((sig.ageClusterRatio||0)*100)}%</span>
@@ -594,11 +621,11 @@ function renderSybilPanel(){
                 <table class="adx-tbl" style="font-size:10.5px"><thead><tr><th>Downloader</th><th>IP</th><th>Subnet</th><th class="r">Acct age</th><th>Exclusive</th><th class="r">When</th></tr></thead>
                 <tbody>${(r.sample||[]).map(e=>`<tr>
                   <td>${esc(e.userLabel||e.userId)}</td>
-                  <td class="adx-num" style="color:#8A93A3">${esc(e.ip||'—')}</td>
-                  <td class="adx-num" style="color:#8A93A3">${esc(e.ipPrefix||'—')}</td>
-                  <td class="r adx-num" style="color:${e.accountAgeHours!=null&&e.accountAgeHours<24?'#FF6B5E':'#B7C0CE'}">${e.accountAgeHours!=null?e.accountAgeHours+'h':'—'}</td>
-                  <td>${e.exclusive?'<span class="adx-bdg adx-bdg-pending" style="font-size:9px">only this</span>':'<span style="color:#5E6675">no</span>'}</td>
-                  <td class="r adx-num" style="color:#5E6675">${esc(String(e.createdAt||'').slice(0,10))}</td>
+                  <td class="adx-num" style="color:var(--muted)">${esc(e.ip||'—')}</td>
+                  <td class="adx-num" style="color:var(--muted)">${esc(e.ipPrefix||'—')}</td>
+                  <td class="r adx-num" style="color:${e.accountAgeHours!=null&&e.accountAgeHours<24?'#FF6B5E':'var(--text2)'}">${e.accountAgeHours!=null?e.accountAgeHours+'h':'—'}</td>
+                  <td>${e.exclusive?'<span class="adx-bdg adx-bdg-pending" style="font-size:9px">only this</span>':'<span style="color:var(--muted2)">no</span>'}</td>
+                  <td class="r adx-num" style="color:var(--muted2)">${esc(String(e.createdAt||'').slice(0,10))}</td>
                 </tr>`).join('')}</tbody></table>
               </div></td></tr>` : '';
             return main+detail;
@@ -633,12 +660,12 @@ function renderPayouts(){
       <div id="poolPanelBody" style="padding:12px 18px"></div>
     </div>
     <div class="adx-grid4" style="margin-bottom:16px">
-      ${axStat({label:'Earning events',val:totalEvents.toLocaleString(),ic:'download-simple',icColor:'#C2F04A',foot:'TemplateDownloadEvent'})}
+      ${axStat({label:'Earning events',val:totalEvents.toLocaleString(),ic:'download-simple',icColor:'var(--lime)',foot:'TemplateDownloadEvent'})}
       ${axStat({label:'Ready for payout',val:pendingCount,ic:'users-three',foot:'contributor'})}
       ${axStat({label:'Unpaid balance',val:bizUsdCents(poolCents),ic:'hand-coins',icColor:'#FFB27C',foot:isPool?'pool + legacy accruals':bizUsdCents(perDl)+' / download'})}
-      ${axStat({label:'Paid (total)',val:bizUsdCents(paidCents),ic:'check-circle',icColor:'#C2F04A',foot:'recorded payouts'})}
+      ${axStat({label:'Paid (total)',val:bizUsdCents(paidCents),ic:'check-circle',icColor:'var(--lime)',foot:'recorded payouts'})}
     </div>
-    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Contributor earning → payout</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">${isPool?`POOL · SHARE ${sharePct}%`:`RATE: ${bizUsdCents(perDl)} / DOWNLOAD`}</span></div>
+    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Contributor earning → payout</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">${isPool?`POOL · SHARE ${sharePct}%`:`RATE: ${bizUsdCents(perDl)} / DOWNLOAD`}</span></div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:960px">
         <thead><tr><th>Contributor</th><th class="r">Earning events</th><th class="r">Total earned</th><th class="r">Accrued (balance)</th><th class="r">Paid</th><th>Status</th><th class="r">Action</th></tr></thead>
         <tbody>${rows.length ? rows.map(r=>{
@@ -649,7 +676,7 @@ function renderPayouts(){
             <td class="r adx-num">${(r.earningEvents||0).toLocaleString()}</td>
             <td class="r adx-num">${bizUsdCents(r.totalEarnedCents)}</td>
             <td class="r adx-num" style="color:#FFB27C">${bizUsdCents(r.balanceCents)}</td>
-            <td class="r adx-num" style="color:#C2F04A">${bizUsdCents(paid)}</td>
+            <td class="r adx-num" style="color:var(--lime)">${bizUsdCents(paid)}</td>
             <td>${pending?'<span class="adx-bdg adx-bdg-pending"><span class="bd"></span>Pending':'<span class="adx-bdg adx-bdg-approved"><span class="bd"></span>Paid'}</span></td>
             <td class="r">${pending?`<button class="adx-btn sm" onclick="openPayoutRecord('${r.contributorId}')"><i class="ph ph-check"></i>Record payout</button>`:`<button class="adx-btn2 sm" onclick="toast('Receipt','Viewing payout history coming in a future version','info')"><i class="ph ph-clipboard-text"></i>Receipt</button>`}</td>
           </tr>`;
@@ -668,8 +695,8 @@ function openPayoutRecord(contributorId){
   const holdDays = r.payoutHoldDays!=null?r.payoutHoldDays:30;
   const sybil = SYBIL_DATA && (SYBIL_DATA.contributors||[]).find(x=>x.contributorId===contributorId && x.suspicious);
   host.innerHTML = `<div class="adx-editpanel" style="width:340px"><div style="padding:18px 20px">
-    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-hand-coins" style="color:#C2F04A"></i><span style="font-weight:700;font-size:13.5px">Record payout</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
-    <div style="font-size:11.5px;color:#8A93A3;margin-top:6px;line-height:1.5">${esc(r.name||r.email||'')} — unpaid balance <b style="color:var(--text)">${bizUsdCents(r.balanceCents)}</b>. This is a manually entered payout record (ContributorPayout) — the money transfer happens outside the system. All unpaid earnings will be linked.</div>
+    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-hand-coins" style="color:var(--lime)"></i><span style="font-weight:700;font-size:13.5px">Record payout</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5">${esc(r.name||r.email||'')} — unpaid balance <b style="color:var(--text)">${bizUsdCents(r.balanceCents)}</b>. This is a manually entered payout record (ContributorPayout) — the money transfer happens outside the system. All unpaid earnings will be linked.</div>
     ${sybil?`<div style="margin-top:10px;padding:9px 11px;background:rgba(255,107,94,.12);border:1px solid rgba(255,107,94,.28);border-radius:9px;font-size:10.5px;color:#FF6B5E;line-height:1.5"><i class="ph ph-warning"></i> <b>Flagged (risk ${sybil.score})</b> — review the Trust &amp; safety panel before paying. ${esc((sybil.reasons||[])[0]||'')}</div>`:''}
     ${held>0?`<div style="margin-top:10px;padding:9px 11px;background:rgba(255,178,124,.12);border:1px solid rgba(255,178,124,.28);border-radius:9px;font-size:10.5px;color:#FFB27C;line-height:1.5"><i class="ph ph-clock-countdown"></i> ${bizUsdCents(held)} of this is within the ${holdDays}-day hold window. Payable now: <b>${bizUsdCents(payable)}</b>. Recording links ALL unpaid earnings — hold is advisory.</div>`:''}
     <div class="adx-flab" style="margin-top:12px">AMOUNT</div><input class="adx-input mono" value="${bizUsdCents(r.balanceCents)}" disabled>
@@ -707,7 +734,7 @@ VIEWS.activity = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; }
 window.afterRender.activity = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='activity') tba.innerHTML =
-    `<div class="adx-inp" style="width:220px;height:34px"><i class="ph ph-magnifying-glass" style="font-size:14px;color:#8A93A3"></i><input placeholder="User, ID…" value="${esc(ACTIVITY_SEARCH)}" oninput="ACTIVITY_SEARCH=this.value;renderActivity()"></div>`+
+    `<div class="adx-inp" style="width:220px;height:34px"><i class="ph ph-magnifying-glass" style="font-size:14px;color:var(--muted)"></i><input placeholder="User, ID…" value="${esc(ACTIVITY_SEARCH)}" oninput="ACTIVITY_SEARCH=this.value;renderActivity()"></div>`+
     `<button class="adx-btn2 sm" onclick="toast('Export','Preparing activity log CSV…','info')"><i class="ph ph-export"></i>CSV</button>`;
   await loadActivity();
 };
@@ -725,7 +752,7 @@ function activityEventBadge(ev){
   return `<span class="adx-bdg adx-bdg-approved"><i class="ph ph-download-simple" style="font-size:10px"></i>Download</span>`;
 }
 function activitySourceBadge(src){
-  if(src==='web') return `<span class="adx-bdg" style="color:#C2F04A;background:rgba(194,240,74,.1)">Web</span>`;
+  if(src==='web') return `<span class="adx-bdg" style="color:var(--lime);background:var(--limedim)">Web</span>`;
   return `<span class="adx-bdg" style="color:#7CC4FF;background:rgba(124,196,255,.12)">AE Plugin</span>`;
 }
 
@@ -766,26 +793,26 @@ function renderMetrics(){
   root.innerHTML = `
     ${axInfo(`Basic business metrics for <b style="color:var(--text)">${esc(d.month)}</b> from real revenue (RevenueEvent) + plan-change history (PlanChangeEvent). Churn = downgrades ÷ paying at period start; conversion = free→paid upgrades ÷ free users; ARPU = period net revenue ÷ paying users; LTV = ARPU ÷ churn. Deeper cohort analytics is a future iteration.`,'info')}
     <div class="adx-grid4" style="margin-bottom:12px">
-      ${axStat({label:'Paying subscribers',val:(d.payingNow||0).toLocaleString(),ic:'users-three',icColor:'#C2F04A',foot:`${(d.freeNow||0).toLocaleString()} free`})}
-      ${axStat({label:'Free → paid (period)',val:d.upgrades||0,ic:'arrow-up-right',icColor:'#C2F04A',foot:'conversion '+pct(d.conversionPct),footCls:'adx-up'})}
+      ${axStat({label:'Paying subscribers',val:(d.payingNow||0).toLocaleString(),ic:'users-three',icColor:'var(--lime)',foot:`${(d.freeNow||0).toLocaleString()} free`})}
+      ${axStat({label:'Free → paid (period)',val:d.upgrades||0,ic:'arrow-up-right',icColor:'var(--lime)',foot:'conversion '+pct(d.conversionPct),footCls:'adx-up'})}
       ${axStat({label:'Downgrades (period)',val:d.downgrades||0,ic:'arrow-down-right',icColor:'#FF6B5E',foot:'churn '+pct(d.churnPct),footCls:(d.downgrades||0)>0?'adx-down':''})}
       ${axStat({label:'Dunning / at-risk',val:d.dunningCount||0,ic:'warning',icColor:'#FFB27C',foot:'billing issue flagged'})}
     </div>
     <div class="adx-grid4" style="margin-bottom:16px">
-      ${axStat({label:'Net revenue (period)',val:bizUsdCents(rev.netCents),ic:'wallet',icColor:'#C2F04A',foot:(rev.events||0)+' events'})}
-      ${axStat({label:'MRR (subscription net)',val:bizUsdCents(rev.mrrCents),ic:'trend-up',icColor:'#C2F04A',foot:'this period'})}
+      ${axStat({label:'Net revenue (period)',val:bizUsdCents(rev.netCents),ic:'wallet',icColor:'var(--lime)',foot:(rev.events||0)+' events'})}
+      ${axStat({label:'MRR (subscription net)',val:bizUsdCents(rev.mrrCents),ic:'trend-up',icColor:'var(--lime)',foot:'this period'})}
       ${axStat({label:'ARPU',val:d.arpuCents!=null?bizUsdCents(d.arpuCents):'—',ic:'user',icColor:'#7CC4FF',foot:'net ÷ paying users'})}
       ${axStat({label:'LTV (basic)',val:d.ltvCents!=null?bizUsdCents(d.ltvCents):'—',ic:'chart-line-up',icColor:'#b794f6',foot:'ARPU ÷ churn'})}
     </div>
-    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Recent plan changes</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">LAST ${(d.recentChanges||[]).length}</span></div>
+    <div class="adx-card" style="overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Recent plan changes</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">LAST ${(d.recentChanges||[]).length}</span></div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:760px">
         <thead><tr><th>Time</th><th>User</th><th>Change</th><th>From → To</th><th>Source</th></tr></thead>
         <tbody>${(d.recentChanges||[]).length ? d.recentChanges.map(c=>`<tr>
-          <td class="adx-num" style="font-size:10.5px;color:#8A93A3;white-space:nowrap">${esc(String(c.at||'').slice(0,16).replace('T',' '))}</td>
+          <td class="adx-num" style="font-size:10.5px;color:var(--muted);white-space:nowrap">${esc(String(c.at||'').slice(0,16).replace('T',' '))}</td>
           <td><div class="adx-who">${axAv(c.userName||c.userEmail||'?',c.userEmail,26)}<span class="nm" style="font-size:12px">${esc(c.userName||c.userEmail||'—')}</span></div></td>
           <td>${metricsChangeBadge(c.fromPlan,c.toPlan)}</td>
-          <td style="font-size:11.5px;color:#B7C0CE">${esc(c.fromPlan)} → <b style="color:var(--text)">${esc(c.toPlan)}</b></td>
-          <td style="font-size:11px;color:#8A93A3">${esc(c.source)}</td>
+          <td style="font-size:11.5px;color:var(--text2)">${esc(c.fromPlan)} → <b style="color:var(--text)">${esc(c.toPlan)}</b></td>
+          <td style="font-size:11px;color:var(--muted)">${esc(c.source)}</td>
         </tr>`).join('') : `<tr><td colspan="5"><div class="adx-empty" style="border:0;padding:30px"><span class="ei"><i class="ph ph-chart-line-up"></i></span><div style="font-size:11px;color:var(--muted2)">No plan changes recorded yet — they are captured from billing webhooks and admin actions.</div></div></td></tr>`}</tbody>
       </table></div>
     </div>`;
@@ -807,12 +834,12 @@ function renderActivity(){
         <thead><tr><th>Time</th><th>User</th><th>Event</th><th>Detail</th><th>Source</th><th class="r">Credit / cost</th></tr></thead>
         <tbody>${items.length ? items.map(it=>{
           const time = String(it.at||'').slice(11,19) || String(it.at||'').slice(0,10);
-          const cred = it.event==='gen' && it.credits>0 ? `<span style="color:#C2F04A">−✦ ${it.credits}</span>` : '<span style="color:#8A93A3">—</span>';
+          const cred = it.event==='gen' && it.credits>0 ? `<span style="color:var(--lime)">−✦ ${it.credits}</span>` : '<span style="color:var(--muted)">—</span>';
           return `<tr>
-            <td class="adx-num" style="font-size:10.5px;color:#8A93A3;white-space:nowrap">${esc(time)}</td>
+            <td class="adx-num" style="font-size:10.5px;color:var(--muted);white-space:nowrap">${esc(time)}</td>
             <td><div class="adx-who">${axAv(it.userName||it.userEmail||'?',it.userEmail,26)}<span class="nm" style="font-size:12px">${esc(it.userName||it.userEmail||'—')}</span></div></td>
             <td>${activityEventBadge(it.event)}</td>
-            <td style="font-size:11.5px;color:#B7C0CE">${esc(it.detail||'—')}</td>
+            <td style="font-size:11.5px;color:var(--text2)">${esc(it.detail||'—')}</td>
             <td>${activitySourceBadge(it.source)}</td>
             <td class="r adx-num">${cred}</td>
           </tr>`;
@@ -849,11 +876,11 @@ async function loadProfit(){
 function plRow(label, cents, opts){
   opts = opts || {};
   const neg = opts.cost ? -Math.abs(cents) : cents;
-  const color = opts.color || (neg<0 ? '#FF6B5E' : (neg>0 ? '#C2F04A' : '#B7C0CE'));
+  const color = opts.color || (neg<0 ? '#FF6B5E' : (neg>0 ? 'var(--lime)' : 'var(--text2)'));
   const sign = neg>0 ? '+' : (neg<0 ? '−' : '');
   return `<div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--hair2)">
-    <span style="font-size:12.5px;color:${opts.strong?'var(--text)':'#B7C0CE'};font-weight:${opts.strong?'600':'400'}">${label}</span>
-    ${opts.note?`<span style="font-size:10px;color:#5E6675">${opts.note}</span>`:''}
+    <span style="font-size:12.5px;color:${opts.strong?'var(--text)':'var(--text2)'};font-weight:${opts.strong?'600':'400'}">${label}</span>
+    ${opts.note?`<span style="font-size:10px;color:var(--muted2)">${opts.note}</span>`:''}
     <span style="flex:1"></span>
     <span class="adx-num" style="font-size:${opts.strong?'15px':'13px'};font-weight:${opts.strong?'700':'500'};color:${color}">${sign}${bizUsd(Math.abs(neg)/100)}</span>
   </div>`;
@@ -880,9 +907,9 @@ function renderProfit(){
       : axInfo(`No sales channel is priced below the cost floor ($${(floors.floorUsd||0).toFixed(4)}/credit). Boot assertion enforces this on every deploy.`,'lime')}
 
     <div class="adx-grid4" style="margin-bottom:12px">
-      ${axStat({label:'Net revenue',val:bizUsdCents(rev.netCents),ic:'currency-circle-dollar',icColor:'#C2F04A',foot:isMonth?esc(d.month):'all time'})}
+      ${axStat({label:'Net revenue',val:bizUsdCents(rev.netCents),ic:'currency-circle-dollar',icColor:'var(--lime)',foot:isMonth?esc(d.month):'all time'})}
       ${axStat({label:'Total costs',val:bizUsd((( (c.aiCents||0)+(c.lsFeeCents||0)+(c.infraCents||0)+(c.contributorCents||0) ))/100),ic:'coins',icColor:'#7CC4FF',foot:'AI + LS + infra + payout'})}
-      ${axStat({label:'PROFIT',val:bizUsd(profit/100),ic:profit>=0?'trend-up':'trend-down',icColor:profit>=0?'#C2F04A':'#FF6B5E',foot:profit>=0?'in the black':'operating at a loss',footCls:profit>=0?'adx-up':'adx-down'})}
+      ${axStat({label:'PROFIT',val:bizUsd(profit/100),ic:profit>=0?'trend-up':'trend-down',icColor:profit>=0?'var(--lime)':'#FF6B5E',foot:profit>=0?'in the black':'operating at a loss',footCls:profit>=0?'adx-up':'adx-down'})}
       ${axStat({label:'Free-user AI (CAC)',val:bizUsd((cac.freeUserAiCents||0)/100),ic:'gift',icColor:'#FFB27C',foot:'spent · revenue $0'})}
     </div>
 
@@ -900,15 +927,15 @@ function renderProfit(){
           ${plRow('Infrastructure', c.infraCents||0, {cost:true, note:c.infraPresent?`storage ${bizUsd(infraB.storageCents/100)} · egress ${bizUsd(infraB.egressCents/100)} · compute ${bizUsd(infraB.computeCents/100)}`:'not entered — profit overstated'})}
           ${plRow('Contributor pool', c.contributorCents||0, {cost:true, note:c.poolNegative?'pool base is NEGATIVE → clamped to 0':'30% of (sub net − AI − infra)'})}
           <div style="height:6px"></div>
-          ${plRow('PROFIT', profit, {strong:true, color:profit>=0?'#C2F04A':'#FF6B5E'})}
+          ${plRow('PROFIT', profit, {strong:true, color:profit>=0?'var(--lime)':'#FF6B5E'})}
         </div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Infrastructure cost</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">${esc(d.month||'—')}</span></div>
+        <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Infrastructure cost</span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">${esc(d.month||'—')}</span></div>
           <div style="padding:12px 16px">
             ${!isMonth?`<div style="font-size:11px;color:#FFB27C;margin-bottom:8px">Pick a specific month to enter infra cost.</div>`:`
-            <div style="font-size:10.5px;color:#8A93A3;line-height:1.5;margin-bottom:10px">Admin-entered monthly infra (storage + <b style="color:var(--text)">egress / traffic</b> + compute). Subtracted from the contributor pool base and shown above. ${c.infraPresent?'':'<b style="color:#FFB27C">Not entered for this month.</b>'}</div>
+            <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">Admin-entered monthly infra (storage + <b style="color:var(--text)">egress / traffic</b> + compute). Subtracted from the contributor pool base and shown above. ${c.infraPresent?'':'<b style="color:#FFB27C">Not entered for this month.</b>'}</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
               <div><div class="adx-flab">STORAGE $</div><input class="adx-input mono" id="infStorage" type="number" min="0" step="0.01" value="${(infraB.storageCents/100)||''}" placeholder="0"></div>
               <div><div class="adx-flab">EGRESS $</div><input class="adx-input mono" id="infEgress" type="number" min="0" step="0.01" value="${(infraB.egressCents/100)||''}" placeholder="0"></div>
@@ -918,30 +945,30 @@ function renderProfit(){
           </div>
         </div>
         <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Cost confidence (P24)</span></div>
-          <div style="padding:12px 16px;font-size:11.5px;color:#B7C0CE;line-height:1.7">
-            <div style="display:flex;gap:8px;align-items:center"><span style="width:9px;height:9px;border-radius:3px;background:#C2F04A"></span>Measured / official <span style="flex:1"></span><b class="adx-num">${measuredRows} rows</b></div>
+          <div style="padding:12px 16px;font-size:11.5px;color:var(--text2);line-height:1.7">
+            <div style="display:flex;gap:8px;align-items:center"><span style="width:9px;height:9px;border-radius:3px;background:var(--lime)"></span>Measured / official <span style="flex:1"></span><b class="adx-num">${measuredRows} rows</b></div>
             <div style="display:flex;gap:8px;align-items:center"><span style="width:9px;height:9px;border-radius:3px;background:#FFB27C"></span>Estimated <span style="flex:1"></span><b class="adx-num">${estRows} rows</b></div>
-            <div style="height:8px;border-radius:5px;overflow:hidden;background:rgba(255,178,124,.25);margin-top:8px"><div style="height:100%;width:${measPct}%;background:#C2F04A"></div></div>
-            <div style="font-size:10px;color:#5E6675;margin-top:6px">${measPct}% of AI cost is measured (BytePlus tokens / invoice), the rest is estimated. Trust the measured share; treat the rest as directional.</div>
+            <div style="height:8px;border-radius:5px;overflow:hidden;background:rgba(255,178,124,.25);margin-top:8px"><div style="height:100%;width:${measPct}%;background:var(--lime)"></div></div>
+            <div style="font-size:10px;color:var(--muted2);margin-top:6px">${measPct}% of AI cost is measured (BytePlus tokens / invoice), the rest is estimated. Trust the measured share; treat the rest as directional.</div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="adx-card" style="margin-top:16px;overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Loss-making models <span class="adx-bdg ${(d.lossMakingModels||[]).length?'adx-bdg-pending':'adx-bdg-approved'}" style="margin-left:6px">${(d.lossMakingModels||[]).length} under water</span></span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:#8A93A3">MARGIN &lt; 1.0× (credit-value proxy)</span></div>
+    <div class="adx-card" style="margin-top:16px;overflow:hidden"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Loss-making models <span class="adx-bdg ${(d.lossMakingModels||[]).length?'adx-bdg-pending':'adx-bdg-approved'}" style="margin-left:6px">${(d.lossMakingModels||[]).length} under water</span></span><span style="flex:1"></span><span class="adx-num" style="font-size:9.5px;color:var(--muted)">MARGIN &lt; 1.0× (credit-value proxy)</span></div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:820px">
         <thead><tr><th>Model</th><th>Provider</th><th>Mode</th><th class="r">Gens</th><th class="r">Credit revenue</th><th class="r">Real cost</th><th class="r">Margin</th></tr></thead>
         <tbody>${(d.lossMakingModels||[]).length ? d.lossMakingModels.map(m=>`<tr>
           <td style="color:var(--text);font-weight:600">${esc(m.label||('model '+m.modelId))}</td>
-          <td style="font-size:11px;color:#8A93A3">${esc(m.provider||'—')}</td>
+          <td style="font-size:11px;color:var(--muted)">${esc(m.provider||'—')}</td>
           <td>${bizModeBadge(m.mode)}</td>
           <td class="r adx-num">${(m.credits||0).toLocaleString()}</td>
-          <td class="r adx-num" style="color:#C2F04A">${bizUsd(m.revenueUsd)}</td>
+          <td class="r adx-num" style="color:var(--lime)">${bizUsd(m.revenueUsd)}</td>
           <td class="r adx-num" style="color:#7CC4FF">${bizUsd(m.realCostUsd)}</td>
           <td class="r adx-num" style="color:#FF6B5E">${m.margin!=null?m.margin.toFixed(2)+'×':'—'}</td>
         </tr>`).join('') : `<tr><td colspan="7"><div class="adx-empty" style="border:0;padding:26px"><span class="ei"><i class="ph ph-check-circle"></i></span><div style="font-size:11px;color:var(--muted2)">No model is selling below its provider cost this period.</div></div></td></tr>`}</tbody>
       </table></div>
-      <div style="padding:10px 16px;font-size:10.5px;color:#5E6675;line-height:1.5;border-top:1px solid var(--hair2)">⚠️ "Credit revenue" is the credit-value proxy (credits × anchor). For <b>free-plan</b> generations the user paid nothing — that spend is <b>customer-acquisition cost</b> (${bizUsd((cac.freeUserAiCents||0)/100)} this period), not revenue.</div>
+      <div style="padding:10px 16px;font-size:10.5px;color:var(--muted2);line-height:1.5;border-top:1px solid var(--hair2)">⚠️ "Credit revenue" is the credit-value proxy (credits × anchor). For <b>free-plan</b> generations the user paid nothing — that spend is <b>customer-acquisition cost</b> (${bizUsd((cac.freeUserAiCents||0)/100)} this period), not revenue.</div>
     </div>`;
 }
 

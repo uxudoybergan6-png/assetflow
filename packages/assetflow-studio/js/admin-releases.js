@@ -127,7 +127,14 @@ window.relPublish = async function () {
     .filter((p) => REL_INSTALLERS[p])
     .map((p) => ({ platform: p, key: REL_INSTALLERS[p].key, sha256: REL_INSTALLERS[p].sha256 }));
   if (!installers.length && !REL_PKG) { alert("Upload at least one platform installer (.pkg / .exe / .msi)"); return; }
-  if (!installers.length && !confirm("No platform installer uploaded. Plugins will NOT be able to update automatically — only the manual .zxp download will work. Publish anyway?")) return;
+  // D6 (#12) — xom confirm() o'rniga dizayn tizimidagi tasdiq modali (afConfirm, ui.js)
+  if (!installers.length && !(await afConfirm({
+    title: "Publish without an installer?",
+    sub: "Version " + v.trim() + " has no platform installer (.pkg / .exe / .msi).",
+    tone: "warn",
+    warn: "Plugins will NOT be able to update automatically — only the manual .zxp download will work.",
+    okLabel: "Publish anyway",
+  }))) return;
   REL_BUSY = true;
   try {
     await StudioApi.publishPluginRelease({
@@ -150,7 +157,12 @@ window.relPublish = async function () {
 };
 
 window.relDelete = async function (id, version) {
-  if (!confirm("Delete release v" + version + "? Plugins that already updated keep working; the version check will fall back to the previous release.")) return;
+  if (!(await afConfirm({
+    title: "Delete release v" + version + "?",
+    warn: "Plugins that already updated keep working; the version check falls back to the previous release.",
+    okLabel: "Delete release",
+    icon: "trash",
+  }))) return;
   try {
     await StudioApi.deletePluginRelease(id);
     await relLoad(true);

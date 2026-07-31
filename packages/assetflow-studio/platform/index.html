@@ -111,325 +111,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <!-- BATCH6 tema: Space Grotesk (display) · Inter (body) · JetBrains Mono (label) — CSP style-src/font-src ruxsat berilgan (audit #17) -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<style>/* #75 (W2) — shrift yo'llari ROOT-ABSOLUTE (`/assets/…`) bo'lishi SHART. Nisbiy
-   `assets/…` SPA fallback'da 2+ segmentli marshrutda (/stock/xyz) `/stock/assets/…`
-   ga aylanib 404 berardi va sahifa zaxira shriftda ochilardi. */
-/* cyrillic-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-/* vietnamese */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
-  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/2d786135.woff2") format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* cyrillic-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-/* vietnamese */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
-  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/2d786135.woff2") format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* cyrillic-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-/* vietnamese */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
-  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/2d786135.woff2") format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* cyrillic-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-/* vietnamese */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
-  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/assets/fonts/2d786135.woff2") format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* cyrillic-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url("/assets/fonts/886e43ce.woff2") format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-/* vietnamese */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url("/assets/fonts/b07fad76.woff2") format('woff2');
-  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url("/assets/fonts/2d786135.woff2") format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  font-style: normal;
-  font-weight: 800;
-  font-display: swap;
-  src: url("/assets/fonts/9a5c604f.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* cyrillic-ext */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/c26bd38a.woff2") format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-/* cyrillic */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/d16072c3.woff2") format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-/* vietnamese */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/03302853.woff2") format('woff2');
-  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/944c675f.woff2") format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/assets/fonts/280b622a.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* cyrillic-ext */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/dcf0cc79.woff2") format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-/* cyrillic */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/abc1ee6a.woff2") format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-/* vietnamese */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/605a8c68.woff2") format('woff2');
-  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/02c53f77.woff2") format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/assets/fonts/663704e0.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* cyrillic-ext */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/40e458e6.woff2") format('woff2');
-  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
-}
-/* cyrillic */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/dfee119c.woff2") format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-/* vietnamese */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/440323b3.woff2") format('woff2');
-  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/19bbd1f5.woff2") format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/assets/fonts/97d6f528.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-</style>
+<!-- D6 (#17) — o'lik self-hosted shrift qatlami (20 @font-face 'Hanken Grotesk' + 15 'IBM Plex Mono',
+     319 qator) OLIB TASHLANDI: barcha iste'molchi `var(--sans)`/`var(--mono)` tokenlariga o'tdi, ya'ni bu
+     familylar endi hech qanday font-stack'da yo'q. `.woff2` FAYLLARI joyida qoldi — `styles/admin.css`
+     o'zining @font-face'ida shu fayllardan foydalanadi. Etalon: Space Grotesk / Inter / JetBrains Mono (:113).
+     Eslatma (#75 W2): shrift yo'llari ROOT-ABSOLUTE (`/assets/…`) bo'lishi SHART — nisbiy `assets/…` SPA
+     fallback'da 2+ segmentli marshrutda (/stock/xyz) `/stock/assets/…` ga aylanib 404 berardi. -->
 <style>@font-face {
   font-family: "Phosphor";
   src:
@@ -14310,7 +13997,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   html,body{margin:0;padding:0}
   /* SC_12: scrollbar paydo/yo'qolishida markaziy seg 5px sakramasin (klassik scrollbar OS'larda) */
   html{scrollbar-gutter:stable}
-  body{background:var(--th-bg);font-family:'Inter',system-ui,sans-serif}
+  /* D6 (#17) — asosiy shrift ham TOKENDAN (:14037). Qiymat aynan bir xil edi, lekin ikki joyda
+     yozilgani standartni o'zgartirganda birini yangilab, ikkinchisini esdan chiqarishga olib keladi. */
+  body{background:var(--th-bg);font-family:var(--sans)}
   /* ═══════════ BATCH6 · 3-TEMA TOKEN QATLAMI (noir · neon · cold) — manba: docs/mockups/batch6 ═══════════ */
   :root,:root[data-theme="noir"]{
     --th-bg:#0a0a0b;--th-bg-deep:#050506;--th-surface:#131316;--th-surface-2:#1b1b1f;--th-surface-3:#232329;
@@ -14341,6 +14030,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     --th-r-xs:6px;--th-r-sm:8px;--th-r-md:10px;--th-r-lg:14px;--th-r-xl:18px;--th-r-pill:999px;
     --th-sp-1:6px;--th-sp-2:10px;--th-sp-3:14px;--th-sp-4:20px;--th-sp-5:28px;--th-sp-6:40px;
     --th-dur-fast:.16s;--th-dur:.2s;--th-dur-slow:.32s;--th-ease:cubic-bezier(.2,.7,.2,1);
+    /* D6 (#17) — SHRIFT TOKENLARI. Bitta ilovada uch tizim yashardi: BATCH6 standarti
+       (Space Grotesk display · Inter body · JetBrains Mono label — Google Fonts, :113) ustiga
+       eski avlodning self-hosted 'Hanken Grotesk' (20 qoida) va 'IBM Plex Mono' (15 qoida)
+       hardcode'lari qolgan edi. Endi hamma joyda shu tokenlar; `.va-app` ichidagi lokal
+       `--mono` override olib tashlandi (u butun app'ni Plex Mono'ga qaytarardi) va o'lik
+       @font-face qatlami ham ketdi (:114 dagi izohga qara). */
+    --sans:'Inter',system-ui,sans-serif;
+    --display:'Space Grotesk','Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,monospace;
   }
   a{text-decoration:none}
   ::selection{background:var(--th-accent-soft);color:var(--th-text)}
@@ -14477,10 +14175,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffl-mainflex>*{min-width:0;width:100%}
   /* BATCH6: accent gradient 3-tema tokenidan (accent→accent-2), hardcode rang yo'q */
   .ff .ffm-grad{background:linear-gradient(92deg,var(--th-accent) 10%,var(--th-accent-2) 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .ff .ffm-eyebrow{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;color:var(--lime)}
+  .ff .ffm-eyebrow{font:600 10px var(--mono);letter-spacing:.16em;color:var(--lime)}
   /* buttons */
   .ff .ffm-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 22px;border:none;border-radius:100px;background:var(--spend-grad);color:var(--onlime);font-family:inherit;font-weight:700;font-size:13.5px;white-space:nowrap;cursor:pointer;text-decoration:none}
-  .ff .ffm-btn .bc{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(14,20,0,.14)}
+  .ff .ffm-btn .bc{font-family:var(--mono);font-weight:600;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(14,20,0,.14)}
   .ff .ffm-btn.lg{height:50px;padding:0 28px;font-size:14.5px}
   .ff .ffm-btn.sm{height:32px;padding:0 15px;font-size:12px}
   .ff .ffm-btn.full{width:100%}
@@ -14520,9 +14218,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffm-seg>span.on{background:var(--pill-active);font-weight:600;color:var(--text)}
   .ff .ffm-tag{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);font-weight:500;font-size:11.5px;color:var(--muted);white-space:nowrap;cursor:pointer}
   .ff .ffm-tag.on{background:var(--pill-active);border-color:transparent;font-weight:600;color:var(--text)}
-  .ff .ffm-credit{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;padding:5px 10px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);white-space:nowrap}
+  .ff .ffm-credit{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;padding:5px 10px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);white-space:nowrap}
   .ff .ffm-credit em{font-style:normal;color:var(--lime)}
-  .ff .ffm-cost{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--lime);white-space:nowrap}
+  .ff .ffm-cost{font-family:var(--mono);font-size:10px;color:var(--lime);white-space:nowrap}
   /* plan */
   .ff .ffm-plan{flex:1;min-width:0;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px 22px;display:flex;flex-direction:column;gap:0}
   .ff .ffm-plan.rec{border-color:color-mix(in srgb,var(--lime) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--lime) 4.5%,transparent),color-mix(in srgb,var(--lime) 0%,transparent) 40%),var(--surface)}
@@ -14533,15 +14231,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffm-th{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/10;background:var(--surface2)}
   .ff .ffm-nm{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
   .ff .ffm-mt{font-size:10.5px;color:var(--muted2);margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ff .ffm-bgpro{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:10px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--lime);color:var(--onlime)}
-  .ff .ffm-bgfree{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--scrim);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
-  .ff .ffm-bgtr{position:absolute;top:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;padding:3px 7px;border-radius:4px;background:var(--scrim);color:#E7ECF3}
-  .ff .ffm-appc{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;padding:3px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffm-bgpro{position:absolute;top:8px;left:8px;font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--lime);color:var(--onlime)}
+  .ff .ffm-bgfree{position:absolute;top:8px;left:8px;font-family:var(--mono);font-weight:600;font-size:10px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--scrim);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
+  .ff .ffm-bgtr{position:absolute;top:8px;right:8px;font-family:var(--mono);font-weight:600;font-size:10px;padding:3px 7px;border-radius:4px;background:var(--scrim);color:#E7ECF3}
+  .ff .ffm-appc{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;font-family:var(--mono);font-weight:600;font-size:10px;padding:3px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
   .ff .ffm-appc .d{width:5px;height:5px;border-radius:50%}
-  .ff .ffm-dur{position:absolute;bottom:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffm-dur{position:absolute;bottom:8px;right:8px;font-family:var(--mono);font-size:10px;padding:3px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
   /* AI result tile */
   .ff .ffm-res{position:relative;border-radius:14px;overflow:hidden;background:var(--media)}
-  .ff .ffm-res .rtag{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;padding:2px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffm-res .rtag{position:absolute;top:8px;left:8px;font-family:var(--mono);font-weight:600;font-size:10px;padding:2px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
   .ff .ffm-res.pend{background:#0D1119;border:1px solid color-mix(in srgb,var(--lime) 28%,transparent);animation:ffmBreathe 2.2s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
   .ff .ffm-spin{animation:ffmSpin 1.1s linear infinite;display:inline-flex}
   /* marketing responsive */
@@ -14858,7 +14556,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffa-logo .lb{width:24px;height:24px;border-radius:7px;background:var(--lime);color:var(--onlime);display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}
   .ff .ffa-collapse{font-size:13px;color:var(--muted2);cursor:pointer;background:none;border:none;padding:4px;display:flex;align-items:center}
   .ff .ffa-collapse:hover{color:var(--text)}
-  .ff .ffa-shead{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--muted2);padding:14px 11px 7px}
+  .ff .ffa-shead{font:600 10px var(--mono);letter-spacing:.14em;color:var(--muted2);padding:14px 11px 7px}
   .ff .ffa-sit{height:37px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-weight:500;font-size:12.5px;color:var(--muted);position:relative;white-space:nowrap;cursor:pointer;background:none;border:none;font-family:inherit;width:100%;text-align:left}
   .ff .ffa-sit i{font-size:16px;flex:none}
   .ff .ffa-sit:hover{color:var(--text)}
@@ -14876,8 +14574,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffa-inp{height:36px;display:flex;align-items:center;gap:8px;padding:0 13px;background:var(--f1);border:1px solid var(--hair2);border-radius:10px;color:var(--muted2);font-size:12.5px}
   .ff .ffa-inp input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:12.5px}
   .ff .ffa-inp input::placeholder{color:var(--muted2)}
-  .ff .ffa-kbd{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:1px 5px}
-  .ff .ffa-credit{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;padding:5px 10px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);white-space:nowrap}
+  .ff .ffa-kbd{font-family:var(--mono);font-size:10px;color:var(--muted2);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:1px 5px}
+  .ff .ffa-credit{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:11px;font-weight:500;padding:5px 10px;border-radius:999px;background:var(--f1);border:1px solid var(--hair2);color:var(--text);white-space:nowrap}
   .ff .ffa-credit em{font-style:normal;color:var(--lime)}
   .ff .ffa-iconbtn{width:34px;height:34px;border-radius:50%;background:var(--f1);border:1px solid var(--hair2);display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#B7C0CE;position:relative;cursor:pointer}
   .ff .ffa-iconbtn:hover{color:var(--text)}
@@ -14893,25 +14591,25 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffa-prog .pb{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--lime)}
   /* result + template cards (app) */
   .ff .ffa-res{position:relative;border-radius:14px;overflow:hidden;background:var(--media)}
-  .ff .ffa-res .rtag{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;padding:2px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffa-res .rtag{position:absolute;top:8px;left:8px;font-family:var(--mono);font-weight:600;font-size:10px;padding:2px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
   .ff .ffa-res.pend{background:#0D1119;border:1px solid color-mix(in srgb,var(--lime) 28%,transparent);animation:ffmBreathe 2.2s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
   .ff .ffa-tc{display:flex;flex-direction:column;gap:7px;min-width:0;cursor:pointer}
   .ff .ffa-th{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/10;background:var(--surface2);transition:outline .18s}
   .ff .ffa-nm{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
   .ff .ffa-mt{font-size:10.5px;color:var(--muted2);margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ff .ffa-bgpro{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:10px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--lime);color:var(--onlime)}
-  .ff .ffa-bgfree{position:absolute;top:8px;left:8px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--scrim);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
-  .ff .ffa-appc{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;padding:3px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffa-bgpro{position:absolute;top:8px;left:8px;font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--lime);color:var(--onlime)}
+  .ff .ffa-bgfree{position:absolute;top:8px;left:8px;font-family:var(--mono);font-weight:600;font-size:10px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;background:var(--scrim);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
+  .ff .ffa-appc{position:absolute;bottom:8px;left:8px;display:flex;align-items:center;gap:4px;font-family:var(--mono);font-weight:600;font-size:10px;padding:3px 7px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
   .ff .ffa-appc .d{width:5px;height:5px;border-radius:50%}
   .ff .ffa-tc:hover .ffa-th{outline:1px solid rgba(255,255,255,.16)}
-  .ff .ffa-dur{position:absolute;bottom:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
+  .ff .ffa-dur{position:absolute;bottom:8px;right:8px;font-family:var(--mono);font-size:10px;padding:3px 6px;background:var(--scrim);border-radius:4px;color:#E7ECF3}
   .ff .ffa-tplay{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:scale(.85);transition:.22s var(--ease,cubic-bezier(.34,1.2,.64,1))}
   .ff .ffa-tplay>span{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.36);display:grid;place-items:center;color:#fff;font-size:15px}
   .ff .ffa-tc:hover .ffa-tplay{opacity:1;transform:scale(1)}
   /* ── marketplace filter rail (mockup tpl1 · 1:1) ── */
   .ff .ffa-mkt-grid{display:flex;min-height:0;gap:0}
   .ff .ffa-mkt-rail{width:220px;flex:none;border-right:1px solid var(--hair);padding:4px 22px 4px 0;margin-right:24px;align-self:start;position:sticky;top:78px}
-  .ff .ffa-flab{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--muted2);margin-bottom:8px;display:block}
+  .ff .ffa-flab{font:500 10px var(--mono);letter-spacing:.1em;color:var(--muted2);margin-bottom:8px;display:block}
   .ff .ffa-ftag{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-family:inherit;font-weight:500;font-size:11.5px;color:var(--muted);white-space:nowrap;cursor:pointer;transition:background .14s,color .14s}
   .ff .ffa-ftag:hover{color:var(--text)}
   .ff .ffa-ftag.on{background:var(--pill-active);border-color:transparent;font-weight:600;color:var(--text)}
@@ -14923,7 +14621,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffa-chk.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
   .ff .ffa-mkt-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 18px}
   .ff .ffa-fbtn{display:none;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--text);font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer}
-  .ff .ffa-fbadge{min-width:16px;height:16px;border-radius:999px;background:var(--lime);color:var(--onlime);font:700 10px 'IBM Plex Mono',monospace;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
+  .ff .ffa-fbadge{min-width:16px;height:16px;border-radius:999px;background:var(--lime);color:var(--onlime);font:700 10px var(--mono);display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
   /* mobile filter drawer (bottom sheet) */
   .ff .ffa-fdrawer-ovl{position:fixed;inset:0;z-index:88;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:flex;align-items:flex-end}
   .ff .ffa-fdrawer{width:100%;max-height:88vh;overflow-y:auto;background:var(--pop);border-radius:18px 18px 0 0;border-top:1px solid rgba(255,255,255,.12);padding:8px 18px 22px;box-shadow:0 -18px 42px rgba(0,0,0,.5)}
@@ -14952,12 +14650,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffa-auth{display:flex;min-height:100vh}
   .ff .ffa-auth-brand{flex:1;padding:56px 60px;display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid rgba(255,255,255,.06)}
   .ff .ffa-auth-form{width:460px;flex:none;padding:56px 48px;display:flex;flex-direction:column;justify-content:center}
-  .ff .ffa-flab{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--muted2);margin-bottom:6px;display:block}
+  .ff .ffa-flab{font:500 10px var(--mono);letter-spacing:.1em;color:var(--muted2);margin-bottom:6px;display:block}
   .ff .ffa-field{width:100%;height:42px;padding:0 13px;background:var(--f1);border:1px solid var(--hair2);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border-color .18s,box-shadow .18s}
   .ff .ffa-field:focus{background:var(--f2);border-color:color-mix(in srgb,var(--lime) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 12%,transparent)}
   .ff .ffa-divider{display:flex;align-items:center;gap:12px;margin:18px 0}
   .ff .ffa-divider .ln{flex:1;height:1px;background:rgba(255,255,255,.08)}
-  .ff .ffa-divider span{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--muted2)}
+  .ff .ffa-divider span{font:600 10px var(--mono);letter-spacing:.14em;color:var(--muted2)}
   /* BATCH6 auth — mockup .auth-art visual + quote + form heading + switch row */
   .ff .ffa-auth-brand{position:relative;overflow:hidden}
   .ff .ffa-auth-visual{position:absolute;inset:19% 9% 21%;border:1px solid var(--hair2);border-radius:18px;overflow:hidden;transform:rotate(-2deg);box-shadow:var(--th-shadow);z-index:1}
@@ -15007,17 +14705,17 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffa-ttab:hover{color:var(--text)}
   .ff .ffa-ttab.on{background:var(--pill-active);border-color:transparent;color:var(--text)}
   .ff .ffa-st-title{font-weight:700;font-size:16px;letter-spacing:-.01em;white-space:nowrap}
-  .ff .ffa-st-modeltag{padding:5px 11px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#B7C0CE;white-space:nowrap}
+  .ff .ffa-st-modeltag{padding:5px 11px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);font-family:var(--mono);font-size:10.5px;color:#B7C0CE;white-space:nowrap}
   /* CANVAS shell — dotted bg; body (stage + filmstrip) fills, dock floats over bottom */
   .ff .ffa-st-canvas{position:relative;flex:1;min-height:0;border:1px solid var(--hair2);border-radius:24px;overflow:hidden;background-color:var(--bg);background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:20px 20px}
   .ff .ffa-st-body{position:absolute;inset:0;display:flex}
   .ff .ffa-st-stage{flex:1;min-width:0;overflow-y:auto;padding:26px 26px 168px;display:flex;flex-direction:column;align-items:center}
   .ff .ffa-st-hero{display:flex;gap:16px;align-items:flex-start;justify-content:center;flex-wrap:wrap;width:100%}
   .ff .ffa-st-main{position:relative;border-radius:16px;overflow:hidden;background:var(--media);width:100%;max-width:440px}
-  .ff .ffa-st-cost{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted2);margin-top:16px;text-align:center}
+  .ff .ffa-st-cost{font-family:var(--mono);font-size:10.5px;color:var(--muted2);margin-top:16px;text-align:center}
   /* right filmstrip (Tarix — result thumbs) */
   .ff .ffa-st-strip{width:108px;flex:none;border-left:1px solid var(--hair);background:rgba(10,13,18,.4);overflow-y:auto;padding:14px 12px 156px;display:flex;flex-direction:column;gap:10px}
-  .ff .ffa-st-striph{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--muted2);text-align:center;margin-bottom:2px}
+  .ff .ffa-st-striph{font:500 10px var(--mono);letter-spacing:.14em;color:var(--muted2);text-align:center;margin-bottom:2px}
   .ff .ffa-st-sthumb{position:relative;border-radius:9px;overflow:hidden;aspect-ratio:1/1;cursor:pointer;border:1.5px solid transparent;background:var(--media);transition:border-color .15s}
   .ff .ffa-st-sthumb:hover{border-color:rgba(255,255,255,.2)}
   .ff .ffa-st-sthumb.on{border-color:var(--lime)}
@@ -15037,7 +14735,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffa-chip{position:relative;display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:11px;background:var(--f2);border:1px solid var(--hair2);line-height:1.15;white-space:nowrap;cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s}
   .ff .ffa-chip:hover{border-color:var(--f3)}
   .ff .ffa-chip.open{border-color:color-mix(in srgb,var(--lime) 50%,transparent)}
-  .ff .ffa-chip b{font:400 7px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:var(--muted2)}
+  .ff .ffa-chip b{font:400 7px var(--mono);letter-spacing:.08em;color:var(--muted2)}
   .ff .ffa-chip>span{font-weight:600;font-size:11px;color:var(--text);display:flex;align-items:center;gap:5px;max-width:150px;overflow:hidden;text-overflow:ellipsis}
   .ff .ffa-chip.open>span::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--lime);flex:none}
   /* chip popover — opens upward from the docked bar */
@@ -15048,8 +14746,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffa-popbd{position:fixed;inset:0;z-index:15}
   .ff .ffa-st-imp{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid color-mix(in srgb,var(--lime) 28%,transparent);border-radius:10px;background:color-mix(in srgb,var(--lime) 8%,transparent);color:var(--lime);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .15s}
   .ff .ffa-st-imp:hover{background:color-mix(in srgb,var(--lime) 15%,transparent)}
-  .ff .ffa-st-eq{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--lime);white-space:nowrap}
-  .ff .ffa-st-bal{display:flex;align-items:center;gap:5px;margin-top:9px;font-size:10px;color:var(--muted2);font-family:'IBM Plex Mono',monospace}
+  .ff .ffa-st-eq{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--lime);white-space:nowrap}
+  .ff .ffa-st-bal{display:flex;align-items:center;gap:5px;margin-top:9px;font-size:10px;color:var(--muted2);font-family:var(--mono)}
   /* indeterminate progress bar inside the breathing pending tile */
   .ff .ffa-pendbar{position:absolute;left:0;bottom:0;height:3px;background:var(--lime);border-radius:0 3px 3px 0;animation:ffaProg 1.7s ease-in-out infinite}
   @keyframes ffaProg{0%{width:10%}50%{width:82%}100%{width:10%}}
@@ -15095,7 +14793,6 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     --hair:rgba(255,255,255,.06);--hair2:rgba(255,255,255,.09);
     --f2:rgba(255,255,255,.07);--f3:rgba(255,255,255,.11);
     --scrim:rgba(6,8,11,.78);--glow:color-mix(in srgb,var(--lime) 28%,transparent);
-    --mono:'IBM Plex Mono',ui-monospace,monospace;
     display:flex;flex-direction:column;min-height:100vh;font-size:13.5px;line-height:1.45;color:var(--text);
   }
   .ff .va-main{flex:1;width:100%;max-width:1600px;margin:0 auto}
@@ -15109,7 +14806,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-badge{font:700 10px var(--mono);letter-spacing:.07em;padding:2.5px 6px;border-radius:4px}
   .ff .va-badge.pro{background:var(--lime);color:var(--onlime)}
   .ff .va-badge.free{background:rgba(10,13,18,.78);color:#E7ECF3;font-weight:600;border:1px solid rgba(255,255,255,.14)}
-  .ff .va-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;cursor:pointer;border-radius:10px;font:700 12.5px 'Hanken Grotesk',sans-serif;letter-spacing:-.005em;text-decoration:none}
+  .ff .va-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;cursor:pointer;border-radius:10px;font:700 12.5px var(--sans);letter-spacing:-.005em;text-decoration:none}
   .ff .va-btn.lime{background:var(--spend-grad);color:var(--onlime);padding:10px 18px;border-radius:100px}
   .ff .va-btn.ghost{background:var(--f1);color:var(--text);border:1px solid var(--hair2);padding:10px 16px;font-weight:600}
   .ff .va-btn.sm{padding:7px 12px;font-size:11.5px;border-radius:8px}
@@ -15290,7 +14987,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-fmmini>*{position:relative;z-index:1}
   .ff .va-fmmini .nm{font-weight:700;font-size:13px}
   .ff .va-fmmini .cm{display:flex;align-items:center;gap:7px;margin-top:4px}
-  .ff .va-fmmini .try{position:absolute;top:10px;right:10px;z-index:1;font:700 10px 'Hanken Grotesk',sans-serif;padding:5px 12px;border-radius:100px;background:rgba(6,8,11,.6);border:1px solid rgba(255,255,255,.22);color:#fff;opacity:0;transition:opacity .2s ease}
+  .ff .va-fmmini .try{position:absolute;top:10px;right:10px;z-index:1;font:700 10px var(--sans);padding:5px 12px;border-radius:100px;background:rgba(6,8,11,.6);border:1px solid rgba(255,255,255,.22);color:#fff;opacity:0;transition:opacity .2s ease}
   .ff .va-fmmini:hover .try{opacity:1}
   /* featured models — mobile: B-style uniform cards at 172px */
   .ff .va-fmstrip{display:none}
@@ -15371,7 +15068,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   }
   /* mobile bottom tabs (A5 va-mtabs verbatim, fixed) */
   .ff .va-mtabs{display:none;position:fixed;left:0;right:0;bottom:0;z-index:45;border-top:1px solid var(--hair2);background:rgba(10,13,18,.97);padding:8px 6px 14px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-  .ff .va-mtabs a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font:600 10px 'Hanken Grotesk',sans-serif;color:var(--muted2);text-decoration:none;cursor:pointer}
+  .ff .va-mtabs a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font:600 10px var(--sans);color:var(--muted2);text-decoration:none;cursor:pointer}
   .ff .va-mtabs a.on{color:var(--lime)}
   .ff .va-mtabs .va-ic{width:19px;height:19px}
   @media(max-width:820px){ .ff .va-mtabs{display:flex} }
@@ -15446,7 +15143,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-rel4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
   /* ── detail actions (fav · project · share) — mockup detail-actions ── */
   .ff .va-dact{display:flex;gap:6px;margin-top:12px}
-  .ff .va-dact .fav{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-2);cursor:pointer;padding:9px;font:600 10.5px 'Hanken Grotesk',sans-serif;transition:border-color .16s,color .16s}
+  .ff .va-dact .fav{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-2);cursor:pointer;padding:9px;font:600 10.5px var(--sans);transition:border-color .16s,color .16s}
   .ff .va-dact .fav:hover{color:var(--text);border-color:var(--th-accent)}
   .ff .va-dact .fav.on{color:var(--th-accent);border-color:var(--th-accent);background:var(--th-accent-soft)}
   .ff .va-col{margin:44px 40px 44px;border-radius:15px;overflow:hidden;position:relative;background:var(--surface);border:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:20px 22px}
@@ -15489,7 +15186,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-cpack .am{font:700 18px var(--mono)}
   .ff .va-cpack .am .s{color:var(--lime)}
   .ff .va-cpack .sub{font-size:10px;color:var(--muted);line-height:1.35;min-height:26px}
-  .ff .va-cpack>strong{font:700 19px 'Hanken Grotesk',sans-serif;margin-top:auto}
+  .ff .va-cpack>strong{font:700 19px var(--sans);margin-top:auto}
   .ff .va-cpack.hot{border-color:color-mix(in srgb,var(--lime) 45%,transparent)}
   .ff .va-credtag{position:absolute;top:-8px;left:10px;right:10px;padding:4px 5px;border-radius:5px;background:var(--lime);color:var(--onlime);font:700 6.5px var(--mono);letter-spacing:.05em;text-align:center;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ff .va-cpack:not(.hot) .va-credtag{display:none}
@@ -15556,7 +15253,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-setgroup > *{flex-shrink:1}
   .ff .va-genwrap{display:flex;align-items:center;gap:9px;flex:0 0 auto;margin-left:auto}
   .ff .va-genwrap *{flex-shrink:0}
-  .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px 'Hanken Grotesk',sans-serif;color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap;flex:0 1 auto;min-width:0}
+  .ff .va-set{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:999px;font:600 12px var(--sans);color:#C9D2DE;background:var(--f1);border:1px solid var(--hair2);cursor:pointer;position:relative;white-space:nowrap;flex:0 1 auto;min-width:0}
   /* mode/model/settings chip yorlig'i tor joyda qisqaradi (popover buzilmasin) */
   /* SC_20: qiymat kontentgacha keng (~180px kap). SC_55: `min-width:8ch` → `min-width:0` —
      8ch poli tor joyda (setgroup'да 4 chip: mode·model·gear·Enhance[flex:none]) yorliqni CHIP
@@ -15615,7 +15312,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-sgrp + .va-sgrp{border-top:1px solid var(--hair)}
   .ff .va-sgh{font:600 10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--muted2);margin:0 2px 7px}
   .ff .va-sgops{display:flex;flex-wrap:wrap;gap:5px}
-  .ff .va-setopt{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);font:500 11.5px 'Hanken Grotesk',sans-serif;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .ff .va-setopt{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);font:500 11.5px var(--sans);color:var(--muted);cursor:pointer;white-space:nowrap}
   .ff .va-setopt:hover{border-color:var(--hair2);color:var(--text)}
   .ff .va-setopt.on{background:var(--pill-active);border-color:transparent;color:var(--text);font-weight:600}
   .ff .va-setopt .arg{display:inline-block;border:1.4px solid currentColor;border-radius:2px;opacity:.75;flex:none}
@@ -15632,7 +15329,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   /* P30 §2 (29c) — qattiq siyosat ogohlantirishi (bloklamaydi, faqat xabar) */
   .ff .va-policynote{display:flex;align-items:center;gap:7px;margin-top:8px;padding:6px 10px;border-radius:9px;font-size:11px;color:var(--muted);line-height:1.4}
   .ff .va-policynote i{color:var(--muted2);flex:none;font-size:13px}
-  .ff .va-gategtu{display:inline-flex;align-items:center;gap:4px;flex:none;height:28px;padding:0 12px;border-radius:999px;background:var(--lime);color:var(--onlime);border:0;font:700 11px 'Hanken Grotesk',sans-serif;cursor:pointer}
+  .ff .va-gategtu{display:inline-flex;align-items:center;gap:4px;flex:none;height:28px;padding:0 12px;border-radius:999px;background:var(--lime);color:var(--onlime);border:0;font:700 11px var(--sans);cursor:pointer}
   .ff .va-dockrow .sp{flex:1}
   .ff .va-quote{font:600 11.5px var(--mono);color:var(--muted);white-space:nowrap}
   .ff .va-quote b{color:var(--lime)}
@@ -15709,7 +15406,11 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-toast>i.lead{font-size:18px;flex:none}
   .ff .va-toast .rt{flex:none;margin-left:4px;padding:5px 12px;border-radius:8px;background:var(--th-accent);color:var(--th-on-accent);font-weight:700;font-size:13px;cursor:pointer}
   /* P30 (29c) — provayder kontent rad etilishi banneri (halol) */
-  .ff .va-rejbanner{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);z-index:201;display:flex;align-items:center;gap:12px;max-width:min(620px,94vw);padding:13px 16px;border-radius:14px;background:var(--surface);border:1px solid color-mix(in srgb,var(--th-danger) 40%,var(--hair2));box-shadow:0 18px 44px -12px rgba(0,0,0,.6);animation:ffRise .25s ease}
+  /* D6 (audit N5) — markazlash `translate` xossasida, `transform` da EMAS: `animation:ffRise`
+     from `translateY(12px)` transform'ni butunlay yozadi va banner ~250 ms davomida markazdan
+     chapga sirg'alardi. Ikki xossa qo'shiladi, shuning uchun kirish animatsiyasi buzilmaydi.
+     (Ayni tuzatish D5 #17 da toastda o'lchangan.) */
+  .ff .va-rejbanner{position:fixed;bottom:92px;left:50%;translate:-50% 0;z-index:201;display:flex;align-items:center;gap:12px;max-width:min(620px,94vw);padding:13px 16px;border-radius:14px;background:var(--surface);border:1px solid color-mix(in srgb,var(--th-danger) 40%,var(--hair2));box-shadow:0 18px 44px -12px rgba(0,0,0,.6);animation:ffRise .25s ease}
   .ff .va-rejbanner>i.lead{color:var(--th-danger);font-size:20px;flex:none}
   .ff .va-rejbanner .rb-body{min-width:0;flex:1}
   .ff .va-rejbanner .rb-body b{display:block;font-size:13px;font-weight:700;color:var(--text)}
@@ -15811,7 +15512,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-sesscheck.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
   .ff .va-sessbulk{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:var(--f1);border:1px solid var(--hair2);border-radius:11px;padding:7px 9px;margin-top:6px}
   .ff .va-sessbulk .n{font:600 10px var(--mono);color:var(--muted)}
-  .ff .va-sessbulk b{font-size:10.5px;font-weight:700;color:var(--text);cursor:pointer;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.06)}
+  /* D6 (#16) — bulk paneldagi ikonlar ham Phosphor (xom ⬇/🗑 emas), matn bilan bir chiziqda turishi uchun
+     inline-flex; `i` ikonini matndan bir pog'ona katta olamiz, chunki 10.5px'da glif juda mayda ko'rinadi. */
+  .ff .va-sessbulk b{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--text);cursor:pointer;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.06)}
+  .ff .va-sessbulk b i{font-size:12.5px;line-height:1}
   .ff .va-sessbulk b:hover{background:rgba(255,255,255,.12)}
   .ff .va-sessbulk b.danger{color:#ff8484}
   .ff .va-sessrow .ren:hover{background:var(--f2);color:var(--text)}
@@ -16520,19 +16224,19 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div style="width:260px">
             <span class="ffm-logo" onclick="{{ goLanding }}" role="button" tabindex="0"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
             <div style="font-size:12px;color:var(--muted2);line-height:1.6;margin-top:12px">{{ lcFtTagline }}</div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);margin-top:14px">{{ lcFtEmail }}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted2);margin-top:14px">{{ lcFtEmail }}</div>
           </div>
           <div class="ffm-footcols" style="flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
             <div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT1 }}</div>
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT1 }}</div>
               <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtProdLinks }}" as="l" hint-placeholder-count="4"><a class="ff-link" data-screen="{{ l.screen }}" onclick="{{ onNav }}" style="cursor:pointer" role="button" tabindex="0">{{ l.label }}</a></sc-for></div>
             </div>
             <div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT2 }}</div>
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT2 }}</div>
               <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtCatLinks }}" as="l" hint-placeholder-count="5"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer" role="button" tabindex="0">{{ l.label }}</a></sc-for></div>
             </div>
             <div>
-              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT3 }}</div>
+              <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT3 }}</div>
               <!-- TODO(FF) i18n (FAZA 5 B4): UI ingliz tilida, lekin terms/privacy/refund/dmca
                    sahifalari O'ZBEK tilida. Rasmiy (authoritative) tilni EGASI tanlashi kerak:
                    yoki legal sahifalarni inglizchaga tarjima qilish, yoki UI'ni o'zbekchaga.
@@ -16542,7 +16246,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           </div>
         </div>
         <div style="display:flex;align-items:center;margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,.05);flex-wrap:wrap;gap:12px">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2)">{{ lcFtCopyright }}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted2)">{{ lcFtCopyright }}</span>
           <span style="flex:1"></span>
           <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)"><i class="ph ph-shield-check" style="color:var(--lime);font-size:13px"></i>{{ lcFtGuarantee }}</span>
         </div>
@@ -16565,6 +16269,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"></path></symbol>
         <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5-11-6.5z"></path></symbol>
         <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"></path><path d="M4 21h16"></path></symbol>
+        <!-- D6 (#16) — `i-refresh`: karta amal panelidagi ↻ xom belgisi o'rniga. Phosphor emas, sprayt,
+             chunki yonidagi `i-down` ham sprayt: bir panelda ikki ikon tizimi shtrix qalinligi va
+             optik o'lchamda farq qilardi. -->
+        <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"></path><path d="M20 4v4h-4"></path></symbol>
         <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h10M18 8h2M4 16h4M12 16h8"></path><circle cx="16" cy="8" r="2.2"></circle><circle cx="10" cy="16" r="2.2"></circle></symbol>
         <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"></path></symbol>
         <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></symbol>
@@ -16610,7 +16318,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="ffa-menu" style="top:40px;right:0">
             <div style="display:flex;align-items:center;gap:10px;padding:8px 10px 10px;border-bottom:1px solid rgba(255,255,255,.06)">
               <span class="va-ava" style="cursor:default;{{ avaStyle }}">{{ avaText }}</span>
-              <div style="min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">{{ planLabel }}</div></div>
+              <div style="min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">{{ planLabel }}</div></div>
             </div>
             <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-user-circle"></i>Account</button>
             <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-download-simple"></i>Downloads</button>
@@ -17091,8 +16799,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <sc-if value="{{ sessBulkOn }}" hint-placeholder-val="{{ false }}">
                     <div class="va-sessbulk">
                       <span class="n">{{ sessBulkCount }} selected</span>
-                      <b onclick="{{ axBulkDownload }}">⬇ Download</b>
-                      <b class="{{ sessBulkDelCls }}" onclick="{{ axBulkDelete }}">🗑 {{ sessBulkDelLabel }}</b>
+                      <b onclick="{{ axBulkDownload }}"><i class="ph ph-download-simple"></i>Download</b>
+                      <b class="{{ sessBulkDelCls }}" onclick="{{ axBulkDelete }}"><i class="ph ph-trash"></i>{{ sessBulkDelLabel }}</b>
                       <b onclick="{{ axSessSelectToggle }}">Cancel</b>
                     </div>
                   </sc-if>
@@ -17172,7 +16880,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                                 <button class="va-axuse" onclick="{{ toggleUseMenu }}">Use ▾</button>
                                 <span style="flex:1"></span>
                                 <span class="va-axaico" title="Download" onclick="{{ axTileDownload }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-down"></use></svg></span>
-                                <span class="va-axaico" title="Regenerate" onclick="{{ axTileRegen }}" role="button" tabindex="0">↻</span>
+                                <span class="va-axaico" title="Regenerate" onclick="{{ axTileRegen }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-refresh"></use></svg></span>
                               </div>
                             </sc-if>
                           </div>
@@ -17180,18 +16888,22 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                           <sc-if value="{{ g.menuOpen }}" hint-placeholder-val="{{ false }}">
                             <div class="va-axmenu" style="{{ axUseMenuStyle }}" onclick="{{ stop }}">
                               <!-- SC_30: rasm bo'lmagan natijada (video) bu ikki band umuman ko'rinmaydi — o'lik band yo'q -->
+                              <!-- D6 (#16) — menyu ikonlari BUTUNLAY Phosphor: ilgari ✎ ▶ ⬇ ↻ ⧉ 🗑 xom unicode
+                                   `ph-folder-plus`/`ph-compass` bilan aralash edi (xom belgilar OT'ga qarab har xil
+                                   o'lchamda va emoji rangida chiqardi, 🗑 esa rangli). -->
+
                               <sc-if value="{{ axSrcImgRows }}" hint-placeholder-val="{{ true }}">
-                                <div class="{{ axEditCls }}" title="{{ axEditTip }}" onclick="{{ axUseEdit }}" role="button" tabindex="0"><span class="mic">✎</span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div>
-                                <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}" role="button" tabindex="0"><span class="mic">▶</span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
+                                <div class="{{ axEditCls }}" title="{{ axEditTip }}" onclick="{{ axUseEdit }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-pencil-simple"></i></span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div>
+                                <div class="{{ axI2vCls }}" title="{{ axI2vTip }}" onclick="{{ axUseI2V }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-play"></i></span><span>Generate video from image<span class="sub">Use as the start frame</span></span></div>
                                 <div class="va-axmdiv"></div>
                               </sc-if>
                               <div class="va-axmi plain" onclick="{{ axMenuAddProj }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-folder-plus"></i></span>Add to project</div>
                               <!-- P3 (step 34) — Add to Explore (yuborilgan bo'lsa holat ko'rsatadi) -->
                               <div class="{{ axExploreCls }}" onclick="{{ axMenuAddExplore }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-compass"></i></span>{{ axExploreLabel }}</div>
-                              <div class="va-axmi plain" onclick="{{ axMenuDownload }}" role="button" tabindex="0"><span class="mic">⬇</span>Download</div>
-                              <div class="va-axmi plain" onclick="{{ axMenuRegen }}" role="button" tabindex="0"><span class="mic">↻</span>Regenerate</div>
-                              <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}" role="button" tabindex="0"><span class="mic">⧉</span>Copy prompt</div></sc-if>
-                              <div class="{{ axMenuDelCls }}" onclick="{{ axMenuDelete }}" role="button" tabindex="0"><span class="mic">🗑</span>{{ axMenuDelLabel }}</div>
+                              <div class="va-axmi plain" onclick="{{ axMenuDownload }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-download-simple"></i></span>Download</div>
+                              <div class="va-axmi plain" onclick="{{ axMenuRegen }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrow-clockwise"></i></span>Regenerate</div>
+                              <sc-if value="{{ axHasPrompt }}" hint-placeholder-val="{{ false }}"><div class="va-axmi plain" onclick="{{ axMenuCopyPrompt }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-copy"></i></span>Copy prompt</div></sc-if>
+                              <div class="{{ axMenuDelCls }}" onclick="{{ axMenuDelete }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-trash"></i></span>{{ axMenuDelLabel }}</div>
                               <div class="va-axmdiv"></div>
                               <!-- R4_08 — Topaz enhance/upscale bir-bosishlik (faqat yoqilgan op + mos media turida ko'rinadi) -->
                               <sc-if value="{{ axUpscaleImgRow }}" hint-placeholder-val="{{ false }}">
@@ -17474,12 +17186,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <button onclick="{{ goPricing }}" class="ffm-btn2 sm">Change plan</button>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                  <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Credit balance</div><div style="font-size:24px;font-weight:700;color:var(--lime);font-family:'IBM Plex Mono',monospace">✦ {{ creditsFmt }}</div></div>
-                  <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Downloads (month)</div><div style="font-size:24px;font-weight:700;font-family:'IBM Plex Mono',monospace">{{ downloadsMonth }}</div></div>
+                  <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Credit balance</div><div style="font-size:24px;font-weight:700;color:var(--lime);font-family:var(--mono)">✦ {{ creditsFmt }}</div></div>
+                  <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Downloads (month)</div><div style="font-size:24px;font-weight:700;font-family:var(--mono)">{{ downloadsMonth }}</div></div>
                 </div>
                 <!-- FAZA 2 #20 — storage kvota bar -->
                 <div class="ffa-acccard" style="padding:16px">
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--muted)">Storage (AI results)</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted)">{{ storageUsedFmt }} / {{ storageQuotaFmt }}</span></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--muted)">Storage (AI results)</span><span style="font-family:var(--mono);font-size:11.5px;color:var(--muted)">{{ storageUsedFmt }} / {{ storageQuotaFmt }}</span></div>
                   <div style="height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden"><div style="height:100%;border-radius:999px;width:{{ storagePct }};background:{{ storageBarCol }}"></div></div>
                 </div>
               </div>
@@ -17498,10 +17210,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <!-- YUKLAMALAR -->
           <sc-if value="{{ accYuklama }}" hint-placeholder-val="{{ false }}">
             <div class="va-accpad" style="max-width:760px">
-              <div style="display:flex;align-items:baseline;margin-bottom:14px"><span style="font-weight:600;font-size:15px">Downloaded templates</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-left:8px">This month: {{ downloadsMonth }}</span></div>
+              <div style="display:flex;align-items:baseline;margin-bottom:14px"><span style="font-weight:600;font-size:15px">Downloaded templates</span><span style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:8px">This month: {{ downloadsMonth }}</span></div>
               <sc-if value="{{ hasDownloads }}" hint-placeholder-val="{{ false }}">
                 <div style="display:flex;flex-direction:column;gap:2px">
-                  <sc-for list="{{ downloadsView }}" as="d" hint-placeholder-count="3"><div class="ffa-lrow"><div style="width:52px;height:34px;border-radius:6px;background:var(--f2);flex:none;display:grid;place-items:center"><i class="ph ph-download-simple" style="color:var(--muted)"></i></div><div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.name }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">{{ d.sub }}</div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted)">{{ d.when }}</span></div></sc-for>
+                  <sc-for list="{{ downloadsView }}" as="d" hint-placeholder-count="3"><div class="ffa-lrow"><div style="width:52px;height:34px;border-radius:6px;background:var(--f2);flex:none;display:grid;place-items:center"><i class="ph ph-download-simple" style="color:var(--muted)"></i></div><div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.name }}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">{{ d.sub }}</div></div><span style="font-family:var(--mono);font-size:10px;color:var(--muted)">{{ d.when }}</span></div></sc-for>
                   <sc-if value="{{ downloadsHasMore }}" hint-placeholder-val="{{ false }}"><button class="va-ledmore" onclick="{{ loadMoreDownloads }}" style="margin-top:8px;border-top:0">Load more</button></sc-if>
                 </div>
               </sc-if>
@@ -17535,7 +17247,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <b onclick="{{ projSelectAll }}">Select all</b>
               <b onclick="{{ projSelectClear }}">Clear</b>
               <span style="flex:1"></span>
-              <b class="{{ projBulkDelCls }}" onclick="{{ projBulkDelete }}">🗑 {{ projBulkDelLabel }}</b>
+              <b class="{{ projBulkDelCls }}" onclick="{{ projBulkDelete }}"><i class="ph ph-trash"></i>{{ projBulkDelLabel }}</b>
               <b onclick="{{ projSelectToggle }}">Cancel</b>
             </div>
           </sc-if>
@@ -17562,7 +17274,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     </div>
                   </sc-for>
                 </div>
-                <div style="padding:13px 14px"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px">{{ p.d }}</div></div>
+                <div style="padding:13px 14px"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px">{{ p.d }}</div></div>
               </div>
             </sc-for>
             <!-- SC_34: select rejimida "New project" plitkasi yashirin (tanlab bo'lmaydigan element) -->
@@ -17582,7 +17294,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="va-accpad" style="padding-top:24px">
             <div class="va-crumb" style="padding:0 0 16px"><a onclick="{{ backToProjects }}" role="button" tabindex="0">Projects</a> <svg class="va-ic"><use href="#i-arrow"></use></svg> <b>{{ projDetail.name }}</b></div>
             <div class="va-ptitle">
-              <div><div class="va-kick">PROJECT</div><h1 class="va-ph1">{{ projDetail.name }}</h1><p class="va-psub" style="font-family:'IBM Plex Mono',monospace">{{ projDetail.metaLine }}</p></div>
+              <div><div class="va-kick">PROJECT</div><h1 class="va-ph1">{{ projDetail.name }}</h1><p class="va-psub" style="font-family:var(--mono)">{{ projDetail.metaLine }}</p></div>
               <span style="flex:1"></span>
               <button class="va-btn ghost sm" onclick="{{ renameProject }}"><i class="ph ph-pencil-simple" style="font-size:13px"></i>Rename</button>
               <button class="va-btn ghost sm" onclick="{{ deleteProject }}" style="color:var(--th-danger)">{{ projDelLabel }}</button>
@@ -17788,7 +17500,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <sc-for list="{{ addPickProjects }}" as="p" hint-placeholder-count="3">
             <button data-id="{{ p.id }}" onclick="{{ doAddToProject }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--card2);border:1px solid var(--bd);cursor:pointer;font-family:inherit;text-align:left">
               <span style="width:34px;height:34px;flex:none;border-radius:9px;background:{{ p.cv }};background-size:cover;background-position:center;display:grid;place-items:center;color:var(--txt3)"><sc-if value="{{ p.noCv }}" hint-placeholder-val="{{ false }}"><i class="ph ph-folder-open"></i></sc-if></span>
-              <span style="min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</span><span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--txt3);margin-top:2px">{{ p.d }}</span></span>
+              <span style="min-width:0"><span style="display:block;font-size:13.5px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.n }}</span><span style="display:block;font-family:var(--mono);font-size:10px;color:var(--txt3);margin-top:2px">{{ p.d }}</span></span>
             </button>
           </sc-for>
           <sc-if value="{{ addPickEmpty }}" hint-placeholder-val="{{ false }}">

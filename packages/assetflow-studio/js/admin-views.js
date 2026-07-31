@@ -67,13 +67,13 @@ function axAv(name, seed, size){
 function axInfo(html, kind){
   var m = {
     info:  ['var(--seldim)','rgba(124,196,255,.22)','#7CC4FF','ph-info'],
-    lime:  ['var(--limedim)','rgba(194,240,74,.22)','#C2F04A','ph-info'],
+    lime:  ['var(--limedim)','var(--glow)','var(--lime)','ph-info'],
     amber: ['var(--amberdim)','rgba(255,178,124,.22)','#FFB27C','ph-warning'],
     red:   ['var(--reddim)','rgba(255,107,94,.25)','#FF6B5E','ph-warning'],
   }[kind||'info'];
   return '<div style="display:flex;align-items:center;gap:9px;padding:10px 13px;background:'+m[0]+';border:1px solid '+m[1]+';border-radius:11px;margin-bottom:16px">'+
     '<i class="ph '+m[3]+'" style="color:'+m[2]+';font-size:16px;flex:none"></i>'+
-    '<span style="font-size:11.5px;color:#B7C0CE;line-height:1.5">'+html+'</span></div>';
+    '<span style="font-size:11.5px;color:var(--text2);line-height:1.5">'+html+'</span></div>';
 }
 /** Stat karta (maket .stat). o: {label,val,foot,ic,icColor,trend('up'|'down'),footCls}. */
 function axStat(o){
@@ -229,10 +229,10 @@ function adxPackScanBanner(t){
   const bg = isHard?'var(--reddim)':'var(--amberdim)';
   const bd = isHard?'rgba(255,107,94,.3)':'rgba(255,178,124,.32)';
   const fg = isHard?'#FF6B5E':'#FFB27C';
-  const detail = (t.packScanDetail && String(t.packScanDetail).trim()) ? `<div style="font-size:11px;color:#8A93A3;margin-top:4px">${esc(t.packScanDetail)}</div>` : '';
+  const detail = (t.packScanDetail && String(t.packScanDetail).trim()) ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${esc(t.packScanDetail)}</div>` : '';
   return `<div style="margin-top:16px;background:${bg};border:1px solid ${bd};border-radius:11px;padding:10px 12px">
     <div class="adx-flab" style="margin:0;color:${fg};display:flex;align-items:center;gap:6px"><i class="ph ph-shield-warning"></i>SECURITY: ${esc(info.lab.toUpperCase())}</div>
-    <div style="font-size:12px;color:#B7C0CE;margin-top:4px;line-height:1.55">${esc(info.msg)}</div>${detail}</div>`;
+    <div style="font-size:12px;color:var(--text2);margin-top:4px;line-height:1.55">${esc(info.msg)}</div>${detail}</div>`;
 }
 
 /* "Clear pack (security)" tugmasi — faqat qo'lda ochsa bo'ladigan holatda (pending/quarantined). */
@@ -252,17 +252,17 @@ function modTopbarActions(){
   const cons = modContributors();
   const conLabel = MOD_CON==='all' ? 'All contributors' : ((cons.find(c=>c.id===MOD_CON)||{}).name || 'Contributor');
   tba.innerHTML = `
-    <label class="adx-sel"><i class="ph ph-stack" style="font-size:13px"></i><span>${esc(typeLabel)}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
+    <label class="adx-sel"><i class="ph ph-stack" style="font-size:13px"></i><span>${esc(typeLabel)}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i>
       <select onchange="setModType(this.value)">
         <option value="all" ${MOD_TYPE==='all'?'selected':''}>All types</option>
         ${typeList.map(x=>`<option value="${esc(x.key)}" ${MOD_TYPE===x.key?'selected':''}>${esc(x.label)}</option>`).join('')}
       </select></label>
-    <label class="adx-sel"><i class="ph ph-user" style="font-size:13px"></i><span>${esc(conLabel)}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
+    <label class="adx-sel"><i class="ph ph-user" style="font-size:13px"></i><span>${esc(conLabel)}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i>
       <select onchange="setModCon(this.value)">
         <option value="all" ${MOD_CON==='all'?'selected':''}>All contributors</option>
         ${cons.map(c=>`<option value="${esc(c.id)}" ${MOD_CON===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
       </select></label>
-    <label class="adx-sel"><i class="ph ph-sort-descending" style="font-size:13px"></i><span>${MOD_SORT==='new'?'Date: Newest \u2192 oldest':'Date: Oldest \u2192 newest'}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
+    <label class="adx-sel"><i class="ph ph-sort-descending" style="font-size:13px"></i><span>${MOD_SORT==='new'?'Date: Newest \u2192 oldest':'Date: Oldest \u2192 newest'}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i>
       <select onchange="setModSort(this.value)">
         <option value="new" ${MOD_SORT==='new'?'selected':''}>Date: Newest \u2192 oldest</option>
         <option value="old" ${MOD_SORT==='old'?'selected':''}>Oldest \u2192 newest</option>
@@ -317,7 +317,7 @@ function renderModeration(){
               <span class="adx-modthumb">${adxModThumb(t)}</span>
               <div style="flex:1;min-width:0">
                 <div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</div>
-                <div style="font-size:10.5px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(meta)}</div>
+                <div style="font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(meta)}</div>
               </div>
               <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:none">
                 ${t.reReview?'<span class="adx-bdg adx-bdg-pending" title="Content was replaced after approval — re-review required">Re-review</span>':t.isNew?'<span class="adx-bdg adx-bdg-info">New</span>':''}
@@ -354,7 +354,7 @@ function adxFileChips(t){
  *  chiqadi (eski shablonlar bo'sh). Reja: Length/Resolution/FPS/Alpha/Looped/Codec/Orientation. */
 function adxSpecBoxes(t){
   const a = (t && t._api) || {};
-  const box = (lab, val) => `<div class="adx-metabox"><div class="adx-flab" style="margin:0">${lab}</div><div style="font-size:12px;color:#B7C0CE">${esc(val)}</div></div>`;
+  const box = (lab, val) => `<div class="adx-metabox"><div class="adx-flab" style="margin:0">${lab}</div><div style="font-size:12px;color:var(--text2)">${esc(val)}</div></div>`;
   const out = [];
   if(a.width && a.height) out.push(box('DIMENSIONS', `${a.width} × ${a.height}`));
   if(a.durationSec!=null && a.durationSec>0){ const s=Math.round(a.durationSec); out.push(box('LENGTH', `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`)); }
@@ -383,7 +383,7 @@ function renderModDetail(t){
       <div class="adx-prevbox">${preview}</div>
       <div style="flex:1;min-width:260px">
         <div style="display:flex;align-items:flex-start;gap:10px">
-          <div style="flex:1;min-width:0"><div class="adx-h18">${esc(t.name)}</div><div style="font-size:12px;color:#8A93A3;margin-top:3px">${esc(t.cat)} \u00b7 ${esc(typeof kindTypeLabel==='function'?kindTypeLabel(t):'After Effects')}</div></div>
+          <div style="flex:1;min-width:0"><div class="adx-h18">${esc(t.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">${esc(t.cat)} \u00b7 ${esc(typeof kindTypeLabel==='function'?kindTypeLabel(t):'After Effects')}</div></div>
           ${adxModStatusBdg(t.status)}
           ${t.isNew?'<span class="adx-bdg adx-bdg-info">New</span>':''}
           ${t.reReview?'<span class="adx-bdg adx-bdg-pending" title="Content was replaced after approval — re-review required">Re-review</span>':''}
@@ -392,33 +392,33 @@ function renderModDetail(t){
         <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">${adxFileChips(t)}</div>
         <div style="display:flex;align-items:center;gap:9px;margin-top:14px;padding:10px 12px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:11px">
           <span class="adx-av ${adxModGrad(t.grad)}" style="width:34px;height:34px">${esc(initialsOf(con.name))}</span>
-          <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px">${esc(con.name)}</div><div style="font-size:10.5px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(con.email||'')}</div></div>
+          <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px">${esc(con.name)}</div><div style="font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(con.email||'')}</div></div>
           <button class="adx-btn2 sm" onclick="route('contributor-detail','${t.cid}')"><i class="ph ph-user"></i>Profile</button>
         </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px">
-      <div class="adx-metabox"><div class="adx-flab" style="margin:0">ID</div><div class="adx-mono" style="font-size:11px;color:#B7C0CE" title="${esc(t.id)}">${esc(shortId)}</div></div>
-      <div class="adx-metabox"><div class="adx-flab" style="margin:0">KIND</div><div style="font-size:12px;color:#B7C0CE">${esc(typeof kindTypeLabel==='function'?kindTypeLabel(t):'Template')}</div></div>
-      <div class="adx-metabox"><div class="adx-flab" style="margin:0">CATEGORY</div><div style="font-size:12px;color:#B7C0CE">${esc(t.cat)}</div></div>
-      <div class="adx-metabox"><div class="adx-flab" style="margin:0">RESOLUTION</div><div style="font-size:12px;color:#B7C0CE">${esc(t.res)}</div></div>
-      <div class="adx-metabox"><div class="adx-flab" style="margin:0">ORIENTATION</div><div style="font-size:12px;color:#B7C0CE">${esc(t.orient)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">ID</div><div class="adx-mono" style="font-size:11px;color:var(--text2)" title="${esc(t.id)}">${esc(shortId)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">KIND</div><div style="font-size:12px;color:var(--text2)">${esc(typeof kindTypeLabel==='function'?kindTypeLabel(t):'Template')}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">CATEGORY</div><div style="font-size:12px;color:var(--text2)">${esc(t.cat)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">RESOLUTION</div><div style="font-size:12px;color:var(--text2)">${esc(t.res)}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">ORIENTATION</div><div style="font-size:12px;color:var(--text2)">${esc(t.orient)}</div></div>
       ${adxSpecBoxes(t)}
-      <div class="adx-metabox"><div class="adx-flab" style="margin:0">FILE SIZE</div><div style="font-size:12px;color:#B7C0CE">${esc(t.size||'\u2014')}</div></div>
-      <div class="adx-metabox"><div class="adx-flab" style="margin:0">UPLOADED</div><div class="adx-mono" style="font-size:11px;color:#B7C0CE">${esc(t.created||'\u2014')}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">FILE SIZE</div><div style="font-size:12px;color:var(--text2)">${esc(t.size||'\u2014')}</div></div>
+      <div class="adx-metabox"><div class="adx-flab" style="margin:0">UPLOADED</div><div class="adx-mono" style="font-size:11px;color:var(--text2)">${esc(t.created||'\u2014')}</div></div>
     </div>
-    <div style="margin-top:16px"><div class="adx-flab">DESCRIPTION</div><div style="font-size:12.5px;color:#B7C0CE;line-height:1.6">${esc(t.desc)}</div>
+    <div style="margin-top:16px"><div class="adx-flab">DESCRIPTION</div><div style="font-size:12.5px;color:var(--text2);line-height:1.6">${esc(t.desc)}</div>
       <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${(t.tags||[]).map(tag=>`<span class="adx-tagpill">${esc(tag)}</span>`).join('')}</div></div>
-    ${t.aiSource==='ai'||t.templateType==='ai-stock'?`<div style="margin-top:16px;background:var(--limedim,rgba(194,240,74,.08));border:1px solid rgba(194,240,74,.28);border-radius:11px;padding:10px 12px">
-      <div class="adx-flab" style="margin:0;color:#C2F04A;display:flex;align-items:center;gap:6px"><i class="ph ph-sparkle"></i>AI GENERATION PROMPT</div>
-      <div style="font-size:12px;color:#B7C0CE;margin-top:5px;line-height:1.55">${t.aiPrompt?esc(t.aiPrompt):'<span style="color:#8A93A3">(no prompt captured)</span>'}</div></div>`:''}
+    ${t.aiSource==='ai'||t.templateType==='ai-stock'?`<div style="margin-top:16px;background:var(--limedim);border:1px solid var(--glow);border-radius:11px;padding:10px 12px">
+      <div class="adx-flab" style="margin:0;color:var(--lime);display:flex;align-items:center;gap:6px"><i class="ph ph-sparkle"></i>AI GENERATION PROMPT</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:5px;line-height:1.55">${t.aiPrompt?esc(t.aiPrompt):'<span style="color:var(--muted)">(no prompt captured)</span>'}</div></div>`:''}
     ${t.reason?`<div style="margin-top:16px;background:${t.status==='hard'?'var(--reddim)':'var(--amberdim)'};border:1px solid ${t.status==='hard'?'rgba(255,107,94,.3)':'rgba(255,178,124,.32)'};border-radius:11px;padding:10px 12px">
       <div class="adx-flab" style="margin:0;color:${t.status==='hard'?'#FF6B5E':'#FFB27C'}">PREVIOUS DECISION REASON</div>
-      <div style="font-size:12px;color:#B7C0CE;margin-top:4px;line-height:1.55">${esc(t.reason)}</div></div>`:''}
+      <div style="font-size:12px;color:var(--text2);margin-top:4px;line-height:1.55">${esc(t.reason)}</div></div>`:''}
     ${adxPackScanBanner(t)}
     <!-- decision panel -->
     <div class="adx-decide">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="ph ph-gavel" style="color:#C2F04A;font-size:16px"></i><span class="adx-h16" style="font-size:14px">Decision panel</span></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><i class="ph ph-gavel" style="color:var(--lime);font-size:16px"></i><span class="adx-h16" style="font-size:14px">Decision panel</span></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="adx-btn adx-btn-ok" onclick="modApprove('${t.id}')"><i class="ph ph-check-circle"></i>Approve \u2014 publish in AE</button>
         <button class="adx-btn2 adx-btn-warn" onclick="modSoftReject('${t.id}')"><i class="ph ph-arrow-u-up-left"></i>Soft reject</button>
@@ -433,7 +433,7 @@ function renderModDetail(t){
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:16px">
       <button class="adx-btn2 sm" onclick="navMod(-1)"><i class="ph ph-caret-left"></i>Previous</button>
-      <span class="adx-mono" style="font-size:11px;color:#8A93A3">${idx+1} / ${items.length}</span>
+      <span class="adx-mono" style="font-size:11px;color:var(--muted)">${idx+1} / ${items.length}</span>
       <button class="adx-btn2 sm" onclick="navMod(1)">Next<i class="ph ph-caret-right"></i></button>
     </div>`;
 }
@@ -505,10 +505,19 @@ async function bulkAction(a){
   const names = items.slice(0,8).map(t=>'• '+(t.name||t.id));
   if(items.length>8) names.push(`… and ${items.length-8} more`);
   const warn = a==='clear-pack'
-    ? '\n\nThis clears the security quarantine flag — only do it after checking the pack.'
-    : (a==='reject' ? '' : '\n\nApproved templates go live in the AE catalog immediately.');
-  const extra = dropped ? `\n\n(${dropped} previously selected template${dropped===1?'':'s'} no longer in this filter — skipped.)` : '';
-  if(!confirm(`${m.label}\n\n${n} template${n===1?'':'s'}:\n${names.join('\n')}${warn}${extra}`)) return;
+    ? 'This clears the security quarantine flag — only do it after checking the pack.'
+    : (a==='reject' ? '' : 'Approved templates go live in the AE catalog immediately.');
+  const extra = dropped ? `(${dropped} previously selected template${dropped===1?'':'s'} no longer in this filter — skipped.)` : '';
+  // D6 (#12) — xom confirm() o'rniga dizayn tizimidagi tasdiq modali (afConfirm, ui.js).
+  // Auditda bu sirt sanab o'tilmagan edi, lekin ayni defekt — #17 juftligiga qo'shildi.
+  if(!(await afConfirm({
+    title: m.label,
+    sub: `${n} template${n===1?'':'s'} will be affected.`,
+    tone: a==='reject' ? 'danger' : (a==='clear-pack' ? 'warn' : 'success'),
+    warn: warn || undefined,
+    body: names.join('\n') + (extra ? '\n\n'+extra : ''),
+    okLabel: m.label,
+  }))) return;
 
   let resp;
   try{

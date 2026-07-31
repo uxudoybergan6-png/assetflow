@@ -81,7 +81,7 @@ function pcArea(field, value, rows, ph) {
 function pcCard(title, sub, body) {
   return `<div class="adx-card" style="padding:18px 20px">
     <div class="adx-h16" style="font-size:14px;margin-bottom:${sub ? 4 : 14}px">${title}</div>
-    ${sub ? `<div style="font-size:11px;color:#8A93A3;margin-bottom:14px">${sub}</div>` : ""}
+    ${sub ? `<div style="font-size:11px;color:var(--muted);margin-bottom:14px">${sub}</div>` : ""}
     ${body}
   </div>`;
 }
@@ -104,9 +104,9 @@ function pcMediaBlock(target, mediaUrl, mediaType, hint) {
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="adx-btn2 sm" onclick="pcPickMedia('${target}')"><i class="ph ph-upload-simple"></i>${hasMedia ? "Replace media" : "Upload media"}</button>
         ${hasMedia ? `<button class="adx-btn2 sm" onclick="pcClearMedia('${target}')"><i class="ph ph-x"></i>Remove</button>` : ""}
-        <span class="pc-upstat" data-pc-upstat="${target}" style="font-size:10px;color:#8A93A3"></span>
+        <span class="pc-upstat" data-pc-upstat="${target}" style="font-size:10px;color:var(--muted)"></span>
       </div>
-      <div style="font-size:10px;color:#8A93A3;margin-top:6px">${hint}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">${hint}</div>
     </div>
   </div>`;
 }
@@ -134,7 +134,7 @@ VIEWS.plugincms = function () {
   const CARD_NAMES = ["Image", "Video", "Audio"];
   const aiCards = c.aiLauncher.cards.map((cd, i) => `
     <div class="adx-card" style="padding:14px 16px;margin-bottom:10px">
-      <div style="font:700 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8A93A3;margin-bottom:10px">${CARD_NAMES[i].toUpperCase()} CARD</div>
+      <div style="font:700 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:var(--muted);margin-bottom:10px">${CARD_NAMES[i].toUpperCase()} CARD</div>
       <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-bottom:10px">
         <div>${axFlab("TITLE")}${pcInput(`aiLauncher.cards.${i}.title`, cd.title, { ph: "empty = built-in" })}</div>
         <div>${axFlab("DESCRIPTION")}${pcInput(`aiLauncher.cards.${i}.desc`, cd.desc, { ph: "empty = built-in / live models" })}</div>
@@ -278,7 +278,14 @@ async function pcSave() {
 }
 
 async function pcReset() {
-  if (!confirm("Reset the WHOLE plugin content (hero, headings, guest screen, AI launcher) to the original built-in copy? Uploaded media links will be removed (files stay in storage).")) return;
+  // D6 (#12) — xom confirm() o'rniga dizayn tizimidagi tasdiq modali (afConfirm, ui.js)
+  if (!(await afConfirm({
+    title: "Reset plugin content",
+    sub: "Hero, headings, guest screen and AI launcher return to the built-in copy.",
+    warn: "This cannot be undone — your edited plugin copy is replaced by the defaults.",
+    body: "Uploaded media links are removed from the page (the files stay in storage).",
+    okLabel: "Reset content",
+  }))) return;
   try {
     const d = await StudioApi.resetPluginContentConfig();
     PC_CFG = d.config;

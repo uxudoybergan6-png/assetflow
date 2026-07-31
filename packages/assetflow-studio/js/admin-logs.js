@@ -4,7 +4,7 @@ let LOG_POLL = null;
 
 VIEWS.logs = function () {
   return `<div id="logRoot">
-    <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--limedim);border:1px solid rgba(194,240,74,.2);border-radius:10px;margin-bottom:14px"><span style="width:7px;height:7px;border-radius:50%;background:#C2F04A;flex:none"></span><span style="font-size:11.5px;color:#B7C0CE">Server: <b id="logServerStatus" style="color:#C2F04A">checking…</b> · Admin + Contributor + AE Plugin logs appear here</span></div>
+    <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--limedim);border:1px solid var(--glow);border-radius:10px;margin-bottom:14px"><span style="width:7px;height:7px;border-radius:50%;background:var(--lime);flex:none"></span><span style="font-size:11.5px;color:var(--text2)">Server: <b id="logServerStatus" style="color:var(--lime)">checking…</b> · Admin + Contributor + AE Plugin logs appear here</span></div>
     <div class="adx-tagrow" id="logSourceChips"></div>
     <div class="adx-card" style="overflow:hidden"><div id="logTableHost"><div class="adx-empty" style="border:0;padding:40px"><span class="ei"><i class="ph ph-scroll"></i></span><div style="font-size:12px;color:var(--muted2)">Loading…</div></div></div></div>
   </div>`;
@@ -13,7 +13,7 @@ VIEWS.logs = function () {
 window.afterRender.logs = function () {
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='logs') tba.innerHTML =
-    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${LOG_FILTER.level==='all'?'All levels':LOG_FILTER.level}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="LOG_FILTER.level=this.value;refreshLogs()"><option value="all">All levels</option><option value="error" ${LOG_FILTER.level==='error'?'selected':''}>Error</option><option value="warn" ${LOG_FILTER.level==='warn'?'selected':''}>Warn</option><option value="info" ${LOG_FILTER.level==='info'?'selected':''}>Info</option><option value="debug" ${LOG_FILTER.level==='debug'?'selected':''}>Debug</option></select></label>`+
+    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${LOG_FILTER.level==='all'?'All levels':LOG_FILTER.level}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i><select onchange="LOG_FILTER.level=this.value;refreshLogs()"><option value="all">All levels</option><option value="error" ${LOG_FILTER.level==='error'?'selected':''}>Error</option><option value="warn" ${LOG_FILTER.level==='warn'?'selected':''}>Warn</option><option value="info" ${LOG_FILTER.level==='info'?'selected':''}>Info</option><option value="debug" ${LOG_FILTER.level==='debug'?'selected':''}>Debug</option></select></label>`+
     `<button class="adx-btn2 sm" onclick="refreshLogs(true)"><i class="ph ph-arrow-clockwise"></i>Refresh</button>`+
     `<button class="adx-btn2 sm" onclick="exportLogs()"><i class="ph ph-export"></i>Export</button>`+
     `<button class="adx-btn2 sm adx-btn-dghost" onclick="clearLogs()"><i class="ph ph-trash"></i>Clear</button>`;
@@ -55,7 +55,7 @@ async function refreshLogs(showToast) {
   try {
     const apiBase = (typeof StudioApi !== "undefined" ? StudioApi.baseUrl() : "");
     const h = await fetch(`${apiBase}/health`);
-    if (status){ status.textContent = h.ok ? "online" : "not responding"; status.style.color = h.ok ? "#C2F04A" : "#FFB27C"; }
+    if (status){ status.textContent = h.ok ? "online" : "not responding"; status.style.color = h.ok ? "var(--lime)" : "#FFB27C"; }
   } catch { if (status){ status.textContent="offline — browser logs only"; status.style.color="#FFB27C"; } }
   const rows = await AssetFlowLog.getAll({ source: LOG_FILTER.source, level: LOG_FILTER.level, q: LOG_FILTER.q, includeServer: true, limit: 250 });
   renderLogSourceChips();
@@ -66,12 +66,12 @@ async function refreshLogs(showToast) {
   host.innerHTML = `<div style="overflow-x:auto"><table class="adx-tbl" style="min-width:960px">
     <thead><tr><th>Time</th><th>Source</th><th>Level</th><th>Message</th><th>Action</th><th>Note</th></tr></thead>
     <tbody>${rows.map((r)=>`<tr>
-      <td class="adx-num" style="font-size:10.5px;color:#8A93A3;white-space:nowrap">${AssetFlowLog.formatTime(r.ts)}</td>
+      <td class="adx-num" style="font-size:10.5px;color:var(--muted);white-space:nowrap">${AssetFlowLog.formatTime(r.ts)}</td>
       <td>${axLogSourceBadge(r.source)}</td>
       <td>${axLogLevelBadge(r.level)}</td>
       <td style="color:var(--text);max-width:320px">${escapeHtml(r.message)}</td>
-      <td class="adx-num" style="font-size:10px;color:#8A93A3">${escapeHtml(r.action||"—")}</td>
-      <td style="font-size:10.5px;color:#5E6675;max-width:280px">${escapeHtml(r.detail||"")}</td>
+      <td class="adx-num" style="font-size:10px;color:var(--muted)">${escapeHtml(r.action||"—")}</td>
+      <td style="font-size:10.5px;color:var(--muted2);max-width:280px">${escapeHtml(r.detail||"")}</td>
     </tr>`).join("")}</tbody>
   </table></div>`;
   if (showToast) toast("Log refreshed", `${rows.length} entries`, "info");

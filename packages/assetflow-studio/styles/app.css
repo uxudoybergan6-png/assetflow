@@ -29,13 +29,18 @@
   --tx-2: rgba(255,255,255,.66);  /* muted (AA body) */
   --tx-3: rgba(255,255,255,.52);  /* faint / placeholder */
 
-  /* ---- Brend = LIME (eski --violet nomi saqlandi → 2-bosqichda --accent ga rename) ---- */
-  --violet: #82c341;        /* baza / chegara / fill */
-  --violet-bright: #a3e635; /* yorqin — active matn/ikon + hover */
-  --violet-dim: rgba(163,230,53,.13);
-  --violet-line: rgba(163,230,53,.34);
-  --on-accent: #0a0b08;     /* lime fill ustidagi qora matn (AAA) */
-  --accent-glow: rgba(163,230,53,.28);
+  /* ---- Brend = LIME (eski --violet nomi saqlandi → 2-bosqichda --accent ga rename) ----
+     D6 (#15) — uch sirtda uch xil lime bor edi (studio #a3e635, admin #C2F04A, plagin/platforma
+     #d8ff3e) va izohlar "plagin bilan AYNAN" deb yolg'on da'vo qilardi. Etalon = FrameFlow brend
+     lime: `tokens.css` neon `--accent:#d8ff3e` + `--accent-2:#baf02c` (platforma `--th-accent`
+     bilan bir xil). Qorong'i qiymatlar shu juftlikka tortildi; yorug' tema bloklari (`:123`,
+     `:971`) TEGILMADI — ular ataylab to'qroq (AA), qarang audit N1. */
+  --violet: #baf02c;        /* baza / chegara / fill (brend accent-2) */
+  --violet-bright: #d8ff3e; /* yorqin — active matn/ikon + hover (brend accent) */
+  --violet-dim: rgba(216,255,62,.13);
+  --violet-line: rgba(216,255,62,.34);
+  --on-accent: #0a0d02;     /* lime fill ustidagi qora matn (AAA, plagin bilan bir xil) */
+  --accent-glow: rgba(216,255,62,.28);
 
   --green: #38d399;
   --green-dim: rgba(56,211,153,.13);
@@ -65,7 +70,9 @@
   --r-sm: 8px;
   --r-md: 10px;
   --r-lg: 14px;
-  --r-xl: 16px;
+  /* D6 (#12) — `--r-xl` O'CHIRILDI: hech qayerda ishlatilmagan (0 iste'molchi) va 16px izohda
+     e'lon qilingan "6/10/14" skalasidan ham, platformadagi `--th-r-xl:18px` dan ham chetga
+     chiqib skala haqida yolg'on ma'lumot berardi. Kerak bo'lsa 18px bilan qayta qo'shiladi. */
   --r-full: 999px;
 
   /* ---- Spacing (yangi — 2-bosqichda komponentlar qabul qiladi) ---- */
@@ -168,7 +175,7 @@ body.portal-admin {
 
 /* #79 (X5) — KLAVIATURA FOKUSI: Studio'da ham bitta focus halqasi. `:focus-visible`
    faqat klaviatura navigatsiyasida chiqadi, sichqoncha bosishida yo'q. */
-:focus-visible { outline: 2px solid var(--violet-bright, #a3e635); outline-offset: 2px; border-radius: 8px; }
+:focus-visible { outline: 2px solid var(--violet-bright, #d8ff3e); outline-offset: 2px; border-radius: 8px; }
 input:focus-visible, textarea:focus-visible, select:focus-visible { outline-offset: 0; }
 [role="button"] { cursor: pointer; }
 
@@ -234,7 +241,7 @@ svg { display: block; }
   width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
   background: linear-gradient(145deg, var(--violet-bright), var(--violet));
   display: grid; place-items: center;
-  box-shadow: 0 4px 14px rgba(163,230,53,.35), inset 0 1px 0 rgba(255,255,255,.25);
+  box-shadow: 0 4px 14px rgba(216,255,62,.35), inset 0 1px 0 rgba(255,255,255,.25);
 }
 .brand-mark svg { stroke: var(--on-accent); }
 .brand-name { font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: -.02em; }
@@ -1016,7 +1023,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
   display: flex; flex-direction: column; justify-content: space-between;
   padding: 56px 48px;
   background:
-    radial-gradient(120% 120% at 0% 0%, rgba(163,230,53,.10), transparent 55%),
+    radial-gradient(120% 120% at 0% 0%, rgba(216,255,62,.10), transparent 55%),
     radial-gradient(90% 90% at 100% 100%, rgba(130,195,65,.07), transparent 60%),
     var(--bg-1);
   border-right: 1px solid var(--line);
@@ -1024,11 +1031,11 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .auth-deco { position: absolute; inset: 0; pointer-events: none; opacity: .5; }
 .auth-deco::before {
   content: ""; position: absolute; top: -80px; right: -90px; width: 340px; height: 340px;
-  border-radius: 38% 62% 55% 45% / 50% 45% 55% 50%; border: 1.5px solid rgba(163,230,53,.22);
+  border-radius: 38% 62% 55% 45% / 50% 45% 55% 50%; border: 1.5px solid rgba(216,255,62,.22);
 }
 .auth-deco::after {
   content: ""; position: absolute; bottom: -110px; left: -70px; width: 280px; height: 280px;
-  border-radius: 50%; border: 1.5px solid rgba(163,230,53,.14);
+  border-radius: 50%; border: 1.5px solid rgba(216,255,62,.14);
 }
 .deco-grid {
   position: absolute; inset: 0;
@@ -1047,7 +1054,7 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .auth-brand-top .brand-mark {
   width: 38px; height: 38px; border-radius: 11px;
   background: linear-gradient(150deg, var(--violet-bright), var(--violet));
-  box-shadow: 0 4px 16px rgba(163,230,53,.28);
+  box-shadow: 0 4px 16px rgba(216,255,62,.28);
 }
 .auth-brand-top .brand-mark svg { width: 22px; height: 22px; stroke-width: 2; stroke: var(--on-accent); }
 .brand-word { font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: -.01em; color: var(--tx-0); }

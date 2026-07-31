@@ -68,7 +68,7 @@ async function pushPlanConfigToServer() {
 function renderDiscountSection() {
   return `<div class="adx-card" style="padding:18px 20px;margin-top:16px">
     <div class="adx-h16" style="font-size:14px;margin-bottom:6px">Discounts and promo codes</div>
-    <div style="font-size:11.5px;color:#8A93A3;line-height:1.6">
+    <div style="font-size:11.5px;color:var(--muted);line-height:1.6">
       Discount codes are created in <b>Lemon Squeezy</b> (Store → Discounts) and applied at checkout,
       so they work for both the plugin upgrade window and the web checkout.
       This screen does not manage them — a code entered here would never reach the checkout.
@@ -87,15 +87,15 @@ function renderPlanEditorCard(p) {
     : p.id === "studio"
       ? '<span class="adx-bdg adx-bdg-pro" style="background:rgba(124,196,255,.16);color:#7CC4FF">STUDIO PLAN</span>'
       : '<span class="adx-bdg adx-bdg-free">FREE PLAN</span>';
-  return `<div class="adx-card" style="padding:18px 20px${isPaid?';border-color:rgba(194,240,74,.3)':''}" data-plan-id="${p.id}">
+  return `<div class="adx-card" style="padding:18px 20px${isPaid?';border-color:var(--glow)':''}" data-plan-id="${p.id}">
     <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">${badge}<span style="flex:1"></span><button class="adx-tog ${p.active!==false?'on':'off'}" data-plan-active="${p.id}" onclick="togglePlanActive('${p.id}')" title="Active"><i></i></button></div>
     ${isPaid
       ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div>${axFlab(`PRICE (MONTHLY) · ${p.currency}`)}<input class="adx-input mono plan-input" data-field="priceMonthly" data-plan="${p.id}" type="number" min="0" step="1" value="${p.priceMonthly}"></div><div>${axFlab(`PRICE (YEARLY) · ${p.currency}`)}<input class="adx-input mono plan-input" data-field="priceYearly" data-plan="${p.id}" type="number" min="0" step="1" value="${p.priceYearly}"></div></div>`
-      : `<div style="font-size:11px;color:#8A93A3;margin-bottom:14px">Free — always $0. Only limits are configurable.</div>`}
+      : `<div style="font-size:11px;color:var(--muted);margin-bottom:14px">Free — always $0. Only limits are configurable.</div>`}
     ${axFlab("AI CREDITS / MONTH")}
     <div style="margin-bottom:12px"><input class="adx-input mono plan-input" data-field="aiMonthlyCredits" data-plan="${p.id}" type="number" min="0" max="1000000" value="${p.aiMonthlyCredits ?? (isPro?1000:50)}"></div>
     ${axFlab("DOWNLOADS / MONTH")}
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><input class="adx-input mono plan-input plan-limit-input" data-field="downloadLimit" data-plan="${p.id}" type="number" min="1" max="9999" value="${p.downloadLimit ?? 15}" ${unlim?"disabled":""} style="flex:1"><label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8A93A3;cursor:pointer;white-space:nowrap"><button class="adx-tog ${unlim?'on':'off'}" data-plan-unlim="${p.id}" onclick="togglePlanUnlimited('${p.id}')" style="transform:scale(.85)"><i></i></button>Unlimited</label></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><input class="adx-input mono plan-input plan-limit-input" data-field="downloadLimit" data-plan="${p.id}" type="number" min="1" max="9999" value="${p.downloadLimit ?? 15}" ${unlim?"disabled":""} style="flex:1"><label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);cursor:pointer;white-space:nowrap"><button class="adx-tog ${unlim?'on':'off'}" data-plan-unlim="${p.id}" onclick="togglePlanUnlimited('${p.id}')" style="transform:scale(.85)"><i></i></button>Unlimited</label></div>
     ${axFlab("IMPORT LIMIT (AE) / MONTH")}
     <div style="margin-bottom:12px"><input class="adx-input mono plan-input" data-field="importLimit" data-plan="${p.id}" type="number" min="0" placeholder="${unlim?"Unlimited":"10"}" value="${p.importLimit != null ? p.importLimit : ""}" ${unlim?"disabled":""}></div>
     ${axFlab("MAX RESOLUTION")}

@@ -18,10 +18,10 @@ function uById(id){ return U_LIST.find(u=>u.id===id) || U_PENDING.find(u=>u.id==
 /** Role badge — inline palette (ADMIN=lime, CONTRIBUTOR=blue, USER=gray). */
 function axRole(role){
   const m = {
-    ADMIN:       ['rgba(194,240,74,.14)','#C2F04A'],
+    ADMIN:       ['var(--limedim)','var(--lime)'],
     CONTRIBUTOR: ['rgba(124,196,255,.14)','#7CC4FF'],
-    USER:        ['rgba(138,147,163,.14)','#8A93A3'],
-  }[role] || ['rgba(138,147,163,.14)','#8A93A3'];
+    USER:        ['rgba(138,147,163,.14)','var(--muted)'],
+  }[role] || ['rgba(138,147,163,.14)','var(--muted)'];
   return `<span class="adx-bdg" style="background:${m[0]};color:${m[1]}">${esc(role)}</span>`;
 }
 
@@ -30,7 +30,7 @@ function axRole(role){
  *  Suspended = butun hisob yopiq · Upload blocked = faqat contributor yuklashi. */
 function uStatusCell(u){
   if(u.suspended){
-    const why = u.suspendedReason ? `<div style="font-size:10px;color:#8A93A3;margin-top:3px">${esc(u.suspendedReason)}</div>` : '';
+    const why = u.suspendedReason ? `<div style="font-size:10px;color:var(--muted);margin-top:3px">${esc(u.suspendedReason)}</div>` : '';
     return `<span class="adx-bdg adx-bdg-hard">Suspended</span>${why}`;
   }
   if(u.blocked) return `<span class="adx-bdg" style="background:rgba(255,178,124,.14);color:#FFB27C">Upload blocked</span>`;
@@ -43,7 +43,7 @@ window.afterRender.users = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='users'){
     tba.innerHTML =
-      `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${U_ROLE_FILTER==='all'?'All roles':U_ROLE_FILTER}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="U_ROLE_FILTER=this.value;refreshAdminUsers()"><option value="all">All roles</option><option value="USER" ${U_ROLE_FILTER==='USER'?'selected':''}>USER</option><option value="CONTRIBUTOR" ${U_ROLE_FILTER==='CONTRIBUTOR'?'selected':''}>CONTRIBUTOR</option><option value="ADMIN" ${U_ROLE_FILTER==='ADMIN'?'selected':''}>ADMIN</option></select></label>`;
+      `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${U_ROLE_FILTER==='all'?'All roles':U_ROLE_FILTER}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i><select onchange="U_ROLE_FILTER=this.value;refreshAdminUsers()"><option value="all">All roles</option><option value="USER" ${U_ROLE_FILTER==='USER'?'selected':''}>USER</option><option value="CONTRIBUTOR" ${U_ROLE_FILTER==='CONTRIBUTOR'?'selected':''}>CONTRIBUTOR</option><option value="ADMIN" ${U_ROLE_FILTER==='ADMIN'?'selected':''}>ADMIN</option></select></label>`;
   }
   await refreshAdminUsers();
 };
@@ -75,12 +75,12 @@ function renderAdminUsers(){
 
   const pendingCard = U_PENDING.length ? `
     <div class="adx-card" style="overflow:hidden;margin-bottom:16px">
-      <div class="adx-cardhd"><i class="ph ph-user-plus" style="color:#FFB27C;font-size:15px"></i><span class="adx-h16" style="font-size:14px">Contributor requests</span><span style="flex:1"></span><span style="font-size:11px;color:#8A93A3">${U_PENDING.length} pending</span></div>
+      <div class="adx-cardhd"><i class="ph ph-user-plus" style="color:#FFB27C;font-size:15px"></i><span class="adx-h16" style="font-size:14px">Contributor requests</span><span style="flex:1"></span><span style="font-size:11px;color:var(--muted)">${U_PENDING.length} pending</span></div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:640px">
         <tbody>
         ${U_PENDING.map(u=>`<tr>
           <td><div class="adx-who">${axAv(u.name||u.email,u.email,32)}<div style="min-width:0"><div class="nm">${esc(u.name||'—')}</div><div class="em">${esc(u.email)}</div></div></div></td>
-          <td class="adx-num" style="font-size:11px;color:#8A93A3">Requested: ${esc(String(u.contributorRequestedAt||'').slice(0,10))}</td>
+          <td class="adx-num" style="font-size:11px;color:var(--muted)">Requested: ${esc(String(u.contributorRequestedAt||'').slice(0,10))}</td>
           <td class="r"><div style="display:flex;gap:6px;justify-content:flex-end">
             <button class="adx-btn2 sm adx-btn-ok" onclick="openRoleChange('${u.id}','CONTRIBUTOR')"><i class="ph ph-check-circle"></i>Approve as contributor</button>
             <button class="adx-btn2 sm" onclick="openDismissRequest('${u.id}')"><i class="ph ph-x"></i>Dismiss</button>
@@ -93,7 +93,7 @@ function renderAdminUsers(){
   root.innerHTML = `
     <div class="adx-grid4" style="margin-bottom:18px">
       ${axStat({label:'Users shown',val:U_LIST.length,ic:'users',icColor:'#7CC4FF',foot:'latest 100'})}
-      ${axStat({label:'Admins',val:admins,ic:'shield-star',icColor:'#C2F04A',foot:'in current list'})}
+      ${axStat({label:'Admins',val:admins,ic:'shield-star',icColor:'var(--lime)',foot:'in current list'})}
       ${axStat({label:'Contributors',val:contribs,ic:'users-three',foot:'in current list'})}
       ${axStat({label:'Pending requests',val:U_PENDING.length,ic:'user-plus',icColor:'#FFB27C',foot:'contributor access'})}
     </div>
@@ -109,9 +109,9 @@ function renderAdminUsers(){
           <td><div class="adx-who">${axAv(u.name||u.email,u.email,32)}<div style="min-width:0"><div class="nm">${esc(u.name||'—')}</div><div class="em">${esc(u.email)}</div></div></div></td>
           <td>${axRole(u.role)}${u.contributorRequestedAt&&u.role==='USER'?' <span class="adx-bdg" style="background:rgba(255,178,124,.14);color:#FFB27C">requested</span>':''}</td>
           <td>${uStatusCell(u)}</td>
-          <td style="font-size:11.5px;color:${u.emailVerified?'#C2F04A':'#8A93A3'}">${u.emailVerified?'Yes':'No'}</td>
-          <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(String(u.createdAt||'').slice(0,10))}</td>
-          <td class="r"><label class="adx-sel" style="margin-left:auto"><span>${esc(u.role)}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="onRoleSelect('${u.id}',this)">
+          <td style="font-size:11.5px;color:${u.emailVerified?'var(--lime)':'var(--muted)'}">${u.emailVerified?'Yes':'No'}</td>
+          <td class="adx-num" style="font-size:11px;color:var(--muted)">${esc(String(u.createdAt||'').slice(0,10))}</td>
+          <td class="r"><label class="adx-sel" style="margin-left:auto"><span>${esc(u.role)}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i><select onchange="onRoleSelect('${u.id}',this)">
             <option value="USER" ${u.role==='USER'?'selected':''}>USER</option>
             <option value="CONTRIBUTOR" ${u.role==='CONTRIBUTOR'?'selected':''}>CONTRIBUTOR</option>
             <option value="ADMIN" ${u.role==='ADMIN'?'selected':''}>ADMIN</option>

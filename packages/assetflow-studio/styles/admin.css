@@ -2,6 +2,7 @@
    FrameFlow — ADMIN redesign design-system (Bosqich 2 port)
    Manba maket: admin/_admin-redesign-mockup.html (tasdiqlangan).
    Qiymatlar maketdan AYNAN (hex/px/radius/gap) — qayta tokenlashtirilmagan.
+   ISTISNO (D6 #15): brend lime maketdagi #C2F04A dan FrameFlow etaloniga (#d8ff3e) tortildi.
    Prefiks: adx- (app.css bilan to'qnashmaslik uchun). Faqat admin yuklaydi.
    Fontlar: platformadagi self-hosted /assets/fonts (CDN YO'Q).
    ============================================================ */
@@ -116,14 +117,27 @@
 .ph-fill.ph-info:before{content:"\e2ce"}
 .ph-bold.ph-check:before{content:"\e182"}
 
-/* ── TOKENLAR — maket :root bilan AYNAN (AE plagin tokens.css) ── */
+/* ── TOKENLAR — admin maketi (`admin/_admin-redesign-mockup.html`) :root'i.
+   D6 (#15) — izoh ilgari "AE plagin tokens.css bilan AYNAN" deb yolg'on da'vo qilardi: sirt
+   tokenlari (bg/surface/border/red/amber) admin maketiga xos va plagindan farq qiladi. AYNAN
+   bo'lgani — faqat brend lime juftligi: `--lime`/`--lime2` = plagin neon `--accent`/`--accent-2`
+   (#d8ff3e/#baf02c). Aksent qiymatini o'zgartirsang, uchala sirtda birga o'zgartir. ── */
 .adx-app{
   --bg:#06080B; --surface:#13161C; --surface2:#171B22; --surface3:#1A1F28;
   --rail:#0A0D12; --pop:#161B22; --media:#0A0A0A;
-  --text:#F2F5F8; --muted:#8A93A3; --muted2:#5E6675;
+  /* D6 (#12) — matn shkalasi TOKEN: kul-rang qiymatlar admin JS'ida 159 marta inline hardcode
+     edilgan (8A93A3 / 5E6675), 2-darajali matn (B7C0CE, 41 joy) esa umuman tokensiz edi —
+     portal-admin amber rejimi yoki bo'lajak yorug' tema ularni almashtira olmaydi.
+     Endi hammasi shu 4 token. */
+  --text:#F2F5F8; --text2:#B7C0CE; --muted:#8A93A3; --muted2:#5E6675;
   --border:#2A3140; --hair:rgba(255,255,255,.05); --hair2:rgba(255,255,255,.07);
-  --lime:#C2F04A; --lime2:#9CD62B; --onlime:#0E1400;
-  --glow:rgba(194,240,74,.3); --limedim:rgba(194,240,74,.12);
+  /* D6 (#15) — aksentning HAR bir ko'rinishi shu tokenlardan kelib chiqadi. Ilgari qoidalarda
+     ham, admin JS'ida ham xom `#d8ff3e` / `rgba(216,255,62,α)` yozilgan edi: `body.portal-admin`
+     aksentni amberga almashtirsa ham o'sha joylar lime qolib, konsolda ikki rang urishardi.
+     Aniq alfa kerak bo'lganda (fokus halqasi) `color-mix(in srgb,var(--lime) α%,transparent)` —
+     shunda alfa saqlanadi va rang tokendan keladi. */
+  --lime:#d8ff3e; --lime2:#baf02c; --onlime:#0a0d02;
+  --glow:rgba(216,255,62,.3); --limedim:rgba(216,255,62,.12);
   --select:#7CC4FF; --seldim:rgba(124,196,255,.16);
   --red:#FF6B5E; --reddim:rgba(255,107,94,.14);
   --amber:#FFB27C; --amberdim:rgba(255,178,124,.14);
@@ -141,7 +155,7 @@ body.portal-admin .adx-app{
 body.portal-admin .adx-eyebrow{color:#FFB000}
 .adx-portal-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font:700 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;background:var(--limedim);color:var(--lime);border:1px solid rgba(255,176,0,.36);white-space:nowrap}
 
-@keyframes adxbreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(194,240,74,0)}50%{opacity:.85;box-shadow:0 0 26px 2px rgba(194,240,74,.24)}}
+@keyframes adxbreathe{0%,100%{opacity:1;box-shadow:0 0 0 0 transparent}50%{opacity:.85;box-shadow:0 0 26px 2px color-mix(in srgb,var(--lime) 24%,transparent)}}
 @keyframes adxspin{to{transform:rotate(360deg)}}
 
 /* #79 (X5) — klaviatura fokusi: admin qobig'ida ham bitta focus halqasi */
@@ -176,7 +190,7 @@ body.adx-body{background:#06080B}
 .adx-btn2{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 16px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--text);font-weight:600;font-size:12px;white-space:nowrap;cursor:pointer;font-family:inherit}
 .adx-btn2.sm{height:32px;padding:0 13px;font-size:11.5px}
 .adx-btn2.full{width:100%}
-.adx-btn-ok{background:rgba(194,240,74,.14);border:1px solid rgba(194,240,74,.3);color:#C2F04A}
+.adx-btn-ok{background:color-mix(in srgb,var(--lime) 14%,transparent);border:1px solid color-mix(in srgb,var(--lime) 30%,transparent);color:var(--lime)}
 .adx-btn-warn{background:rgba(255,178,124,.14);border:1px solid rgba(255,178,124,.32);color:#FFB27C}
 .adx-btn-danger{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 16px;border-radius:999px;background:var(--red);color:#1C0806;font-weight:700;font-size:12px;cursor:pointer;border:0;font-family:inherit}
 .adx-btn-danger.sm{height:32px;padding:0 13px;font-size:11.5px}
@@ -198,7 +212,7 @@ body.adx-body{background:#06080B}
 .adx-inp{height:38px;display:flex;align-items:center;gap:8px;padding:0 13px;background:var(--f1);border:1px solid var(--hair2);border-radius:10px;color:var(--muted2);font-size:12.5px}
 .adx-inp input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font:inherit;font-size:12.5px}
 .adx-inp input::placeholder{color:var(--muted2)}
-.adx-inp:focus-within{background:var(--f2);border-color:rgba(194,240,74,.5);box-shadow:0 0 0 3px rgba(194,240,74,.12);color:var(--text)}
+.adx-inp:focus-within{background:var(--f2);border-color:color-mix(in srgb,var(--lime) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 12%,transparent);color:var(--text)}
 .adx-field{height:38px;display:flex;align-items:center;padding:0 12px;background:var(--f1);border:1px solid var(--hair2);border-radius:9px;color:var(--text);font-size:12.5px}
 .adx-sel{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;background:var(--f1);border:1px solid var(--hair2);border-radius:9px;color:var(--text);font-size:12px;white-space:nowrap;position:relative;cursor:pointer}
 .adx-sel select{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
@@ -206,13 +220,13 @@ body.adx-body{background:#06080B}
 /* ── Badge (holat) ── */
 .adx-bdg{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:9.5px;letter-spacing:.02em;padding:3px 9px;border-radius:999px}
 .adx-bdg .bd{width:5px;height:5px;border-radius:50%;background:currentColor}
-.adx-bdg-active,.adx-bdg-approved{color:#C2F04A;background:rgba(194,240,74,.13)}
+.adx-bdg-active,.adx-bdg-approved{color:var(--lime);background:color-mix(in srgb,var(--lime) 13%,transparent)}
 .adx-bdg-pending,.adx-bdg-soft{color:#FFB27C;background:rgba(255,178,124,.14)}
 .adx-bdg-blocked,.adx-bdg-hard{color:#FF6B5E;background:rgba(255,107,94,.14)}
-.adx-bdg-removed,.adx-bdg-draft{color:#8A93A3;background:rgba(255,255,255,.06)}
+.adx-bdg-removed,.adx-bdg-draft{color:var(--muted);background:rgba(255,255,255,.06)}
 .adx-bdg-info{color:#7CC4FF;background:rgba(124,196,255,.14)}
-.adx-bdg-pro{color:#0E1400;background:#C2F04A}
-.adx-bdg-free{color:#B7C0CE;background:rgba(255,255,255,.07)}
+.adx-bdg-pro{color:var(--onlime);background:var(--lime)}
+.adx-bdg-free{color:var(--text2);background:rgba(255,255,255,.07)}
 
 /* ── Stat karta ── */
 .adx-stat{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px 18px;min-width:0}
@@ -220,13 +234,13 @@ body.adx-body{background:#06080B}
 .adx-stat .sl i{font-size:14px}
 .adx-stat .sv{font-weight:700;font-size:26px;letter-spacing:-.02em;margin-top:9px;font-variant-numeric:tabular-nums}
 .adx-stat .sf{font-size:11px;color:var(--muted2);margin-top:4px;display:flex;align-items:center;gap:5px}
-.adx-up{color:#C2F04A}.adx-down{color:#FF6B5E}
+.adx-up{color:var(--lime)}.adx-down{color:#FF6B5E}
 
 /* ── Data table ── */
 .adx-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .adx-tbl th{text-align:left;font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--muted2);padding:0 14px 11px;border-bottom:1px solid var(--hair2);white-space:nowrap;text-transform:uppercase}
 .adx-tbl thead th{padding-top:12px}
-.adx-tbl td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.045);color:#B7C0CE;vertical-align:middle}
+.adx-tbl td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.045);color:var(--text2);vertical-align:middle}
 .adx-tbl tr:last-child td{border-bottom:0}
 .adx-tbl tbody tr:hover td{background:rgba(255,255,255,.02)}
 .adx-tbl .num{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
@@ -234,7 +248,7 @@ body.adx-body{background:#06080B}
 .adx-av{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;border:1px solid rgba(255,255,255,.14)}
 .adx-who .nm{font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adx-who .em{font-size:10.5px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.adx-iact{width:30px;height:30px;border-radius:8px;background:var(--f1);border:1px solid var(--hair2);display:inline-flex;align-items:center;justify-content:center;color:#B7C0CE;font-size:14px;cursor:pointer;font-family:inherit}
+.adx-iact{width:30px;height:30px;border-radius:8px;background:var(--f1);border:1px solid var(--hair2);display:inline-flex;align-items:center;justify-content:center;color:var(--text2);font-size:14px;cursor:pointer;font-family:inherit}
 .adx-iact:hover{background:var(--f2);color:var(--text)}
 .adx-iact.dg:hover{color:#FF6B5E;border-color:rgba(255,107,94,.3)}
 
@@ -243,10 +257,10 @@ body.adx-body{background:#06080B}
 .adx-prog .pb{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--lime)}
 .adx-prog .pb.warn{background:var(--amber)}.adx-prog .pb.dan{background:var(--red)}
 .adx-bars{display:flex;align-items:flex-end;gap:5px;height:150px}
-.adx-bars .b{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--lime),rgba(194,240,74,.25));min-width:0}
+.adx-bars .b{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--lime),color-mix(in srgb,var(--lime) 25%,transparent));min-width:0}
 .adx-bars .b.sel{background:linear-gradient(180deg,var(--select),rgba(124,196,255,.25))}
 .adx-spark{display:flex;align-items:flex-end;gap:3px;height:44px}
-.adx-spark .b{width:100%;flex:1;border-radius:2px;background:rgba(194,240,74,.55)}
+.adx-spark .b{width:100%;flex:1;border-radius:2px;background:color-mix(in srgb,var(--lime) 55%,transparent)}
 .adx-donut{width:130px;height:130px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .adx-donut .hole{width:88px;height:88px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center}
 
@@ -262,12 +276,12 @@ body.adx-body{background:#06080B}
 .adx-shead{font:600 8.5px 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--muted2);padding:13px 11px 6px}
 .adx-sit{height:35px;display:flex;align-items:center;gap:10px;padding:0 11px;border-radius:9px;font-weight:500;font-size:12.5px;color:var(--muted);position:relative;white-space:nowrap;cursor:pointer;width:100%;text-align:left;background:none;border:0;font-family:inherit;flex:none}
 .adx-sit i{font-size:16px;flex:none}
-.adx-sit:hover{background:var(--f1);color:#B7C0CE}
+.adx-sit:hover{background:var(--f1);color:var(--text2)}
 .adx-sit.on{background:var(--f2);color:var(--text);font-weight:600}
 .adx-sit.on::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--lime)}
-.adx-nbadge{margin-left:auto;font:700 9px 'IBM Plex Mono',monospace;padding:1px 6px;border-radius:999px;background:var(--f3);color:#B7C0CE}
+.adx-nbadge{margin-left:auto;font:700 9px 'IBM Plex Mono',monospace;padding:1px 6px;border-radius:999px;background:var(--f3);color:var(--text2)}
 .adx-nbadge.warn{background:rgba(255,178,124,.18);color:#FFB27C}
-.adx-nbadge.brand{background:rgba(194,240,74,.16);color:#C2F04A}
+.adx-nbadge.brand{background:color-mix(in srgb,var(--lime) 16%,transparent);color:var(--lime)}
 .adx-ucard{display:flex;align-items:center;gap:10px;padding:9px;border-radius:11px;background:var(--surface);border:1px solid rgba(255,255,255,.07)}
 .adx-ucard .uout{margin-left:auto;font-size:15px;color:var(--muted2);background:none;border:0;cursor:pointer;padding:0;display:inline-flex}
 .adx-ucard .uout:hover{color:var(--red)}
@@ -277,7 +291,7 @@ body.adx-body{background:#06080B}
 .adx-topbar{height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid var(--hair);background:rgba(10,13,18,.6)}
 .adx-crumb{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.02em;color:var(--muted2);display:flex;align-items:center;gap:6px;white-space:nowrap}
 .adx-ptitle{font-weight:700;font-size:17px;letter-spacing:-.01em;margin-top:1px;white-space:nowrap}
-.adx-ico{width:34px;height:34px;flex:none;border-radius:9px;background:var(--f1);border:1px solid var(--hair2);display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:#B7C0CE;position:relative;cursor:pointer;font-family:inherit}
+.adx-ico{width:34px;height:34px;flex:none;border-radius:9px;background:var(--f1);border:1px solid var(--hair2);display:inline-flex;align-items:center;justify-content:center;font-size:16px;color:var(--text2);position:relative;cursor:pointer;font-family:inherit}
 .adx-ico .ndot{position:absolute;top:7px;right:8px;width:6px;height:6px;border-radius:50%;background:#FFB27C;border:1.5px solid #0A0D12}
 .adx-kbd{font:500 9px 'IBM Plex Mono',monospace;color:var(--muted2);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:1px 5px}
 .adx-tbactions{display:flex;align-items:center;gap:12px}
@@ -290,7 +304,7 @@ body.adx-body{background:#06080B}
 .adx-empty{border:1px dashed rgba(255,255,255,.1);border-radius:14px;padding:30px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
 .adx-empty .ei{width:44px;height:44px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--muted)}
 .adx-spin{animation:adxspin 1.1s linear infinite;display:inline-flex}
-.adx-link{font-size:11.5px;color:#8A93A3;cursor:pointer;background:none;border:0;font-family:inherit;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.adx-link{font-size:11.5px;color:var(--muted);cursor:pointer;background:none;border:0;font-family:inherit;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
 .adx-link:hover{color:var(--text)}
 .adx-link i{font-size:11px}
 
@@ -312,15 +326,15 @@ body.adx-body{background:#06080B}
 .adx-modselall:hover{background:var(--surface2)}
 .adx-modscroll{flex:1;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:9px}
 .adx-moditem{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:11px 12px;cursor:pointer;text-align:left;font-family:inherit;color:inherit}
-.adx-moditem.sel{background:var(--surface2);border-color:rgba(194,240,74,.3)}
+.adx-moditem.sel{background:var(--surface2);border-color:color-mix(in srgb,var(--lime) 30%,transparent)}
 .adx-modcheck{width:16px;height:16px;border-radius:5px;border:1px solid rgba(255,255,255,.22);flex:none;display:inline-flex;align-items:center;justify-content:center;color:transparent;font-size:10px;cursor:pointer;background:none}
-.adx-modcheck.on{background:var(--lime);border-color:var(--lime);color:#0E1400}
+.adx-modcheck.on{background:var(--lime);border-color:var(--lime);color:var(--onlime)}
 .adx-modthumb{width:52px;height:36px;border-radius:8px;flex:none;overflow:hidden;position:relative;background:var(--media)}
 .adx-modthumb img,.adx-modthumb video{width:100%;height:100%;object-fit:cover;display:block}
 .adx-moddetail{flex:1;overflow:auto;padding:20px 24px;min-width:0}
 .adx-metabox{background:var(--surface);border:1px solid var(--hair2);border-radius:10px;padding:10px 12px}
-.adx-filechip{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 8px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:#B7C0CE;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
-.adx-decide{margin-top:18px;background:var(--surface);border:1px solid rgba(194,240,74,.18);border-radius:14px;padding:16px 18px}
+.adx-filechip{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:3px 8px;border-radius:999px;background:var(--f2);border:1px solid var(--hair2);color:var(--text2);text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.adx-decide{margin-top:18px;background:var(--surface);border:1px solid color-mix(in srgb,var(--lime) 18%,transparent);border-radius:14px;padding:16px 18px}
 .adx-prevbox{width:300px;height:190px;border-radius:12px;flex:none;position:relative;overflow:hidden;background:var(--media)}
 .adx-prevbox img,.adx-prevbox video{width:100%;height:100%;object-fit:cover;display:block}
 .adx-tagpill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--f1);border:1px solid var(--f2);font-weight:500;font-size:11.5px;color:var(--muted);white-space:nowrap}
@@ -346,7 +360,7 @@ body.adx-body{background:#06080B}
 .adx-tog.off,.adx-tog:not(.on){background:var(--f3)}
 .adx-tog i{position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
 .adx-tog.on i{right:2px}
-.adx-tog:not(.on) i{left:2px;background:#8A93A3}
+.adx-tog:not(.on) i{left:2px;background:var(--muted)}
 /* Grid yordamchilar */
 .adx-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .adx-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
@@ -356,8 +370,8 @@ body.adx-body{background:#06080B}
 .adx-chatwrap{flex:1;overflow:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
 .adx-msg{display:flex;gap:10px;max-width:72%}
 .adx-msg.me{margin-left:auto;flex-direction:row-reverse}
-.adx-bub{border-radius:4px 12px 12px 12px;padding:10px 13px;font-size:12.5px;color:#B7C0CE;background:var(--surface2);border:1px solid var(--hair2)}
-.adx-msg.me .adx-bub{border-radius:12px 4px 12px 12px;background:var(--limedim);border-color:rgba(194,240,74,.2);color:#DCE7C8}
+.adx-bub{border-radius:4px 12px 12px 12px;padding:10px 13px;font-size:12.5px;color:var(--text2);background:var(--surface2);border:1px solid var(--hair2)}
+.adx-msg.me .adx-bub{border-radius:12px 4px 12px 12px;background:var(--limedim);border-color:color-mix(in srgb,var(--lime) 20%,transparent);color:#DCE7C8}
 .adx-msgt{font:400 9px 'IBM Plex Mono',monospace;color:var(--muted2);margin-top:4px}
 .adx-msg.me .adx-msgt{text-align:right}
 /* Kichik floating edit panel (maket b2 narx tahriri) */
@@ -368,12 +382,12 @@ body.adx-body{background:#06080B}
 .adx-finp{height:38px;display:flex;align-items:center;padding:0 12px;background:var(--f1);border:1px solid var(--hair2);border-radius:9px;color:var(--text);font-size:12.5px;width:100%}
 .adx-finp input,.adx-finp textarea,.adx-finp select{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font:inherit;font-size:12.5px}
 .adx-finp textarea{resize:vertical;padding:2px 0}
-.adx-finp:focus-within{background:var(--f2);border-color:rgba(194,240,74,.5);box-shadow:0 0 0 3px rgba(194,240,74,.12)}
+.adx-finp:focus-within{background:var(--f2);border-color:color-mix(in srgb,var(--lime) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 12%,transparent)}
 .adx-finp.ta{height:auto;padding:9px 12px;align-items:flex-start}
 /* Standalone editable input/select/textarea (form ekranlari) */
 .adx-input{height:38px;width:100%;padding:0 12px;background:var(--f1);border:1px solid var(--hair2);border-radius:9px;color:var(--text);font-size:12.5px;font-family:inherit;outline:none}
 .adx-input::placeholder{color:var(--muted2)}
-.adx-input:focus{background:var(--f2);border-color:rgba(194,240,74,.5);box-shadow:0 0 0 3px rgba(194,240,74,.12)}
+.adx-input:focus{background:var(--f2);border-color:color-mix(in srgb,var(--lime) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 12%,transparent)}
 .adx-input.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
 select.adx-input{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:none}
 textarea.adx-input{height:auto;padding:9px 12px;resize:vertical;line-height:1.5}
@@ -390,7 +404,7 @@ textarea.adx-input{height:auto;padding:9px 12px;resize:vertical;line-height:1.5}
   .adx-sit span.lbl{display:none}
   .adx-sit.on::before{left:-11px;top:9px;bottom:9px}
   .adx-nbadge{position:absolute;top:4px;right:5px;margin:0;width:6px;height:6px;padding:0;border-radius:50%;overflow:hidden;color:transparent;background:#FFB27C}
-  .adx-nbadge.brand{background:#C2F04A}
+  .adx-nbadge.brand{background:var(--lime)}
   .adx-ucard{background:none;border:0;padding:0}
   .adx-ucard>div,.adx-ucard .uout{display:none}
   .adx-search{display:none}
@@ -408,7 +422,7 @@ textarea.adx-input{height:auto;padding:9px 12px;resize:vertical;line-height:1.5}
   .adx-sit{width:100%;height:35px;border-radius:9px;justify-content:flex-start;padding:0 11px;gap:10px}
   .adx-sit span.lbl{display:inline}
   .adx-nbadge{position:static;width:auto;height:auto;padding:1px 6px;border-radius:999px;color:#FFB27C;background:rgba(255,178,124,.18);margin-left:auto;overflow:visible}
-  .adx-nbadge.brand{color:#C2F04A;background:rgba(194,240,74,.16)}
+  .adx-nbadge.brand{color:var(--lime);background:color-mix(in srgb,var(--lime) 16%,transparent)}
   .adx-ucard{background:var(--surface);border:1px solid rgba(255,255,255,.07);padding:9px}
   .adx-ucard>div{display:block}
   .adx-ucard .uout{display:inline-flex}

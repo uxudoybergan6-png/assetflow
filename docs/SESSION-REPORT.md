@@ -1,18 +1,21 @@
-# Sessiya hisoboti — 2026-07-31 (dizayn fix-kampaniya: D5)
+# Sessiya hisoboti — 2026-07-31 (dizayn fix-kampaniya: D6)
 
-**Oldingi:** D0 (a8f92c5), D1 (2941809), D2 (e1b0733), D3 (24e3141), D4 (85ea6f2) yopilgan.
+**Oldingi:** D0 (a8f92c5), D1 (2941809), D2 (e1b0733), D3 (24e3141), D4 (85ea6f2), D5 (547fb3b) yopilgan.
 
-**BATCH D5 — Platforma webapp `va-` (5/5).** Manba: `platform/index.html` + `verify-public-copy.mjs`.
-(1) Loyihadan olib tashlash: 1 klikdagi qaytarilmas DELETE → armed 2-klik (`projItemArm`, per-karta
-`rmCls`, 3.5s auto-disarm); `.va-projrm` 26→32px, ≤760px doim ko'rinadi. Jonli o'lchandi: 1-klik faqat
-shu kartani qurollantiradi, 2-klik o'chiradi. (2) Media skeleton: `ffMediaHost` + `load` listeneri
-`window`→`document` — element `load` spek bo'yicha window'ga CHIQMAYDI, ya'ni shimmer hech qachon
-o'chmasdi (brauzerda o'lchandi); kontraktga yozildi (137/137). (3) `.va-rel4` → `auto-fit` (spec
-`auto-fill` deydi, lekin `related` 4 ta: `auto-fill` keng ekranda bo'sh trek qoldirib aynan shu
-findingni qaytaradi — izohda). (4) Mobil tab "Catalog"→"Stock"; o'lik `.va-tc` avlodi (8 qoida);
-7 `tt`ga `title`. (5) Toast: inline 14 xossa → `.va-toast` + `--th-surface`/`--th-on-accent`
-(neon/cold tekshirildi), o'lik `.va-toastwrap` ketdi, markazlash `translate`ga (animatsiya
-transform'ni yozib toastni chapga sirg'atardi); Retry jonli sinaldi. Pul zonasi tegilmagan.
-**Yangi:** audit §6 N5 (`.va-rejbanner` ayni markazlash defekti), N6 (`load` ≠ window saboqi).
+**BATCH D6 — dizayn tizimini birlashtirish (7/7).** (1) Lime etaloni `#d8ff3e`: `admin.css` aksenti +
+11 `admin-*.js` faylidagi 260 inline qiymat tokenga (200 kul-rang, 60 lime), yangi `--text2:#B7C0CE`,
+aniq alfalar `color-mix(in srgb,var(--lime) α%,transparent)`. Sabab jonli o'lchandi: `body.portal-admin`
+aksentni amberga almashtiradi, ya'ni xom lime hexlar konsolda ikki rang urishtirardi — endi `.adx-app`
+ichida xom lime **0 ta**, `--lime`=`#FFB000`. (2) `platform/index.html` shrift hardcode'lari →
+`var(--sans)/(--mono)/(--display)`; o'lik self-hosted qatlam (35 `@font-face`, 319 qator) o'chirildi
+(`.woff2` fayllari qoldi — `admin.css` self-host qiladi). Reload'dan keyin Hanken/Plex iste'molchi 0.
+(3) Xom gliflar `⬇↻⧉🗑` → Phosphor/sprayt (yangi `i-refresh`): menyu + 2 bulk panel + karta paneli.
+(4) 8 ta `confirm()` → `afConfirm` modali (`js/ui.js`), 0 xom `confirm(` qoldi; Cancel/Esc/scrim →
+`false`, tugma → `true`, fokus modalga (brauzerda o'lchandi). (5) O'lik `--r-xl` o'chirildi (18px ga
+o'zgartirilmadi). (6) `design-system.html` 09-bo'lim: 4 sirt × 11 rol token jadvali + drift ogohligi.
+Qo'shimcha: audit N5 (`.va-rejbanner` markazlashuvi `translate` ga). Pul zonasi tegilmagan.
+**Yangi findinglar:** N7 (`alert()`/`prompt()`), N8 (status hexlari), N9 (JS glif konstantalari).
 
-**Keyingi:** D6 (dizayn-tizim: lime/font/ikon + N1/N4/N5) → D7–D9. Egasi: Neon + 8 migratsiya.
+**Tekshirildi:** `studio:sync` ✓ · `verify-public-copy` 137/137 ✓ · `test:plugin-responsive` ✓.
+**Kutilmoqda:** Neon kvota — API'siz ma'lumotga tayangan admin ekranlari sinovdan tashqarida.
+**Keyingi:** D7 (plagin polish) → D8 (marketing/SEO) → D9. Egasi: Neon + 8 migratsiya.

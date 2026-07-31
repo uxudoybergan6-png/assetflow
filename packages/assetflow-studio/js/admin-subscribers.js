@@ -136,13 +136,13 @@ function axUsageCell(s){
   const p = planById(label.toLowerCase());
   const effLim = s.downloadLimitOverride != null ? s.downloadLimitOverride : (p.unlimitedDownloads ? null : p.downloadLimit);
   if(effLim == null){
-    return `<span style="font-size:11px;color:#C2F04A">Unlimited</span><div class="adx-num" style="font-size:9.5px;color:#8A93A3;margin-top:3px">${s.downloadsMonth ?? 0} this month</div>`;
+    return `<span style="font-size:11px;color:var(--lime)">Unlimited</span><div class="adx-num" style="font-size:9.5px;color:var(--muted);margin-top:3px">${s.downloadsMonth ?? 0} this month</div>`;
   }
   const used = s.downloadsMonth ?? 0;
   const lim = effLim || 0;
   const pct = subscriberUsagePct(s) ?? 0;
   const cls = pct>=100 ? 'dan' : pct>=80 ? 'warn' : '';
-  return `<div style="min-width:110px"><div class="adx-prog"><div class="pb ${cls}" style="width:${Math.min(100,pct)}%"></div></div><div class="adx-num" style="font-size:9.5px;color:#8A93A3;margin-top:4px">${used} / ${lim}</div></div>`;
+  return `<div style="min-width:110px"><div class="adx-prog"><div class="pb ${cls}" style="width:${Math.min(100,pct)}%"></div></div><div class="adx-num" style="font-size:9.5px;color:var(--muted);margin-top:4px">${used} / ${lim}</div></div>`;
 }
 
 /** Obunachilar topbar amallari (reja filtri + AI reindex + CSV). */
@@ -150,7 +150,7 @@ function axSubTopbar(){
   const tba = document.getElementById('tbActions');
   if(!tba || (typeof CURRENT!=='undefined' && CURRENT!=='subscribers')) return;
   tba.innerHTML =
-    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${SUB_PLAN_FILTER==='all'?'All plans':SUB_PLAN_FILTER}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i><select onchange="SUB_PLAN_FILTER=this.value;route('subscribers')"><option value="all">All plans</option><option value="Free" ${SUB_PLAN_FILTER==='Free'?'selected':''}>Free</option><option value="Pro" ${SUB_PLAN_FILTER==='Pro'?'selected':''}>Pro</option></select></label>`+
+    `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${SUB_PLAN_FILTER==='all'?'All plans':SUB_PLAN_FILTER}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i><select onchange="SUB_PLAN_FILTER=this.value;route('subscribers')"><option value="all">All plans</option><option value="Free" ${SUB_PLAN_FILTER==='Free'?'selected':''}>Free</option><option value="Pro" ${SUB_PLAN_FILTER==='Pro'?'selected':''}>Pro</option></select></label>`+
     `<button class="adx-btn2 sm" id="aiReindexBtn" onclick="aiReindex()" title="Generates AI semantic search embeddings for approved templates"><i class="ph ph-arrow-clockwise"></i>Re-index AI</button>`+
     `<button class="adx-btn2 sm" onclick="toast('Export','Preparing subscribers CSV…','info')"><i class="ph ph-export"></i>CSV</button>`;
 }
@@ -163,7 +163,7 @@ VIEWS.subscribers = function () {
     ${window._ASSETFLOW_SUBSCRIBER_TRUNCATED ? axInfo(`<b style="color:var(--text)">Showing the ${SUB_MAX_ROWS.toLocaleString()} most recently active</b> of ${sc.total.toLocaleString()} subscribers — the table search only covers the loaded rows. The counters above are for all subscribers.`,'amber') : ''}
     <div class="adx-grid5" style="margin-bottom:16px">
       ${axStat({label:'Total subscribers',val:sc.total,ic:'users',foot:'registered'})}
-      ${axStat({label:'Active',val:sc.active,ic:'check-circle',icColor:'#C2F04A',foot:'account status'})}
+      ${axStat({label:'Active',val:sc.active,ic:'check-circle',icColor:'var(--lime)',foot:'account status'})}
       ${axStat({label:'Online',val:sc.online,ic:'gauge',icColor:'#7CC4FF',foot:'seen in last hour'})}
       ${axStat({label:'Blocked',val:sc.blocked,ic:'prohibit',icColor:'#FF6B5E',foot:'access closed'})}
       ${axStat({label:'Removed',val:sc.removed,ic:'trash',foot:'removed'})}
@@ -182,12 +182,12 @@ VIEWS.subscribers = function () {
             <td><div class="adx-who">${axAv(s.name,s.email,32)}<div style="min-width:0"><div class="nm">${esc(s.name)}</div><div class="em">${esc(s.email)}</div></div></div></td>
             <td>${axStatus(s.status)}</td>
             <td>${axPlan(s.plan)}</td>
-            <td style="font-size:11px"><div style="color:var(--text)">AE ${esc(s.ae||'—')}</div><div style="color:#8A93A3">${esc(s.device||'—')}</div></td>
+            <td style="font-size:11px"><div style="color:var(--text)">AE ${esc(s.ae||'—')}</div><div style="color:var(--muted)">${esc(s.device||'—')}</div></td>
             <td>${axUsageCell(s)}</td>
             <td class="r adx-num">${(s.downloads||0).toLocaleString()}</td>
             <td class="r adx-num">${s.imports||0}</td>
             <td>${s.tokenOk?'<span class="adx-bdg adx-bdg-approved">OK</span>':'<span class="adx-bdg adx-bdg-blocked">Closed</span>'}</td>
-            <td class="adx-num" style="font-size:11px;color:#8A93A3;white-space:nowrap">${esc(s.lastSeen||'—')}</td>
+            <td class="adx-num" style="font-size:11px;color:var(--muted);white-space:nowrap">${esc(s.lastSeen||'—')}</td>
             <td class="r" onclick="event.stopPropagation()"><div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
               <button class="adx-iact" title="Message" onclick="openMessageSub('${s.id}')"><i class="ph ph-chat-circle"></i></button>
               ${subActMenu(s)}
@@ -215,11 +215,11 @@ VIEWS["subscriber-detail"] = function (id) {
   return `
     <button class="adx-btn2 sm" style="margin-bottom:16px" onclick="route('subscribers')"><i class="ph ph-caret-left"></i>AE subscribers</button>
     ${blocked?axInfo(`<b style="color:var(--text)">Plugin access blocked</b> — ${esc(s.blockReason||"Blocked by admin.")} <a style="color:#FF6B5E;text-decoration:underline;cursor:pointer" onclick="unblockSub('${s.id}')">Unblock</a>`,'red'):''}
-    ${removed?axInfo(`<b style="color:var(--text)">Removed from system</b> — ${esc(s.removeReason||"")} ${esc(s.removedAt||"")} <a style="color:#C2F04A;text-decoration:underline;cursor:pointer" onclick="restoreSub('${s.id}')">Restore</a>`,'amber'):''}
+    ${removed?axInfo(`<b style="color:var(--text)">Removed from system</b> — ${esc(s.removeReason||"")} ${esc(s.removedAt||"")} <a style="color:var(--lime);text-decoration:underline;cursor:pointer" onclick="restoreSub('${s.id}')">Restore</a>`,'amber'):''}
     <div class="adx-card" style="padding:18px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       ${axAv(s.name,s.email,56)}
       <div style="flex:1;min-width:220px"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span class="adx-h18">${esc(s.name)}</span>${axStatus(s.status)}${axPlan(s.plan)}</div>
-        <div style="font-size:11.5px;color:#8A93A3;margin-top:3px">${esc(s.email)}${s.device?' · '+esc(s.device):''} · ID: <span class="adx-num">${esc(shortId(s.id))}</span></div></div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:3px">${esc(s.email)}${s.device?' · '+esc(s.device):''} · ID: <span class="adx-num">${esc(shortId(s.id))}</span></div></div>
       <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;max-width:380px">
         ${!removed?`<button class="adx-btn2 sm" onclick="openTogglePlanSub('${s.id}')"><i class="ph ph-${isPro?'arrow-u-up-left':'crown'}"></i>${isPro?'Make Free':'Make Pro'}</button>`:''}
         ${!removed?`<button class="adx-btn2 sm" onclick="openAiCreditsSub('${s.id}')"><i class="ph ph-coins"></i>AI credits (${typeof s.aiCredits==='number'?s.aiCredits:'—'})</button>`:''}
@@ -229,27 +229,27 @@ VIEWS["subscriber-detail"] = function (id) {
         ${!removed?`<button class="adx-btn-danger sm" onclick="openRemoveSub('${s.id}')">Remove</button>`:`<button class="adx-btn2 sm adx-btn-ok" onclick="restoreSub('${s.id}')"><i class="ph ph-arrow-clockwise"></i>Restore</button>`}
       </div>
     </div>
-    ${!removed?`<div style="display:flex;align-items:center;gap:9px;padding:10px 13px;background:var(--limedim);border:1px solid rgba(194,240,74,.22);border-radius:11px;margin-top:14px"><i class="ph ph-crown" style="color:#C2F04A;font-size:15px"></i><span style="font-size:11.5px;color:#B7C0CE">Plan: <b style="color:var(--text)">${normalizePlanLabel(s.plan)}</b> — ${limNote}${hasOverride?' · <b style="color:#FFB27C">custom limit</b>':''}.</span><span style="flex:1"></span><span class="adx-num" style="font-size:10.5px;color:#C2F04A;cursor:pointer" onclick="openLimitOverrideSub('${s.id}')">Edit limit</span></div>`:''}
+    ${!removed?`<div style="display:flex;align-items:center;gap:9px;padding:10px 13px;background:var(--limedim);border:1px solid var(--glow);border-radius:11px;margin-top:14px"><i class="ph ph-crown" style="color:var(--lime);font-size:15px"></i><span style="font-size:11.5px;color:var(--text2)">Plan: <b style="color:var(--text)">${normalizePlanLabel(s.plan)}</b> — ${limNote}${hasOverride?' · <b style="color:#FFB27C">custom limit</b>':''}.</span><span style="flex:1"></span><span class="adx-num" style="font-size:10.5px;color:var(--lime);cursor:pointer" onclick="openLimitOverrideSub('${s.id}')">Edit limit</span></div>`:''}
     <div class="adx-grid4" style="margin-top:14px">
       ${axStat({label:'Downloads this month',val:s.downloadsMonth ?? 0,ic:'download-simple',foot:effDl===null?'unlimited':effDl+' limit'})}
-      ${axStat({label:'Total downloads',val:(s.downloads||0).toLocaleString(),ic:'download-simple',icColor:'#C2F04A'})}
+      ${axStat({label:'Total downloads',val:(s.downloads||0).toLocaleString(),ic:'download-simple',icColor:'var(--lime)'})}
       ${axStat({label:'AE imports',val:(s.imports||0).toLocaleString(),ic:'export',icColor:'#7CC4FF'})}
       ${axStat({label:'Last active',val:`<span style="font-size:18px">${esc(s.lastSeen||'—')}</span>`,ic:'clock-countdown',foot:s.device||''})}
     </div>
     <div class="adx-grid2" style="margin-top:14px">
       <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Plugin connection</span></div><div style="padding:6px 4px">
-        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px"><span style="color:#8A93A3">Token</span>${s.tokenOk?'<span class="adx-bdg adx-bdg-approved">Active</span>':'<span class="adx-bdg adx-bdg-blocked">Revoked</span>'}</div>
-        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:#8A93A3">Device</span><span style="color:var(--text)">${esc(s.device||'—')}${s.ae?' · AE '+esc(s.ae):''}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:#8A93A3">Country</span><span style="color:var(--text)">${esc(s.country||'—')}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:#8A93A3">Plan</span>${axPlan(s.plan)}</div>
+        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px"><span style="color:var(--muted)">Token</span>${s.tokenOk?'<span class="adx-bdg adx-bdg-approved">Active</span>':'<span class="adx-bdg adx-bdg-blocked">Revoked</span>'}</div>
+        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:var(--muted)">Device</span><span style="color:var(--text)">${esc(s.device||'—')}${s.ae?' · AE '+esc(s.ae):''}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:var(--muted)">Country</span><span style="color:var(--text)">${esc(s.country||'—')}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:9px 14px;font-size:12px;border-top:1px solid var(--hair)"><span style="color:var(--muted)">Plan</span>${axPlan(s.plan)}</div>
       </div></div>
       <div class="adx-card"><div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Recent activity</span></div>
-        <div class="adx-empty" style="border:0;padding:22px"><span class="ei"><i class="ph ph-clock-countdown"></i></span><div style="font-size:11.5px;color:#B7C0CE;line-height:1.5">Last seen <b style="color:var(--text)">${esc(s.lastSeen||'—')}</b>${s.device?' · '+esc(s.device):''}${s.ae?' · AE '+esc(s.ae):''}</div><div style="font-size:10.5px;color:var(--muted2)">Detailed event log — in the Activity log section.</div>
+        <div class="adx-empty" style="border:0;padding:22px"><span class="ei"><i class="ph ph-clock-countdown"></i></span><div style="font-size:11.5px;color:var(--text2);line-height:1.5">Last seen <b style="color:var(--text)">${esc(s.lastSeen||'—')}</b>${s.device?' · '+esc(s.device):''}${s.ae?' · AE '+esc(s.ae):''}</div><div style="font-size:10.5px;color:var(--muted2)">Detailed event log — in the Activity log section.</div>
       </div>
     </div>
     <div class="adx-card" id="subGenSection" style="margin-top:14px">
-      <div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Generations</span><span id="subGenSummary" style="font-size:11px;color:#8A93A3"></span></div>
-      <div id="subGenBody" style="padding:8px 4px"><div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:#8A93A3">Loading generations…</div></div>
+      <div class="adx-cardhd"><span class="adx-h16" style="font-size:13.5px">Generations</span><span id="subGenSummary" style="font-size:11px;color:var(--muted)"></span></div>
+      <div id="subGenBody" style="padding:8px 4px"><div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:var(--muted)">Loading generations…</div></div>
     </div>`;
 };
 
@@ -290,8 +290,8 @@ function subGenCard(g) {
   return `<div style="display:flex;gap:11px;padding:9px 10px;border-top:1px solid var(--hair);align-items:flex-start" id="subGenRow_${esc(g.id)}">
     ${media}
     <div style="flex:1;min-width:0">
-      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${subGenStatusBadge(g.status)}<span style="font-size:10.5px;color:#8A93A3">${esc(g.model||'')}</span><span style="font-size:10.5px;color:#6b7280">· ${g.cost||0} cr</span>${g.refunded?'<span class="adx-bdg" style="background:rgba(124,196,255,.14);color:#7CC4FF">Refunded</span>':''}</div>
-      <div style="font-size:11.5px;color:#B7C0CE;margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(g.prompt||'—')}</div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${subGenStatusBadge(g.status)}<span style="font-size:10.5px;color:var(--muted)">${esc(g.model||'')}</span><span style="font-size:10.5px;color:#6b7280">· ${g.cost||0} cr</span>${g.refunded?'<span class="adx-bdg" style="background:rgba(124,196,255,.14);color:#7CC4FF">Refunded</span>':''}</div>
+      <div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${esc(g.prompt||'—')}</div>
       <div style="font-size:10px;color:var(--muted2);margin-top:2px">${esc(when)}</div>
     </div>
     ${act}
@@ -310,7 +310,7 @@ function openRefundGen(genId) {
     </div>
     <div class="modal-body">
       <div class="info-banner">${ic("alert")}<span>${g.cost} credits will be returned to the subscriber's balance. This generation is then marked <b>Refunded</b> and cannot be refunded again.</span></div>
-      <div style="font-size:11.5px;color:#B7C0CE;margin-top:10px;line-height:1.5">${esc(g.prompt || "—")}</div>
+      <div style="font-size:11.5px;color:var(--text2);margin-top:10px;line-height:1.5">${esc(g.prompt || "—")}</div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -367,7 +367,7 @@ function subGenPreview(url, kind, downloadUrl) {
       ? `<video src="${esc(url)}" controls autoplay style="width:100%;border-radius:10px"></video>`
       : kind === "audio"
         ? `<audio src="${esc(url)}" controls autoplay style="width:100%"></audio>`
-        : `<img src="${esc(url)}" style="width:100%;border-radius:10px" onerror="this.outerHTML='<div style=&quot;padding:28px;text-align:center;font-size:12px;color:#8A93A3&quot;>Preview unavailable — use “Open in new tab”.</div>'">`;
+        : `<img src="${esc(url)}" style="width:100%;border-radius:10px" onerror="this.outerHTML='<div style=&quot;padding:28px;text-align:center;font-size:12px;color:var(--muted)&quot;>Preview unavailable — use “Open in new tab”.</div>'">`;
   openModal(`<div class="modal-body" style="padding:8px"><div style="max-width:640px;margin:0 auto">${body}</div></div>
     <div class="modal-foot" style="gap:8px">
       <a class="btn btn-ghost" href="${esc(url)}" target="_blank" rel="noopener">Open in new tab</a>
@@ -382,7 +382,7 @@ async function loadSubGenerations(userId) {
   SUB_GEN.userId = userId;
   SUB_GEN.cursor = null;
   SUB_GEN.items = [];
-  body.innerHTML = `<div id="subGenList"></div><div id="subGenMore" style="padding:10px 12px"><span style="font-size:11.5px;color:#8A93A3">Loading generations…</span></div>`;
+  body.innerHTML = `<div id="subGenList"></div><div id="subGenMore" style="padding:10px 12px"><span style="font-size:11.5px;color:var(--muted)">Loading generations…</span></div>`;
   await loadMoreSubGenerations();
 }
 
@@ -395,7 +395,7 @@ async function loadMoreSubGenerations() {
   const sumEl = document.getElementById("subGenSummary");
   if (!list || !more) return;
   SUB_GEN.loading = true;
-  more.innerHTML = `<span style="font-size:11.5px;color:#8A93A3">Loading…</span>`;
+  more.innerHTML = `<span style="font-size:11.5px;color:var(--muted)">Loading…</span>`;
   try {
     const d = await StudioApi.getUserGenerations(SUB_GEN.userId, {
       take: SUB_GEN_PAGE,
@@ -407,7 +407,7 @@ async function loadMoreSubGenerations() {
     SUB_GEN.items = SUB_GEN.items.concat(items);
     SUB_GEN.cursor = d.nextCursor || null;
     if (!SUB_GEN.items.length) {
-      list.innerHTML = `<div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:#8A93A3">No generations yet.</div>`;
+      list.innerHTML = `<div class="adx-empty" style="border:0;padding:22px;font-size:11.5px;color:var(--muted)">No generations yet.</div>`;
       more.innerHTML = "";
       return;
     }
@@ -416,7 +416,7 @@ async function loadMoreSubGenerations() {
       ? `<button class="adx-btn2 sm" onclick="loadMoreSubGenerations()">Load more (${SUB_GEN.items.length} of ${su.total||SUB_GEN.items.length})</button>`
       : `<span style="font-size:10.5px;color:var(--muted2)">All ${SUB_GEN.items.length} generations shown.</span>`;
   } catch (e) {
-    more.innerHTML = `<span style="font-size:11.5px;color:#8A93A3">Couldn’t load generations${e&&e.message?` — ${esc(e.message)}`:''}. </span><button class="adx-btn2 sm" onclick="loadMoreSubGenerations()">Retry</button>`;
+    more.innerHTML = `<span style="font-size:11.5px;color:var(--muted)">Couldn’t load generations${e&&e.message?` — ${esc(e.message)}`:''}. </span><button class="adx-btn2 sm" onclick="loadMoreSubGenerations()">Retry</button>`;
   } finally {
     SUB_GEN.loading = false;
   }

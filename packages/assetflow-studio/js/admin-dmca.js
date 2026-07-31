@@ -40,7 +40,7 @@ VIEWS.dmca = function(){
 window.afterRender.dmca = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT === 'dmca'){
-    tba.innerHTML = `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${DM_FILTER === 'all' ? 'All reports' : DM_FILTER}</span><i class="ph ph-caret-down" style="font-size:11px;color:#8A93A3"></i>
+    tba.innerHTML = `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${DM_FILTER === 'all' ? 'All reports' : DM_FILTER}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i>
       <select onchange="DM_FILTER=this.value;refreshDmca()">
         <option value="pending" ${DM_FILTER==='pending'?'selected':''}>Pending</option>
         <option value="actioned" ${DM_FILTER==='actioned'?'selected':''}>Actioned</option>
@@ -80,11 +80,11 @@ function renderDmca(){
   const reportRows = DM_REPORTS.length ? DM_REPORTS.map(r => `<tr>
     <td><div style="min-width:0">
       <div style="font-weight:600;font-size:12.5px">${esc(r.reporterName || r.reporterEmail)}</div>
-      <div style="font-size:10.5px;color:#8A93A3">${esc(r.reporterEmail)}${r.claimantType ? ' · ' + esc(r.claimantType.replace('_',' ')) : ''}</div>
+      <div style="font-size:10.5px;color:var(--muted)">${esc(r.reporterEmail)}${r.claimantType ? ' · ' + esc(r.claimantType.replace('_',' ')) : ''}</div>
     </div></td>
-    <td style="max-width:340px"><div style="font-size:11.5px;color:#B7C0CE;line-height:1.5">${esc(dmClip(r.workDescription, 160))}</div></td>
-    <td style="font-size:11px;color:#8A93A3">${r.templateId ? `<span class="adx-mono">${esc(r.templateId)}</span>` : (r.infringingUrl ? esc(dmClip(r.infringingUrl, 40)) : '—')}</td>
-    <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(dmDate(r.createdAt))}</td>
+    <td style="max-width:340px"><div style="font-size:11.5px;color:var(--text2);line-height:1.5">${esc(dmClip(r.workDescription, 160))}</div></td>
+    <td style="font-size:11px;color:var(--muted)">${r.templateId ? `<span class="adx-mono">${esc(r.templateId)}</span>` : (r.infringingUrl ? esc(dmClip(r.infringingUrl, 40)) : '—')}</td>
+    <td class="adx-num" style="font-size:11px;color:var(--muted)">${esc(dmDate(r.createdAt))}</td>
     <td>${dmStatus(r.status)}${r.goodFaith ? '' : ' <span class="adx-bdg" style="background:rgba(255,178,124,.14);color:#FFB27C" title="The claimant did not tick the good-faith statement">no good-faith</span>'}</td>
     <td class="r"><button class="adx-btn2 sm" onclick="openDmcaReport('${esc(r.id)}')"><i class="ph ph-eye"></i>Review</button></td>
   </tr>`).join('') : `<tr><td colspan="6"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-scales"></i></span><div style="font-weight:600;font-size:13px">No reports</div><div style="font-size:11px;color:var(--muted2)">Nothing to review in this filter.</div></div></td></tr>`;
@@ -92,9 +92,9 @@ function renderDmca(){
   const tdRows = DM_TAKEDOWNS.length ? DM_TAKEDOWNS.map(t => {
     const a = t._api || {};
     return `<tr>
-      <td><div style="font-weight:600;font-size:12.5px">${esc(t.name)}</div><div class="adx-mono" style="font-size:10.5px;color:#8A93A3">${esc(t.id)}</div></td>
-      <td style="font-size:11.5px;color:#B7C0CE;max-width:320px">${esc(dmClip(a.takedownReason || '—', 140))}</td>
-      <td class="adx-num" style="font-size:11px;color:#8A93A3">${esc(dmDate(a.takedownAt))}</td>
+      <td><div style="font-weight:600;font-size:12.5px">${esc(t.name)}</div><div class="adx-mono" style="font-size:10.5px;color:var(--muted)">${esc(t.id)}</div></td>
+      <td style="font-size:11.5px;color:var(--text2);max-width:320px">${esc(dmClip(a.takedownReason || '—', 140))}</td>
+      <td class="adx-num" style="font-size:11px;color:var(--muted)">${esc(dmDate(a.takedownAt))}</td>
       <td class="r"><button class="adx-btn2 sm adx-btn-ok" onclick="openDmcaRestore('${esc(t.id)}')"><i class="ph ph-arrow-clockwise"></i>Restore</button></td>
     </tr>`;
   }).join('') : `<tr><td colspan="4"><div class="adx-empty" style="border:0;padding:28px"><span class="ei"><i class="ph ph-check-circle"></i></span><div style="font-weight:600;font-size:13px">Nothing taken down</div><div style="font-size:11px;color:var(--muted2)">No template is currently removed from the catalog.</div></div></td></tr>`;
@@ -105,11 +105,11 @@ function renderDmca(){
       ${axStat({label:'Pending claims',val:pending,ic:'scales',icColor:'#FFB27C',foot:'awaiting a decision'})}
       ${axStat({label:'Shown',val:DM_REPORTS.length,ic:'list',foot:DM_FILTER==='all'?'all statuses':DM_FILTER})}
       ${axStat({label:'Taken down',val:DM_TAKEDOWNS.length,ic:'prohibit',icColor:'#FF6B5E',foot:'removed from the catalog'})}
-      ${axStat({label:'Actioned',val:DM_REPORTS.filter(r=>r.status==='actioned').length,ic:'check-circle',icColor:'#C2F04A',foot:'in this list'})}
+      ${axStat({label:'Actioned',val:DM_REPORTS.filter(r=>r.status==='actioned').length,ic:'check-circle',icColor:'var(--lime)',foot:'in this list'})}
     </div>
 
     <div class="adx-card" style="overflow:hidden;margin-bottom:18px">
-      <div class="adx-cardhd"><i class="ph ph-scales" style="color:#FFB27C;font-size:15px"></i><span class="adx-h16" style="font-size:14px">Infringement reports</span><span style="flex:1"></span><span style="font-size:11px;color:#8A93A3">latest 200</span></div>
+      <div class="adx-cardhd"><i class="ph ph-scales" style="color:#FFB27C;font-size:15px"></i><span class="adx-h16" style="font-size:14px">Infringement reports</span><span style="flex:1"></span><span style="font-size:11px;color:var(--muted)">latest 200</span></div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:980px">
         <thead><tr><th>Claimant</th><th>Claimed work</th><th>Target</th><th>Submitted</th><th>Status</th><th class="r">Action</th></tr></thead>
         <tbody>${reportRows}</tbody>
@@ -117,7 +117,7 @@ function renderDmca(){
     </div>
 
     <div class="adx-card" style="overflow:hidden">
-      <div class="adx-cardhd"><i class="ph ph-prohibit" style="color:#FF6B5E;font-size:15px"></i><span class="adx-h16" style="font-size:14px">Taken-down templates</span><span style="flex:1"></span><span style="font-size:11px;color:#8A93A3">restore returns it to the catalog</span></div>
+      <div class="adx-cardhd"><i class="ph ph-prohibit" style="color:#FF6B5E;font-size:15px"></i><span class="adx-h16" style="font-size:14px">Taken-down templates</span><span style="flex:1"></span><span style="font-size:11px;color:var(--muted)">restore returns it to the catalog</span></div>
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:800px">
         <thead><tr><th>Template</th><th>Reason</th><th>Taken down</th><th class="r">Action</th></tr></thead>
         <tbody>${tdRows}</tbody>
@@ -132,7 +132,7 @@ function openDmcaReport(id){
   if(!r) return;
   const target = r.templateId
     ? `<div class="adx-mono" style="font-size:11.5px">${esc(r.templateId)}</div>`
-    : `<div style="font-size:11.5px;color:#B7C0CE;word-break:break-all">${esc(r.infringingUrl || '(not specified)')}</div>`;
+    : `<div style="font-size:11.5px;color:var(--text2);word-break:break-all">${esc(r.infringingUrl || '(not specified)')}</div>`;
   const resolved = r.status !== 'pending';
   openModal(`
     <div class="modal-head">
@@ -140,10 +140,10 @@ function openDmcaReport(id){
       <div><h3>Copyright claim</h3><p>${esc(r.reporterEmail)} · ${esc(dmDate(r.createdAt))}</p></div>
     </div>
     <div class="modal-body col gap-12">
-      <div><div class="adx-flab">CLAIMANT</div><div style="font-size:12.5px;color:#B7C0CE">${esc(r.reporterName || '—')} · ${esc(r.claimantType ? r.claimantType.replace('_',' ') : 'not stated')}${r.goodFaith ? '' : ' · <span style="color:#FFB27C">good-faith statement NOT ticked</span>'}</div></div>
-      <div><div class="adx-flab">CLAIMED WORK</div><div style="font-size:12.5px;color:#B7C0CE;line-height:1.6;white-space:pre-wrap">${esc(r.workDescription)}</div></div>
+      <div><div class="adx-flab">CLAIMANT</div><div style="font-size:12.5px;color:var(--text2)">${esc(r.reporterName || '—')} · ${esc(r.claimantType ? r.claimantType.replace('_',' ') : 'not stated')}${r.goodFaith ? '' : ' · <span style="color:#FFB27C">good-faith statement NOT ticked</span>'}</div></div>
+      <div><div class="adx-flab">CLAIMED WORK</div><div style="font-size:12.5px;color:var(--text2);line-height:1.6;white-space:pre-wrap">${esc(r.workDescription)}</div></div>
       <div><div class="adx-flab">TARGET</div>${target}</div>
-      ${r.resolutionNote ? `<div><div class="adx-flab">RESOLUTION NOTE</div><div style="font-size:12px;color:#B7C0CE">${esc(r.resolutionNote)}</div></div>` : ''}
+      ${r.resolutionNote ? `<div><div class="adx-flab">RESOLUTION NOTE</div><div style="font-size:12px;color:var(--text2)">${esc(r.resolutionNote)}</div></div>` : ''}
       ${resolved ? axInfo(`Already <b style="color:var(--text)">${esc(r.status)}</b>${r.reviewedAt ? ' on ' + esc(dmDate(r.reviewedAt)) : ''}.`, 'info') : `
       <div><div class="adx-flab">DECISION NOTE (saved with the report)</div>
         <textarea id="dmNote" class="textarea" rows="2" placeholder="Why this claim was actioned or dismissed…"></textarea></div>`}
@@ -225,7 +225,7 @@ function openDmcaRestore(templateId){
     </div>
     <div class="modal-body col gap-12">
       <div class="info-banner">${ic('alert')}<span>The takedown flag is cleared. Tick "republish" to put an <b>approved</b> template straight back into the AE catalog — otherwise it stays unpublished until you publish it.</span></div>
-      <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#B7C0CE;cursor:pointer">
+      <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--text2);cursor:pointer">
         <input type="checkbox" id="dmRepub" checked> Republish in the catalog (approved templates only)</label>
     </div>
     <div class="modal-foot">

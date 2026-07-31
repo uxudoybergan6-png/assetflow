@@ -137,7 +137,7 @@ element `animation:ffRise` (from `translateY(12px)`) ni oladi — animatsiya tra
 yozadi, shuning uchun ~250 ms davomida element ekran markazidan chapga (`left:50%` nuqtasiga)
 sirg'aladi. Toastda markazlash `translate:-50% 0` xossasiga o'tkazilib tuzatildi (ikkisi qo'shiladi);
 `.va-rejbanner` da AYNI defekt qoldi (P30 banneri, kamdan-kam chiqadi). **Tavsiya:** D6'da bir xil
-almashtirish (`transform:translateX(-50%)` → `translate:-50% 0`).
+almashtirish (`transform:translateX(-50%)` → `translate:-50% 0`). → **D6'da TUZATILDI** (`:15409`).
 
 **N6 (P2, `platform/index.html` — sinf: hodisa-delegatsiya) — element `load` hodisasi `window`ga chiqmaydi.**
 DOM spetsifikatsiyasiga ko'ra element `load` hodisasining tarqalish yo'lida Window YO'Q (`window.onload`
@@ -146,3 +146,77 @@ ishlaydi, `window` capture listener HECH QACHON chaqirilmaydi (`error` va `loade
 ham ishlaydi). D5 (#18) da media skeleton listeneri `document`ga ko'chirildi. Boshqa sirtlar (plagin,
 contributor studio) grep bilan tekshirildi — bu naqsh boshqa joyda YO'Q, ya'ni faqat shu bitta joy
 zararlangan edi. Yozib qo'yildi: kelajakda media delegatsiyasi yozilganda `document` ishlatilsin.
+
+**N7 (P3, admin JS) — xom `alert()` va `prompt()` hali qoldi.**
+D6 (#12) barcha `confirm()` chaqiruvlarini `afConfirm` modaliga o'tkazdi (0 ta xom `confirm(` qoldi),
+lekin `js/admin-releases.js` dagi xabar `alert()` lari va `js/admin-business.js:62` dagi `prompt()`
+(marja qiymatini so'rash) OT'ning tizim dialogini chiqaradi: konsol identiteti yo'q, fokus qaytishi
+boshqarilmaydi, matn tarjima qilinmaydi. **Tavsiya:** `alert()` → `toast()` (allaqachon bor),
+`prompt()` → kichik `openModal` input formasi. Auditda sanalmagan, D6'da topildi.
+
+**N8 (P3, admin JS) — status ranglari hali inline hex.**
+D6 (#15) faqat aksent (lime) va kul-rang matn shkalasini tokenlashtirdi. Holat ranglari — `#FF6B5E`
+(xato), `#FFB27C` (ogohlantirish), `#7CC4FF` (tanlangan), `#DCE7C8` — admin JS'ida hamon xom yozilgan,
+holbuki `admin.css .adx-app` da `--red/--amber/--select` tokenlari MAVJUD. Aksent kabi kritik emas
+(`portal-admin` ularni almashtirmaydi), lekin bo'lajak yorug' tema uchun ayni to'siq (N1 bilan bir sinf).
+
+**N9 (P3, `platform/index.html:17640`, `:20571`) — JS ichidagi glif konstantalari.**
+`const GLYPH = { image:'⊞', video:'▶', audio:'♪' }` va mention chip `glyph:'▶'` — D6 (#16) da
+sanalgan to'rt belgidan (`⬇↻⧉🗑`) tashqari, shu sababli tegilmadi. Ular thumbnail placeholder va
+chip ikonasi sifatida ishlatiladi; `⊞`/`♪` OT'ga qarab har xil kenglikda chiqadi. **Tavsiya:** sprayt
+(`i-img`/`i-vid`/`i-wave` allaqachon bor) yoki Phosphor sinfiga o'tkazish.
+
+---
+
+## 7 · Qarorlar (BATCH ichida qabul qilingan, kod bilan tasdiqlangan)
+
+**Q1 (D6 #15) — Brend lime yagona etalon: `#d8ff3e` (+ `#baf02c` ikkilamchi, `#0a0d02` on-accent).**
+Manba: `plugins/after-effects-cep/css/tokens.css` neon `--accent`/`--accent-2` = platforma
+`--th-accent`. Tortildi: studio `app.css --violet/--violet-bright` (#82c341/#a3e635 →
+#baf02c/#d8ff3e, inline `rgba(163,230,53,…)` glowlar ham) va admin `admin.css --lime/--lime2/
+--onlime/--glow/--limedim` + 10 `admin-*.js` faylidagi inline `#C2F04A/#9CD62B/#0E1400`
+(#d8ff3e/#baf02c/#0a0d02). Barcha fill'lar qorong'i matn (`--on-accent`/`--onlime`) bilan
+juftlashgan — yorqinroq lime kontrastni FAQAT yaxshilaydi. TEGILMAGAN: yorug' tema bloklari
+(`app.css:123`, `:971`, `:137`) — ular ataylab to'qroq, AA uchun (audit N1/N4 shu haqda).
+
+**Q2 (D6 #15) — aksent alfalari `color-mix` bilan tokenlashtiriladi, xom `rgba()` bilan emas.**
+Fokus halqasi kabi joylarda aniq alfa (.5 border, .12 shadow) kerak, lekin rang tokendan kelishi shart.
+`rgba(216,255,62,.5)` ni saqlab qolish tokenni chetlab o'tadi; yangi `--lime-50` turkumini kiritish esa
+token soni portlashiga olib keladi. Tanlangan: `color-mix(in srgb,var(--lime) 50%,transparent)` — alfa
+saqlanadi, rang `body.portal-admin` amber almashtirishini kuzatadi. Brauzerda o'lchandi (:3001):
+`.adx-app` ichida xom `rgb(216,255,62)` = **0 ta** element, `--lime` = `#FFB000` (amber identitet).
+
+**Q3 (D6 #15) — `--text2:#B7C0CE` YANGI token sifatida kiritildi.**
+2-darajali matn admin JS'ida 41 joyda tokensiz hardcode edi (`--text`/`--muted` orasidagi pog'ona).
+Tokenlashtirilgan jami: 200 kul-rang + 60 lime inline qiymat, 11 faylda. **Istisno** (ataylab xom
+qoldirildi): `js/admin-website.js:32/:176/:179` — bular public-sayt CMS *ma'lumoti* (aksent preset
+katalogi, sozlangan aksent fallback'i, kontrast hisoblash natijasi) va API'ga yuboriladi, konsolning
+o'z UI rangi emas; tokenga aylantirilsa saytga `var(--lime)` matni ketardi.
+
+**Q4 (D6 #17) — o'lik self-hosted shrift qatlami (319 qator, 35 `@font-face`) o'chirildi.**
+`platform/index.html` da 'Hanken Grotesk' (20) + 'IBM Plex Mono' (15) e'lon qilingan edi; barcha
+iste'molchi `var(--sans)`/`var(--mono)` ga o'tgach bu familylar hech qanday font-stack'da qolmadi.
+Brauzerda tasdiqlandi (:8975 reload'dan keyin): Hanken iste'molchi **0**, Plex **0**, uch token ham
+hal bo'ladi. `.woff2` FAYLLARI O'CHIRILMADI — `styles/admin.css` ayni yo'llardan self-host qiladi
+(shu sabab dizayn-tizim 09-jadvalida admin qatori hamon 'Hanken Grotesk' ko'rsatadi — bu haqiqat,
+sirtlar orasidagi real farq; uni birlashtirish D6 ko'lamida emas edi).
+
+**Q5 (D6 #12) — `afConfirm` promise qaytaradi, callback qabul qilmaydi.**
+8 ta chaqiruv joyi allaqachon `async` edi, shuning uchun `if (!(await afConfirm({…}))) return;`
+naqshi xom `if (!confirm(…)) return;` semantikasini AYNAN saqlaydi — funksiyalarni ikkiga bo'lish
+kerak emas. Bekor qilishning HAR yo'li `false` bilan hal bo'ladi (brauzerda o'lchandi: Cancel tugmasi,
+Esc, scrim bosish, ustiga boshqa modal ochilishi) — `closeModal()` ichidagi yagona nuqtada.
+Matn `afConfirm` ichida bir marta escape qilinadi (`toast()` konventsiyasi).
+
+**Q6 (D6 #12) — `--r-xl` O'CHIRILDI (18px ga o'zgartirilmadi).**
+Iste'molchisi 0 ta edi; 16px qiymati o'z izohidagi "6/10/14" skalasiga ham, platformadagi
+`--th-r-xl:18px` ga ham qarshi turib skala haqida yolg'on ma'lumot berardi. O'lik tokenni to'g'ri
+qiymat bilan saqlab qolish = hech kim tekshirmagan yana bitta da'vo.
+
+**Q7 (D6 #16) — ikon almashtirish menyudan tashqariga chiqarildi.**
+Finding #16 dalili `.va-axmi` menyusi edi, lekin AYNI to'rt glif (`⬇↻⧉🗑`) bir xil ekranda yana
+3 joyda: sessiya bulk paneli (`:16791/:16792`), loyihalar bulk paneli (`:17242`) va karta amal
+paneli `↻` (`:16875`). Yarim-Phosphor ekran qoldirish findingni yopmagan bo'lardi, shuning uchun
+hammasi tuzatildi. Karta panelida Phosphor EMAS, sprayt (`i-refresh` yangi simvoli) ishlatildi —
+yonidagi `i-down` ham sprayt, ikki ikon tizimi bir panelda shtrix qalinligida farq qilardi.
+Yo'l brauzerda sinaldi (bbox 16×16 yoy + 4×4 uchi). Qolgan gliflar → N9.

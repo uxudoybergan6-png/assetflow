@@ -54,7 +54,7 @@
     return statCard({ label: "In queue", val: c.pending, ic: "clock-countdown", icColor: "#FFB27C", foot: "awaiting review" }) +
       // FAZA 5 (C6): "Active" aniqlashtirildi — last-seen 7 kun (status emas)
       statCard({ label: "Active (7 days)", val: sc.active, ic: "users-three", icColor: "#7CC4FF", foot: sc.total + " total · by last-seen" }) +
-      statCard({ label: "Pro subscriptions", val: sc.pro, ic: "crown", icColor: "#C2F04A", foot: sc.free + " Free · excl. removed" }) +
+      statCard({ label: "Pro subscriptions", val: sc.pro, ic: "crown", icColor: "var(--lime)", foot: sc.free + " Free · excl. removed" }) +
       statCard({ label: "Total downloads", val: dlDisp, ic: "download-simple", foot: dlFoot });
   }
 
@@ -75,7 +75,7 @@
     return '<div class="adx-qrow">' +
       '<span class="adx-qthumb">' + qthumbHtml(t) + "</span>" +
       '<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(t.name) + scanBdg + "</div>" +
-        '<div style="font-size:10.5px;color:#8A93A3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(meta) + "</div></div>" +
+        '<div style="font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(meta) + "</div></div>" +
       clearBtn +
       '<button class="adx-btn adx-btn-ok sm" onclick="modApprove(\'' + t.id + '\')"><i class="ph ph-check"></i>Approve</button>' +
       '<button class="adx-btn2 adx-btn-warn sm" onclick="modSoftReject(\'' + t.id + '\')">Reject</button>' +
@@ -128,7 +128,7 @@
   VIEWS.overview = function () {
     var pendCount = (typeof tByStatus === "function") ? tByStatus("pending").length : 0;
     return '<div style="display:flex;align-items:flex-end">' +
-        '<div><div class="adx-h22">Platform status</div><div style="font-size:12.5px;color:#8A93A3;margin-top:3px">Today’s moderation and subscription metrics</div></div>' +
+        '<div><div class="adx-h22">Platform status</div><div style="font-size:12.5px;color:var(--muted);margin-top:3px">Today’s moderation and subscription metrics</div></div>' +
         '<span style="flex:1"></span>' +
         '<button class="adx-btn2 sm" onclick="route(\'overview\')"><i class="ph ph-arrow-clockwise"></i>Refresh</button></div>' +
 

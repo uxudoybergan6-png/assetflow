@@ -29,7 +29,7 @@ const WS_CARD_SLOTS = [
 ];
 
 const WS_ACCENT_PRESETS = [
-  { hex: "#C2F04A", name: "Lime (default)" },
+  { hex: "#d8ff3e", name: "Lime (default)" },
   { hex: "#5BE8E0", name: "Cyan" },
   { hex: "#F5B54A", name: "Amber" },
   { hex: "#B794F6", name: "Violet" },
@@ -110,7 +110,7 @@ function wsArea(field, value, rows, opts) {
 function wsCard(title, sub, body) {
   return `<div class="adx-card" style="padding:18px 20px">
     <div class="adx-h16" style="font-size:14px;margin-bottom:${sub ? 4 : 14}px">${title}</div>
-    ${sub ? `<div style="font-size:11px;color:#8A93A3;margin-bottom:14px">${sub}</div>` : ""}
+    ${sub ? `<div style="font-size:11px;color:var(--muted);margin-bottom:14px">${sub}</div>` : ""}
     ${body}
   </div>`;
 }
@@ -127,7 +127,7 @@ function wsCardEditor(c, i) {
         : `<img src="${wsEsc(c.mediaUrl)}" alt="" style="width:100%;height:100%;object-fit:cover">`)
     : `<span style="font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.65)">GRADIENT</span>`;
   return `<div class="adx-card" style="padding:14px" data-ws-card="${i}">
-    <div style="font-size:10px;color:#8A93A3;margin-bottom:8px">${wsEsc(slot.hint)}</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${wsEsc(slot.hint)}</div>
     <div style="display:flex;gap:12px">
       <div style="width:${slot.wide ? 150 : 92}px;height:64px;flex:none;border-radius:9px;overflow:hidden;background:${slot.grad};display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08)">${thumb}</div>
       <div style="flex:1;min-width:0;display:grid;grid-template-columns:1fr 76px;gap:8px">
@@ -137,8 +137,8 @@ function wsCardEditor(c, i) {
     </div>
     <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
       <button class="adx-btn2 sm" onclick="wsPickMedia(${i})"><i class="ph ph-upload-simple"></i>${hasMedia ? "Replace media" : "Upload media"}</button>
-      ${hasMedia ? `<button class="adx-btn2 sm" onclick="wsClearMedia(${i})"><i class="ph ph-x"></i>Remove (use gradient)</button>` : `<span style="font-size:10px;color:#8A93A3">No media — the landing shows the gradient placeholder</span>`}
-      <span class="ws-upstat" data-ws-upstat="${i}" style="font-size:10px;color:#8A93A3"></span>
+      ${hasMedia ? `<button class="adx-btn2 sm" onclick="wsClearMedia(${i})"><i class="ph ph-x"></i>Remove (use gradient)</button>` : `<span style="font-size:10px;color:var(--muted)">No media — the landing shows the gradient placeholder</span>`}
+      <span class="ws-upstat" data-ws-upstat="${i}" style="font-size:10px;color:var(--muted)"></span>
     </div>
   </div>`;
 }
@@ -165,7 +165,7 @@ function wsThemeSection() {
       <div>
         ${axFlab("FONT (SELF-HOSTED SET)")}
         <select class="adx-input" data-ws="theme.font" onchange="wsRefreshPreview()">${fontOpts}</select>
-        <div style="font-family:${stack};font-size:13px;color:#8A93A3;margin-top:8px" data-ws-fontdemo>Aa Bb Cc — Templates, AI video and audio</div>
+        <div style="font-family:${stack};font-size:13px;color:var(--muted);margin-top:8px" data-ws-fontdemo>Aa Bb Cc — Templates, AI video and audio</div>
       </div>
     </div>`);
 }
@@ -173,29 +173,29 @@ function wsThemeSection() {
 /* ── Jonli preview — hero + bo'lim tartibi ─────────────────── */
 
 function wsPreviewHtml(c) {
-  const accent = /^#[0-9a-fA-F]{6}$/.test(c.theme.accent) ? c.theme.accent : "#C2F04A";
+  const accent = /^#[0-9a-fA-F]{6}$/.test(c.theme.accent) ? c.theme.accent : "#d8ff3e";
   const stack = (WS_FONTS.find((f) => f.key === c.theme.font) || WS_FONTS[0]).stack;
   const r = parseInt(accent.slice(1, 3), 16), g = parseInt(accent.slice(3, 5), 16), b = parseInt(accent.slice(5, 7), 16);
-  const onAcc = ((0.299 * r + 0.587 * g + 0.114 * b) / 255) > 0.55 ? "#0E1400" : "#fff";
+  const onAcc = ((0.299 * r + 0.587 * g + 0.114 * b) / 255) > 0.55 ? "#0a0d02" : "#fff";
   const stats = c.stats.map((s) => {
     const isWord = /[a-zA-Z]/.test(s.suffix || "");
     const n = Number(s.value) || 0;
-    return `<div style="text-align:center"><div style="font:700 17px 'IBM Plex Mono',monospace;color:#F2F5F8">${n >= 1000 ? n.toLocaleString("en-US") : n}${isWord ? `<span style="font-size:12px"> ${wsEsc(s.suffix)}</span>` : `<span style="color:${accent}">${wsEsc(s.suffix)}</span>`}</div><div style="font-size:9.5px;color:#8A93A3;margin-top:2px">${wsEsc(s.label)}</div></div>`;
+    return `<div style="text-align:center"><div style="font:700 17px 'IBM Plex Mono',monospace;color:#F2F5F8">${n >= 1000 ? n.toLocaleString("en-US") : n}${isWord ? `<span style="font-size:12px"> ${wsEsc(s.suffix)}</span>` : `<span style="color:${accent}">${wsEsc(s.suffix)}</span>`}</div><div style="font-size:9.5px;color:var(--muted);margin-top:2px">${wsEsc(s.label)}</div></div>`;
   }).join("");
   // Bo'lim tartibi lentasi — hero doim birinchi; yashirin bo'lim o'chik chip
   const secChips = [`<span style="padding:3px 9px;border-radius:6px;background:${accent};color:${onAcc};font:700 9px 'IBM Plex Mono',monospace">HERO</span>`]
     .concat(c.landingSections.map((sc) =>
-      `<span style="padding:3px 9px;border-radius:6px;font:600 9px 'IBM Plex Mono',monospace;${sc.visible ? "background:rgba(255,255,255,.09);color:#D8DEE8" : "background:rgba(255,255,255,.03);color:#5E6675;text-decoration:line-through"}">${wsEsc((WS_SECTION_LABELS[sc.key] || sc.key).toUpperCase())}</span>`))
-    .join('<i class="ph ph-caret-right" style="font-size:8px;color:#5E6675"></i>');
+      `<span style="padding:3px 9px;border-radius:6px;font:600 9px 'IBM Plex Mono',monospace;${sc.visible ? "background:rgba(255,255,255,.09);color:#D8DEE8" : "background:rgba(255,255,255,.03);color:var(--muted2);text-decoration:line-through"}">${wsEsc((WS_SECTION_LABELS[sc.key] || sc.key).toUpperCase())}</span>`))
+    .join('<i class="ph ph-caret-right" style="font-size:8px;color:var(--muted2)"></i>');
   return `<div style="background:radial-gradient(120% 160% at 50% -20%,#12161d,#07090c 70%);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:26px 22px;text-align:center;font-family:${stack}">
-    <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:10.5px;color:#B7C0CE"><b style="font:700 7.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;padding:2px 6px;border-radius:4px;background:${accent};color:${onAcc}">${wsEsc(c.hero.badgeTag)}</b>${wsEsc(c.hero.badgeText)}</span>
+    <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:10.5px;color:var(--text2)"><b style="font:700 7.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;padding:2px 6px;border-radius:4px;background:${accent};color:${onAcc}">${wsEsc(c.hero.badgeTag)}</b>${wsEsc(c.hero.badgeText)}</span>
     <div style="font-weight:700;font-size:25px;letter-spacing:-.03em;color:#F2F5F8;margin-top:12px;line-height:1.15">${wsEsc(c.hero.title)} <span style="background:linear-gradient(92deg,${accent} 10%,#7CC4FF 90%);-webkit-background-clip:text;background-clip:text;color:transparent">${wsEsc(c.hero.titleAccent)}</span></div>
-    <div style="font-size:11.5px;color:#8A93A3;max-width:430px;margin:9px auto 0;line-height:1.55">${wsEsc(c.hero.sub)}</div>
+    <div style="font-size:11.5px;color:var(--muted);max-width:430px;margin:9px auto 0;line-height:1.55">${wsEsc(c.hero.sub)}</div>
     <div style="display:flex;gap:9px;justify-content:center;margin-top:14px">
       <span style="display:inline-flex;align-items:center;height:32px;padding:0 16px;border-radius:99px;background:${accent};color:${onAcc};font-weight:700;font-size:11px">${wsEsc(c.hero.ctaPrimary)}</span>
       <span style="display:inline-flex;align-items:center;height:32px;padding:0 15px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);color:#F2F5F8;font-weight:600;font-size:11px">${wsEsc(c.hero.ctaSecondary)}</span>
     </div>
-    <div style="font-size:9.5px;color:#8A93A3;margin-top:10px">${wsEsc(c.hero.credline)}</div>
+    <div style="font-size:9.5px;color:var(--muted);margin-top:10px">${wsEsc(c.hero.credline)}</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;border-top:1px solid rgba(255,255,255,.06);margin-top:18px;padding-top:14px">${stats}</div>
     <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;border-top:1px solid rgba(255,255,255,.06);margin-top:14px;padding-top:12px">${secChips}</div>
   </div>`;
@@ -252,8 +252,8 @@ function wsTabHero() {
 function wsSectionOrderCard() {
   const rows = WS_CFG.landingSections.map((sc, i) => `
     <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid rgba(255,255,255,.07);border-radius:10px;margin-bottom:6px;background:var(--surface2,rgba(255,255,255,.02))">
-      <span style="font:700 10px 'IBM Plex Mono',monospace;color:#8A93A3;width:16px">${i + 2}</span>
-      <span style="font-size:12px;font-weight:600;flex:1;${sc.visible ? "" : "color:#5E6675;text-decoration:line-through"}">${WS_SECTION_LABELS[sc.key] || sc.key}</span>
+      <span style="font:700 10px 'IBM Plex Mono',monospace;color:var(--muted);width:16px">${i + 2}</span>
+      <span style="font-size:12px;font-weight:600;flex:1;${sc.visible ? "" : "color:var(--muted2);text-decoration:line-through"}">${WS_SECTION_LABELS[sc.key] || sc.key}</span>
       <button class="adx-ico" title="Move up" onclick="wsSecMove(${i},-1)" ${i === 0 ? "disabled" : ""} style="width:26px;height:26px"><i class="ph ph-caret-up"></i></button>
       <button class="adx-ico" title="Move down" onclick="wsSecMove(${i},1)" ${i === WS_CFG.landingSections.length - 1 ? "disabled" : ""} style="width:26px;height:26px"><i class="ph ph-caret-down"></i></button>
       <button class="adx-tog ${sc.visible ? "on" : "off"}" title="Show / hide" onclick="wsSecToggle(${i})"><i></i></button>
@@ -331,8 +331,8 @@ function wsTabLanding() {
 
 function wsPlanEditor(p, i) {
   const names = ["FREE PLAN", "PRO PLAN (MOST POPULAR)", "STUDIO PLAN"];
-  return `<div class="adx-card" style="padding:16px 18px${i === 1 ? ";border-color:rgba(194,240,74,.3)" : ""}">
-    <div style="font:700 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8A93A3;margin-bottom:12px">${names[i]}</div>
+  return `<div class="adx-card" style="padding:16px 18px${i === 1 ? ";border-color:var(--glow)" : ""}">
+    <div style="font:700 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:var(--muted);margin-bottom:12px">${names[i]}</div>
     <div style="display:grid;grid-template-columns:1fr 90px 1fr;gap:10px;margin-bottom:10px">
       <div>${axFlab("NAME")}${wsInput(`plans.${i}.name`, p.name)}</div>
       <div>${axFlab("PRICE $/MO")}${wsInput(`plans.${i}.price`, p.price, { mono: true, num: true, type: "num" })}</div>
@@ -404,7 +404,7 @@ function wsTabFooter() {
       <div>${axFlab("GUARANTEE LINE (BOTTOM RIGHT)")}${wsInput("footer.guarantee", c.footer.guarantee)}</div>`)}
     ${wsCard("Link columns", "Only the labels are editable — link destinations are fixed in code.", c.footer.cols.map((col, i) => `
       <div style="border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;margin-bottom:8px">
-        <div style="font-size:10px;color:#8A93A3;margin-bottom:8px">${colHints[i]}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${colHints[i]}</div>
         ${axFlab("COLUMN TITLE")}${wsInput(`footer.cols.${i}.title`, col.title, { mono: true })}
         <div style="margin-top:8px">${axFlab("LINK LABELS (ONE PER LINE)")}${wsArea(`footer.cols.${i}.links`, col.links, col.links.length + 1, { type: "lines" })}</div>
       </div>`).join(""))}
@@ -563,7 +563,14 @@ async function wsSave() {
 }
 
 async function wsReset() {
-  if (!confirm("Reset the WHOLE marketing site (landing, pricing, plugin) to the original built-in content? Uploaded card media links will be removed from the page (files stay in storage).")) return;
+  // D6 (#12) — xom confirm() o'rniga dizayn tizimidagi tasdiq modali (afConfirm, ui.js)
+  if (!(await afConfirm({
+    title: "Reset the marketing site",
+    sub: "Landing, pricing and plugin pages return to the built-in content.",
+    warn: "This cannot be undone — every edit you made to the public site is replaced by the defaults.",
+    body: "Uploaded card media links are removed from the page (the files stay in storage).",
+    okLabel: "Reset site",
+  }))) return;
   try {
     const d = await StudioApi.resetLandingConfig();
     WS_CFG = d.config;
