@@ -208,7 +208,7 @@ export function proSwitchAllowed(hasStripePro: boolean) {
   // override bunga aloqasiz: ular proSwitchAllowed'dan o'tmaydi.)
   if (hasStripePro) return true;
   // Self-serve PRO (Stripe'siz) FAQAT aniq flag bilan ochiladi — fail-CLOSED.
-  // Flag yo'q/false → PRO BERILMAYDI (NODE_ENV'ga TAYANMAYMIZ; render.yaml'da "false").
+  // Flag yo'q/false → PRO BERILMAYDI (NODE_ENV'ga TAYANMAYMIZ; deploy env'da "false").
   return process.env.PLUGIN_ALLOW_PRO_WITHOUT_STRIPE === "true";
 }
 

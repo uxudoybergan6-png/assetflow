@@ -38,6 +38,7 @@ const PAYLOAD_CLI = path.join(SCRIPTS, "installer-payload.mjs");
 const WIX_CLI = path.join(SCRIPTS, "installer-wix.mjs");
 const FLAVORS_CLI = path.join(SCRIPTS, "package-flavors.mjs");
 const PKG_JSON = path.join(REPO_ROOT, "package.json");
+const DOCKERFILE = path.join(REPO_ROOT, "Dockerfile");
 
 const WIN_JOB = "windows-installer";
 const CONTRACT_SCRIPT = "test:ci-windows-installer";
@@ -105,6 +106,16 @@ const yml = readOr(CI_YML);
 const ps1 = readOr(PS1);
 const winBuildSrc = readOr(WIN_BUILD);
 const pkg = readOr(PKG_JSON);
+const dockerfile = readOr(DOCKERFILE);
+// Loyihaning Node major'i uchun YAGONA manba — root `package.json` → `engines.node`.
+// Workflow'lar va Dockerfile shunga tenglashtiriladi (pastda tekshiriladi).
+const NODE_MAJOR = (() => {
+  try {
+    return String(JSON.parse(pkg)?.engines?.node ?? "").match(/(\d+)/)?.[1] ?? "";
+  } catch {
+    return "";
+  }
+})();
 const winJob = ymlJob(yml, WIN_JOB);
 const buildJob = ymlJob(yml, "build");
 const ymlCode = codeOnly(yml);
@@ -519,12 +530,30 @@ for (const file of workflowFiles) {
     (u) => !/^(actions|google-github-actions)\/[A-Za-z0-9._-]+@v\d+$/.test(u) && !/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/.test(u)
   );
   check(`${file}: har bir action birinchi tomon (actions|google-github-actions)/*@vN yoki to'liq SHA bilan qadalgan`, badFilePins.length === 0, badFilePins.join(", "));
-  // Loyiha Node versiyasi (20) action major'idan MUSTAQIL — ko'tarilish bilan o'zgarmaydi.
+  // Loyiha Node versiyasi action major'idan MUSTAQIL — lekin u YAGONA manbadan
+  // (root `package.json` → `engines.node`) olinadi, qadalgan literal'dan EMAS.
+  // Ilgari bu yerda "20" qattiq yozilgan edi: Node 22'ga ko'tarilganda (Dockerfile +
+  // engines + 4 workflow) test eskirib qoldi va CI'ni qizil qildi, holbuki kod to'g'ri edi.
   const nodeVersions = [...code.matchAll(/node-version:\s*"?(\d+)"?/g)].map((m) => m[1]);
   for (const v of nodeVersions) {
-    check(`${file}: node-version = 20 saqlangan (topildi: ${v})`, v === "20", file);
+    check(
+      `${file}: node-version loyiha Node major'iga (${NODE_MAJOR}) mos (topildi: ${v})`,
+      v === NODE_MAJOR,
+      file
+    );
   }
 }
+
+// Yagona manba haqiqatan mavjud bo'lsin — `engines.node` yo'qolsa yuqoridagi
+// node-version tekshiruvlari jimgina bo'shashib qolardi (hammasi "" ga teng bo'lardi).
+check(`package.json: engines.node major aniqlangan (topildi: ${NODE_MAJOR || "yo'q"})`, /^\d+$/.test(NODE_MAJOR), "engines.node");
+// Runtime image ham SHU major'da — CI Node bilan production Node ajralib ketmasin.
+const dockerNodeMajor = dockerfile.match(/^FROM\s+node:(\d+)/m)?.[1] ?? "";
+check(
+  `Dockerfile: FROM node:${NODE_MAJOR} — engines.node bilan bir xil major (topildi: ${dockerNodeMajor || "yo'q"})`,
+  dockerNodeMajor === NODE_MAJOR && NODE_MAJOR !== "",
+  "Dockerfile"
+);
 
 // Windows job'ida setup-node v7 implicit kesh KIRITMASLIGI aniq o'chirilgan bilan kafolatlanadi.
 check(

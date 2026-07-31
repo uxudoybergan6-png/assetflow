@@ -9,6 +9,9 @@ REGION="${REGION:-europe-west1}"
 SERVICE="${SERVICE:-assetflow-api}"
 REPO="${REPO:-assetflow}"
 IMG_BASE="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api"
+# 2026-07-31 — baza Neon'dan Google Cloud SQL'ga ko'chdi (Neon bepul compute kvotasi tugadi).
+# (Auth Proxy versiyasi va SHA-256 — scripts/cloudsql-proxy.sh ichida, yagona joyda.)
+CLOUDSQL_INSTANCE="${CLOUDSQL_INSTANCE:-project-289028d3-984c-4d84-bd4:europe-west1:frameflow-db}"
 # #33 (I2) — o'zgarmas teg: `:latest` bilan deploy qilinsa Cloud Run revision AYNAN
 # qaysi kodni ishlatayotgani noaniq bo'lib qoladi (keyingi push tegni bosib ketadi) va
 # rollback "eski image'ga qayting" deyish imkonsiz. Endi CI kabi commit SHA teg ham
@@ -54,8 +57,22 @@ else
     exit 1
   fi
   DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DIRECT_DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//' || true)"
+
+  # Cloud SQL ko'chishi (2026-07-31): DATABASE_URL Unix socket'ga qaraydi
+  # (…?host=/cloudsql/<INSTANCE>). Cloud Run'da uni --add-cloudsql-instances mount
+  # qiladi, lekin BU YERDA (Cloud Shell / lokal mashina) mount YO'Q — shuning uchun
+  # Auth Proxy o'sha joylashuvni takrorlaydi va URL O'ZGARISHSIZ ishlatiladi.
+  # (Socket kerak bo'lmasa skript o'zi hech nima qilmaydi.)
+  bash scripts/cloudsql-proxy.sh "$DB_URL"
+  # Skript qanday tugasa ham (xato/Ctrl-C) proxy ortda qolib ketmaydi.
+  # `|| true` + yakuniy `true`: trap'ning o'z natijasi skript exit kodini BOSIB ketmasin.
+  trap 'if [ -f cloud-sql-proxy.pid ]; then kill "$(cat cloud-sql-proxy.pid)" 2>/dev/null || true; rm -f cloud-sql-proxy.pid; fi; true' EXIT
+
   DATABASE_URL="$DB_URL" DIRECT_DATABASE_URL="${DIRECT_URL:-$DB_URL}" \
     npm run migrate:deploy -w @creative-tools/database
+  # Ko'chishdan keyingi isbot: barcha migratsiya "applied" (drift bo'lsa yiqilamiz).
+  DATABASE_URL="$DB_URL" DIRECT_DATABASE_URL="${DIRECT_URL:-$DB_URL}" \
+    npm run migrate:status -w @creative-tools/database
 fi
 
 echo "▶ API'lar yoqilmoqda…"
@@ -91,6 +108,7 @@ gcloud run deploy "$SERVICE" --image "$IMG" \
   --memory 1Gi --cpu 1 --timeout 600 \
   --startup-probe "httpGet.path=/health,initialDelaySeconds=5,periodSeconds=10,timeoutSeconds=5,failureThreshold=17" \
   --liveness-probe "httpGet.path=/livez,periodSeconds=30,timeoutSeconds=5,failureThreshold=3" \
+  --add-cloudsql-instances "$CLOUDSQL_INSTANCE" \
   --env-vars-file cloudrun-env.yaml
 
 URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"

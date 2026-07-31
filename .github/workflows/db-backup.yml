@@ -1,7 +1,12 @@
-name: DB Backup (Neon → GCS)
+name: DB Backup (Cloud SQL → GCS)
 
-# Kunlik Postgres (Neon) logical backup → GCS bucket (Bosqich 1 #8).
-# Neon'ning o'z branch/PITR snapshot'iga QO'SHIMCHA mustaqil nusxa (provider-lock'siz DR).
+# Kunlik Postgres (Cloud SQL) logical backup → GCS bucket (Bosqich 1 #8).
+# Cloud SQL'ning o'z avtomatik backup/PITR'iga QO'SHIMCHA mustaqil nusxa (provider-lock'siz DR).
+#
+# 2026-07-31 — baza Neon'dan Google Cloud SQL'ga ko'chdi. DIRECT_DATABASE_URL endi
+# Unix socket'ga qaraydi (…?host=/cloudsql/<INSTANCE>), runner'da esa bunday mount YO'Q —
+# shuning uchun pg_dump'dan OLDIN Auth Proxy o'sha socket'ni joyida ko'taradi
+# (scripts/cloudsql-proxy.sh — deploy workflow'i bilan AYNAN bir xil yo'l).
 #
 # ⚠️ MANUAL SOZLASH (kod bilan qilib bo'lmaydi):
 #   1) Backup bucket yarating + versioning yoqing:
@@ -29,7 +34,7 @@ env:
   REGION: europe-west1
   WIF_PROVIDER: projects/331762958776/locations/global/workloadIdentityPools/github-pool/providers/github-provider
   WIF_SERVICE_ACCOUNT: github-deployer@project-289028d3-984c-4d84-bd4.iam.gserviceaccount.com
-  PG_MAJOR: "18" # Neon PG versiyasiga moslang (2026-07: Neon server = PG 18.4; pg_dump >= server MAJOR bo'lishi shart)
+  PG_MAJOR: "18" # Cloud SQL server versiyasi (2026-07-31: PostgreSQL 18; pg_dump >= server MAJOR bo'lishi shart)
 
 jobs:
   backup:
@@ -85,6 +90,10 @@ jobs:
           echo "DATABASE_URL=$DUMP_URL" >> "$GITHUB_ENV"
           rm -f cloudrun-env.yaml
 
+      # Socket URL bo'lsa Auth Proxy ko'tariladi; TCP URL bo'lsa skript o'zi hech nima qilmaydi.
+      - name: Start Cloud SQL Auth Proxy (pg_dump uchun)
+        run: bash scripts/cloudsql-proxy.sh "$DATABASE_URL"
+
       - name: Run backup
         env:
           BACKUP_GCS_BUCKET: ${{ secrets.BACKUP_GCS_BUCKET || vars.BACKUP_GCS_BUCKET }}
@@ -95,3 +104,8 @@ jobs:
             exit 1
           fi
           node scripts/db-backup.mjs
+
+      - name: Stop Cloud SQL Auth Proxy
+        if: always()
+        run: |
+          if [ -f cloud-sql-proxy.pid ]; then kill "$(cat cloud-sql-proxy.pid)" 2>/dev/null || true; fi

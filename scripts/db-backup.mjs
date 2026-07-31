@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * DB backup (Bosqich 1 #8) — Postgres (Neon) logical backup.
+ * DB backup (Bosqich 1 #8) — Postgres (Cloud SQL) logical backup.
  *
  * `pg_dump` (custom format -Fc, o'zi siqilgan) bilan DATABASE_URL'dan snapshot oladi:
  *   node scripts/db-backup.mjs
@@ -9,7 +9,7 @@
  * BACKUP_GCS_BUCKET o'rnatilgan bo'lsa — `gcloud storage cp` bilan gs://<bucket>/db/ ga yuklaydi
  * (retention/versioning bucket tomonida — DR-RUNBOOK'ga qarang).
  *
- * Talab: `pg_dump` PATH'da (Neon PG versiyasiga mos, masalan postgresql-client-16). Env: DATABASE_URL.
+ * Talab: `pg_dump` PATH'da (server PG versiyasiga mos yoki undan yangi). Env: DATABASE_URL.
  * Restore yo'riqnomasi: docs/DR-RUNBOOK.md.
  */
 import { execFileSync, execSync } from "node:child_process";
@@ -40,7 +40,7 @@ const file = path.join(dir, `frameflow-${stamp}.dump`);
 console.log(`[db-backup] pg_dump → ${file}`);
 try {
   // -Fc: custom format (siqilgan, pg_restore bilan tanlab tiklash mumkin). --no-owner/--no-acl:
-  // boshqa rolga tiklashda muammo bo'lmasin (Neon).
+  // boshqa rolga tiklashda muammo bo'lmasin.
   execFileSync("pg_dump", ["-Fc", "--no-owner", "--no-acl", "-f", file, DB_URL], {
     stdio: ["ignore", "inherit", "inherit"],
   });

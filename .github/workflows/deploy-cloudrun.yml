@@ -16,6 +16,8 @@ on:
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/deploy-cloudrun.yml"
+      # Migratsiya qadami shu skriptga bog'liq — o'zgarsa deploy yo'li qayta sinalsin.
+      - "scripts/cloudsql-proxy.sh"
   workflow_dispatch: {}
 
 concurrency:
@@ -33,6 +35,9 @@ env:
   REPO: assetflow
   WIF_PROVIDER: projects/331762958776/locations/global/workloadIdentityPools/github-pool/providers/github-provider
   WIF_SERVICE_ACCOUNT: github-deployer@project-289028d3-984c-4d84-bd4.iam.gserviceaccount.com
+  # 2026-07-31 — baza Neon'dan Google Cloud SQL'ga ko'chdi (Neon bepul compute kvotasi tugadi).
+  # (Auth Proxy versiyasi va SHA-256 — scripts/cloudsql-proxy.sh ichida, yagona joyda.)
+  CLOUDSQL_INSTANCE: project-289028d3-984c-4d84-bd4:europe-west1:frameflow-db
 
 jobs:
   deploy:
@@ -61,9 +66,8 @@ jobs:
 
       # Gate: yangi kod DEPLOY bo'lishidan OLDIN migratsiyalar qo'llanadi. Xato
       # bo'lsa bu qadam yiqiladi → build/push/deploy ISHLAMAYDI → eski (ishlaydigan)
-      # revision jonli qoladi. render.yaml'ning preDeployCommand gate'i o'rnini
-      # bosadi (Cloud Run'da preDeploy yo'q). Migratsiyalar FAQAT additive bo'lgani
-      # uchun eski kod yangi sxemani ham tolerat qiladi.
+      # revision jonli qoladi (Cloud Run'da preDeploy hook yo'q — gate shu yerda).
+      # Migratsiyalar FAQAT additive bo'lgani uchun eski kod yangi sxemani ham tolerat qiladi.
       - name: Setup Node (migration)
         uses: actions/setup-node@v7
         with:
@@ -72,6 +76,20 @@ jobs:
 
       - name: Install deps (migration)
         run: npm ci
+
+      # Cloud SQL ko'chishi (2026-07-31): Cloud Run konteynerida `/cloudsql/<INSTANCE>`
+      # Unix socket'ini `--add-cloudsql-instances` avtomatik mount qiladi, LEKIN Actions
+      # runner'ida bunday mount YO'Q — migratsiya qadami esa jonli bazaga ulanishi shart.
+      # Yechim: Auth Proxy runner'da AYNAN shu joylashuvni takrorlaydi (`-u /cloudsql` →
+      # `/cloudsql/<INSTANCE>/.s.PGSQL.5432`). Shu sababli CLOUDRUN_ENV_YAML'dagi
+      # DATABASE_URL O'ZGARISHSIZ ishlatiladi:
+      #   · URL qayta yozilmaydi → maxsus belgili parolni qayta kodlash xatosi YO'Q;
+      #   · migratsiya AYNAN production connection string'ini sinaydi (TCP taxminini emas).
+      - name: Start Cloud SQL Auth Proxy (migratsiya uchun)
+        run: |
+          set -euo pipefail
+          DB_URL="$(grep -E '^DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//')"
+          bash scripts/cloudsql-proxy.sh "$DB_URL"
 
       - name: Run DB migrations (gated — fail stops deploy)
         run: |
@@ -84,14 +102,23 @@ jobs:
             exit 1
           fi
           export DATABASE_URL="$DB_URL"
-          # P8 #2 — migratsiya DIRECT (poolsiz) endpoint'dan yurishi kerak (pgbouncer DDL'ni
-          # qo'llab-quvvatlamaydi). DIRECT_DATABASE_URL yaml'da bo'lsa uni, aks holda
-          # DATABASE_URL'ni ishlatamiz (fallback — pooler'ga o'tishdan oldin buzilmaydi).
+          # P8 #2 — migratsiya DIRECT (poolsiz) endpoint'dan yurishi kerak. Cloud SQL'da
+          # ikkala URL bir xil Unix socket'ga qaraydi (pgbouncer yo'q), lekin fallback
+          # saqlanadi — pooler qaytib kelsa kontrakt buzilmaydi.
           # `|| true` SHART: DIRECT_DATABASE_URL yaml'da yo'q bo'lsa grep exit 1 qaytaradi va
           # `set -euo pipefail` butun bosqichni o'ldiradi (fallback'gacha yetib bormaydi).
           DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DIRECT_DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//' || true)"
           export DIRECT_DATABASE_URL="${DIRECT_URL:-$DB_URL}"
           npm run migrate:deploy -w @creative-tools/database
+          # Ko'chishdan keyingi isbot: yangi bazada BARCHA migratsiya "applied" bo'lsin.
+          # Drift yoki qo'llanmagan migratsiya bo'lsa bu yerda yiqilamiz → deploy TO'XTAYDI.
+          npm run migrate:status -w @creative-tools/database
+
+      # Proxy o'z ishini bajardi — image build/push/deploy unga muhtoj emas.
+      - name: Stop Cloud SQL Auth Proxy
+        if: always()
+        run: |
+          if [ -f cloud-sql-proxy.pid ]; then kill "$(cat cloud-sql-proxy.pid)" 2>/dev/null || true; fi
 
       - name: Build image
         run: |
@@ -120,6 +147,7 @@ jobs:
             --memory 1Gi --cpu 1 --timeout 600 \
             --startup-probe "httpGet.path=/health,initialDelaySeconds=5,periodSeconds=10,timeoutSeconds=5,failureThreshold=17" \
             --liveness-probe "httpGet.path=/livez,periodSeconds=30,timeoutSeconds=5,failureThreshold=3" \
+            --add-cloudsql-instances "$CLOUDSQL_INSTANCE" \
             --env-vars-file cloudrun-env.yaml
 
       - name: Show URL

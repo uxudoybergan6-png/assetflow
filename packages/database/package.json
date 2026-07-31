@@ -11,6 +11,7 @@
     "push": "prisma db push",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
+    "migrate:status": "prisma migrate status",
     "seed": "tsx prisma/seed.ts",
     "seed:assetflow": "tsx prisma/seed-assetflow.ts",
     "studio": "prisma studio"

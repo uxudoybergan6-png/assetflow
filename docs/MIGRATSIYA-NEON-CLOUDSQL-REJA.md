@@ -1,8 +1,24 @@
-# Neon → Google Cloud SQL ko'chirish rejasi (TAYYORGARLIK)
+# Neon → Google Cloud SQL ko'chirish rejasi (BAJARILDI 2026-07-31)
 
-> 🔴 EGA QARORI (2026-07-14): baza Neon'dan Google Cloud SQL (PostgreSQL)'ga ko'chadi.
-> VAQTI: V2 + audit muammolari TUGAGACH. Bu hujjat — oldindan tayyorgarlik. HOZIR ko'chirilMAYDI.
-> Ko'chirish = alohida "maydonda" (jonli test), ega + Code birga, boshqa ish parallel EMAS.
+> ✅ **BAJARILDI (2026-07-31).** Ko'chirish rejalashtirilganidan ERTA majburan bajarildi:
+> Neon bepul compute kvotasi tugadi va baza o'chib qoldi (`docs/` insident hisoboti).
+> Bu hujjat endi **tarixiy reja + ko'chirish yozuvi** — kelajak ish rejasi EMAS.
+>
+> **Joriy holat:** Cloud SQL PostgreSQL 18, instance
+> `project-289028d3-984c-4d84-bd4:europe-west1:frameflow-db` (europe-west1, db-custom-1-3840).
+> App Cloud Run'dan `--add-cloudsql-instances` bilan Unix socket orqali ulanadi
+> (`…?host=/cloudsql/<INSTANCE>`). CI/Cloud Shell'da o'sha socket'ni
+> `scripts/cloudsql-proxy.sh` (Cloud SQL Auth Proxy) ko'taradi.
+>
+> **Faza 0–2 (ega bajardi):** instance yaratildi, 29-iyul `pg_dump -Fc` zaxirasi to'liq
+> tiklandi va qator sonlari tekshirildi (User=17, ContributorTemplate=15, Generation=221,
+> CreditLedger=270), IAM (`roles/cloudsql.client`) berildi, `CLOUDRUN_ENV_YAML` yangilandi.
+>
+> **Faza 1/3/4 (Code):** migratsiya gate + `migrate status` isboti + `--add-cloudsql-instances`
+> deploy oqimiga ulandi; kunlik zaxira workflow'i ham Cloud SQL'ga o'tkazildi.
+>
+> 🔴 Ochiq qolgani: 5-faza (Neon'ni zaxira sifatida saqlash) mavzusiz — Neon allaqachon
+> o'lik, rollback yo'li YO'Q. Yagona tiklash manbai = GCS'dagi `pg_dump` zaxiralari.
 
 ## 0. Hozirgi holat (kod tasdig'i)
 
