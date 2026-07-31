@@ -1,22 +1,25 @@
-# Sessiya hisoboti — 2026-07-31 (dizayn fix-kampaniya: D2)
+# Sessiya hisoboti — 2026-07-31 (dizayn fix-kampaniya: D3)
 
-**Oldingi:** D0 (Neon compute kvota, `idle-timer.ts`, a8f92c5) va D1 (klaviatura+fokus a11y, 2941809) yopilgan.
+**Oldingi:** D0 (Neon kvota, a8f92c5), D1 (a11y, 2941809), D2 (CEP Admin, e1b0733) yopilgan.
 
-**BATCH D2 — CEP Admin panel (9/11).** `AssetFlow_Admin.html` yagona o'zgargan fayl (+212/−122).
-(1) **Ranglar** — ~45 CSS joy + 1 JS + 1 inline atribut hardcode lime/qizil/amber'dan `css/tokens.css`
-tokenlariga; grep bo'yicha `#82c341/#5a9a24/rgba(130,195,65)` **0 ta** qoldi. Qoida: to'ldirish/badge
-chegarasi = `-soft`, holat signali (rendered/rendering) = to'liq token; `color-mix` YO'Q (eski CEP).
-`<head>`da tema restore — Browse panelning `af.prefs.theme` kaliti (`liquid-glass→neon` migratsiyasi).
-(2) **Toast** nowrap olib tashlandi (`normal` + `100vw−24px` + markaz); `.err` chegarasi CSS'ga ko'chdi.
-(3) **Batch render** — `scanFolder` qulflanadi, `scenes` snapshot, butun loop `try`, `finally`da unlock
-(`require`/mkdir ham try ichida); overlay yopishda busy-confirm (Escape ham shu yo'ldan).
-(4) **escHtml** — umumiy `renderErrorState()` (3 joy) + packLog `state/text`.
-(5) **Approve/Reject** ochiq detail panelni yopmaydi (togglePublish naqshi); upload tugashi ham.
-(6) O'lik CSS (`.scenes-wrap*`, `.scan-card-check`) + `topUser` o'chdi, `switchTab` dublikatlari,
-stats xatosi "!"+tooltip+toast (ilgari jim), 360px `stats-row` 2-ustun, eskirgan yorliqlar (Render→Cloud Run).
-**Tekshirildi** (:8976 http, real yuklanish): 3 tema jonli token qiymatlari, tema migratsiyasi, toast wrap,
-`finally` unlock (throw bilan), busy-confirm 4 holat, approve→detail ochiq qoldi, escHtml XSS payload,
-stats "!" yo'li, 379px media qoidasi, `test:plugin-responsive` — OK. Pul zonasi tegilmagan.
-**#6/#7** D1'da bajarilgan ("no change needed"; faqat `.sub-msg-btn` 30px shu yerda).
+**BATCH D3 — auth oqim birligi (9/13).** 10 fayl: `auth.ts`, `login.html`, `admin-login.html`,
+`reset-password.html`, `verify-email.html`, `device.html`, `design-system.html`, `hub.html`,
+`styles/app.css`, `platform/index.html`.
+(1) **Yo'naltirish** — `POST /reset-password` javobiga `role` qo'shildi; reset/verify sahifalarida
+`authDest(role)`: USER→`/` (platforma), CONTRIBUTOR→`/studio/login.html`, ADMIN→`/admin/login.html`;
+4 ta "orqaga" havolasi ham `/`ga (ilgari hammasi Contributor Studio = USER uchun berk yo'l).
+(2) **Qobiq birligi** — 3 standalone sahifada `light` tema hurmat qilinadi (FOUC skript + `[data-theme=light]`
+token bloki + cycle `noir→neon→cold→light`), yagona brand-mark SVG, `device` divider 8→10.5px.
+(3) **Turnstile cap** — `login.html` va SPA `renderTurnstile` da cheksiz retry → 25×200ms + inline
+yo'riqnoma banneri (`role=status`), submit xabari ham moslashtirildi (CF skriptini 404 qilib tekshirildi).
+(4) **Double-submit** — SPA `doAuth` boshida busy-guard + `disabled="{{ authBusy }}"` + `.ffm-btn:disabled`
+uslubi (3× klik → 1 `register`). (5) **Copy** — "PostgreSQL" xabari neytral; 2FA yo'li haqiqiy `<a>`
+(DOM, innerHTML emas); `?verified=1` ikki login sahifasida success-banner (`.auth-ok`, `replaceState`
+bilan tozalanadi, light temada 5.03:1). (6) Parol toggle: register×2, reset×2, device×1.
+(7) SPA registerga Terms/Privacy rozilik qatori. (8) `design-system.html` xom `${…}` bloki script-render'ga,
+swatch hex jonli `getComputedStyle`dan (tema kuzatuvchisi bilan). **#13** shu batch'da: o'lik auth CSS +
+hub soxta ✓ pill (endi lokalda haqiqiy ping, productionda ko'rsatilmaydi).
+**#3/#6/#7** D1'da bajarilgan → "no change needed". Pul zonasi tegilmagan; `build -w apps/api` yashil.
+**Yangi topildi** (audit §6): N1 light temada `--green/--red` matn kontrasti, N2 `.ffm-btn:disabled`, N3 `dist/`.
 
-**Keyingi qadam:** D3 (auth oqimini birlashtirish) → D4–D9. Egasi tomonida: Neon upgrade / 1-avg reset, keyin 8 migratsiya.
+**Keyingi qadam:** D4 (Contributor Studio) → D5–D9. Egasi: Neon upgrade / 1-avg reset, keyin 8 migratsiya.

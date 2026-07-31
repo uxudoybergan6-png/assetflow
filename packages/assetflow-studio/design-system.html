@@ -170,9 +170,9 @@
         <span class="pill">Ae</span>
       </div>
       <div class="search mb-16" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search templates…"></div>
-      <div class="grid-auto" style="grid-template-columns:repeat(3,1fr)">
-        ${['g1','g3','g4','g6','g7','g10'].map((g,i)=>`<div style="border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line)"><div class="thumb ${g} grain" style="aspect-ratio:16/10"><div class="play"><span style="width:26px;height:26px">▶</span></div></div><div style="padding:6px 8px;background:var(--bg-2)"><div style="font-size:11px;font-weight:600">Template ${i+1}</div><div style="font-size:10px;color:var(--tx-2)">4K · ${1+i}.2K ⤓</div></div></div>`).join('')}
-      </div>
+      <!-- D3: bu blok ilgari xom `${...}` shablon-literali sifatida sahifada ko'rinardi
+           (mockup'dan ko'chirilgan, hech kim render qilmagan) — endi pastdagi script chizadi. -->
+      <div class="grid-auto" id="pluginGrid" style="grid-template-columns:repeat(3,1fr)"></div>
     </div>
   </section>
 
@@ -180,11 +180,23 @@
 
 <script src="/studio/js/ui.js"></script>
 <script>
-const SURF=[['--bg-0','App background','#0d0f14'],['--bg-1','Rail / panel','#12151b'],['--bg-2','Card','#171a21'],['--bg-3','Elevated','#1d212b'],['--bg-4','Input / active','#242935']];
-const ACC=[['--violet','Brand / Contributor','#8b7cf6'],['--green','Success / Approved','#38d399'],['--yellow','Pending','#f2c94c'],['--orange','Soft reject','#f2994a'],['--red','Hard reject / Block','#ef5d6b'],['--blue','Info','#56a0f2']];
-function sw(v,n,h){return `<div class="swatch"><div class="chip-c" style="background:var(${v})"></div><div class="meta"><div class="nm">${n}</div><div class="hex">${h}</div></div></div>`;}
-document.getElementById('surfaces').innerHTML=SURF.map(s=>sw(...s)).join('');
-document.getElementById('accents').innerHTML=ACC.map(s=>sw(...s)).join('');
+/* D3: hex qiymatlar app.css `:root` (13-57) bilan sinxron — ilgari lime rebrand'dan
+   OLDINGI (binafsha/ko'k) qiymatlar turardi va namuna nomi rangga to'g'ri kelmasdi. */
+const SURF=[['--bg-0','App background','#0a0b08'],['--bg-1','Rail / panel','#0d0f0a'],['--bg-2','Card','#141612'],['--bg-3','Elevated / hover','#1c1f18'],['--bg-4','Input / active','#23271e']];
+const ACC=[['--violet','Brand (lime)','#82c341'],['--violet-bright','Brand bright','#a3e635'],['--green','Success / Approved','#38d399'],['--yellow','Pending','#f2c94c'],['--orange','Soft reject','#f2994a'],['--red','Hard reject / Block','#ef5d6b'],['--blue','Info','#56a0f2'],['--gray','Archived / neutral','#8b95a6']];
+/* D3: hex YORLIG'I jonli qiymatdan o'qiladi — light tema tokenlarni almashtiradi, oldin
+   yorliq va namuna rangi bir-biriga to'g'ri kelmasdi (drift manbai). Fallback = jadval hex. */
+function sw(v,n,h){
+  const live=getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  return `<div class="swatch"><div class="chip-c" style="background:var(${v})"></div><div class="meta"><div class="nm">${n}</div><div class="hex">${live||h}</div></div></div>`;
+}
+function paintSwatches(){
+  document.getElementById('surfaces').innerHTML=SURF.map(s=>sw(...s)).join('');
+  document.getElementById('accents').innerHTML=ACC.map(s=>sw(...s)).join('');
+}
+paintSwatches();
+// tema almashganda yorliqlarni qayta chizamiz (theme.js data-theme'ni almashtiradi)
+new MutationObserver(paintSwatches).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 document.getElementById('badges').innerHTML=['draft','pending','approved','soft','hard','archived'].map(s=>badge(s)).join('');
 document.getElementById('btns').innerHTML=`
   <button class="btn btn-primary">Primary</button>
@@ -199,6 +211,14 @@ document.getElementById('btns2').innerHTML=`
   <button class="btn btn-ghost btn-icon btn-sm">${ic('more')}</button>
   <span class="pill">${ic('tag')} pill / tag</span>
   <span class="pill">${ic('film')} preview.mp4</span>`;
+document.getElementById('pluginGrid').innerHTML=['g1','g3','g4','g6','g7','g10'].map((g,i)=>`
+  <div style="border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line)">
+    <div class="thumb ${g} grain" style="aspect-ratio:16/10"><div class="play"><span style="width:26px;height:26px">▶</span></div></div>
+    <div style="padding:6px 8px;background:var(--bg-2)">
+      <div style="font-size:11px;font-weight:600">Template ${i+1}</div>
+      <div style="font-size:10px;color:var(--tx-2)">4K · ${1+i}.2K ⤓</div>
+    </div>
+  </div>`).join('');
 </script>
 </body>
 </html>

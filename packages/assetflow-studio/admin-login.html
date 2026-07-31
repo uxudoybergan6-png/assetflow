@@ -148,6 +148,17 @@
   if (s?.apiToken && s.role === "admin") { location.href = ASSETFLOW_STUDIO.adminUrl; return; }
   if (s?.apiToken && s.role !== "admin") AssetFlowAuth.clearSession();
 
+  // D3 — verify-email.html ADMIN'ni shu yerga `?verified=1` bilan yuboradi; ilgari
+  // parametr jim tashlab yuborilardi va tasdiqlash oqimi natijasiz ko'rinardi.
+  if (card && new URLSearchParams(location.search).get("verified") === "1") {
+    const okBan = document.createElement("p");
+    okBan.className = "auth-ok";
+    okBan.setAttribute("role", "status");
+    okBan.textContent = "✓ Email verified — you can sign in now";
+    card.prepend(okBan);
+    history.replaceState(null, "", location.pathname);
+  }
+
   // Show a banner if the session expired (set by the global 401 interceptor)
   if (sessionStorage.getItem("af_session_expired")) {
     sessionStorage.removeItem("af_session_expired");
@@ -245,7 +256,9 @@
       return;
     }
     if (r.session.role !== "admin") {
-      err.textContent = "This account is not Admin (role: " + r.session.role + "). Set it to ADMIN in PostgreSQL.";
+      // D3 — copy: "Set it to ADMIN in PostgreSQL" ichki texnik yo'riqnoma edi; foydalanuvchi
+      // uchun ma'nosiz va infratuzilma haqida ortiqcha ma'lumot berardi.
+      err.textContent = "This account does not have admin access. Ask an existing admin to grant it, or sign in with your admin account.";
       err.classList.remove("hidden");
       AssetFlowAuth.logout(false);
       return;

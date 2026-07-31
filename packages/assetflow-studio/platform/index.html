@@ -14491,6 +14491,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffm-btn2.sm{height:32px;padding:0 14px;font-size:11.5px}
   .ff .ffm-btn2.full{width:100%}
   .ff .ffm-btn:hover,.ff .ffm-btn2:hover{filter:brightness(1.06)}
+  /* D3 — o'chirilgan holat ko'rinishi: `disabled` bindinglar bor edi (auth submit, Explore)
+     lekin uslub yo'q edi — tugma bosiladigandek ko'rinardi. */
+  .ff .ffm-btn:disabled,.ff .ffm-btn2:disabled{opacity:.55;cursor:not-allowed}
+  .ff .ffm-btn:disabled:hover,.ff .ffm-btn2:disabled:hover{filter:none}
   /* nav */
   /* P10 — top-nav frost sof CSS bilan: landing tepada tekis, html.ffscrolled bo'lsa muzli;
      .nf = pricing/plugin doim muzli. Scroll handler faqat html.ffscrolled klassini almashadi (setState YO'Q). */
@@ -17654,8 +17658,11 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </sc-if>
         <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">
           <div id="ffTurnstileWidget" style="margin-top:14px"></div>
+          <!-- D3 — Terms rozilik qatori: Studio login.html'da checkbox bor, SPA registerda
+               hech qanday huquqiy eslatma yo'q edi (Google tugmasi ham shu qatordan pastda). -->
+          <p style="font-size:11.5px;color:var(--muted2);margin:14px 0 0;line-height:1.6">By creating an account you agree to the <a href="terms.html" style="color:var(--lime);font-weight:600">Terms of Service</a> and the <a href="privacy.html" style="color:var(--lime);font-weight:600">Privacy Policy</a>.</p>
         </sc-if>
-        <button onclick="{{ authSubmit }}" class="ffm-btn full lg" style="margin-top:20px">{{ authBtn }}<i class="ph ph-arrow-right" style="font-size:14px"></i></button>
+        <button onclick="{{ authSubmit }}" class="ffm-btn full lg" style="margin-top:20px" disabled="{{ authBusy }}">{{ authBtn }}<i class="ph ph-arrow-right" style="font-size:14px"></i></button>
         <sc-if value="{{ authShowGoogle }}" hint-placeholder-val="{{ false }}">
           <div class="ffa-divider"><span class="ln"></span><span>OR</span><span class="ln"></span></div>
           <div id="ffGoogleBtn" style="display:flex;justify-content:center;min-height:44px"></div>
@@ -20130,6 +20137,9 @@ class Component extends DCLogic {
   }
   async doAuth() {
     const st = this.state;
+    // D3 — ikki marta yuborish qalqoni: tugma bosilganda `authBusy` faqat matnni
+    // o'zgartirardi, tugma esa bosiladigan qolardi (Enter + klik = 2 register so'rovi).
+    if (st.authBusy) return;
     const email = (st.authEmail || '').trim(), pass = st.authPassword || '';
     if (!email || email.indexOf('@') < 0) { this.setState({ authErr: 'Enter your email' }); return; }
     if (st.authMode !== 'forgot' && pass.length < (st.authMode === 'register' ? 8 : 1)) {
@@ -20218,7 +20228,24 @@ class Component extends DCLogic {
     const siteKeyMeta = document.querySelector('meta[name="turnstile-site-key"]');
     const siteKey = siteKeyMeta && siteKeyMeta.getAttribute('content');
     if (!siteKey) return;
-    if (!window.turnstile) { setTimeout(() => this.renderTurnstile(), 200); return; }
+    // D3 — retry cheklovi: ilgari kutish CHEKSIZ edi (skript bloklansa hech qanday
+    // xabar chiqmasdi, register esa "Please complete the bot check"da tiqilardi).
+    if (!window.turnstile) {
+      if (this._turnstileFailed) return;
+      this._turnstileTries = (this._turnstileTries || 0) + 1;
+      if (this._turnstileTries > 25) { // ~5s (25 × 200ms)
+        this._turnstileFailed = true;
+        const b = document.createElement('div');
+        // uslub authErr banneri bilan bir xil (SPA'da inline, alohida klass yo'q)
+        b.style.cssText = 'padding:11px 14px;border-radius:11px;background:var(--reddim);border:1px solid rgba(255,107,94,.3);font-size:13px;color:#FF9C8F;text-align:left';
+        b.setAttribute('role', 'status');
+        b.textContent = 'The bot check could not load. Turn off your ad/content blocker (or allow challenges.cloudflare.com) and reload the page.';
+        container.appendChild(b);
+        return;
+      }
+      setTimeout(() => this.renderTurnstile(), 200);
+      return;
+    }
     this._turnstileWidgetId = window.turnstile.render(container, {
       sitekey: siteKey,
       callback: (token) => { this._turnstileToken = token; },

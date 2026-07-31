@@ -100,3 +100,26 @@ CEP Admin: o'lik CSS avlodi, stats jim xato, 360px breakpoint yo'q. AI Tools: EN
 ## 5 · Qamrov eslatmasi
 
 10 sirtdan 6 tasi agentlar tomonidan to'liq, 4 tasi (plugin-home-browse, landing-marketing, platform-ai-studio, admin-panel) qo'lda nishonli auditdan o'tdi (sessiya limitlari sabab agentlar qotgan). Bu 4 sirtda qamrov ~70% — keyingi chuqurlashtirish `DIZAYN-FIX-SYSTEM-PROMPT.md` D9 bandida.
+
+---
+
+## 6 · BATCH davomida topilgan yangi findinglar (scope'ga qo'shilmagan)
+
+**N1 (P2, `styles/app.css`) — yorug' temada FILL tokenlari matn uchun AA'dan o'tmaydi.**
+`[data-theme="light"]` bloki faqat `--bg-*`, `--line*`, `--tx-*`, `--violet*` va `*-dim`/`*-line`
+tuslarini almashtiradi; `--green/--red/--yellow/--orange/--blue/--gray` esa qorong'i fonda
+TO'LDIRISH uchun tanlangan qiymatlarda qoladi. Oq/tus fon ustida matn sifatida ishlatilganda
+kontrast 2–3:1 ga tushadi (o'lchandi: `--green` ~1.9:1, `--red` ~3:1). D3'da faqat ikki auth
+banneri (`.auth-ok`, `.auth-error`) nishonli tuzatildi; qolgan iste'molchilar — status badge'lar,
+`.btn-success` matni, trend strelkalari, contributor/admin jadval holat nuqtalari — tekshirilmagan.
+**Tavsiya:** `light` blokiga alohida `--green-ink/--red-ink/...` "matn" tokenlari kiritib, badge/matn
+iste'molchilarini ularga o'tkazish (D6 dizayn-tizim birlashtirishida).
+
+**N2 (P3, `platform/index.html`) — `.ffm-btn` da `:disabled` uslubi yo'q edi.**
+`disabled="{{ ... }}"` bindinglari mavjud (Explore submit, `:17803`) lekin tugma bosiladigandek
+ko'rinardi. D3'da `.ffm-btn/.ffm-btn2:disabled` (opacity .55 + not-allowed + hover:none) qo'shildi —
+boshqa SPA tugma sinflarida (`va-*`, `ffa-*`) shu tekshiruv o'tkazilmagan.
+
+**N3 (P3, `dist/`) — `packages/assetflow-studio/dist/` eskirgan artefakt.**
+`studio:sync`/`prepare-vercel.mjs` bu papkani QAYTA YOZMAYDI (faqat CF Pages build yozadi), shuning
+uchun grep natijalarida o'chirilgan CSS (masalan `.auth-back`) tirik ko'rinadi va auditni chalg'itadi.

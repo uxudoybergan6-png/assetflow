@@ -522,7 +522,10 @@ authRouter.post("/reset-password", tokenLimiter, async (req, res) => {
   await prisma.verificationToken.deleteMany({
     where: { identifier: record.identifier },
   });
-  res.json({ ok: true, message: "Password updated — you can now sign in" });
+  // D3 — `role` javobda: reset-password.html tugagach foydalanuvchini O'Z portali
+  // loginiga yuboradi (verify-email bilan bir xil naqsh). Ilgari role yo'q edi va
+  // sahifa hammani Contributor Studio loginiga tashlardi (USER uchun boshi berk).
+  res.json({ ok: true, message: "Password updated — you can now sign in", role: user.role });
 });
 
 // ── Email tasdiqlash ─────────────────────────────────────────────────────────

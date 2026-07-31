@@ -112,13 +112,26 @@
             <label>Email</label>
             <input class="input" type="email" name="email" placeholder="email@example.com" required>
           </div>
+          <!-- D3 — ro'yxatdan o'tish parollariga ham ko'rsatish/yashirish (Sign in'da bor edi,
+               bu yerda yo'q — 8+ belgili parolni yozganda tekshirish imkoni yo'qligi
+               "Passwords do not match" xatosining asosiy manbai). -->
           <div class="field">
-            <label>Password</label>
-            <input class="input" type="password" name="password" minlength="8" placeholder="At least 8 characters" required>
+            <label for="regPass">Password</label>
+            <div class="field-wrap">
+              <input id="regPass" class="input has-trail" type="password" name="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required>
+              <button type="button" class="toggle-pw" aria-label="Show password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
           </div>
           <div class="field">
-            <label>Confirm password</label>
-            <input class="input" type="password" name="password2" minlength="8" required>
+            <label for="regPass2">Confirm password</label>
+            <div class="field-wrap">
+              <input id="regPass2" class="input has-trail" type="password" name="password2" autocomplete="new-password" minlength="8" required>
+              <button type="button" class="toggle-pw" aria-label="Show password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
           </div>
           <label class="row center gap-8" style="cursor:pointer;font-size:13px;color:var(--tx-1)">
             <div class="checkbox" id="termsChk" tabindex="0" role="checkbox"></div>
@@ -171,6 +184,17 @@
     return;
   }
 
+  // D3 — verify-email.html `?verified=1` bilan qaytaradi, lekin hech kim uni o'qimasdi:
+  // foydalanuvchi tasdiqlash oqimidan hech qanday tasdiq ko'rmay login formasiga tushardi.
+  if (card && new URLSearchParams(location.search).get("verified") === "1") {
+    const ok = document.createElement("p");
+    ok.className = "auth-ok";
+    ok.setAttribute("role", "status");
+    ok.textContent = "✓ Email verified — you can sign in now";
+    card.prepend(ok);
+    history.replaceState(null, "", location.pathname); // qayta yuklashda takrorlanmasin
+  }
+
   // Banner if the session expired (set by the global 401 interceptor)
   if (sessionStorage.getItem("af_session_expired")) {
     sessionStorage.removeItem("af_session_expired");
@@ -218,9 +242,31 @@
   let turnstileToken = "";
   const turnstileSiteKey = document.querySelector('meta[name="turnstile-site-key"]')?.getAttribute("content") || "";
   let turnstileWidgetId = null;
+  // D3 — retry cheklovi: ilgari `setTimeout(initTurnstile, 200)` CHEKSIZ edi. Skript
+  // bloklansa (content blocker / CF uzilishi) foydalanuvchi hech qachon xabar ko'rmay,
+  // "Please complete the bot check" bilan abadiy tiqilib qolardi.
+  let turnstileTries = 0;
+  let turnstileFailed = false;
+  const TURNSTILE_MAX_TRIES = 25; // ~5s (25 × 200ms)
+  function turnstileUnavailable() {
+    turnstileFailed = true;
+    const el = document.getElementById("turnstileWidget");
+    if (!el || el.dataset.failed === "1") return;
+    el.dataset.failed = "1";
+    const b = document.createElement("div");
+    b.className = "auth-error";
+    b.style.marginBottom = "0";
+    b.setAttribute("role", "status");
+    b.textContent = "The bot check could not load. Turn off your ad/content blocker (or allow challenges.cloudflare.com) and reload the page.";
+    el.appendChild(b);
+  }
   function initTurnstile() {
-    if (!turnstileSiteKey || turnstileWidgetId !== null) return;
-    if (!window.turnstile) { setTimeout(initTurnstile, 200); return; }
+    if (!turnstileSiteKey || turnstileWidgetId !== null || turnstileFailed) return;
+    if (!window.turnstile) {
+      if (++turnstileTries > TURNSTILE_MAX_TRIES) { turnstileUnavailable(); return; }
+      setTimeout(initTurnstile, 200);
+      return;
+    }
     const el = document.getElementById("turnstileWidget");
     if (!el) return;
     turnstileWidgetId = window.turnstile.render(el, {
@@ -303,8 +349,7 @@
       const r = await AssetFlowAuth.loginWithGoogle(resp.credential);
       if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
       if (r.twoFactorRequired) {
-        err.textContent = "This admin account uses 2FA — please sign in from the Admin Console (/admin/login.html).";
-        err.classList.remove("hidden");
+        showAdmin2fa(err);
         return;
       }
       const block = afterAuth(r, chk.classList.contains("on"));
@@ -325,6 +370,21 @@
     initGoogleButtons();
   }
 
+
+  /** D3 — 2FA yo'nalishi: ilgari xabar ichida xom `(/admin/login.html)` yo'li turardi —
+   *  bosilmaydigan va texnik ko'rinishdagi matn. Endi haqiqiy havola (innerHTML EMAS, DOM). */
+  function showAdmin2fa(err) {
+    err.textContent = "";
+    const s = document.createElement("span");
+    s.appendChild(document.createTextNode("This admin account uses 2FA — please sign in from the "));
+    const a = document.createElement("a");
+    a.href = "/admin/login.html";
+    a.textContent = "Admin Console";
+    a.style.cssText = "color:inherit;font-weight:700;text-decoration:underline";
+    s.append(a, document.createTextNode("."));
+    err.appendChild(s);
+    err.classList.remove("hidden");
+  }
 
   /** #134 (C12) — submit tugmasi loading/disabled holati: ilgari sekin tarmoqda
    *  hech qanday javob ko'rinmasdi va foydalanuvchi tugmani qayta-qayta bosardi. */
@@ -354,8 +414,7 @@
     }
     if (!r.ok) { err.textContent = r.error; err.classList.remove("hidden"); return; }
     if (r.twoFactorRequired) {
-      err.textContent = "This admin account uses 2FA — please sign in from the Admin Console (/admin/login.html).";
-      err.classList.remove("hidden");
+      showAdmin2fa(err);
       return;
     }
     const block = afterAuth(r, chk.classList.contains("on"));
@@ -381,7 +440,11 @@
       return;
     }
     if (turnstileSiteKey && !turnstileToken) {
-      err.textContent = "Please complete the bot check";
+      // D3 — widget yuklanmagan bo'lsa boshqa xabar: "complete the bot check" mavjud
+      // bo'lmagan narsani so'ragandek edi.
+      err.textContent = turnstileFailed
+        ? "The bot check could not load — turn off your ad/content blocker and reload the page."
+        : "Please complete the bot check";
       err.classList.remove("hidden");
       return;
     }
@@ -413,15 +476,19 @@
 })();
 </script>
 <script>
-/* Show/hide password — does not touch auth logic (only input.type) */
+/* Show/hide password — does not touch auth logic (only input.type).
+   D3: bitta `#loginPwToggle` o'rniga `.field-wrap` ichidagi HAR BIR `.toggle-pw`. */
 (function () {
-  var t = document.getElementById('loginPwToggle');
-  var i = document.getElementById('loginPass');
-  if (t && i) t.addEventListener('click', function () {
-    var show = i.type === 'password';
-    i.type = show ? 'text' : 'password';
-    t.setAttribute('aria-pressed', String(show));
-    t.setAttribute('aria-label', show ? 'Hide password' : "Show password");
+  document.querySelectorAll('.toggle-pw').forEach(function (t) {
+    var wrap = t.closest('.field-wrap');
+    var i = wrap && wrap.querySelector('input[type="password"]');
+    if (!i) return;
+    t.addEventListener('click', function () {
+      var show = i.type === 'password';
+      i.type = show ? 'text' : 'password';
+      t.setAttribute('aria-pressed', String(show));
+      t.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
   });
 })();
 </script>

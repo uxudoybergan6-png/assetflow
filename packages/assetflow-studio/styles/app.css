@@ -1102,12 +1102,22 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .auth-error.hidden { display: none; }
 .auth-error svg { width: 15px; height: 15px; flex: none; }
 
-/* muvaffaqiyat/xabar (reset-password) */
-.msg { font-size: 12px; margin-top: 12px; text-align: center; line-height: 1.5; min-height: 16px; color: var(--tx-2); }
-.msg.ok { color: var(--violet-bright); }
-.msg.err { color: var(--red); }
-.auth-back { display: block; text-align: center; font-size: 12px; color: var(--violet-bright); margin-top: 16px; }
-.auth-back:hover { text-decoration: underline; }
+/* muvaffaqiyat banneri (form-level; .auth-error bilan bir shakl, JS prepend qiladi).
+   D3: eski `.msg*`/`.auth-back` bloki o'chirildi — reset-password/verify-email standalone
+   bo'lgach app.css'ni yuklamaydi, `.auth-back` esa manbada umuman ishlatilmasdi. */
+.auth-ok {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--green); font-size: 12.5px;
+  padding: 9px 11px; border-radius: var(--r-sm);
+  background: var(--green-dim); border: 1px solid var(--green-line); margin-bottom: 12px;
+}
+.auth-ok.hidden { display: none; }
+
+/* D3 — yorug' temada `--green`/`--red` FILL uchun mo'ljallangan (light bloki faqat
+   `-dim/-line`ni almashtiradi) — oq fonda banner matni 2-3:1 bo'lib qolardi.
+   Bu yerda faqat banner MATNI to'qroq variantga o'tadi (tugma/badge tegilmaydi). */
+[data-theme="light"] .auth-ok { color: #0d6f47; } /* tint fon ustida 5.03:1 */
+[data-theme="light"] .auth-error { color: #c0261f; }
 
 .btn-block { width: 100%; padding: 12px 16px; font-size: 16px; }
 

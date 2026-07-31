@@ -28,10 +28,8 @@
     transition: border-color .15s, transform .15s, box-shadow .15s;
   }
   .hub-card:hover { border-color: var(--violet-line); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.25); }
-  .hub-card.admin:hover { border-color: var(--green); }
   .hub-ico { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 22px; }
   .hub-card.contrib .hub-ico { background: var(--violet-dim); color: var(--violet-bright); }
-  .hub-card.admin .hub-ico { background: var(--green-dim); color: var(--green); }
   .hub-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
   .hub-card p { font-size: 13px; color: var(--tx-2); line-height: 1.5; margin-bottom: 14px; }
   .hub-url { font-size: 11px; color: var(--tx-3); font-family: ui-monospace, monospace; word-break: break-all; }
@@ -84,12 +82,12 @@
     }
   }
   const pills = [await ping(apiBase + "/health", "API")];
+  // D3 — productionda "Studio ✓"/"Admin ✓" HARDCODED edi: hech narsa ping qilinmasdi,
+  // ya'ni indikator hamisha yashil turardi (statusning ma'nosi yo'q). Endi lokalda
+  // haqiqiy ping, productionda esa indikator umuman ko'rsatilmaydi.
   if (location.hostname === "localhost") {
     pills.push(await ping("http://localhost:3000/studio/hub.html", "Web"));
     pills.push(await fetch("http://localhost:3001/login.html", { mode: "no-cors" }).then(() => "Admin ✓").catch(() => "Admin ✗"));
-  } else {
-    pills.push("Studio ✓");
-    pills.push("Admin ✓");
   }
   el.innerHTML = pills.map((t) => {
     const ok = t.includes("✓");

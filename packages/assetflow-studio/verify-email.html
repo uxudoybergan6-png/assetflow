@@ -7,7 +7,7 @@
 <title>FrameFlow — Verify email</title>
 <!-- BATCH6 tema: FOUC oldini olish — birinchi bo'yoqdan oldin html[data-theme] o'rnatiladi
      (platform/index.html bilan SINXRON saqla — bir xil ff-theme kaliti) -->
-<script>(function(){try{var t=localStorage.getItem('ff-theme');if(t!=='noir'&&t!=='neon'&&t!=='cold')t='noir';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','noir');}})();</script>
+<script>(function(){try{var t=localStorage.getItem('ff-theme');if(t!=='noir'&&t!=='neon'&&t!=='cold'&&t!=='light')t='noir';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','noir');}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -17,6 +17,10 @@
 :root,[data-theme="noir"]{--bg:#0a0a0b;--bg-deep:#050506;--surface:#131316;--surface-2:#1b1b1f;--surface-3:#232329;--text:#fff;--text-2:#d0d0d5;--muted:#a2a2aa;--faint:#85858e;--border:rgba(255,255,255,.12);--accent:#fff;--accent-2:#d7d7dc;--on-accent:#09090a;--accent-soft:rgba(255,255,255,.09);--glow:rgba(255,255,255,.11);--danger:#ff675f;--success:#9be36c;--warning:#f7c967;--grad:linear-gradient(135deg,#fff 0%,#a6a6ae 100%);--shadow:0 28px 80px rgba(0,0,0,.45)}
 [data-theme="neon"]{--bg:#050505;--bg-deep:#020202;--surface:#0d0d0e;--surface-2:#151517;--surface-3:#1d1d20;--text:#f8f8f5;--text-2:#d0d1ca;--muted:#a0a39a;--faint:#82867c;--border:rgba(216,255,62,.18);--accent:#d8ff3e;--accent-2:#baf02c;--on-accent:#0a0d02;--accent-soft:rgba(216,255,62,.1);--glow:rgba(216,255,62,.35);--danger:#ff635c;--success:#d8ff3e;--warning:#ffd45c;--grad:linear-gradient(135deg,#d8ff3e 0%,#9fe622 100%);--shadow:0 28px 90px rgba(0,0,0,.6)}
 [data-theme="cold"]{--bg:#0b0e14;--bg-deep:#070910;--surface:#10141d;--surface-2:#161b28;--surface-3:#1d2434;--text:#f7f9ff;--text-2:#d1d7e8;--muted:#9da7c0;--faint:#7f8aa4;--border:rgba(124,140,255,.22);--accent:#7c8cff;--accent-2:#4fd8eb;--on-accent:#080b16;--accent-soft:rgba(124,140,255,.12);--glow:rgba(79,216,235,.24);--danger:#ff6c7d;--success:#66e8b3;--warning:#ffc96c;--grad:linear-gradient(135deg,#7c8cff 0%,#4fd8eb 100%);--shadow:0 28px 90px rgba(0,0,0,.5)}
+/* D3 — YORUG' variant: Studio (theme.js) `ff-theme=light` yozadi, bu sahifalar esa uni
+   `noir`ga majburlab qorong'i qilardi — bitta auth oqimi o'rtasida tema sakrardi.
+   Qiymatlar app.css LIGHT THEME blokidan (matn/aksent AA: >=4.5:1 oq sirt ustida). */
+[data-theme="light"]{--bg:#f4f5f8;--bg-deep:#eceef3;--surface:#fff;--surface-2:#f8f9fc;--surface-3:#e8ebf2;--text:#12151c;--text-2:#3d4556;--muted:#5f6775;--faint:#6b7385;--border:#dde1ea;--accent:#4d7d22;--accent-2:#3f6a1b;--on-accent:#fff;--accent-soft:rgba(77,125,34,.12);--glow:rgba(77,125,34,.18);--danger:#c0261f;--success:#0f7a4f;--warning:#8a6100;--grad:linear-gradient(135deg,#4d7d22 0%,#3f6a1b 100%);--shadow:0 18px 50px rgba(15,23,42,.12)}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
@@ -25,6 +29,9 @@ h1{font-family:"Space Grotesk",sans-serif;letter-spacing:-.035em}
 .auth-form-wrap{display:grid;place-items:center;padding:50px 24px;background:var(--bg);min-height:100vh}
 .brand{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:700;font-family:"Space Grotesk",sans-serif;text-decoration:none;white-space:nowrap;color:var(--text)}
 .brand-mark{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;background:var(--grad);color:var(--on-accent);font-size:16px}
+/* D3 — brend belgisi login.html (app.css .brand-mark) bilan BIR XIL: ilgari bu sahifalarda
+   `ϟ` chaqmoq turardi va parol kiritish oqimida boshqa saytga o'tgandek taassurot berardi. */
+.brand-mark svg{width:19px;height:19px;stroke:var(--on-accent);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .kicker{font:600 10px/1 "JetBrains Mono",monospace;letter-spacing:.08em;color:var(--muted);display:inline-block}
 .verify-card{width:min(490px,90vw);padding:35px;border:1px solid var(--border);border-radius:18px;background:var(--surface);text-align:center}
 .verify-card .mail-icon{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;background:var(--accent-soft);color:var(--accent);font-size:28px}
@@ -60,7 +67,7 @@ h1{font-family:"Space Grotesk",sans-serif;letter-spacing:-.035em}
 <button class="theme-cyc" type="button" onclick="cycleTheme()" title="Theme" aria-label="Switch theme">◐</button>
 <div class="auth-screen"><div class="auth-form-wrap">
   <div style="width:min(490px,90vw)">
-    <a class="brand" href="/" style="justify-content:center;margin-bottom:22px"><span class="brand-mark" aria-hidden="true">ϟ</span>FrameFlow</a>
+    <a class="brand" href="/" style="justify-content:center;margin-bottom:22px"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.1 9.6V6.1h3.5"/><path d="M14.4 6.1h3.5v3.5"/><path d="M6.1 14.4v3.5h3.5"/><path d="M14.4 17.9h3.5v-3.5"/><path d="M8.9 12h4.6"/><path d="m13.4 10 2 2-2 2"/></svg></span>FrameFlow</a>
 
     <!-- Automatic verification via token -->
     <div id="verifyView" class="verify-card">
@@ -68,7 +75,7 @@ h1{font-family:"Space Grotesk",sans-serif;letter-spacing:-.035em}
       <span class="kicker" id="verifyKick">ONE MORE STEP</span>
       <h1 id="verifyStatus">Checking…</h1>
       <p class="msg" id="verifyMsg">Verifying your email link…</p>
-      <div class="auth-switch"><a href="/login.html">&larr; Back to sign in</a></div>
+      <div class="auth-switch"><a href="/">&larr; Back to sign in</a></div>
     </div>
 
     <!-- No token or expired — resend view -->
@@ -83,19 +90,23 @@ h1{font-family:"Space Grotesk",sans-serif;letter-spacing:-.035em}
       </div>
       <button class="primary full" id="reBtn" onclick="doResend()">Resend verification email</button>
       <div class="msg" id="reMsg"></div>
-      <div class="auth-switch"><a href="/login.html">&larr; Back to sign in</a></div>
+      <div class="auth-switch"><a href="/">&larr; Back to sign in</a></div>
     </div>
   </div>
 </div></div>
 
 <script>
 /* Minimal tema tsikli — ff-theme kalitini platform bilan bo'lishadi (FOUC yuqorida o'qiydi). */
-function cycleTheme(){var o=['noir','neon','cold'];var c=document.documentElement.getAttribute('data-theme')||'noir';var n=o[(o.indexOf(c)+1)%o.length];document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('ff-theme',n);}catch(e){}}
+function cycleTheme(){var o=['noir','neon','cold','light'];var c=document.documentElement.getAttribute('data-theme')||'noir';var n=o[(o.indexOf(c)+1)%o.length];document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('ff-theme',n);}catch(e){}}
 </script>
 <script>
 function apiBase(){
   const meta=document.querySelector('meta[name="assetflow-api"]');
   return (meta?.getAttribute('content')||'https://api.getframeflow.app').replace(/\/$/,'');
+}
+/* D3 — rolga mos portal logini (reset-password.html bilan AYNI helper). */
+function authDest(role){
+  return role==='ADMIN'?'/admin/login.html':role==='CONTRIBUTOR'?'/studio/login.html':'/';
 }
 const params=new URLSearchParams(location.search);
 const token=params.get('token');
@@ -124,7 +135,7 @@ async function doVerify(){
     msg.className='msg ok';
     msg.textContent='You can now use AI generation. Redirecting to the sign-in page…';
     // Rolga qarab O'Z portal loginiga: ADMIN → admin console, CONTRIBUTOR → studio, USER → platforma.
-    const dest=(data&&data.role==='ADMIN')?'/admin/login.html?verified=1':(data&&data.role==='CONTRIBUTOR')?'/studio/login.html?verified=1':'/?verified=1';
+    const dest=authDest(data&&data.role)+'?verified=1';
     setTimeout(()=>{location.href=dest;},1800);
   }catch(e){
     // Invalid/expired link → show the resend view
