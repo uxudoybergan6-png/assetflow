@@ -106,9 +106,91 @@ const AssetFlowStore = (() => {
 
   function saveMeta(items) {
     initDiskBackend();
-    if (useDisk) fs.writeFileSync(metaPath, JSON.stringify(items), "utf8");
-    else localStorage.setItem(META_KEY, JSON.stringify(items));
+    if (useDisk) {
+      // #140 (PL-j): ATOMIK yozuv — vaqtinchalik faylga yozib, keyin rename.
+      // Ilgari to'g'ridan `meta.json` ga yozilardi: AE yozuv o'rtasida yopilsa
+      // (yoki disk to'lsa) fayl YARIM qolib, butun lokal katalog yo'qolardi.
+      const tmp = metaPath + ".tmp";
+      fs.writeFileSync(tmp, JSON.stringify(items), "utf8");
+      fs.renameSync(tmp, metaPath);
+    } else localStorage.setItem(META_KEY, JSON.stringify(items));
     notifyMetaUpdated();
+  }
+
+  /* ---- #140 (PL-j): meta.json read-modify-write qulfi ----
+   *
+   * `listMeta()` → (await …) → `saveMeta()` ketma-ketligi orasida await bor:
+   * ikkita amal (masalan yuklash + o'chirish) parallel ketsa, ikkinchisi
+   * birinchisining natijasini KO'RMAGAN ro'yxatni qayta yozadi — yozuv jimgina
+   * yo'qoladi. Bundan tashqari Browse va Admin panellari AYNI faylni ochadi
+   * (ikki alohida CEP jarayoni) — shu bois jarayonlararo fayl-qulfi ham kerak.
+   *
+   * Ikki qatlam: (1) jarayon ICHIDA promise-navbat, (2) diskda `meta.lock`
+   * papkasi (mkdir — atomik). Qulf olinmasa 5s dan keyin ogohlantirish bilan
+   * davom etamiz: foydalanuvchi amali muzlab qolgandan ko'ra shu afzal.
+   */
+  const LOCK_STALE_MS = 15000;
+  const LOCK_WAIT_MS = 5000;
+  let metaChain = Promise.resolve();
+
+  function sleepMs(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  async function acquireMetaFileLock() {
+    if (!useDisk) return () => {};
+    const p = metaPath + ".lock";
+    const started = Date.now();
+    for (;;) {
+      try {
+        fs.mkdirSync(p); // mavjud bo'lsa xato — atomik "egallash"
+        return () => {
+          try {
+            fs.rmSync(p, { recursive: true, force: true });
+          } catch {
+            /* */
+          }
+        };
+      } catch {
+        // Egallangan. Eskirgan (jarayon o'lgan) bo'lsa — tozalab, qayta urinamiz.
+        try {
+          const st = fs.statSync(p);
+          if (Date.now() - st.mtimeMs > LOCK_STALE_MS) {
+            fs.rmSync(p, { recursive: true, force: true });
+            continue;
+          }
+        } catch {
+          continue; // qulf hozirgina bo'shadi
+        }
+        if (Date.now() - started > LOCK_WAIT_MS) {
+          try {
+            console.warn("[FrameFlow] meta.json lock timeout — qulfsiz davom etamiz");
+          } catch {
+            /* */
+          }
+          return () => {};
+        }
+        await sleepMs(60);
+      }
+    }
+  }
+
+  /** Meta'ni O'ZGARTIRADIGAN amallar SHU o'ram ichida bajarilishi kerak. */
+  function withMetaLock(fn) {
+    const next = metaChain.then(async () => {
+      initDiskBackend();
+      const release = await acquireMetaFileLock();
+      try {
+        return await fn();
+      } finally {
+        release();
+      }
+    });
+    metaChain = next.then(
+      () => {},
+      () => {}
+    );
+    return next;
   }
 
   async function blobToBuffer(blob) {
@@ -319,14 +401,20 @@ const AssetFlowStore = (() => {
       updatedAt: new Date().toISOString(),
     };
 
-    const items = listMeta();
-    items.unshift(record);
-    saveMeta(items);
+    await withMetaLock(async () => {
+      const items = listMeta();
+      items.unshift(record);
+      saveMeta(items);
+    });
     await hydrateBlobUrls([record]);
     return record;
   }
 
   async function updateUpload(id, patch, files) {
+    return withMetaLock(() => updateUploadUnlocked(id, patch, files));
+  }
+
+  async function updateUploadUnlocked(id, patch, files) {
     const items = listMeta();
     const idx = items.findIndex((x) => x.id === id);
     if (idx < 0) throw new Error("Upload not found");
@@ -374,6 +462,10 @@ const AssetFlowStore = (() => {
   }
 
   async function deleteUpload(id) {
+    return withMetaLock(() => deleteUploadUnlocked(id));
+  }
+
+  async function deleteUploadUnlocked(id) {
     const items = listMeta();
     const item = items.find((x) => x.id === id);
     if (!item) return;
@@ -387,9 +479,14 @@ const AssetFlowStore = (() => {
   }
 
   async function clearAll() {
+    return withMetaLock(() => clearAllUnlocked());
+  }
+
+  async function clearAllUnlocked() {
     await openDb();
     const items = listMeta();
-    await Promise.all(items.map((item) => deleteUpload(item.id)));
+    // Qulf ALLAQACHON bizda — ichkarida qulflangan variantni chaqirmaymiz
+    await Promise.all(items.map((item) => deleteUploadUnlocked(item.id)));
     if (useDisk && fs.existsSync(blobDir)) {
       for (const name of fs.readdirSync(blobDir)) {
         fs.unlinkSync(pathLib.join(blobDir, name));
@@ -416,6 +513,10 @@ const AssetFlowStore = (() => {
   }
 
   async function togglePublished(id) {
+    return withMetaLock(() => togglePublishedUnlocked(id));
+  }
+
+  async function togglePublishedUnlocked(id) {
     const items = listMeta();
     const item = items.find((x) => x.id === id);
     if (!item) return null;
@@ -482,12 +583,16 @@ const AssetFlowStore = (() => {
     };
   }
 
-  async function importDemoPack(payload, { replace = true } = {}) {
+  async function importDemoPack(payload, opts) {
+    return withMetaLock(() => importDemoPackUnlocked(payload, opts || {}));
+  }
+
+  async function importDemoPackUnlocked(payload, { replace = true } = {}) {
     if (!payload || !Array.isArray(payload.items)) throw new Error("Invalid demo pack");
     await openDb();
     if (replace) {
       const existing = listMeta();
-      await Promise.all(existing.map((item) => deleteUpload(item.id)));
+      await Promise.all(existing.map((item) => deleteUploadUnlocked(item.id)));
     }
     const blobEntries = Object.entries(payload.blobs || {});
     for (const [id, entry] of blobEntries) {
@@ -508,6 +613,10 @@ const AssetFlowStore = (() => {
   }
 
   async function importMetaJson(text) {
+    return withMetaLock(() => importMetaJsonUnlocked(text));
+  }
+
+  async function importMetaJsonUnlocked(text) {
     const parsed = JSON.parse(text);
     if (!Array.isArray(parsed)) throw new Error("Invalid JSON");
     const existing = listMeta();

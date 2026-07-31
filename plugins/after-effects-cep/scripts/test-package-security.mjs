@@ -57,6 +57,8 @@ import {
   extractAll,
   verifyArchiveReferences,
 } from "./verify-zxp-package.mjs";
+// #148 (PX11) — ikonalar generatori (PNG baytlari uchun yagona manba).
+import { PANEL_ICONS, checkPanelIcons } from "./make-panel-icons.mjs";
 
 let passed = 0;
 let failed = 0;
@@ -262,6 +264,33 @@ console.log("");
 
 // ── A) Ijobiy auditlar ───────────────────────────────────────────────────────
 for (const key of Object.keys(FLAVORS)) auditArchive(archives[key], key);
+
+// ── A2) #148 (PX11) Panel ikonalari ──────────────────────────────────────────
+// Ikonalar repo'ga "shunchaki binar" bo'lib tushmaydi: manba — scripts/make-panel-icons.mjs.
+// Diskdagi PNG generator chiqishidan farq qilsa, kimdir ularni qo'lda almashtirgan bo'ladi.
+{
+  const iconState = checkPanelIcons();
+  for (const ic of iconState) {
+    check(`ikona generatordan bayt-ba-bayt bir xil: ${ic.file}`, ic.ok);
+  }
+  const custXml = readFileSync(path.join(PLUGIN_SRC, FLAVORS.customer.manifestSource), "utf8");
+  check(
+    "mijoz manifestida `<Icons>` bor (AE ro'yxatida bo'sh ikona qolmaydi)",
+    /<Icons>/.test(custXml)
+  );
+  for (const ic of PANEL_ICONS) {
+    check(
+      `manifest \`<Icon Type="${ic.type}">\` → ${ic.file}`,
+      new RegExp(`<Icon Type="${ic.type}">\\./${ic.file.replace(/[./]/g, (c) => `\\${c}`)}</Icon>`).test(custXml)
+    );
+  }
+  const custFiles = new Set(resolveFlavorFiles("customer").map((f) => f.to));
+  check(
+    "barcha ikonalar mijoz paketiga kiritilgan (flavor ro'yxati)",
+    PANEL_ICONS.every((ic) => custFiles.has(ic.file)),
+    PANEL_ICONS.filter((ic) => !custFiles.has(ic.file)).map((ic) => ic.file).join(", ")
+  );
+}
 
 // ── B) Versiya sinxronligi ───────────────────────────────────────────────────
 const declared = declaredPluginVersion();

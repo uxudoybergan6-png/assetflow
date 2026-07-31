@@ -67,6 +67,7 @@ import {
   postinstallScript,
   sha256File,
   stageCustomerPayload,
+  uninstallScript,
   verifyPayload,
   writeChecksumSidecar,
 } from "./installer-payload.mjs";
@@ -620,6 +621,78 @@ if (macBuilt) {
   check(
     "eski fayllar ro'yxati joriy payload bilan kesishmaydi (ishlaydigan fayl o'chmaydi)",
     obsoleteInstallFiles().every((f) => !expected.includes(f))
+  );
+
+  // ── #147 (PX10): o'chirgich komponenti ────────────────────────────────────
+  // Mijozda `.pkg` ni olib tashlash yo'li BO'LISHI kerak (Windows'da MSI buni o'zi beradi).
+  // Shart: u ALOHIDA komponent — CEP payload'iga tushmaydi (aks holda imzo konverti va
+  // paketning bayt-tengligi buziladi).
+  const uninsInfoPath = path.join(expandDir, "frameflow-uninstaller.pkg/PackageInfo");
+  const uninsInfo = existsSync(uninsInfoPath) ? readFileSync(uninsInfoPath, "utf8") : "";
+  check("o'chirgich komponenti paketda bor (frameflow-uninstaller.pkg)", !!uninsInfo);
+  check(
+    "o'chirgich install-location = ~/Library/Application Support/FrameFlow",
+    uninsInfo.includes('install-location="Library/Application Support/FrameFlow"'),
+    (uninsInfo.match(/install-location="[^"]*"/) || [])[0]
+  );
+  check("o'chirgich identifikatori com.frameflow.uninstaller", uninsInfo.includes('identifier="com.frameflow.uninstaller"'));
+  check("o'chirgich `auth=\"none\"` — administrator paroli so'ralmaydi", uninsInfo.includes('auth="none"'));
+  check("o'chirgichda `preinstall`/`postinstall` skript YO'Q", !existsSync(path.join(expandDir, "frameflow-uninstaller.pkg/Scripts")));
+  check("Distribution o'chirgich komponentiga havola qiladi", dist.includes("frameflow-uninstaller.pkg"));
+
+  const uninsOut = track(path.join(WORK, "unins-payload"));
+  mkdirSync(uninsOut, { recursive: true });
+  const uninsList = run("bash", [
+    "-c",
+    `cd "${expandDir}/frameflow-uninstaller.pkg" && cat Payload | gzip -dc | (cd "${uninsOut}" && cpio -id --quiet) && cd "${uninsOut}" && find . -type f`,
+  ]);
+  const uninsFiles = uninsList.out.split("\n").map((l) => l.trim().replace(/^\.\//, "")).filter(Boolean);
+  check(
+    "o'chirgich payload'ida FAQAT bitta fayl — `Uninstall FrameFlow.command`",
+    uninsFiles.length === 1 && uninsFiles[0] === "Uninstall FrameFlow.command",
+    uninsFiles.join(", ")
+  );
+  check("mijoz payload'ida o'chirgich fayli YO'Q (CEP papkasi toza)", !pkgFiles.some((e) => /\.command$/.test(e)));
+
+  const uninsFile = path.join(uninsOut, "Uninstall FrameFlow.command");
+  const unins = existsSync(uninsFile) ? readFileSync(uninsFile, "utf8") : "";
+  check("o'chirgich generatordan bayt-ba-bayt bir xil chiqdi", unins === uninstallScript());
+  check(
+    "o'chirgich bajariladigan (Finder'dan ikki marta bosiladi)",
+    existsSync(uninsFile) && (statSync(uninsFile).mode & 0o111) !== 0
+  );
+  const uninsCode = codeOnly(unins);
+  check("o'chirgich `sudo`/imtiyoz ko'tarishni ishlatmaydi", !/\bsudo\b|osascript .*administrator/i.test(unins));
+  check(
+    "o'chirgich `/Library` (tizim) ga tegmaydi — faqat $HOME",
+    !/(^|[^~$])\/Library\//m.test(unins.replace(/\$HOME\/Library\//g, "~HOME~/"))
+  );
+  check(
+    "o'chirgich yo'llarni `case` bilan tekshiradi (kutilmagan yo'lda hech narsa qilmaydi)",
+    /case "\$EXT" in/.test(uninsCode) && /case "\$DATA" in/.test(uninsCode) && /extensions\/com\.frameflow\)/.test(uninsCode)
+  );
+  check(
+    "o'chirgich FAQAT ikki nishonni o'chiradi ($EXT va $DATA) — boshqa `rm -rf` YO'Q",
+    (uninsCode.match(/rm\s+-rf/g) || []).length === 2 &&
+      /rm -rf "\$EXT"/.test(uninsCode) &&
+      /rm -rf "\$DATA"/.test(uninsCode) &&
+      !/\bfind\b|\*\s*"?\$(EXT|DATA)|\$(EXT|DATA)[^"\n]*\*/.test(uninsCode)
+  );
+  check(
+    "o'chirgich AVVAL so'raydi va sukut bo'yicha BEKOR qiladi ([y/N])",
+    /\[y\/N\]/.test(unins) && /Cancelled\. Nothing was changed\./.test(unins) && /read -r reply/.test(uninsCode)
+  );
+  check(
+    "foydalanuvchi ma'lumoti ALOHIDA so'raladi (panel bilan bir savolda emas)",
+    /read -r reply2/.test(uninsCode) && /Data kept\./.test(unins)
+  );
+  check(
+    "o'chirgich Adobe debug sozlamasiga TEGMAYDI (`defaults` YO'Q · PlayerDebugMode YO'Q)",
+    !/\bdefaults\b/.test(uninsCode) && !/PlayerDebugMode/.test(unins) && !/com\.adobe\.CSXS/.test(unins)
+  );
+  check(
+    "o'chirgich boshqa CEP kengaytmalariga tegmaydi (nishon aynan com.frameflow)",
+    !/extensions"\s*$/m.test(uninsCode) && !/rm -rf "\$HOME\/Library\/Application Support\/Adobe/.test(uninsCode)
   );
 }
 check("macOS build boshqa flavor (ichki Admin) artefaktiga TEGMADI — SHA-256 o'zgarmadi", adminUntouched());

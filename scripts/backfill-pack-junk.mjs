@@ -36,6 +36,8 @@ const {
 const { openStreamingIngestZip, computePackJunkEntries } = await import(
   "../apps/api/dist/lib/ingest-zip.js"
 );
+// #96 (PL-d): hosila zip bilan uning sha256 yon-obyekti DOIM birga o'chiriladi.
+const { packDownloadCacheKeys } = await import("../apps/api/dist/lib/serve-asset.js");
 
 const DRY_RUN = process.env.DRY_RUN !== "0"; // default: dry-run (owner runs manually)
 const ALL = process.env.ALL === "1";
@@ -122,7 +124,7 @@ for (let i = 0; i < rows.length; i++) {
       data: { metaJson: { ...existingMeta, packJunkEntries: junk } },
     });
     // Eskirgan filtrlanmagan (yoki eski) yuklab-olish keshini o'chiramiz.
-    await deleteS3Objects([`templates/${r.id}/pack.dl.zip`]).catch(() => {});
+    await deleteS3Objects(packDownloadCacheKeys(r.id)).catch(() => {});
     updated++;
     console.log(`${tag} — ✓ ${junk.length} entry yozildi + pack.dl.zip tozalandi`);
   } catch (e) {

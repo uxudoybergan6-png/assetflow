@@ -32,6 +32,7 @@ const CUSTOMER_FILES = [
   "assetflow-init.js",
   "assetflow-local-store.js",
   "assetflow-log.js",
+  "assetflow-secret-store.js",
   "assetflow-zip.js",
   "js/CSInterface.js",
   "jsx/host.jsx",
@@ -39,6 +40,13 @@ const CUSTOMER_FILES = [
   "css/styles.css",
   "css/ff-components.css",
   "css/fonts/*.woff2",
+  // #148 (PX11): AE "Window → Extensions" ro'yxati va panel yorlig'i ikonalari
+  // (CSXS manifest `<Icons>`). Generatsiya: scripts/make-panel-icons.mjs.
+  "icons/panel-normal.png",
+  "icons/panel-rollover.png",
+  "icons/panel-disabled.png",
+  "icons/panel-dark-normal.png",
+  "icons/panel-dark-rollover.png",
 ];
 
 /** Ichki Admin paneli MINIMAL: HTML + env + CSInterface + host.jsx + tokens.css (+shriftlar). */

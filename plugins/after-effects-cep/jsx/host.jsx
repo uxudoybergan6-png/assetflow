@@ -1280,7 +1280,9 @@ function uniqueRootFolderLabel(label, excludeId) {
   return name;
 }
 
-function renameImportRootForComp(comp, folderLabel) {
+// `outIds` (ixtiyoriy) — #30 (PL-c): import qilingan root papkaning AE item ID'si
+// shu obyektga yoziladi. O'chirish keyinchalik NOM emas, ID bo'yicha bo'ladi.
+function renameImportRootForComp(comp, folderLabel, outIds) {
   if (!comp) return folderLabel;
   try {
     var folder = comp.parentFolder;
@@ -1290,13 +1292,14 @@ function renameImportRootForComp(comp, folderLabel) {
     }
     if (folder && folder instanceof FolderItem) {
       folder.name = uniqueRootFolderLabel(folderLabel, folder.id);
+      if (outIds) outIds.folderId = folder.id;
       return folder.name;
     }
   } catch (ignore) {}
   return folderLabel;
 }
 
-function renameNewImportRootFolder(existingIds, folderLabel) {
+function renameNewImportRootFolder(existingIds, folderLabel, outIds) {
   var roots = getNewRootItems(existingIds);
   var i, root;
   for (i = 0; i < roots.length; i++) {
@@ -1304,6 +1307,7 @@ function renameNewImportRootFolder(existingIds, folderLabel) {
     if (root instanceof FolderItem) {
       try {
         root.name = uniqueRootFolderLabel(folderLabel, root.id);
+        if (outIds) outIds.folderId = root.id;
         return root.name;
       } catch (ignore) {}
     }
@@ -1650,6 +1654,7 @@ function importSingleSceneFromAep(jsonStr) {
     var folderLabel = String(packLabel);
     var keptFolder = folderLabel;
     var movedCount = 0;
+    var rootRef = {}; // #30 (PL-c): import root papkasining ID'si shu yerga tushadi
 
     if (pruneToScene) {
       var deps = collectCompDependencies(targetComp, [], {});
@@ -1665,9 +1670,9 @@ function importSingleSceneFromAep(jsonStr) {
         app.endUndoGroup();
         return JSON.stringify({ ok: false, message: "Comp was not preserved: " + resolvedName });
       }
-      keptFolder = renameImportRootForComp(targetComp, folderLabel);
+      keptFolder = renameImportRootForComp(targetComp, folderLabel, rootRef);
     } else {
-      keptFolder = renameNewImportRootFolder(existingIds, folderLabel);
+      keptFolder = renameNewImportRootFolder(existingIds, folderLabel, rootRef);
       targetComp = findCompByIdInProject(targetId);
       if (!targetComp) {
         removeAllImportedItems(existingIds);
@@ -1697,6 +1702,10 @@ function importSingleSceneFromAep(jsonStr) {
     return JSON.stringify({
       ok: true,
       comp: resolvedName,
+      // #30 (PL-c): nom emas, ID bilan o'chirish uchun (nomi bir xil bo'lgan
+      // foydalanuvchi papkasi/comp'i tegilmasin)
+      compId: targetComp.id,
+      folderId: rootRef.folderId || 0,
       folder: keptFolder || folderLabel,
       movedCount: movedCount,
       importMode: importMode,
@@ -1736,20 +1745,66 @@ function removeCompByExactName(name) {
   return removed;
 }
 
+/** #30 (PL-c) — loyiha elementini AE item ID'si bo'yicha o'chiradi (nom emas). */
+function removeProjectItemById(id) {
+  if (!id) return false;
+  for (var i = app.project.numItems; i >= 1; i--) {
+    var item = app.project.item(i);
+    try {
+      if (item.id === id) { item.remove(); return true; }
+    } catch (ignoreTop) {}
+    if (item instanceof FolderItem) {
+      var found = findItemByIdInFolder(item, id);
+      if (found) {
+        try { found.remove(); return true; } catch (ignoreNested) {}
+      }
+    }
+  }
+  return false;
+}
+
+function findItemByIdInFolder(folder, id) {
+  for (var i = 1; i <= folder.numItems; i++) {
+    var item = folder.item(i);
+    try {
+      if (item.id === id) return item;
+    } catch (ignoreId) {}
+    if (item instanceof FolderItem) {
+      var found = findItemByIdInFolder(item, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 /**
  * Yuklab olingan shablonni loyihadan olib tashlaydi.
- * cfg = { folders: [...nom], comps: [...nom] }
- * Avval papkalar (ichidagi hamma narsa bilan), keyin qolgan comp'lar nomi bo'yicha.
+ * cfg = { folderIds: [...id], compIds: [...id], folders: [...nom], comps: [...nom] }
+ *
+ * #30 (PL-c): ID bo'yicha o'chiramiz. Ilgari faqat NOM ishlatilardi — shablon
+ * papkasi "Titles" bo'lsa, foydalanuvchining O'Z "Titles" papkasi ham (yoki bir xil
+ * nomli comp'i) o'chib ketardi. `folders`/`comps` (nom) ro'yxatiga endi mijoz FAQAT
+ * ID'si yo'q eski yozuvlarni qo'yadi — ya'ni nom yo'li orqaga moslik uchun qoladi.
  * Comp o'chirilganda uning layer nusxalari foydalanuvchi comp'idan ham yo'qoladi.
  */
 function removeImportedTemplate(jsonStr) {
   try {
     var cfg = JSON.parse(jsonStr || "{}");
+    var folderIds = cfg.folderIds || [];
+    var compIds = cfg.compIds || [];
     var folders = cfg.folders || [];
     var comps = cfg.comps || [];
     app.beginUndoGroup("FrameFlow Remove Template");
     var removed = 0;
+    var byId = 0;
     var i;
+    for (i = 0; i < folderIds.length; i++) {
+      if (removeProjectItemById(Number(folderIds[i]))) { removed++; byId++; }
+    }
+    for (i = 0; i < compIds.length; i++) {
+      if (removeProjectItemById(Number(compIds[i]))) { removed++; byId++; }
+    }
+    // Eski (ID'siz) yozuvlar — nom bo'yicha
     for (i = 0; i < folders.length; i++) {
       if (folders[i] && removeProjectFolderByName(String(folders[i]))) removed++;
     }
@@ -1757,7 +1812,7 @@ function removeImportedTemplate(jsonStr) {
       if (comps[i]) removed += removeCompByExactName(String(comps[i]));
     }
     app.endUndoGroup();
-    return JSON.stringify({ ok: true, removed: removed });
+    return JSON.stringify({ ok: true, removed: removed, byId: byId });
   } catch (e) {
     try { app.endUndoGroup(); } catch (ignoreRm) {}
     return JSON.stringify({ ok: false, message: e.toString() });
@@ -2185,12 +2240,19 @@ function importTemplateProject(jsonStr) {
     var io = new ImportOptions(file);
     io.importAs = ImportAsType.PROJECT;
     app.project.importFile(io);
-    var keptFolder = renameNewImportRootFolder(existingIds, packLabel);
+    var rootRef = {}; // #30 (PL-c)
+    var keptFolder = renameNewImportRootFolder(existingIds, packLabel, rootRef);
     var importedComps = collectAllImportedComps(existingIds);
     var movedCount = importedComps.length;
     var missingFonts = af_missingFontsForComps(importedComps);
     app.endUndoGroup();
-    return JSON.stringify({ ok: true, folder: keptFolder || packLabel, movedCount: movedCount, missingFonts: missingFonts });
+    return JSON.stringify({
+      ok: true,
+      folder: keptFolder || packLabel,
+      folderId: rootRef.folderId || 0,
+      movedCount: movedCount,
+      missingFonts: missingFonts
+    });
   } catch (e) {
     try { app.endUndoGroup(); } catch (ignore) {}
     return JSON.stringify({ ok: false, message: e.toString() });
@@ -2307,6 +2369,7 @@ function importFootageBundle(jsonStr) {
         imported: imported,
         failed: failed,
         folder: packLabel,
+        folderId: imported > 0 ? folder.id : 0, // #30 (PL-c)
         reason: imported > 0 ? "" : (firstReason || "No importable media in the pack")
       };
     } catch (e) {

@@ -76,6 +76,15 @@ export const INSTALL_DIR_NAME = getFlavor(INSTALLER_FLAVOR).installDirName;
 /** macOS home-domain ichidagi nisbiy o'rnatish yo'li (pkgbuild --install-location). */
 export const MAC_INSTALL_LOCATION = `Library/Application Support/Adobe/CEP/extensions/${INSTALL_DIR_NAME}`;
 
+/** #147 (PX10) — macOS o'chirgichi. Windows'da MSI "Dastur qo'shish/o'chirish" ni O'ZI beradi,
+ *  `.pkg` da esa umuman o'chirish yo'li yo'q edi: foydalanuvchi papkani QO'LDA topishi kerak edi.
+ *  O'chirgich ALOHIDA komponent paket sifatida o'rnatiladi — CEP payload'i (imzo konverti bilan)
+ *  bayt-ba-bayt tegilmaydi. */
+export const MAC_UNINSTALL_LOCATION = "Library/Application Support/FrameFlow";
+export const MAC_UNINSTALL_FILE = "Uninstall FrameFlow.command";
+/** Plagin foydalanuvchi ma'lumoti (token, kesh, prefs) — o'chirgich buni ALOHIDA so'raydi. */
+export const MAC_USER_DATA_LOCATION = "Library/Application Support/AssetFlow";
+
 /** Platforma → ruxsat etilgan kengaytmalar (server kontrakti bilan bir xil:
  *  apps/api/src/lib/plugin-release-contract.ts INSTALLER_EXTENSIONS). */
 export const INSTALLER_EXTENSIONS = { mac: ["pkg"], win: ["msi", "exe"] };
@@ -553,6 +562,98 @@ export function postinstallScript() {
   ].join("\n");
 }
 
+/** #147 (PX10) — macOS o'chirgichi (`Uninstall FrameFlow.command`).
+ *
+ *  MUAMMO: Windows MSI foydalanuvchiga "Dastur qo'shish/o'chirish" ni O'ZI beradi, `.pkg` da
+ *  esa bunday mexanizm YO'Q. Ilgari mijoz panelni olib tashlash uchun Finder'da yashirin
+ *  `~/Library/Application Support/Adobe/CEP/extensions/…` yo'lini qo'lda topishi kerak edi.
+ *
+ *  YECHIM: ALOHIDA komponent paketi bilan yuboriladigan, Finder'dan ikki marta bosilib
+ *  Terminal'da ochiladigan `.command` skripti. U CEP payload'iga KIRMAYDI — imzo konverti va
+ *  paket bayt-tengligi (`test:marketplace-preflight`) tegilmaydi.
+ *
+ *  Chegaralar (ataylab tor):
+ *   • Ikki nishon, har biri uchun ALOHIDA savol; ikkalasi ham sukut bo'yicha "yo'q".
+ *   • Foydalanuvchi ma'lumoti (kirish tokeni, kesh) ALOHIDA so'raladi va sukut bo'yicha QOLADI.
+ *   • Boshqa CEP kengaytmalari, Adobe sozlamalari, CSXS/PlayerDebugMode bayroqlari TEGILMAYDI.
+ *   • Yo'llar `case` bilan kutilgan shaklga tekshiriladi — o'zgaruvchi bo'sh bo'lsa `rm` ishlamaydi.
+ */
+export function uninstallScript() {
+  const dirName = INSTALL_DIR_NAME;
+  return [
+    "#!/bin/bash",
+    "# GENERATSIYA: scripts/installer-payload.mjs (uninstall-script) — qo'lda tahrirlanmaydi.",
+    "#",
+    "# Finder'da ikki marta bosilsa Terminal'da ochiladi. FAQAT quyidagilarni o'chirishi mumkin:",
+    `#   1) panel:      ~/${MAC_INSTALL_LOCATION}`,
+    `#   2) ma'lumot:   ~/${MAC_USER_DATA_LOCATION}   (alohida so'raladi, sukut bo'yicha QOLADI)`,
+    "# Boshqa kengaytmalar va Adobe/CSXS sozlamalari HECH QACHON o'zgartirilmaydi.",
+    "set -eu",
+    "",
+    `EXT="$HOME/${MAC_INSTALL_LOCATION}"`,
+    `DATA="$HOME/${MAC_USER_DATA_LOCATION}"`,
+    `SELF="$HOME/${MAC_UNINSTALL_LOCATION}/${MAC_UNINSTALL_FILE}"`,
+    `SELF_DIR="$HOME/${MAC_UNINSTALL_LOCATION}"`,
+    "",
+    "# Yo'l shakli kutilganidan farq qilsa — hech narsa qilinmaydi (bo'sh $HOME himoyasi ham shu).",
+    'case "$EXT" in',
+    `  */Adobe/CEP/extensions/${dirName}) : ;;`,
+    '  *) echo "Unexpected install path — nothing was changed."; exit 1 ;;',
+    "esac",
+    'case "$DATA" in',
+    "  */Application\\ Support/AssetFlow) : ;;",
+    '  *) echo "Unexpected data path — nothing was changed."; exit 1 ;;',
+    "esac",
+    "",
+    'echo "FrameFlow — Uninstall"',
+    'echo',
+    'echo "Quit After Effects before continuing."',
+    'echo',
+    'if [ -d "$EXT" ]; then',
+    '  echo "This will remove the FrameFlow panel:"',
+    '  echo "  $EXT"',
+    "else",
+    '  echo "The FrameFlow panel is not installed — nothing to remove."',
+    "fi",
+    'echo',
+    'printf "Remove the FrameFlow panel? [y/N] "',
+    'read -r reply || reply=""',
+    'case "$reply" in',
+    "  y|Y|yes|YES) ;;",
+    '  *) echo "Cancelled. Nothing was changed."; exit 0 ;;',
+    "esac",
+    'if [ -d "$EXT" ]; then',
+    '  rm -rf "$EXT"',
+    '  echo "✓ Panel removed."',
+    "fi",
+    "",
+    "# Foydalanuvchi ma'lumoti — ALOHIDA qaror. Sukut bo'yicha SAQLANADI.",
+    'if [ -d "$DATA" ]; then',
+    '  echo',
+    '  echo "Your FrameFlow data (sign-in, cache, preferences) is stored at:"',
+    '  echo "  $DATA"',
+    '  printf "Delete this data too? You will need to sign in again. [y/N] "',
+    '  read -r reply2 || reply2=""',
+    '  case "$reply2" in',
+    '    y|Y|yes|YES) rm -rf "$DATA"; echo "✓ Data removed." ;;',
+    '    *) echo "Data kept." ;;',
+    "  esac",
+    "fi",
+    "",
+    "# Paket kvitansiyasi — bor bo'lsa unutiladi (ruxsat bo'lmasa jimgina o'tkazib yuboriladi).",
+    'pkgutil --forget com.frameflow.plugin >/dev/null 2>&1 || true',
+    'pkgutil --forget com.frameflow.uninstaller >/dev/null 2>&1 || true',
+    "",
+    'echo',
+    'echo "Done. You can close this window."',
+    "# Oxirida o'chirgichning o'zi olib tashlanadi (papka bo'sh qolsa — papka ham).",
+    'rm -f "$SELF" 2>/dev/null || true',
+    'rmdir "$SELF_DIR" 2>/dev/null || true',
+    "exit 0",
+    "",
+  ].join("\n");
+}
+
 // ── SHA-256 chiqishi (admin publish bayt-ba-bayt mos bo'lishi uchun) ─────────
 
 /** `<artefakt>.sha256` yozadi (`shasum -a 256 -c` formatida) va hex qaytaradi. */
@@ -625,6 +726,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       console.log(writeChecksumSidecar(path.resolve(a)));
     } else if (cmd === "postinstall-script") {
       process.stdout.write(postinstallScript());
+    } else if (cmd === "uninstall-script") {
+      process.stdout.write(uninstallScript());
     } else if (cmd === "stale-files") {
       console.log(obsoleteInstallFiles().join("\n"));
     } else if (cmd === "record") {
@@ -634,7 +737,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     } else {
       console.error(
         "Foydalanish: installer-payload.mjs version|payload-files|stage|verify|artifact|checksum|record|" +
-          "postinstall-script|stale-files"
+          "postinstall-script|uninstall-script|stale-files"
       );
       process.exit(2);
     }

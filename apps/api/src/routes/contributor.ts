@@ -53,6 +53,8 @@ import {
   getSignedDownloadUrl,
 } from "../lib/s3.js";
 import { assetKeySetFromStored, syncTemplateAssetKeys } from "../lib/asset-state.js";
+// #96 (PL-d): hosila `pack.dl.zip` va uning sha256 yon-obyekti DOIM birga o'chiriladi.
+import { packDownloadCacheKeys } from "../lib/serve-asset.js";
 import {
   optimizePreviewForStreaming,
   probeMediaDimensions,
@@ -1778,7 +1780,7 @@ contributorRouter.post(
     }
     // Eski .aep→.zip kesh (serve-asset.ts) endi ESKI mazmunga ishora qiladi —
     // o'chiramiz, keyingi yuklab olishda yangi .aep'dan qayta quriladi.
-    await deleteS3Objects([`templates/${id}/pack.dl.zip`]).catch(() => {});
+    await deleteS3Objects(packDownloadCacheKeys(id)).catch(() => {});
     // Xavfsizlik quvuri (hash dedup + malware skan) → TOZA bo'lsa .zip sahnalarni ajratadi.
     // ⚠️ Cloud Run javobdan keyin CPU'ni throttle qiladi — fire-and-forget fon task muzlab,
     // packScanStatus abadiy "pending" qolardi (approve bloklanardi). Shu bois skan+status'ni
@@ -3930,7 +3932,7 @@ contributorRouter.post(
             ensure: [verifiedKey],
             prune: { pack: verifiedKey },
           });
-          await deleteS3Objects([`templates/${existing.id}/pack.dl.zip`]).catch(() => {});
+          await deleteS3Objects(packDownloadCacheKeys(existing.id)).catch(() => {});
         }
         updated++;
       } else {

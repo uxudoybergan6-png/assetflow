@@ -73,6 +73,10 @@ export function verifyArchiveReferences(archivePath) {
   const paths = [
     ...extractAll(xml, /<MainPath>([^<]+)<\/MainPath>/gi),
     ...extractAll(xml, /<ScriptPath>([^<]+)<\/ScriptPath>/gi),
+    // #148 (PX11): `<Icons>` yo'llari ham RUNTIME referensi — AE ularni panel ro'yxatida
+    // o'qiydi. Fayl paketga tushmay qolsa ikona jimgina yo'qoladi, shuning uchun bu
+    // yerda tekshiriladi (MainPath bilan bir xil qat'iylik).
+    ...extractAll(xml, /<Icon\b[^>]*>([^<]+)<\/Icon>/gi),
   ];
   for (const raw of paths) {
     const resolved = normalizeRef(".", raw);

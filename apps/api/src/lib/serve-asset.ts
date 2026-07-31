@@ -1,6 +1,7 @@
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
-import type { Readable } from "stream";
+import { Transform, type Readable } from "stream";
 import yazl from "yazl";
 import type { Request, Response } from "express";
 import { prisma } from "@creative-tools/database";
@@ -19,9 +20,62 @@ import {
   createS3RangeStream,
   readS3ObjectRange,
   uploadStreamToS3,
+  uploadBufferToS3,
+  downloadS3ToBuffer,
   deleteS3Objects,
 } from "./s3.js";
 import { resolveAssetKeyCached } from "./asset-state.js";
+
+/**
+ * #96 (PL-d) — HOSILA pack (`pack.dl.zip`) sha256'i shu yon-obyektda saqlanadi.
+ * Plagin yuklab olgan baytlarni AYNAN shu hash bilan solishtiradi (ilgari
+ * `expectedSha256` hech qachon berilmasdi — yaxlitlik tekshiruvi o'lik edi).
+ * Bayt-bir-xil xizmat qilinadigan pack uchun yon-obyekt SHART EMAS: `packHash`
+ * ingest'da aynan o'sha obyektdan hisoblangan.
+ */
+function dlHashKey(templateId: string): string {
+  return `templates/${templateId}/pack.dl.sha256`;
+}
+
+/**
+ * Pack yangilanganda o'chiriladigan YUKLAB-OLISH keshi kalitlari (hosila zip +
+ * uning sha256 yon-obyekti). Ikkalasi DOIM birga o'chirilishi shart — aks holda
+ * eski hash yangi zip bilan solishtirilib, mijozda yolg'on "integrity" xatosi
+ * chiqadi. Chaqiruvchilar: contributor pack re-upload, ingest, cleanup skriptlari.
+ */
+export function packDownloadCacheKeys(templateId: string): string[] {
+  return [`templates/${templateId}/pack.dl.zip`, dlHashKey(templateId)];
+}
+
+/** Oqim ustidan sha256 — baytlar S3'ga ketayotib yo'lda hisoblanadi (qo'shimcha o'qish yo'q). */
+function hashingPass(hash: crypto.Hash): Transform {
+  return new Transform({
+    transform(chunk, _enc, cb) {
+      hash.update(chunk);
+      cb(null, chunk);
+    },
+  });
+}
+
+/** Hosila pack qurilgach hash'ni yon-obyektga yozadi (xato yuklab olishni bloklamaydi). */
+async function saveDlHash(templateId: string, hex: string): Promise<void> {
+  try {
+    await uploadBufferToS3(Buffer.from(hex, "utf8"), dlHashKey(templateId), "text/plain", "no-store");
+  } catch (e) {
+    console.error("[serve-asset] pack.dl.sha256 yozilmadi:", templateId, e);
+  }
+}
+
+/** Yon-obyektdagi hash (yo'q/buzuq bo'lsa "" — mijoz tekshiruvsiz davom etadi). */
+async function readDlHash(templateId: string): Promise<string> {
+  try {
+    const buf = await downloadS3ToBuffer(dlHashKey(templateId));
+    const hex = buf.toString("utf8").trim().toLowerCase();
+    return /^[0-9a-f]{64}$/.test(hex) ? hex : "";
+  } catch {
+    return "";
+  }
+}
 
 const MIME: Record<TemplateAssetKind, string> = {
   thumb: "image/jpeg",
@@ -62,16 +116,18 @@ async function getOrBuildAepDownloadZip(
   }
   const src = createS3RangeStream(aepKey, 0, meta.sizeBytes);
   const zipfile = new yazl.ZipFile();
+  const zipOut = zipfile.outputStream as unknown as Readable;
   // Manba stream xatosi yazl chiqishida ham ko'rinsin — upload aniq yiqilsin.
-  src.on("error", (e) => (zipfile.outputStream as unknown as Readable).destroy(e));
+  src.on("error", (e) => zipOut.destroy(e));
   zipfile.addReadStream(src, path.basename(aepKey));
   zipfile.end();
+  // #96 (PL-d): baytlar bucket'ga ketayotib sha256 hisoblanadi (qo'shimcha o'qish yo'q)
+  const hash = crypto.createHash("sha256");
+  const hasher = hashingPass(hash);
+  zipOut.on("error", (e) => hasher.destroy(e));
   try {
-    await uploadStreamToS3(
-      zipfile.outputStream as Readable,
-      cacheKey,
-      "application/zip"
-    );
+    await uploadStreamToS3(zipOut.pipe(hasher), cacheKey, "application/zip");
+    await saveDlHash(templateId, hash.digest("hex"));
   } finally {
     if (!src.destroyed) src.destroy();
   }
@@ -120,13 +176,19 @@ async function getOrBuildFilteredPackZip(
   };
   const zipfile = new yazl.ZipFile();
   const outStream = zipfile.outputStream as unknown as Readable;
-  const uploadP = uploadStreamToS3(outStream, cacheKey, "application/zip");
+  // #96 (PL-d): yuklab-olish nusxasining sha256'i yo'l-yo'lakay hisoblanadi
+  const hash = crypto.createHash("sha256");
+  const hasher = hashingPass(hash);
+  outStream.on("error", (e) => hasher.destroy(e));
+  const uploadP = uploadStreamToS3(outStream.pipe(hasher), cacheKey, "application/zip");
   try {
     await copyZipExcluding(source, exclude, zipfile);
     await uploadP;
+    await saveDlHash(templateId, hash.digest("hex"));
   } catch (e) {
     // Yarim yozilgan kesh keyingi so'rovga chala fayl bermasin — uzib, tozalaymiz.
     if (!outStream.destroyed) outStream.destroy();
+    if (!hasher.destroyed) hasher.destroy();
     await uploadP.catch(() => {});
     await deleteS3Objects([cacheKey]).catch(() => {});
     throw e;
@@ -147,12 +209,13 @@ export async function serveTemplateAsset(
   if (s3Key) {
     let downloadKey = s3Key;
     let filename: string | undefined;
+    let packSha = ""; // #96 (PL-d) — xizmat qilinayotgan AYNAN shu obyekt sha256'i
     if (kind === "pack") {
       // FAZA 5 (C3): Content-Disposition fayl nomi ENDI HAR DOIM shablon nomi.
       // P35: metaJson ham kerak — zip pack'dan marketing fayllarni chiqarish uchun.
       const template = await prisma.contributorTemplate.findUnique({
         where: { id: templateId },
-        select: { name: true, metaJson: true },
+        select: { name: true, metaJson: true, packHash: true },
       });
       if (/\.aep$/i.test(s3Key)) {
         // Raw .aep — mijoz (plagin/veb) .zip kutadi; plagin o'zi ochadi (unzip)
@@ -178,6 +241,14 @@ export async function serveTemplateAsset(
       }
       const ext = path.extname(downloadKey).toLowerCase() || ".zip";
       filename = `${sanitizeFileBaseName(template?.name || "template")}${ext}`;
+      // #96 (PL-d): bayt-bir-xil xizmat qilinsa `packHash` (ingest AYNAN shu
+      // obyektdan hisoblagan); hosila `pack.dl.zip` uchun qurishda yozilgan
+      // yon-obyekt. Hech biri yo'q bo'lsa header umuman yuborilmaydi —
+      // mijoz eski xatti-harakat bilan (hajm bo'yicha) davom etadi.
+      packSha =
+        downloadKey === s3Key
+          ? String(template?.packHash || "")
+          : await readDlHash(templateId);
     }
     // Pack — qimmatli (pullik) asset: qisqa muddatli signed URL (5 daqiqa),
     // shunda redirect URL'i ulashib bo'lmaydi. Thumb/preview — CDN bo'lsa public,
@@ -189,8 +260,14 @@ export async function serveTemplateAsset(
     // ?json=1 — web platforma uchun: brauzer fetch redirect'ni GCS'ga CORS'siz
     // kuzata olmaydi, shu sabab signed URL JSON'da qaytadi va klient unga
     // to'g'ridan (navigatsiya/anchor) o'tadi — navigatsiya CORS'ga tushmaydi.
+    // #96 (PL-d): plagin redirectni kuzatishdan OLDIN shu header'ni o'qiydi va
+    // yuklab olingan faylni solishtiradi (mos kelmasa fayl o'chiriladi).
+    if (packSha && /^[0-9a-f]{64}$/i.test(packSha)) {
+      res.setHeader("X-Pack-Sha256", packSha.toLowerCase());
+      res.setHeader("Access-Control-Expose-Headers", "X-Pack-Sha256");
+    }
     if (req.query.json === "1") {
-      res.json({ url });
+      res.json({ url, sha256: packSha || undefined });
       return;
     }
     res.redirect(302, url);

@@ -3,6 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- #146 (PX9) — Content-Security-Policy. Panel `--enable-nodejs` bilan ishlaydi va bir necha
+     joyda keng `innerHTML` ishlatadi; ilgari HECH QANDAY CSP yo'q edi, ya'ni serverdan kelgan
+     matn ichidagi masofaviy skript tegi yoki `<object>`/`<iframe>` ishlashi mumkin edi.
+
+     Nima BLOKLANADI: masofaviy skript yuklash (`script-src` da tashqi manba YO'Q), `<object>`/
+     `<embed>`, `<iframe>`, `<base>` bilan yo'lni burish, `<form>` bilan ma'lumot chiqarish.
+     `default-src 'none'` — ro'yxatda yo'q hamma narsa taqiqlangan.
+
+     Nima BLOKLANMAYDI (ataylab, halol yozamiz):
+       • `'unsafe-inline'` — panel butunlay inline `<script>` va inline `onclick` ustiga qurilgan
+         (17k satr). Uni olib tashlash = to'liq qayta yozish, alohida ish.
+       • `https:` (`connect-src`/`img-src`/`media-src`) — media va presigned yuklash manzillari
+         SERVER env'idan keladi (CDN_BASE_URL / bucket host) va plagin relizisiz o'zgarishi mumkin.
+         Qattiq host ro'yxati birinchi CDN almashuvida barcha o'rnatilgan panellarni sindirardi.
+       • Node (`require`) — CSP unga umuman ta'sir qilmaydi; bu CEP manifest darajasidagi masala.
+       • `'unsafe-eval'` — bizning kodda `eval`/`new Function` YO'Q (grep bilan tekshirilgan), lekin
+         CEP'ning o'z node/CSInterface bootstrap'i uni ba'zi AE versiyalarida talab qiladi. Panelni
+         AE ichida sindirib qo'ymaslik uchun qoldirildi; innerHTML vektoriga aloqasi yo'q.
+
+     `file:` HAR bir direktivaga qo'shilgan: AE ichida sahifa file:// dan yuklanadi va u yerda
+     `'self'` mahalliy fayllarga MOS KELMAYDI (opaque origin) — bo'lmasa css/js umuman yuklanmaydi. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src 'self' file: 'unsafe-inline' 'unsafe-eval';
+  style-src 'self' file: 'unsafe-inline';
+  img-src 'self' file: data: blob: https:;
+  media-src 'self' file: data: blob: https:;
+  font-src 'self' file: data:;
+  connect-src 'self' file: data: blob: https: http://localhost:4000 http://127.0.0.1:4000 ws://localhost:* ws://127.0.0.1:*;
+  object-src 'none';
+  frame-src 'none';
+  child-src 'none';
+  worker-src 'self' blob:;
+  base-uri 'none';
+  form-action 'none';
+">
 <title>FrameFlow — After Effects</title>
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/ff-components.css">
@@ -22,219 +58,8 @@ body{
 /* Display tipografiya — brend wordmark + bo'lim sarlavhalari (Space Grotesk → Inter → system) */
 .sb-brand-text,.cat-hero-cardtitle,.lr-title,.scenes-title,.ptitle{font-family:var(--font-display);letter-spacing:-.01em}
 
-/* AFTER EFFECTS DEMO STAGE */
-.demo-stage{
-  min-height:100vh;
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:0;
-  background:#232323;
-}
-
-.demo-badge{
-  position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:50;
-  display:flex;align-items:center;gap:10px;
-  padding:6px 14px;border-radius:4px;
-  background:#2d2d2d;
-  border:1px solid #3a3a3a;
-  font-size:11px;color:#999;
-}
-.demo-badge strong{color:#ddd;font-weight:600}
-.demo-badge a{color:#9ecbff;text-decoration:none;margin-left:6px}
-.demo-badge a:hover{text-decoration:underline}
-.demo-badge .dot{width:6px;height:6px;border-radius:50%;background:#46a046}
-
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* AE App chrome */
-.ae-app{
-  grid-column:1;
-  display:flex;flex-direction:column;
-  min-width:0;min-height:100vh;
-  border-right:1px solid #111;
-}
-
-.ae-menubar{
-  height:28px;background:#2d2d2d;border-bottom:1px solid #111;
-  display:flex;align-items:center;padding:0 12px;gap:16px;
-  font-size:11px;color:#999;flex-shrink:0;
-}
-.ae-menubar span{cursor:default}
-.ae-menubar span:hover{color:#ddd}
-.ae-title{flex:1;text-align:center;color:#666;font-size:var(--fs-xs)}
-
-.ae-toolbar{
-  height:36px;background:#2a2a2a;border-bottom:1px solid #111;
-  display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0;
-}
-.ae-tool{
-  width:28px;height:24px;border-radius:3px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;color:#888;cursor:default;
-  border:1px solid transparent;
-}
-.ae-tool.active{background:#3a3a3a;border-color:#555;color:#ddd}
-.ae-tool-sep{width:1px;height:18px;background:#444;margin:0 4px}
-
-.ae-main{
-  flex:1;display:grid;
-  grid-template-columns:240px 1fr;
-  grid-template-rows:1fr 220px;
-  min-height:0;
-}
-
-/* Project panel */
-.ae-panel{
-  background:#232323;border:1px solid #111;
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.ae-panel-head{
-  height:26px;background:#2d2d2d;border-bottom:1px solid #111;
-  display:flex;align-items:center;padding:0 10px;
-  font-size:11px;color:#999;flex-shrink:0;
-}
-.ae-panel-head .tab{color:#ddd;font-weight:500}
-.project-panel{grid-row:1/3;grid-column:1;border-right:none}
-
-.project-search{
-  margin:8px;padding:5px 8px;background:#1a1a1a;
-  border:1px solid #3a3a3a;border-radius:3px;
-  font-size:var(--fs-xs);color:#666;
-}
-.project-tree{padding:4px 0;overflow-y:auto;flex:1;font-size:11px}
-.proj-folder{padding:4px 10px;color:#999;display:flex;align-items:center;gap:6px;cursor:default}
-.proj-folder.open{color:#bbb}
-.proj-item{
-  padding:3px 10px 3px 22px;display:flex;align-items:center;gap:7px;
-  color:#aaa;cursor:default;transition:background .15s;
-}
-.proj-item:hover,.proj-item.added{background:#333;color:#ddd}
-.proj-item.added .proj-ico{color:#6eb5ff}
-.proj-ico{font-size:var(--fs-xs);width:14px;text-align:center}
-.proj-ico.comp{color:#9d72ff}
-.proj-ico.folder{color:#c9a227}
-
-/* Composition viewer */
-.comp-panel{grid-row:1;grid-column:2;display:flex;flex-direction:column}
-.comp-tabs{
-  height:26px;background:#2d2d2d;border-bottom:1px solid #111;
-  display:flex;align-items:flex-end;padding:0 8px;gap:2px;
-}
-.comp-tab{
-  padding:5px 14px 4px;font-size:var(--fs-xs);color:#888;
-  background:#232323;border:1px solid #111;border-bottom:none;
-  border-radius:3px 3px 0 0;cursor:default;
-}
-.comp-tab.active{background:#1a1a1a;color:#ddd;border-color:#333}
-
-.comp-viewer{
-  flex:1;background:#1a1a1a;position:relative;
-  display:flex;align-items:center;justify-content:center;overflow:hidden;
-  background-image:
-    linear-gradient(45deg,#222 25%,transparent 25%),
-    linear-gradient(-45deg,#222 25%,transparent 25%),
-    linear-gradient(45deg,transparent 75%,#222 75%),
-    linear-gradient(-45deg,transparent 75%,#222 75%);
-  background-size:16px 16px;
-  background-position:0 0,0 8px,8px -8px,-8px 0;
-  background-color:#1a1a1a;
-}
-.comp-viewer video,.comp-viewer img{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:min(88%,100%);max-height:88%;
-  aspect-ratio:16/9;height:auto;object-fit:cover;z-index:2;
-  box-shadow:0 0 0 1px rgba(255,255,255,.08);
-}
-.comp-viewer::after{
-  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:min(88%,100%);aspect-ratio:16/9;max-height:88%;
-  border:1px solid rgba(110,181,255,.18);pointer-events:none;z-index:3;
-}
-.comp-viewer video{display:none}
-.comp-viewer.has-video video{display:block}
-.comp-viewer.has-video .preview-label{display:none}
-.comp-viewer.has-poster .preview-label{display:none}
-.comp-viewer.has-poster .monitor-poster{display:block}
-.monitor-poster{display:none}
-
-.preview-label{
-  font-size:11px;color:#555;text-align:center;z-index:1;
-  padding:20px;
-}
-.preview-label.active{color:#888}
-
-.comp-controls{
-  height:32px;background:#2d2d2d;border-top:1px solid #111;
-  display:flex;align-items:center;padding:0 10px;gap:12px;
-  font-size:var(--fs-xs);color:#888;
-}
-.comp-controls .time{color:#6eb5ff;font-family:monospace;font-size:11px}
-.comp-controls .zoom{margin-left:auto;color:#666}
-
-/* Timeline - AE style */
-.timeline-panel{grid-row:2;grid-column:2}
-.timeline-toolbar{
-  height:28px;background:#2d2d2d;border-bottom:1px solid #111;
-  display:flex;align-items:center;padding:0 8px;gap:6px;font-size:var(--fs-xs);color:#777;
-}
-.timeline-toolbar .active-tab{color:#ddd;background:#333;padding:2px 8px;border-radius:2px}
-
-.drop-zone{
-  flex:1;display:flex;flex-direction:column;overflow:hidden;
-  transition:background .2s;
-}
-.drop-zone.dragover{background:rgba(110,181,255,.06);box-shadow:inset 0 0 0 1px #6eb5ff}
-
-.timeline-grid{
-  flex:1;display:grid;grid-template-columns:180px 1fr;overflow:hidden;
-}
-.layer-col{
-  background:#232323;border-right:1px solid #111;overflow-y:auto;
-}
-.layer-col-head{
-  height:24px;background:#2a2a2a;border-bottom:1px solid #111;
-  display:grid;grid-template-columns:24px 20px 20px 1fr;
-  align-items:center;font-size:var(--fs-xs);color:#666;padding:0 4px;
-}
-.time-col{overflow-x:auto;overflow-y:auto;position:relative}
-.time-ruler{
-  height:24px;background:#2a2a2a;border-bottom:1px solid #111;
-  position:relative;min-width:100%;
-  background-image:repeating-linear-gradient(90deg,#333 0 1px,transparent 1px 40px);
-}
-.playhead{
-  position:absolute;top:0;bottom:0;width:1px;background:#e84242;z-index:5;
-  left:120px;pointer-events:none;
-}
-.playhead::before{
-  content:'';position:absolute;top:0;left:-4px;
-  border:5px solid transparent;border-top-color:#e84242;
-}
-
-.ae-layer{
-  display:grid;grid-template-columns:24px 20px 20px 1fr;
-  align-items:center;height:28px;border-bottom:1px solid #1a1a1a;
-  font-size:var(--fs-xs);color:#aaa;
-}
-.ae-layer:hover{background:#2a2a2a}
-.ae-layer.selected{background:#333;color:#ddd}
-.layer-num{text-align:center;color:#666;font-size:var(--fs-xs)}
-.layer-sw{color:#666;font-size:var(--fs-xs);text-align:center;cursor:default}
-.layer-label{
-  display:flex;align-items:center;gap:6px;padding-right:6px;min-width:0;
-}
-.layer-color{width:3px;height:18px;border-radius:1px;flex-shrink:0}
-.layer-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.time-layer{
-  height:28px;border-bottom:1px solid #1a1a1a;position:relative;
-  min-width:600px;
-}
-.time-bar{
-  position:absolute;top:6px;height:16px;border-radius:2px;
-  border:1px solid rgba(255,255,255,.15);
-  min-width:40px;
-}
+/* #143 (PX6): AE demo saxnasi CSS'i _dev-ae-stage.html ga ko'chirildi (dev-only).
+   Mijoz paketida bu uslublar endi umuman yo'q. */
 
 .workspace{display:none}
 
@@ -291,6 +116,19 @@ body{
 .ptitle{font-size:11px;color:var(--muted);flex:1;text-align:center;font-weight:500}
 .pmenu{font-size:12px;color:var(--muted-2);cursor:pointer;padding:4px;border-radius:4px}
 .pmenu:hover{color:var(--text);background:rgba(255,255,255,.06)}
+
+/* #145 (PX8) — oflayn/ulanish yo'q holati. Panel eni tor bo'lgani uchun strip: bitta satr,
+   qisqa matn + "Retry". Faqat `.on` bo'lganda joy egallaydi (aks holda layoutga ta'sir yo'q). */
+.offbar{display:none;flex-shrink:0;align-items:center;gap:8px;padding:6px 12px;
+  background:rgba(255,178,124,.12);border-bottom:1px solid rgba(255,178,124,.28);
+  font-size:var(--fs-xs,11px);color:#FFB27C;line-height:1.35}
+.offbar.on{display:flex}
+.offbar .obd{width:7px;height:7px;border-radius:50%;background:#FFB27C;flex-shrink:0}
+.offbar .obt{flex:1;min-width:0}
+.offbar .obr{border:1px solid rgba(255,178,124,.5);border-radius:999px;padding:2px 9px;
+  cursor:pointer;font-weight:600;white-space:nowrap;background:transparent;color:inherit;font-size:inherit}
+.offbar .obr:hover{background:rgba(255,178,124,.18)}
+.offbar .obr[disabled]{opacity:.55;cursor:default}
 
 .panel-body{display:flex;flex:1;overflow:hidden;position:relative;min-height:0}
 
@@ -903,8 +741,13 @@ html.cep-mode .container{min-width:320px}
 html.cep-mode .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
 .card{
   background:transparent;border:none;border-radius:0;overflow:visible;
-  cursor:grab;transition:transform .2s ease;position:relative;
+  cursor:pointer;transition:transform .2s ease;position:relative;
 }
+/* #144 (PX7): "tortish" kursori FAQAT drag haqiqatan ulangan bo'lsa (initDrag `draggable`ni
+   drop-zona mavjud bo'lgandagina qo'yadi). CEP ichida tashlash joyi yo'q → oddiy `pointer`. */
+.card[draggable="true"]{cursor:grab}
+/* #144 (PX7): fokus halqasi — AI natija kartasi (.recentgrid .rc:focus-visible) bilan bir xil */
+.card:focus-visible{outline:2px solid var(--acc,var(--accent));outline-offset:3px;border-radius:8px}
 .card:hover{transform:translateY(-3px)}
 .card .thumb{
   border-radius:8px;overflow:hidden;
@@ -2447,9 +2290,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .crumb .bk:hover{color:var(--txt)}
 .axroot .crumb .path{color:var(--mut);font-size:12px}
 .axroot .crumb .path b{color:var(--txt);font-weight:700}
-.axroot .describe{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--blue);background:rgba(90,169,255,.1);border:1px solid #2a3a4a;border-radius:7px;padding:4px 9px;cursor:pointer;margin-bottom:8px}
-.axroot .describe:hover{background:rgba(90,169,255,.18)}
-.axroot .describe small{display:none}
+/* #142 (PX5): ".describe" uslublari o'chirildi — mos DOM elementi yo'q edi (o'lik kod). */
 .axroot .busybadge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--acc);border:1px solid var(--acc2);border-radius:999px;padding:4px 9px;cursor:pointer;animation:pulse 1.4s infinite}
 .axroot 50%{opacity:.5}
 .axroot .exrow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
@@ -3971,87 +3812,32 @@ html.cep-mode .af-topbar{height:44px}
      (eski 'cep-mode' ~3271-qatorда edi — demo-stage'дан keyin, shu sabab flash bo'lardi). -->
 <script>try{if(typeof window!=='undefined'&&window.__adobe_cep__)document.documentElement.classList.add('cep-mode');}catch(e){}</script>
 
-<div class="demo-badge">
-  <span class="dot"></span>
-  <span><strong>FrameFlow</strong> — After Effects plugin</span>
-</div>
 
-<div class="demo-stage">
-  <div class="ae-app">
-    <div class="ae-menubar">
-      <span>File</span><span>Edit</span><span>Composition</span><span>Layer</span><span>Effect</span>
-      <span>Animation</span><span>Window</span><span>Help</span>
-      <span class="ae-title">Main Comp · 1920×1080 · 25fps</span>
-    </div>
-    <div class="ae-toolbar">
-      <div class="ae-tool active" title="Selection">↖</div>
-      <div class="ae-tool" title="Hand">✋</div>
-      <div class="ae-tool" title="Zoom">🔍</div>
-      <div class="ae-tool-sep"></div>
-      <div class="ae-tool" title="Position">▦</div>
-      <div class="ae-tool" title="Rotation">↻</div>
-      <div class="ae-tool-sep"></div>
-      <div class="ae-tool active" title="Play">▶</div>
-      <div class="ae-tool" title="RAM Preview">⏵</div>
-    </div>
-
-    <div class="ae-main">
-      <div class="ae-panel project-panel">
-        <div class="ae-panel-head"><span class="tab">Project</span></div>
-        <div class="project-search">Search Project...</div>
-        <div class="project-tree" id="binList">
-          <div class="proj-folder open">▾ <span class="proj-ico folder">📁</span> Assets</div>
-          <div class="proj-item"><span class="proj-ico comp">◆</span> Main Comp</div>
-          <div class="proj-item"><span class="proj-ico">▣</span> Background.jpg</div>
-          <div class="proj-folder open">▾ <span class="proj-ico folder">📁</span> Imported</div>
-        </div>
-      </div>
-
-      <div class="ae-panel comp-panel">
-        <div class="comp-tabs"><div class="comp-tab active">Main Comp · 1920×1080 · 16:9</div></div>
-        <div class="comp-viewer" id="monitorBody">
-          <div class="preview-label" id="previewText">Composition preview<br><span style="font-size:var(--fs-xs);color:#444">Drag asset from plugin panel</span></div>
-          <video id="monitorVideo" muted loop playsinline preload="metadata"></video>
-        </div>
-        <div class="comp-controls">
-          <span class="time" id="aeTimecode">0:00:00:00</span>
-          <span>|</span><span>1920 × 1080</span><span>|</span><span>25 fps</span>
-          <span class="zoom">100%</span>
-        </div>
-      </div>
-
-      <div class="ae-panel timeline-panel">
-        <div class="timeline-toolbar">
-          <span class="active-tab">Timeline</span><span>|</span><span>Main Comp</span>
-          <span style="margin-left:auto;color:#6eb5ff;font-size:var(--fs-xs)">Drop files here ↓</span>
-        </div>
-        <div class="drop-zone" id="dropZone">
-          <div class="timeline-grid">
-            <div class="layer-col">
-              <div class="layer-col-head"><span>#</span><span>👁</span><span>🔒</span><span>Layer Name</span></div>
-              <div id="layerNames">
-                <div class="ae-layer selected">
-                  <span class="layer-num">1</span><span class="layer-sw">●</span><span class="layer-sw">○</span>
-                  <div class="layer-label"><span class="layer-color" style="background:#6eb5ff"></span><span class="layer-name">Background.jpg</span></div>
-                </div>
-                <div class="ae-layer">
-                  <span class="layer-num">2</span><span class="layer-sw">●</span><span class="layer-sw">○</span>
-                  <div class="layer-label"><span class="layer-color" style="background:#46a046"></span><span class="layer-name">Audio — Music.wav</span></div>
-                </div>
-              </div>
-            </div>
-            <div class="time-col">
-              <div class="time-ruler"><div class="playhead"></div></div>
-              <div id="layers">
-                <div class="time-layer"><div class="time-bar" style="left:0;width:70%;background:rgba(110,181,255,.35);border-color:#6eb5ff"></div></div>
-                <div class="time-layer"><div class="time-bar" style="left:5%;width:55%;background:rgba(70,160,70,.3);border-color:#46a046"></div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="demo-stage" id="demoStage">
+  <!-- #143 (PX6): soxta AE oynasi (menyu/loyiha/kompozitsiya/timeline) BU YERDAN olib
+       tashlandi — u faqat brauzer QA uchun kerak, mijoz paketida esa o'lik yuk va
+       yo'l-xaritani oshkor qiluvchi mockup edi. Manba: _dev-ae-stage.html (relizga
+       kirmaydi), quyidagi loader uni CEP TASHQARISIDA yuklaydi.
+       Sinxron XHR ataylab: pastdagi kod (initDrag, dropZone, addLayer…) DOM elementlarini
+       parse vaqtida kutadi. CEP ichida bu blok umuman ishlamaydi — so'rov ham yo'q. -->
+  <script>
+  (function(){
+    try{
+      if(typeof window==='undefined'||window.__adobe_cep__)return;   // faqat brauzer QA
+      var x=new XMLHttpRequest(); x.open('GET','_dev-ae-stage.html',false); x.send(null);
+      if(x.status&&x.status>=400)return;
+      var host=document.getElementById('demoStage'); if(!host)return;
+      var tmp=document.createElement('div'); tmp.innerHTML=x.responseText;
+      while(tmp.firstChild){
+        var n=tmp.firstChild;
+        // Uslublar head'ning BOSHIGA — kaskad tartibi avvalgidek qoladi (asosiy varaq
+        // media/cep-mode qoidalari saxna uslublarini ustun qiladi).
+        if(n.nodeType===1&&n.tagName==='STYLE')document.head.insertBefore(n,document.head.firstChild);
+        else host.appendChild(n);   // .ae-app grid-column:1, badge esa position:fixed
+      }
+    }catch(e){ try{console.warn('[dev] AE QA saxnasi yuklanmadi:',e&&e.message);}catch(_){} }
+  })();
+  </script>
 
   <div class="plugin-wrap">
     <div class="container" id="container">
@@ -4064,6 +3850,14 @@ html.cep-mode .af-topbar{height:44px}
           </div>
           <div class="ptitle">FrameFlow</div>
           <div class="pmenu" onclick="toggleCollapse()">⌄</div>
+        </div>
+
+        <!-- #145 (PX8): ulanish yo'q strip'i — `afNet` boshqaradi (offline/online hodisalari +
+             tarmoq xatosi bo'lgan har qanday fetch). Sukut bo'yicha yashirin. -->
+        <div class="offbar" id="offBar" role="status" aria-live="polite">
+          <span class="obd" aria-hidden="true"></span>
+          <span class="obt" id="offBarText">No connection — check your network</span>
+          <button type="button" class="obr" id="offBarRetry">Retry</button>
         </div>
 
         <div class="panel-body">
@@ -4667,7 +4461,8 @@ html.cep-mode .af-topbar{height:44px}
                                   <button class="gensend" id="vgGen" disabled title="Generate video" aria-label="Generate video">Generate<span class="costtag" id="vgCost">✦—</span></button>
                                 </div>
                               </div>
-                              <div class="genhint" style="margin-top:6px">≈ 1–2 min · credits refunded on error</div>
+                              <!-- #141 (PX4): matn endi TANLANGAN MODEL bo'yicha (server o'lchagan mediana) — applyVgMeta yozadi -->
+                              <div class="genhint" id="vgEtaHint" style="margin-top:6px">credits refunded on error</div>
                               <!-- SC_18: BALANCE qatori o'chirildi — doimiy top-bar kredit chipi bor; Generate narx yorlig'i qoladi -->
                             </div>
                           </div>
@@ -4972,14 +4767,14 @@ html.cep-mode .af-topbar{height:44px}
                         <!-- b11: preferenslar (real mavjud sozlamalar) -->
                         <div class="set-seck">PREFERENCES</div>
                         <div class="set-prefrow">Default import <span style="margin-left:auto;display:flex;gap:5px"><span class="cchip" id="impComp" data-imp="comp">Comp</span><span class="cchip" id="impBin" data-imp="bin">Bin</span></span></div>
-                        <div class="set-prefrow">Auto-load (Project selection)<div class="sw2 on" data-toggle style="margin-left:auto"></div></div>
-                        <!-- dev-only demo toggle'lar — production build'da yashirin (bootPlugin'dagi __AF_BUILD__ gate ochadi) -->
-                        <div id="devDemoSec" style="display:none">
-                          <div class="set-seck" style="color:var(--muted-2)">DEV · DEMO</div>
-                          <div class="set-prefrow">Demo: no media selected (empty)<div class="sw2" id="emptyToggle" data-toggle style="margin-left:auto"></div></div>
-                          <div class="set-prefrow">Demo: low credits (5)<div class="sw2" id="lowToggle" data-toggle style="margin-left:auto"></div></div>
-                          <div class="set-prefrow">Demo: next gen fails<div class="sw2" id="errToggle" data-toggle style="margin-left:auto"></div></div>
-                        </div>
+                        <!-- #101 (PX3): "Auto-load (Project selection)" qatori OLIB TASHLANDI — u
+                             butunlay dekorativ edi (hech qanday holatga ulanmagan, saqlanmasdi,
+                             hech narsani o'zgartirmasdi). Loyiha panelidan referens olish QO'LDA:
+                             referens qo'shish → "Project panel". Yolg'on sozlamadan ko'ra yo'qligi afzal. -->                        <!-- #143 (PX6): "DEV · DEMO" bo'limi (bo'sh media / kam kredit / gen xato
+                             taqlidi) BUTUNLAY o'chirildi. U mijoz paketiga ham tushardi: ZXP build
+                             `__AF_BUILD__` shtampini urmaydi, shuning uchun gate panelni "dev" deb
+                             hisoblab bo'limni obunachiga OCHIB qo'yardi. Sinov holatlarini soxta
+                             tugmalar bilan emas, haqiqiy hisob/kredit bilan tekshiramiz. -->
                       </section>
                     </div>
                     <div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
@@ -5469,6 +5264,7 @@ html.cep-mode .af-topbar{height:44px}
 
 <script src="js/CSInterface.js"></script>
 <script src="assetflow-env.js"></script>
+<script src="assetflow-secret-store.js"></script>
 <script src="assetflow-log.js"></script>
 <script src="assetflow-zip.js"></script>
 <script src="assetflow-local-store.js"></script>
@@ -5688,14 +5484,23 @@ function persistUserPrefs(){
   AssetFlowStore.savePrefs(prefs);
 }
 
-/** Import natijasidagi papka/comp nomlarini template uchun saqlaydi */
+/** Import natijasidagi papka/comp ID (va eski nusxalar uchun nom) larini saqlaydi */
 function recordImportedMeta(templateKey,sceneName,data){
   if(!templateKey)return;
   const m=window.downloadedMeta[templateKey]||{folders:[],comps:[],displayName:''};
+  if(!Array.isArray(m.folderIds))m.folderIds=[];
+  if(!Array.isArray(m.compIds))m.compIds=[];
   const pack=packs[templateKey];
   if(pack&&pack.displayName) m.displayName=pack.displayName;
-  if(data&&data.folder&&m.folders.indexOf(data.folder)<0) m.folders.push(data.folder);
-  if(data&&data.comp&&m.comps.indexOf(data.comp)<0) m.comps.push(data.comp);
+  // #30 (PL-c): host AE item ID qaytarsa NOMNI saqlamaymiz — o'chirish faqat shu
+  // aniq elementga tegadi. Nom bo'yicha o'chirish foydalanuvchining bir xil nomli
+  // papkasini/comp'ini ham yo'q qilardi.
+  const fid=data&&Number(data.folderId)||0;
+  const cid=data&&Number(data.compId)||0;
+  if(fid){ if(m.folderIds.indexOf(fid)<0) m.folderIds.push(fid); }
+  else if(data&&data.folder&&m.folders.indexOf(data.folder)<0) m.folders.push(data.folder);
+  if(cid){ if(m.compIds.indexOf(cid)<0) m.compIds.push(cid); }
+  else if(data&&data.comp&&m.comps.indexOf(data.comp)<0) m.comps.push(data.comp);
   // Demo (CEP emas) holatda data bo'lmaydi — sahna nomini comp sifatida saqlaymiz
   if(!data&&sceneName&&m.comps.indexOf(sceneName)<0) m.comps.push(sceneName);
   m.at=Date.now(); // Home "Continue" qatori uchun oxirgi import vaqti
@@ -5727,6 +5532,56 @@ function sceneDownloadOpts(){
     }
   };
 }
+/**
+ * #97 (PL-e) — host (ExtendScript) chaqiruvi uchun hang-guard.
+ *
+ * `csInterface.evalScript` callback'i AE modal dialog ochib qo'ysa (yetishmagan
+ * shrift/effekt ogohlantirishi, "Save changes?" so'rovi) yoki host skript uzoq
+ * ishlasa — callback HECH QACHON qaytmaydi. Ilgari bu holatda progress overlay
+ * abadiy muzlar, panel esa o'lgandek ko'rinardi va foydalanuvchida chiqish yo'li
+ * yo'q edi (`__afOpBusy` ham ochilmasdi → keyingi importlar ham bloklanardi).
+ *
+ * Bu o'ram:
+ *   1) `softMs` dan keyin overlay matnini almashtiradi va «bekor qilish» tugmasini
+ *      yoqadi — panel jonli ekani ko'rinadi va AE'da dialog borligi aytiladi;
+ *   2) `hardMs` da o'zi settle bo'ladi.
+ * ExtendScript'ni tashqaridan TO'XTATIB BO'LMAYDI — shu bois matn halol:
+ * biz faqat KUTISHNI to'xtatamiz, AE fonda importni tugatishi mumkin.
+ *
+ * Natija doim string: host javobi yoki `{ok:false,error:'timeout'|'cancelled',message}`
+ * JSON'i (chaqiruvchilar allaqachon shu shaklni parse qiladi).
+ */
+function hostEvalGuarded(script,opts){
+  const o=opts||{};
+  const softMs=o.softMs||15000;
+  const hardMs=o.hardMs||180000;
+  const label=o.label||'After Effects';
+  return new Promise((resolve)=>{
+    let settled=false,softT=0,hardT=0;
+    const done=(v)=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(softT);clearTimeout(hardT);
+      if(window.__afHostWait&&window.__afHostWait.done===done)window.__afHostWait=null;
+      resolve(v);
+    };
+    softT=setTimeout(()=>{
+      if(settled)return;
+      showProgress(100,label+' is taking longer than usual — check After Effects for an open dialog',true,true);
+    },softMs);
+    hardT=setTimeout(()=>{
+      done(JSON.stringify({ok:false,error:'timeout',message:'After Effects did not respond in '+Math.round(hardMs/1000)+'s — check AE for an open dialog, then try again'}));
+    },hardMs);
+    // onAfCancel shu yerdan kutishni uzadi (yuklab olish emas — host kutuvi)
+    window.__afHostWait={done:done,cancel:()=>done(JSON.stringify({ok:false,error:'cancelled',message:'Stopped waiting — After Effects may still finish the import in the background'}))};
+    try{
+      csInterface.evalScript(script,(raw)=>done(raw==null?'':String(raw)));
+    }catch(e){
+      done(JSON.stringify({ok:false,error:'evalfail',message:String((e&&e.message)||e)}));
+    }
+  });
+}
+
 async function importPackFileToAE(pack){
   if(!IS_CEP||!csInterface)return '';
   let importPath='';
@@ -5774,56 +5629,44 @@ async function importPackFileToAE(pack){
     const bundleFiles=Array.isArray(importPath.files)?importPath.files:[];
     const bundleLabel=String(pack?.displayName||pack?.name||'FrameFlow').trim()||'FrameFlow';
     showProgress(100,'Importing '+bundleFiles.length+' item'+(bundleFiles.length===1?'':'s')+'…',true);
-    return new Promise((resolve)=>{
-      csInterface.evalScript(`importFootageBundle(${JSON.stringify(JSON.stringify({files:bundleFiles,packLabel:bundleLabel}))})`,(result)=>{
-        hideProgress();
-        let r=null;try{r=result?JSON.parse(result):null;}catch(e){r=null;}
-        if(r&&r.ok){
-          const n=r.imported||bundleFiles.length;
-          showToast('Imported '+n+' item'+(n===1?'':'s')+' into "'+(r.folder||bundleLabel)+'"'+(r.failed?(' — '+r.failed+' skipped'):''),'success');
-          resolve('bundle:ok');
-        }else{
-          showToast('Import error: '+((r&&r.reason)||(result?String(result):'no result')),'error');
-          resolve('');
-        }
-      });
-    });
+    const bundleRaw=await hostEvalGuarded(`importFootageBundle(${JSON.stringify(JSON.stringify({files:bundleFiles,packLabel:bundleLabel}))})`,{label:'Importing footage'});
+    hideProgress();
+    let br=null;try{br=bundleRaw?JSON.parse(bundleRaw):null;}catch(e){br=null;}
+    if(br&&br.ok){
+      const n=br.imported||bundleFiles.length;
+      showToast('Imported '+n+' item'+(n===1?'':'s')+' into "'+(br.folder||bundleLabel)+'"'+(br.failed?(' — '+br.failed+' skipped'):''),'success');
+      return 'bundle:ok';
+    }
+    showToast('Import error: '+((br&&(br.reason||br.message))||(bundleRaw?String(bundleRaw):'no result')),'error');
+    return '';
   }
   showProgress(100,'Importing into AE…',true);
   const packLabel=String(pack?.displayName||pack?.name||'FrameFlow').trim()||'FrameFlow';
   const mediaKind=packMediaKind(pack);
-  return new Promise((resolve)=>{
-    // P5.2 — LUT: AE footage sifatida import qilib bo'lmaydi → faylni OS'da ko'rsatamiz + ko'rsatma.
-    if(mediaKind==='lut'){
-      csInterface.evalScript(`revealFileInOS(${JSON.stringify(importPath)})`,()=>{
-        hideProgress();
-        showToast('LUT downloaded and revealed in your file browser. Apply it via Lumetri Color → Creative → Look, or the “Apply Color LUT” effect.','info');
-        resolve('lut:downloaded');
-      });
-      return;
+  // P5.2 — LUT: AE footage sifatida import qilib bo'lmaydi → faylni OS'da ko'rsatamiz + ko'rsatma.
+  if(mediaKind==='lut'){
+    await hostEvalGuarded(`revealFileInOS(${JSON.stringify(importPath)})`,{label:'Revealing file',hardMs:30000});
+    hideProgress();
+    showToast('LUT downloaded and revealed in your file browser. Apply it via Lumetri Color → Creative → Look, or the “Apply Color LUT” effect.','info');
+    return 'lut:downloaded';
+  }
+  // P5.2 — Stock xom media (video/rasm/audio): FOOTAGE sifatida import + aktiv comp'ga qat'lam
+  // (host importMediaFromPath — canImportAs(FOOTAGE) guard bilan). importTemplateProject EMAS.
+  if(mediaKind==='video'||mediaKind==='image'||mediaKind==='audio'){
+    const mediaRaw=await hostEvalGuarded(`importMediaFromPath(${JSON.stringify(importPath)})`,{label:'Importing media'});
+    hideProgress();
+    let mr=null;try{mr=mediaRaw?JSON.parse(mediaRaw):null;}catch(e){mr=(String(mediaRaw).indexOf('ok')===0)?{ok:true}:null;}
+    if(mr&&mr.ok){
+      showToast(mr.addedToComp?('Imported — added to '+(mr.compName?('"'+mr.compName+'" '):'')+'composition'):'Imported to AE (Project panel)','success');
+      return 'media:ok';
     }
-    // P5.2 — Stock xom media (video/rasm/audio): FOOTAGE sifatida import + aktiv comp'ga qat'lam
-    // (host importMediaFromPath — canImportAs(FOOTAGE) guard bilan). importTemplateProject EMAS.
-    if(mediaKind==='video'||mediaKind==='image'||mediaKind==='audio'){
-      csInterface.evalScript(`importMediaFromPath(${JSON.stringify(importPath)})`,(result)=>{
-        hideProgress();
-        let r=null;try{r=result?JSON.parse(result):null;}catch(e){r=(String(result).indexOf('ok')===0)?{ok:true}:null;}
-        if(r&&r.ok){
-          showToast(r.addedToComp?('Imported — added to '+(r.compName?('"'+r.compName+'" '):'')+'composition'):'Imported to AE (Project panel)','success');
-          resolve('media:ok');
-        }else{
-          showToast('Import error: '+((r&&r.reason)||(result?String(result):'no result')),'error');
-          resolve('');
-        }
-      });
-      return;
-    }
-    // Default — .aep/.mogrt loyiha (video-templates).
-    csInterface.evalScript(`importTemplateProject(${JSON.stringify(JSON.stringify({filePath:importPath,packLabel}))})`,(result)=>{
-      hideProgress();
-      resolve(result||'');
-    });
-  });
+    showToast('Import error: '+((mr&&(mr.reason||mr.message))||(mediaRaw?String(mediaRaw):'no result')),'error');
+    return '';
+  }
+  // Default — .aep/.mogrt loyiha (video-templates). #97: hang-guard bilan.
+  const projRaw=await hostEvalGuarded(`importTemplateProject(${JSON.stringify(JSON.stringify({filePath:importPath,packLabel}))})`,{label:'Importing template'});
+  hideProgress();
+  return projRaw||'';
 }
 
 async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline'){
@@ -5909,20 +5752,9 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     importMode:importMode||'timeline',
     pruneToScene
   });
-  return new Promise((resolve)=>{
-    let settled=false;
-    const tid=setTimeout(()=>{
-      if(settled)return;
-      settled=true;
-      resolve(JSON.stringify({ok:false,error:'timeout',message:'AE script did not respond within 30s — close the AE window and try again'}));
-    },30000);
-    csInterface.evalScript(`importSingleSceneFromAep(${JSON.stringify(cfg)})`,(raw)=>{
-      if(settled)return;
-      settled=true;
-      clearTimeout(tid);
-      resolve(raw||'');
-    });
-  });
+  // #97 (PL-e): umumiy hang-guard — 15s dan keyin «bekor qilish», 180s da o'zi settle.
+  // (Ilgari 30s qattiq timeout edi — katta .aep import'ida noto'g'ri "timeout" berardi.)
+  return await hostEvalGuarded(`importSingleSceneFromAep(${JSON.stringify(cfg)})`,{label:'Importing scene'});
 }
 let featuredDismissedByNav={};
 let currentNav='video', currentPage='assets', currentSub='all', currentOrient='all', currentRes='all', currentSearch='', currentSort='relevant';
@@ -6013,7 +5845,10 @@ function renderCard(a,i,showDl){
   // SC_14: per-karta Import/Re-import tugmasi O'CHIRILDI — karta bosilishi detail'ni ochadi,
   // import/download detail'ning o'z tugmasida (pd3ImportAll — gated oqim o'zgarmagan).
   // "Downloaded" holati thumb ustidagi ✓ badge'da qoladi (stBadge).
-  return`<div class="card${noPack?' no-pack':''}" draggable="true" data-name="${escHtml(a.n)}" data-ico="${escHtml(a.i)}" data-preview="${escHtml(a.preview||'')}"
+  // #144 (PX7): `draggable` MARKUP'da qattiq qo'yilmaydi — uni `initDrag()` faqat haqiqiy
+  // tashlash joyi bo'lganda qo'yadi. Klaviatura kontrakti AI natija kartasi (.rc) bilan bir xil:
+  // role="button" + tabindex="0" + Enter/Space (delegatsiya `initDrag()` yonida).
+  return`<div class="card${noPack?' no-pack':''}" role="button" tabindex="0" data-name="${escHtml(a.n)}" data-ico="${escHtml(a.i)}" data-preview="${escHtml(a.preview||'')}"
     onmouseenter="playCardPreview(this)" onmouseleave="pauseCardPreview(this)"
     onclick="openPack('${safeName}')">
     <div class="thumb${hasPreview?' has-preview':''}" style="background:${escHtml(a.bg)}">
@@ -6056,6 +5891,7 @@ function showMonitorPreview(asset){
   const body=document.getElementById('monitorBody');
   const video=document.getElementById('monitorVideo');
   const label=document.getElementById('previewText');
+  if(!body||!video)return;   // #143 (PX6): monitor faqat dev QA saxnasida bor
   let img=body.querySelector('.monitor-poster');
   if(!img){
     img=document.createElement('img');
@@ -7042,6 +6878,9 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
       }else if(data?.mogrtPicker){
         // MOGRT-pack aniqlandi — sahna ro'yxati yangilandi, foydalanuvchi tanlaydi
         return 'mogrt-picker';
+      }else if(data&&(data.error==='cancelled'||data.error==='timeout')){
+        // #97 (PL-e): kutish uzildi/tugadi — bu import XATOSI emas, holat xabari
+        showToast(data.message||'After Effects did not respond','warning');
       }else{
         const msg=data?.message||raw||'unknown';
         if(String(msg).indexOf('Comp not found')===0){
@@ -7128,19 +6967,22 @@ async function __downloadAllImpl(n){
       if(!result){ render();renderDl(); return; }
       // Host importTemplateProject JSON {ok,folder,movedCount} qaytaradi;
       // eski "ok:aep"/"ok:<name>" string kontrakti ham ehtiyot uchun qabul qilinadi.
-      let ok=false,folder=null,missingFonts=null;
+      let ok=false,folder=null,folderId=0,missingFonts=null,failMsg='';
       if(typeof result==='string'){
         if(result.indexOf('ok:')===0) ok=true;
-        else { try{ const d=JSON.parse(result); if(d&&d.ok){ ok=true; folder=d.folder||null; missingFonts=d.missingFonts||null; } }catch(e){} }
+        else { try{ const d=JSON.parse(result); if(d&&d.ok){ ok=true; folder=d.folder||null; folderId=Number(d.folderId)||0; missingFonts=d.missingFonts||null; }
+          else if(d){ failMsg=String(d.message||d.reason||''); if(d.error==='cancelled'||d.error==='timeout'){ showToast(failMsg||'After Effects did not respond','warning'); render();renderDl(); return; } } }catch(e){} }
       }
       if(ok){
         markPackDownloaded();
-        recordImportedMeta(n,null,folder?{folder}:null);
+        // #30 (PL-c): folderId bo'lsa nom saqlanmaydi (nom bo'yicha o'chirish xavfli)
+        recordImportedMeta(n,null,(folderId||folder)?{folder,folderId}:null);
         showToast('✓ "'+(p.displayName||n)+'" imported into the AE project','success',__elapsed());
         // FAZA 4: yetishmagan shriftlarni fon rejimida hal qilamiz (import'ni bloklamaydi)
         if(missingFonts&&missingFonts.length) resolveTemplateFonts(missingFonts);
       }
-      else showToast('Import error: '+(result||'unknown'),'error');
+      // Xom JSON foydalanuvchiga chiqmasin — faqat o'qiladigan xabar
+      else showToast('Import error: '+(failMsg||'unknown'),'error');
     }catch(err){
       console.error(err);
       showToast('Import error: '+err.message);
@@ -7172,7 +7014,7 @@ async function __downloadAllImpl(n){
 /** Yuklab olingan shablonni loyihadan (va keshdan) o'chiradi */
 async function deleteDownloadedTemplate(key){
   const pack=packs[key];
-  const meta=window.downloadedMeta[key]||{folders:[],comps:[]};
+  const meta=window.downloadedMeta[key]||{folders:[],comps:[],folderIds:[],compIds:[]};
   const name=(pack&&pack.displayName)||meta.displayName||key;
   if(!(await window.afConfirm('Remove "'+name+'" from your project?\nImported folders/comps in the AE Project panel and layers inside comps will also be removed.',{ok:"Remove",danger:true})))return;
 
@@ -7180,10 +7022,16 @@ async function deleteDownloadedTemplate(key){
   if(IS_CEP&&csInterface){
     const folders=Array.isArray(meta.folders)?meta.folders:[];
     const comps=Array.isArray(meta.comps)?meta.comps:[];
-    if(folders.length||comps.length){
+    // #30 (PL-c): yangi importlarda ID bor — host aynan shu elementni o'chiradi.
+    // Nom ro'yxatida faqat ID'siz eski yozuvlar qoladi.
+    const folderIds=Array.isArray(meta.folderIds)?meta.folderIds:[];
+    const compIds=Array.isArray(meta.compIds)?meta.compIds:[];
+    if(folders.length||comps.length||folderIds.length||compIds.length){
       try{
-        const cfg=JSON.stringify({folders,comps});
-        const raw=await new Promise(res=>csInterface.evalScript('removeImportedTemplate('+JSON.stringify(cfg)+')',r=>res(r||'')));
+        const cfg=JSON.stringify({folders,comps,folderIds,compIds});
+        // #97 (PL-e): o'chirish ham host'da osilib qolishi mumkin — guard bilan
+        const raw=await hostEvalGuarded('removeImportedTemplate('+JSON.stringify(cfg)+')',{label:'Removing from project',hardMs:60000});
+        hideProgress();   // guard soft-timer overlay ochgan bo'lishi mumkin
         let data;try{data=JSON.parse(raw);}catch{data=null;}
         if(data&&data.ok) showToast('✓ Removed from project ('+(data.removed||0)+' items)');
         else showToast('Problem removing from project: '+((data&&data.message)||'unknown'));
@@ -7199,20 +7047,16 @@ async function deleteDownloadedTemplate(key){
         const fs=require('fs'),path=require('path'),os=require('os');
         const tid=pack.serverTemplateId;
         const base=(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir&&AssetFlowCatalog.downloadDir())||os.tmpdir();
-        ['','.zip','.aep','.mogrt'].forEach(ext=>{
-          const f=path.join(base,'assetflow_'+tid+ext);
-          try{ if(fs.existsSync(f)) fs.rmSync(f,{force:true}); }catch(e){ cacheFails++; }
+        // #29 (PL-b): bitta skan barcha kesh yozuvini qamrab oladi — `assetflow_<tid>`
+        // fayllari, `_unzipped`, `assetflow_mogrt_<tid>_*` VA P9 nomli ekstraksiya
+        // papkasi ("Nom (af-xxxxxx)"). Oxirgisi ilgari ro'yxatda YO'Q edi → papka
+        // diskda abadiy qolardi, UI esa o'chirildi deb ko'rsatardi.
+        const isMine=(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.isTemplateCacheEntryName)||null;
+        if(!isMine) throw new Error('catalog module missing');
+        fs.readdirSync(base).forEach(name=>{
+          if(!isMine(name,tid))return;
+          try{ fs.rmSync(path.join(base,name),{recursive:true,force:true}); }catch(e){ cacheFails++; }
         });
-        const dir=path.join(base,'assetflow_'+tid+'_unzipped');
-        try{ if(fs.existsSync(dir)) fs.rmSync(dir,{recursive:true,force:true}); }catch(e){ cacheFails++; }
-        // .mogrt extract papkalari (har importda unikal nom — prefiks bo'yicha topamiz)
-        try{
-          fs.readdirSync(base).forEach(name=>{
-            if(name.indexOf('assetflow_mogrt_'+tid+'_')===0){
-              try{ fs.rmSync(path.join(base,name),{recursive:true,force:true}); }catch(e){ cacheFails++; }
-            }
-          });
-        }catch(e){ cacheFails++; }
       }catch(e){ cacheFails++; }
       if(cacheFails>0) showToast('Some cache files could not be removed ('+cacheFails+') — please try again later','warning');
     }
@@ -7241,8 +7085,13 @@ async function afClearDownloads(){
     try{
       const fs=require('fs'),path=require('path'),os=require('os');
       const base=(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir&&AssetFlowCatalog.downloadDir())||os.tmpdir();
+      // #29 (PL-b): faqat bizning kesh fayllar/papkalar. Ilgari shart `assetflow_`
+      // prefiksi edi — P9 dan keyin ekstraksiya papkasi shablon NOMI bilan yasaladi
+      // ("Nom (af-xxxxxx)") va bu filtrga tushmasdi: kesh hech qachon tozalanmasdi.
+      const isMine=(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.isCacheEntryName)||null;
+      if(!isMine) throw new Error('catalog module missing');
       fs.readdirSync(base).forEach(name=>{
-        if(name.indexOf('assetflow_')!==0)return; // faqat bizning kesh fayllar/papkalar
+        if(!isMine(name))return;
         try{ fs.rmSync(path.join(base,name),{recursive:true,force:true}); }catch(e){ cacheFails++; }
       });
     }catch(e){ cacheFails++; }
@@ -7777,6 +7626,8 @@ const aeColors=['#6eb5ff','#46a046','#f7a028','#e84242','#9d72ff','#46cfcf','#e8
 let layerIdx=2;
 
 function addLayer(name,ico,updatePreview=true){
+  // #143 (PX6): soxta AE timeline'i — faqat dev QA saxnasida (mijoz paketida yo'q).
+  if(!document.getElementById('layerNames'))return;
   const c=aeColors[layerIdx%aeColors.length];
   const num=layerIdx+1;
   const w=Math.floor(Math.random()*30+25);
@@ -8836,6 +8687,45 @@ function afUuid(){
   try{ if(window.crypto&&window.crypto.randomUUID) return window.crypto.randomUUID(); }catch(e){}
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=(Math.random()*16)|0,v=c==='x'?r:(r&0x3)|0x8;return v.toString(16);});
 }
+/** #31 (PX1) — UCHAYOTGAN gen'lar reyestri (diskda saqlanadi).
+ *
+ *  MUAMMO: faol job'lar faqat tool'ning JS massivida yashardi. Panel yopilsa (yoki AE
+ *  extension'ni qayta yuklasa) massiv yo'q bo'lardi: kredit yechilgan, server gen'ni
+ *  davom ettirardi, lekin foydalanuvchi natijani HECH QACHON ko'rmasdi.
+ *
+ *  Endi job yuborilganda shu yerga yoziladi va tool ochilganda serverdagi
+ *  `?status=active` ro'yxati bilan solishtirib TIKLANADI (prompt/model/narx diskdan,
+ *  holat serverdan). Yozuv tugagach o'chiriladi; 6 soatdan eski yozuv o'z-o'zidan tushadi. */
+var afJobStore=(function(){
+  var KEY='af_active_jobs',MAX=20,TTL=6*60*60*1000;
+  function read(){ try{ var raw=localStorage.getItem(KEY); var a=raw?JSON.parse(raw):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+  function write(rows){ try{ localStorage.setItem(KEY,JSON.stringify(rows.slice(0,MAX))); }catch(e){} }
+  function prune(rows){ var cut=Date.now()-TTL; return rows.filter(function(r){ return r&&r.jobId&&(r.ts||0)>cut; }); }
+  return {
+    add:function(tool,rec){
+      if(!rec||!rec.jobId)return;
+      var rows=prune(read()).filter(function(r){ return r.jobId!==rec.jobId; });
+      rows.unshift({tool:tool,jobId:rec.jobId,prompt:rec.prompt||'',cat:rec.cat||'image',cost:rec.cost||0,
+                    sid:rec.sid||null,modelId:rec.modelId||null,params:rec.params||null,ts:Date.now()});
+      write(rows);
+    },
+    remove:function(jobId){ if(jobId)write(prune(read()).filter(function(r){ return r.jobId!==jobId; })); },
+    list:function(tool){ var rows=prune(read()); write(rows); return tool?rows.filter(function(r){ return r.tool===tool; }):rows; },
+    clear:function(){ write([]); }
+  };
+})();
+window.afJobStore=afJobStore;
+/** #141 (PX4) — model `etaSec` (server o'lchagan mediana) → odam o'qiydigan diapazon.
+ *  Bitta aniq raqam va'da qilmaymiz: haqiqiy vaqt navbat/provayder yukiga qarab tebranadi,
+ *  shuning uchun ~0.7×…1.4× oralig'i ko'rsatiladi. */
+function afEtaLabel(sec){
+  sec=Number(sec)||0; if(sec<=0)return '';
+  var lo=Math.max(5,Math.round(sec*0.7)),hi=Math.max(lo+5,Math.round(sec*1.4));
+  if(hi<90)return '≈ '+lo+'–'+hi+' sec';
+  var lm=Math.max(1,Math.round(lo/60)),hm=Math.max(lm+1,Math.round(hi/60));
+  return '≈ '+lm+'–'+hm+' min';
+}
+window.afEtaLabel=afEtaLabel;
 function afBackoff(a){ return [1500,3500,7000,10000][a]||10000; }
 function afSleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
 /** /api/studio POST — auth bilan.
@@ -9517,21 +9407,118 @@ function selectSort(el,key,label){
   closeAllDropdowns();
   reloadServerBrowse(); // P1 #15 — saralash server tomonda
 }
+// #144 (PX7): katalog kartasi va AI natija kartasi (.rc) o'rtasidagi nomuvofiqlik.
+// Katalog kartasi `draggable="true"` bilan chizilardi va `cursor:grab` ko'rsatardi, AI natija
+// kartasi esa faqat bosiladi. Ammo CEP paneldan After Effects'ga HTML5 drag ISHLAMAYDI — yagona
+// tashlash joyi brauzer QA saxnasidagi `#dropZone` edi (#143 dan keyin u reliz paketida yo'q).
+// Ya'ni mijozda "tortish mumkin" degan YOLG'ON affordans turardi, ustiga ustak u bosish bilan
+// bir xil ishni (`openPack`) qilardi. Endi: drag faqat haqiqiy tashlash joyi bo'lganda ulanadi,
+// aks holda ikkala grid ham bir xil kontrakt — bosish / Enter / Space.
 function initDrag(){
-  document.querySelectorAll('.card[draggable]').forEach(card=>{
+  const hasDrop=!!document.getElementById('dropZone');
+  document.querySelectorAll('.card[data-name]').forEach(card=>{
+    if(!hasDrop){ card.removeAttribute('draggable'); return; }
+    card.draggable=true;
     card.ondragstart=e=>{card.classList.add('dragging');document.getElementById('ghostName').textContent=card.dataset.name;
       document.getElementById('dragGhost').classList.add('visible');
       e.dataTransfer.setData('text/plain',JSON.stringify({name:card.dataset.name,ico:card.dataset.ico}));};
     card.ondragend=()=>{card.classList.remove('dragging');document.getElementById('dragGhost').classList.remove('visible');};
   });
 }
+// #144 (PX7): Enter/Space kartani ochadi — .rc kartasidagi klaviatura xatti-harakati bilan bir xil.
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' '&&e.keyCode!==13&&e.keyCode!==32)return;
+  const c=e.target;
+  if(!c||!c.classList||!c.classList.contains('card')||!c.dataset||!c.dataset.name)return;
+  e.preventDefault();
+  openPack(c.dataset.name);
+});
+
+/* #145 (PX8) — OFLAYN / ULANISH ANIQLASH.
+ *
+ * MUAMMO: panelda ulanish holati umuman kuzatilmasdi. Internet uzilganda har bir ekran o'z
+ * xom xatosini ("Failed to fetch", bo'sh grid, abadiy skeleton) ko'rsatardi; foydalanuvchi
+ * buni plagin buzilgan deb tushunardi. `navigator.onLine` hech qayerda ishlatilmagan edi.
+ *
+ * YECHIM: bitta manba — `afNet`. Uch signal bilan boqiladi:
+ *   1) brauzerning `offline`/`online` hodisalari (OS interfeysi darajasi),
+ *   2) HAR QANDAY `fetch` ning tarmoq darajasidagi xatosi (TypeError — HTTP status EMAS),
+ *   3) `/livez` probe'i (arzon, rate-limitdan ozod) — "haqiqatan yetib bormayaptimi" deb
+ *      TASDIQLAYDI. `navigator.onLine` CEP ichida yolg'on "true" berishi mumkin, shuning
+ *      uchun bayroqqa emas, probe natijasiga ishonamiz.
+ *
+ * Tiklanganda `af:online` hodisasi chiqadi — ekranlar o'zini qayta yuklashi mumkin.
+ * Boot'da probe YUBORILMAYDI: birinchi haqiqiy so'rov baribir signal beradi.
+ */
+window.afNet=(function(){
+  var bar=null,txt=null,btn=null,offline=false,checking=false,timer=null;
+  function els(){
+    if(bar)return true;
+    bar=document.getElementById('offBar'); txt=document.getElementById('offBarText'); btn=document.getElementById('offBarRetry');
+    if(btn)btn.addEventListener('click',function(){ check(); });
+    return !!bar;
+  }
+  function render(){
+    if(!els())return;
+    bar.classList.toggle('on',offline);
+    if(txt)txt.textContent=(navigator.onLine===false)
+      ? "You're offline — check your network connection"
+      : "Can’t reach FrameFlow — the server may be waking up";
+    if(btn){ btn.disabled=!!checking; btn.textContent=checking?'Checking…':'Retry'; }
+  }
+  function set(v){
+    var was=offline; offline=!!v; render();
+    if(was===offline)return;
+    try{ document.dispatchEvent(new CustomEvent(offline?'af:offline':'af:online')); }catch(e){}
+    if(offline){
+      // Avtomatik qayta tekshirish — foydalanuvchi "Retry" bosishini kutmaymiz.
+      if(!timer)timer=setInterval(function(){ check(); },20000);
+    } else if(timer){ clearInterval(timer); timer=null; }
+  }
+  /** Server yetib boradimi? true = yetadi. Probe FAQAT tarmoq darajasini o'lchaydi. */
+  function check(){
+    if(checking)return Promise.resolve(!offline);
+    checking=true; render();
+    var base;
+    try{ base=(typeof pubApiBase==='function')?pubApiBase():''; }catch(e){ base=''; }
+    if(!base){ checking=false; set(navigator.onLine===false); return Promise.resolve(!offline); }
+    var opts={cache:'no-store'},ctrl=null;
+    if(typeof AbortController!=='undefined'){ ctrl=new AbortController(); opts.signal=ctrl.signal; setTimeout(function(){ try{ctrl.abort();}catch(e){} },8000); }
+    return _fetch(base+'/livez',opts).then(function(){ checking=false; set(false); return true; })
+      .catch(function(){ checking=false; set(true); return false; });
+  }
+  /** Tarmoq darajasidagi xato (HTTP 4xx/5xx EMAS) — probe bilan tasdiqlaymiz. */
+  function noteFailure(err){
+    var m=(err&&err.message)||String(err||'');
+    if(err&&err.name==='AbortError')return;                     // foydalanuvchi/timeout bekori
+    if(!/Failed to fetch|NetworkError|ERR_|ENOTFOUND|ECONNREFUSED|Load failed|network/i.test(m))return;
+    check();
+  }
+  // Global `fetch` o'ramasi — xato AYNAN o'zgarmagan holda qayta uloqtiriladi (chaqiruvchi
+  // mantig'i tegilmaydi), biz faqat kuzatamiz.
+  var _fetch=window.fetch&&window.fetch.bind(window);
+  if(_fetch){
+    window.fetch=function(){
+      return _fetch.apply(null,arguments).then(function(r){ if(offline)set(false); return r; },
+        function(e){ noteFailure(e); throw e; });
+    };
+  }
+  window.addEventListener('offline',function(){ set(true); });
+  window.addEventListener('online',function(){ check(); });
+  if(navigator.onLine===false)set(true); else render();
+  return { isOffline:function(){ return offline; }, check:check, noteFailure:noteFailure };
+})();
 
 document.addEventListener('dragover',e=>{const g=document.getElementById('dragGhost');if(g.classList.contains('visible')){g.style.left=(e.clientX+14)+'px';g.style.top=(e.clientY+14)+'px';}});
+// #143 (PX6): drop-zone endi FAQAT dev QA saxnasida mavjud (_dev-ae-stage.html) —
+// mijoz paketida element yo'q, shuning uchun null-guard.
 const dz=document.getElementById('dropZone');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
-dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');
-  try{const d=JSON.parse(e.dataTransfer.getData('text/plain'));openPack(d.name);}catch(err){}});
+if(dz){
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');
+    try{const d=JSON.parse(e.dataTransfer.getData('text/plain'));openPack(d.name);}catch(err){}});
+}
 
 let resizing=false,resizeDir='',startX,startY,startW,startH;
 document.querySelectorAll('.rh').forEach(h=>h.onmousedown=e=>{
@@ -9758,6 +9745,29 @@ window.afFontResolver=(function(){
   return { open:open, update:update, close:close };
 })();
 
+/**
+ * #99 (PL-g) — shrift o'rnatishga rozilik. Nima bo'lishini ANIQ aytamiz:
+ * qayerdan yuklanadi, qayerga yoziladi va nimaga tegilmaydi. Rad etilsa
+ * hech narsa yuklanmaydi — import natijasi o'zgarishsiz qoladi.
+ */
+async function confirmFontInstall(fonts){
+  if(typeof window.afConfirm!=='function')return false;   // dialog yo'q → rozilik yo'q
+  var names=fonts.slice(0,6).map(function(f){return String(f.family||f.postScript||'').trim();})
+    .filter(Boolean).join(', ');
+  if(fonts.length>6)names+=' +'+(fonts.length-6)+' more';
+  var isWin=false;
+  try{ isWin=(typeof process!=='undefined'&&process.platform==='win32'); }catch(_){ }
+  var where=isWin
+    ?'your personal Windows font folder (and a registry entry under your user account)'
+    :'your personal font folder';
+  return await window.afConfirm(
+    'Install '+fonts.length+' missing font'+(fonts.length===1?'':'s')+'?\n'
+    +names+'\n\nFrameFlow will look them up on Google Fonts and install what it finds into '
+    +where+'. Nothing is installed system-wide, and fonts that are not open-source are left for you to install yourself.',
+    {ok:'Install fonts',cancel:'Not now'}
+  );
+}
+
 /** Import natijasidagi missingFonts'ni 3 bosqichda hal qiladi (host → Node → UI).
  *  Money-zone'ga tegmaydi; xato bo'lsa import muvaffaqiyati BUZILMAYDI. */
 async function resolveTemplateFonts(missingFonts){
@@ -9766,6 +9776,11 @@ async function resolveTemplateFonts(missingFonts){
     if(typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.resolveMissingFonts)return;
     var fonts=Array.isArray(missingFonts)?missingFonts.filter(function(f){return f&&(f.family||f.postScript);}):[];
     if(!fonts.length)return;
+    // #99 (PL-g) — ROZILIK. Ilgari import tugashi bilan panel hech nima
+    // so'ramasdan Google Fonts'dan shrift yuklab, foydalanuvchining OS shrift
+    // papkasiga yozar (Windows'da HKCU registriga yozuv ham qo'shar) edi.
+    // Bu OS'ga jimgina o'zgartirish — endi har safar aniq ruxsat so'raymiz.
+    if(!(await confirmFontInstall(fonts)))return;
     window.afFontResolver.open(fonts);
     var res=await AssetFlowCatalog.resolveMissingFonts(fonts,function(r,i){
       window.afFontResolver.update(i,r);
@@ -9829,6 +9844,9 @@ function friendlyError(e){
     return 'This model won’t process real people or public figures — your credits were refunded';
   if(/output video has sensitive content|sensitive content|nsfw|sexual|nudity|content policy|safety system|no image was returned/i.test(raw))
     return 'The model’s content filter rejected this request — your credits were refunded';
+  // #145 (PX8): OS "ulanish yo'q" desa — taxmin qilmaymiz, aniq aytamiz (strip ham chiqadi).
+  if(navigator.onLine===false)
+    return 'You’re offline — check your network connection';
   if(/Failed to fetch|NetworkError|ENOTFOUND|ECONNREFUSED|network/i.test(raw))
     return 'Couldn’t connect to the internet — check your network or the API';
   // P20: 403 overloaded — biznes-kodni AVVAL hurmat qilamiz, faqat HAQIQIY auth-bekor (401 /
@@ -9893,6 +9911,13 @@ function hideProgress(){
 }
 /** Progress'dagi «Bekor qilish» — faol yuklab olishni uzadi */
 function onAfCancel(){
+  // #97 (PL-e): faol host (ExtendScript) kutuvi bo'lsa — avval O'SHANI uzamiz.
+  // Yuklab olish allaqachon tugagan; bu yerda «bekor» = kutishni to'xtatish.
+  if(window.__afHostWait){
+    try{ window.__afHostWait.cancel(); }catch(e){}
+    hideProgress();
+    return;   // xabar chaqiruvchi callback'da (host javobi 'cancelled' bo'ladi)
+  }
   try{
     if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.cancelDownload)
       AssetFlowCatalog.cancelDownload();
@@ -10380,6 +10405,9 @@ function accountLogout(){
   try{ if(typeof window.afIgClearRecent==='function')window.afIgClearRecent(); }catch(e){}
   try{ if(typeof window.axVGClearRecent==='function')window.axVGClearRecent(); }catch(e){}
   try{ if(typeof window.axAGClearRecent==='function')window.axAGClearRecent(); }catch(e){}
+  // #31 (PX1) — uchayotgan gen reyestri ham hisobga bog'liq: boshqa foydalanuvchi kirsa,
+  // eski hisobning job'lari tiklanmasin (server baribir 404/foreign qaytaradi).
+  try{ if(window.afJobStore)window.afJobStore.clear(); }catch(e){}
   showToast('Signed out');
 }
 
@@ -10956,16 +10984,30 @@ async function reloadHostScript(){
   }catch(e){ return false; }
 }
 
+// #143 (PX6) — o'rnatilgan kengaytma versiyasi (CSXS manifestidan). CEP tashqarisida null.
+function afExtVersion(){
+  try{
+    if(typeof CSInterface==='undefined')return null;
+    const cs=new CSInterface(); const id=cs.getExtensionID&&cs.getExtensionID();
+    const list=(cs.getExtensions?cs.getExtensions(id?[id]:undefined):null)||[];
+    for(let i=0;i<list.length;i++){ if(list[i]&&list[i].version)return String(list[i].version); }
+  }catch(e){}
+  return null;
+}
+
 async function bootPlugin(){
   // Build yorlig'i — shtamplanmagan bo'lsa (manbadan ishga tushirilgan) "dev".
   // Token BO'LIB yozilgan — install-cep.sh sed'i bu tekshiruvga tegmasin (faqat element shtamplanadi).
   try{
     const _b=document.getElementById('afBuild');const _ph='__AF_'+'BUILD__';
     const _isDev=!!(_b&&_b.textContent.indexOf(_ph)>=0);
-    if(_isDev)_b.textContent='build: dev';
-    // DEV·DEMO toggle'lar faqat manbadan (shtamplanmagan) ishga tushirilganda ko'rinadi —
-    // install-cep.sh shtamplagan production panelda yashirin qoladi.
-    const _dd=document.getElementById('devDemoSec'); if(_dd)_dd.style.display=_isDev?'':'none';
+    // #143 (PX6): ZXP reliz paketi shtamp URMAYDI (paket baytlari manba bilan AYNAN teng
+    // bo'lishi shart — marketplace-preflight shu qoidani tekshiradi), shuning uchun ilgari
+    // mijozda ham "build: dev" chiqardi. Endi shtamplanmagan bo'lsa manifest versiyasini
+    // CEP'dan so'raymiz; faqat u ham yo'q bo'lsa "dev" (haqiqiy manba ishga tushirilishi).
+    if(_isDev)_b.textContent='build: '+(afExtVersion()||'dev');
+    // DEV·DEMO gate olib tashlandi — bo'limning o'zi o'chirildi (soxta demo holatlari
+    // mijoz paketiga tushmasin). Bu yerda faqat build yorlig'i qoladi.
   }catch(e){}
   initEnvFilterUi();
   initAccountUi();
@@ -11087,21 +11129,26 @@ async function bootPlugin(){
 /* V5: prototip AI JS (1:1, IIFE-scoped) */
 (function(){
 
-  var balance=606, lowDemo=false, errMode=false, emptyDemo=false, importTarget='comp', toastT;
+  // #143 (PX6): demo holati (`balance=606`, `lowDemo`, `errMode`, `emptyDemo`) o'chirildi —
+  // u mockup davridan qolgan va Sozlamalardagi "DEV · DEMO" bo'limi orqali boshqarilardi.
+  // Bo'lim mijoz paketida ham jo'natilardi (ZXP `__AF_BUILD__` shtampini urmaydi → gate
+  // "dev" deb qarordi), ya'ni obunachi "Demo: low credits" tugmasini ko'rishi mumkin edi.
+  var importTarget='comp', toastT;
   // Yagona toast — asosiy showToast'ga yo'naltiramiz (warn/err → warning/error) → AI Tools va panel bir xil ko'rinish.
   function toast(m,k){
     if(typeof showToast==='function'){ showToast(m,(k==='warn')?'warning':(k==='err')?'error':(k||'info')); return; }
     var t=document.getElementById('axToast'); if(!t)return; t.textContent=m;t.className='on'+(k?' '+k:'');clearTimeout(toastT);toastT=setTimeout(function(){t.className='';},2200);
   }
-  function soon(){toast("⏳ Coming soon · next phase",'warn');}
+  // #143 (PX6): `soon()` ("Coming soon · next phase") o'chirildi — uni faqat o'lik
+  // `data-soon` shoxobchasi chaqirardi; panelda bunday atributli element yo'q.
   // Kredit — YAGONA manba: AssetFlowAccount.aiCredits (demo 606 emas). Header'lar shundan o'qiydi → bir xil qiymat.
   function aiCredReal(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits; }catch(e){} return null; }
-  function bal(){ if(lowDemo)return 5; var v=aiCredReal(); if(v!=null)return v; return 606; }
-  // Displey: real kredit (yoki '—' yuklanmaguncha) — demo 606 EMAS. bal() (raqam) eski estimate uchun qoladi.
+  // #143 (PX6): `bal()` (demo 606 / lowDemo 5 zaxirasi) o'chirildi — uni faqat mockup
+  // narx mashinasi ishlatardi. Displey: real kredit yoki yuklanmaguncha '—'.
   // #25: kesh bo'sh (— ko'rinishi) + login bor → /credits'dan bir marta olamiz (60s guard).
   var balFetchAt=0;
-  function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):(lowDemo?'5':'—');var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();
-    if(v==null&&!lowDemo&&(Date.now()-balFetchAt>60000)&&typeof studioGet==='function'&&typeof pubAuthHeaders==='function'){
+  function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):'—';var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();
+    if(v==null&&(Date.now()-balFetchAt>60000)&&typeof studioGet==='function'&&typeof pubAuthHeaders==='function'){
       try{ var h=pubAuthHeaders(); if(h&&h.Authorization){ balFetchAt=Date.now();
         studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){});
         // P3 (step 34) — AI Stock topshiriq holatlarini bir marta yuklaymiz (kartada "yuborilgan").
@@ -11792,24 +11839,10 @@ async function bootPlugin(){
 
   function setBusy(b){var el=document.getElementById('busy');if(el)el.style.display=b?'inline-flex':'none';}
 
-  // ===== MODELS =====
-  var IMG=[];
-  var VID=[];
-  var IEDIT=[];
-  var VEDIT=[];
-  var I3D=[];
-  var TTS=[];
-  var MUSIC=[];
-  var SFX_A=[];
-  var STT=[];
-  var AVATAR=[];
-  var OPS={};
-  // openrouter/router/video — Gemini (video-capable)
-  var VTT=[];
-  // openrouter/router/vision — VLM'lar
-  var ITP=[];
-  // openrouter/router — LLM'lar (prompt boyitish)
-  var PA=[];
+  // #142 (PX5) + #143 (PX6): prototip model ro'yxatlari (IMG/VID/IEDIT/VEDIT/I3D/TTS/
+  // MUSIC/SFX_A/STT/AVATAR/OPS va VTT/ITP/PA) o'chirildi — hammasi BO'SH edi va faqat
+  // mockup narx/tanlov mashinasida ishlatilardi. Modellar YAGONA manbadan keladi:
+  // server `/api/studio/gen/models` (imggen/vidgen/audgen o'z katalogini shundan oladi).
 
   function go(id){
     // Har view almashganda Rasm/Video tool poll/progress timerlari + inline pleyer ovozini tozalaymiz (leak fix — audit).
@@ -11837,50 +11870,11 @@ async function bootPlugin(){
     if(typeof window.axwsAfterView==='function'){try{window.axwsAfterView(id);}catch(e){}} // #R1: workspace chrome (strip/viewbar/empty) yangilash
   }
 
-  // ===== price / send =====
-  function parseSec(s){if(!s)return 0;if(s==='auto')return 5;var n=parseInt(s);return isNaN(n)?0:n;}
-  function estimate(o,st){
-    var name=(o.models&&o.models[o.cur]&&o.models[o.cur].n||'').toLowerCase();
-    var base=7;
-    if(/turbo|fast|z-image|trellis|lucy|moondream|whisper|chatterbox|flash|editto|rife|seedvr|rembg|bria/.test(name))base=3;
-    else if(/pro|premium|gpt image|veo|sora|rodin|kontext max|hunyuan|claude|\bmax\b|recraft|hailuo|kling o|elevenlabs|omnihuman/.test(name))base=16;
-    if(o.kind==='video'){var sec=0;(o.main||[]).forEach(function(c){if(/Davomiy/.test(c.l))sec=parseSec(st[c.l]);});if(!sec)sec=5;return Math.max(2,Math.round(base*sec/3));}
-    if(o.runType==='3d')return base*2;
-    var n=1;(o.main||[]).forEach(function(c){if(c.l==='Soni')n=parseInt(st[c.l]||'1')||1;});return base*n;
-  }
-
-  // ===== bottom-sheet select (+ search) =====
-  function openSelect(title,opts,cur,onpick){
-    if(!opts||!opts.length){openSheet('<div class="sh"><b>'+title+'</b><span class="cl" data-close>✕</span></div><div class="axhint">No models added yet</div>');return;}
-    var searchable=opts.length>6;
-    openSheet('<div class="sh"><b>'+title+'</b><span class="cl" data-close>✕</span></div>'+(searchable?'<input class="srch" id="selSrch" placeholder="Search…">':'')+'<div id="selBody"></div>');
-    function draw(q){var body=document.getElementById('selBody');body.innerHTML='';opts.forEach(function(o,i){var label=(typeof o==='string')?o:o.n;var sub=(o&&o.s)?'<small>'+o.s+'</small>':'';if(q&&label.toLowerCase().indexOf(q.toLowerCase())<0)return;var r=document.createElement('div');r.className='selrow'+(i===cur?' on':'');r.innerHTML='<div>'+label+sub+'</div>'+(i===cur?'<span class="gd"></span>':'');r.onclick=function(){onpick(i);closeSheet();};body.appendChild(r);});}
-    draw('');if(searchable)document.getElementById('selSrch').oninput=function(){draw(this.value);};
-  }
-  // ===== chip bar =====
-  function buildBar(barEl,o){
-    if(!barEl)return;barEl.innerHTML='';var st={};barEl._st=st;
-    var noModel=!(o.models&&o.models.length);
-    if(o.models){var mr=document.createElement('div');mr.className='cbar-model';var mlab=document.createElement('span');mlab.className='mlab';mlab.textContent='Model';var mc=document.createElement('span');mc.className='cchip mbtn';var setM=function(){var mm=o.models[o.cur];if(!mm){mc.innerHTML='<span class="mleft"><span class="cv" style="color:var(--mut2)">No models added yet</span></span>';return;}mc.innerHTML='<span class="mleft">'+(mm.m||'🎲')+' <span class="cv">'+mm.n+'</span></span><span class="mchev">▾</span>';};setM();mc.onclick=function(){openSelect('Select model',o.models,o.cur,function(i){o.cur=i;setM();if(o.onpick)o.onpick(i);});};mr.appendChild(mlab);mr.appendChild(mc);barEl.appendChild(mr);}
-    var wrap=document.createElement('div');wrap.className='scrollwrap';
-    var row=document.createElement('div');row.className='cbar-row';wrap.appendChild(row);
-    // Reference faqat tepadagi strip orqali qo'shiladi (chip-bar "+" olib tashlandi).
-    (o.main||[]).forEach(function(c){
-      if(c.t==='seg'){st[c.l]=c.o[c.sel||0];(function(){var cur=c.sel||0;var ch=document.createElement('span');ch.className='cchip';var setV=function(){ch.innerHTML='<span class="cv">'+c.o[cur]+'</span> ▾';};setV();ch.onclick=function(){openSelect('Select '+c.l,c.o,cur,function(i){cur=i;st[c.l]=c.o[i];setV();refresh();});};row.appendChild(ch);})();}
-      else if(c.t==='toggle'){(function(){var on=!!c.on;var ch=document.createElement('span');var setT=function(){ch.className='cchip tg'+(on?' on':'');ch.textContent=c.l+' '+(on?'✓':'✗');};setT();ch.onclick=function(){on=!on;setT();};row.appendChild(ch);})();}
-    });
-    var advC=(o.adv||[]).concat((o.main||[]).filter(function(c){return c.t==='slider'||c.t==='text';}));
-    if(advC.length){var ac=document.createElement('span');ac.className='cchip';ac.textContent='⚙';ac.onclick=function(){openSheet('<div class="sh"><b>Advanced settings</b><span class="cl" data-close>✕</span></div><div class="mctrls" id="advBody"></div>');renderCtrls(document.getElementById('advBody'),advC);};row.appendChild(ac);}
-    barEl.appendChild(wrap);
-    var foot=document.createElement('div');foot.className='cbar-foot';
-    var pr=document.createElement('span');pr.className='price';foot.appendChild(pr);
-    var buy=document.createElement('span');buy.className='buybtn';buy.textContent='Get credits';buy.style.display='none';buy.onclick=function(){go('settings');};foot.appendChild(buy);
-    var sb=document.createElement('span');sb.className='sendbtn';sb.textContent=(o.sendLabel||'Generate')+' ↑';foot.appendChild(sb);
-    function refresh(){if(noModel){pr.textContent='No model added';pr.className='price';pr.title='';buy.style.display='none';sb.classList.add('off');return;}var p=estimate(o,st);var ok=p<=bal();pr.textContent='~'+p+' kr · ~$'+(p*0.01).toFixed(2);pr.title='Balance: '+bal()+' kr';pr.className='price'+(ok?'':' bad');sb.classList.toggle('off',!ok);buy.style.display=ok?'none':'inline-block';}
-    sb.onclick=function(){if(noModel){toast('Add a model first','warn');return;}if(sb.classList.contains('off')){toast('Not enough credits','err');return;}run(sb,{type:o.runType,count:parseInt(st['Soni']||'1')||1});};
-    barEl.appendChild(foot);refresh();barEl._refresh=refresh;
-  }
-  function renderCtrls(wrap,ctrls){wrap.innerHTML='';ctrls.forEach(function(c){var row=document.createElement('div');row.style.marginBottom='10px';var lab=document.createElement('div');lab.style.cssText='font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;font-weight:700';lab.textContent=c.l;row.appendChild(lab);if(c.t==='seg'){var sg=document.createElement('div');sg.className='seg';c.o.forEach(function(o,i){var s=document.createElement('span');s.className='s'+(i===(c.sel||0)?' on':'');s.textContent=o;s.onclick=function(){sg.querySelectorAll('.s').forEach(function(x){x.classList.remove('on');});s.classList.add('on');};sg.appendChild(s);});row.appendChild(sg);}else if(c.t==='slider'){var r=document.createElement('input');r.type='range';r.style.width='100%';r.value=c.v||50;row.appendChild(r);}else if(c.t==='text'){var t=document.createElement('input');t.className='srch';t.style.marginBottom='0';t.placeholder=c.ph||'';row.appendChild(t);}else if(c.t==='toggle'){var sw=document.createElement('div');sw.className='sw2'+(c.on?' on':'');sw.onclick=function(){sw.classList.toggle('on');};row.appendChild(sw);}wrap.appendChild(row);});}
+  // #143 (PX6): mockup davrining SOXTA narx/model mashinasi o'chirildi —
+  // `parseSec`/`estimate` (model NOMIDAN taxminiy kredit), `openSelect` (bottom-sheet
+  // model tanlash), `buildBar` (chip-bar + "~N kr · ~$X" + Generate) va `renderCtrls`.
+  // Hech biri chaqirilmasdi (`buildBar` ichidagi `run()` esa umuman mavjud emas edi),
+  // REAL oqim esa serverdan: `/gen/models` katalogi + imzolangan `/gen/cost-quote`.
 
   // ===== reference strip =====
   function refStripHTML(label,thumbs,kind){var t=thumbs.map(function(x){return '<div class="refthumb"><div class="'+x.c+'" style="width:100%;height:100%"></div>'+(x.lab?'<span class="lab">'+x.lab+'</span>':'')+'</div>';}).join('');return '<div class="amal">'+label+'</div><div class="refstrip">'+t+'<div class="refadd" data-ref="'+kind+'">+</div></div>';}
@@ -11996,17 +11990,8 @@ async function bootPlugin(){
     if(window.afGallery){ window.afGallery.invalidate(); window.afGallery.render(w,{scope:'all'}); }
     else { w.innerHTML='<div class="empty"><b>Gallery failed to load</b></div>'; }
   }
-  function histDetail(id){
-    var h=HIST.filter(function(x){return x.id===id;})[0]; if(!h)return;
-    var kindLabel=h.t==='video'?'Video':h.t==='audio'?'Voice':'Image';
-    var prev=h.thumb?('<div class="prev i" style="height:150px;background-image:url(\''+h.thumb+'\');background-size:cover;background-position:center">'+(h.t==='video'?'<div class=pl>▶</div>':(h.t==='audio'?'<div class=pl>♪</div>':''))+'</div>')
-      :('<div class="prev '+(h.t==='video'?'v':'i')+'" style="height:150px">'+(h.t==='video'?'<div class=pl>▶</div>':'')+'<div class="cap">'+histEsc(h.title)+'</div></div>');
-    openSheet('<div class="sh"><b>'+kindLabel+'</b><span class="cl" data-close>✕</span></div>'+prev
-      +'<div style="font-size:12px;color:var(--mut);margin:4px 2px 10px;line-height:1.4">'+histEsc(h.title)+(h.sub?(' · '+histEsc(h.sub)):'')+'</div>'
-      +'<div class="resbtns"><div class="rb pri" id="histImp" data-close>⤓ Import</div><div class="rb" id="histDl" data-close>⬇ Download</div></div>');
-    var imp=document.getElementById('histImp'); if(imp)imp.onclick=function(){ if(typeof aiImportMedia==='function')aiImportMedia(h.url,h.t,null); };
-    var dl=document.getElementById('histDl'); if(dl)dl.onclick=function(){ if(typeof window.__adobe_cep__!=='undefined'){toast('Download — use Import (AE Project panel)');} else { try{var a=document.createElement('a');a.href=h.downloadUrl||h.url;a.download=window.afGenDlName(h.prompt||h.title,h.url,h.cat||h.t);document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){toast('Download failed');} } };
-  }
+  // #143 (PX6): `histDetail()` o'chirildi — uni faqat o'lik `data-hist` shoxobchasi chaqirardi.
+  // Tarix detali endi umumiy galereya lightbox'i (afGallery) orqali ochiladi.
 
   // ===== modal / picker =====
   function openSheet(h){document.getElementById('sheet').innerHTML=h;document.getElementById('ov').classList.add('on');}
@@ -12118,25 +12103,18 @@ async function bootPlugin(){
   // ===== delegation =====
   document.addEventListener('click',function(e){
     if(e.target&&e.target.id==='ov'){closeSheet();return;} // backdrop bosilsa sheet yopiladi (stuck-overlay oldini oladi)
-    var el=e.target.closest('[data-go],[data-toast],[data-toastmsg],[data-op],[data-soon],[data-ref],[data-refadd],[data-refdel],[data-refproj],[data-hf],[data-hist],[data-close],[data-toggle],[data-describe],[data-imp],[data-img2vid],[data-seg],[data-ex]');
+    // #143 (PX6): mockup davridan qolgan o'lik data-* shoxobchalari o'chirildi —
+    // data-toast / data-toastmsg / data-op / data-soon / data-hf / data-hist / data-seg /
+    // data-toggle / data-img2vid. Hech bir DOM elementi ularni ishlatmasdi, ikkitasi esa
+    // mavjud bo'lmagan funksiya/o'zgaruvchini chaqirardi (`op()`, `vidCur`/`vidMode`).
+    var el=e.target.closest('[data-go],[data-ref],[data-refadd],[data-refdel],[data-refproj],[data-close],[data-imp]');
     if(!el)return;
     if(el.hasAttribute('data-refdel')){var rd=el.getAttribute('data-refdel').split('|');axRefRemove(rd[0],parseInt(rd[1],10));return;}
     if(el.hasAttribute('data-refadd')){axRefPicker(el.getAttribute('data-refadd'));return;}
     if(el.hasAttribute('data-refproj')){var rp=el.getAttribute('data-refproj').split('|');axRefProjPick(rp[0],parseInt(rp[1],10));return;}
-    if(el.hasAttribute('data-ex')){var ta2=el.closest('.pin').querySelector('textarea');ta2.value=el.getAttribute('data-ex');toast('Example inserted — edit it');return;}
-    if(el.hasAttribute('data-describe')){var ta=el.closest('.pin').querySelector('textarea');var k=el.getAttribute('data-describe');var mods=(k==='video')?VTT:(k==='image')?ITP:PA;var title=(k==='video')?'Video description model':(k==='image')?'Image description model':'Prompt assistant';openSelect(title,mods,0,function(i){var prev=ta.value.trim();ta.setAttribute('placeholder','✨ '+mods[i].n+' working…');var oldv=ta.value;ta.value='';setTimeout(function(){var add=(k==='video')?"A black sports car in a night city, headlights on, lights in the background, camera pans right.":(k==='image')?"An armored warrior under a lightning sky, colorful energy, dramatic lighting.":(k==='genv')?"Cinematic night city, neon street, 35mm, shallow focus, dramatic lighting.":"Detailed cinematic image, rich color, dramatic lighting, 4K.";ta.value=prev?(prev+" — "+add):add;axGrow(ta);toast('✨ '+mods[i].n+' — ready');},900);});return;}
-    if(el.hasAttribute('data-img2vid')){vidCur=0;vidMode='i2v';go('genvideo');toast('Image → Video (start frame)');return;}
     if(el.hasAttribute('data-imp')){importTarget=el.getAttribute('data-imp');document.getElementById('impComp').classList.toggle('tg',importTarget==='comp');document.getElementById('impComp').classList.toggle('on',importTarget==='comp');document.getElementById('impBin').classList.toggle('on',importTarget==='bin');toast('Default import: '+(importTarget==='comp'?'Comp':'Bin'));return;}
     if(el.hasAttribute('data-go'))go(el.getAttribute('data-go'));
-    else if(el.hasAttribute('data-toastmsg'))toast(el.getAttribute('data-toastmsg'));
-    else if(el.hasAttribute('data-toast'))toast(el.getAttribute('data-toast'));
-    else if(el.hasAttribute('data-op'))op(el.getAttribute('data-op'));
-    else if(el.hasAttribute('data-soon'))soon();
     else if(el.hasAttribute('data-ref'))refPicker(el.getAttribute('data-ref'));
-    else if(el.hasAttribute('data-hf'))renderHistory(el.getAttribute('data-hf'));
-    else if(el.hasAttribute('data-hist'))histDetail(el.getAttribute('data-hist'));
-    else if(el.hasAttribute('data-seg')){el.parentElement.querySelectorAll('.s').forEach(function(s){s.classList.remove('on');});el.classList.add('on');}
-    else if(el.hasAttribute('data-toggle')){el.classList.toggle('on');if(el.id==='errToggle')errMode=el.classList.contains('on');if(el.id==='lowToggle'){lowDemo=el.classList.contains('on');syncBal();}if(el.id==='emptyToggle')emptyDemo=el.classList.contains('on');}
     if(el.hasAttribute('data-close'))closeSheet();
   });
 
@@ -12678,7 +12656,7 @@ window.afGallery=(function(){
     var chip=$('igCredit'); if(chip)chip.classList.toggle('low',low);
     return low;
   }
-  function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); }
+  function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); restoreActiveJobs(); }
   // SC_29: sessiya almashganda feed TOZALANADI — boshqa sessiyaning kartalari qolib ketmasin;
   // faol joblarning pit'i uziladi (natija endi eski sessiya feed'iga tushmaydi, poll fonda davom etadi).
   function igResetFeed(){
@@ -13327,6 +13305,7 @@ window.afGallery=(function(){
   // Jobni massivdan olib tashlaydi, pending kartani ham tozalaydi, UI yangilaydi.
   function removeJob(j){
     var idx=activeJobs.indexOf(j); if(idx>=0)activeJobs.splice(idx,1);
+    if(j.jobId&&window.afJobStore)window.afJobStore.remove(j.jobId); // #31: reyestrdan ham chiqadi
     if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
     if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
     if(j.pit){ var pi=st.recent.indexOf(j.pit); if(pi>=0)st.recent.splice(pi,1); j.pit=null; }
@@ -13334,10 +13313,22 @@ window.afGallery=(function(){
   }
 
   // Foydalanuvchi "Bekor qilish" bosdi.
+  /** #100 (PX2) — HAQIQIY bekor qilish. Ilgari bu faqat kartani yashirar edi: job serverda
+   *  davom etardi, kredit qaytmasdi. Endi serverga `POST /gen/:jobId/cancel` yuboriladi:
+   *  navbatdagi (provayderga ketmagan) job bekor qilinadi + TO'LIQ refund; provayder allaqachon
+   *  boshlagan bo'lsa server 409 `GENERATION_DISPATCHED` beradi — u holda faqat kutishni
+   *  to'xtatamiz va buni ochiq aytamiz (natija History'da chiqadi, kredit yechilgan). */
   function cancelJob(j){
     j.cancelled=true; removeJob(j);
-    if(j.submitted){ toast('Continuing in the background — result will appear in History','info'); }
-    else { toast('Canceled — no credits charged','info'); }
+    if(!j.submitted||!j.jobId){ toast('Canceled — no credits charged','info'); return; }
+    studioPost('/api/studio/gen/'+j.jobId+'/cancel',{}).then(function(r){
+      if(r&&typeof r.creditsLeft==='number')setCreditChip(r.creditsLeft); else setCreditChip(credits());
+      toast('Cancelled'+(r&&r.refunded?(' — ✦'+r.refunded+' refunded'):' — no credits charged'),'success');
+    }).catch(function(err){
+      if(err&&err.code==='GENERATION_DISPATCHED')toast('Already started at the provider — stopped waiting; it will appear in History','warning');
+      else if(err&&err.code==='GENERATION_FINISHED')toast('It already finished — check History🕘','info');
+      else toast('Continuing in the background — result will appear in History','info');
+    });
   }
 
   // View'дан chiqishда barcha faol joblarni to'xtatamiz (timer/network leak oldini olish).
@@ -13397,6 +13388,8 @@ window.afGallery=(function(){
       if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
       if(!res||!res.jobId)throw new Error('Job was not created');
       j.jobId=res.jobId; j.submitted=true;
+      // #31 (PX1): panel yopilsa ham job diskda qoladi → keyingi ochilishда tiklanadi
+      if(window.afJobStore)window.afJobStore.add('imggen',{jobId:j.jobId,prompt:j.prompt,cat:'image',cost:j.jcost,sid:j.sid,modelId:j.modelId,params:j.params});
       if(_gb)_gb.classList.remove('busy');
       startJobProg(j); pollJob(j,0);
     }).catch(function(err){
@@ -13404,6 +13397,36 @@ window.afGallery=(function(){
       if(j.cancelled||(err&&err.message==='CANCELLED')){ removeJob(j); return; }
       removeJob(j); toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Generation error','error');
     });
+  }
+  /** #31 (PX1) — panel qayta ochilganda UCHAYOTGAN gen'larni tiklaydi.
+   *  Holat manbai — server (`/gen/history?status=active`); prompt/narx/model esa diskdagi
+   *  reyestrdan (afJobStore) to'ldiriladi. Karta FAQAT joriy sessiya job'lari uchun
+   *  ko'rsatiladi (SC_29), lekin poll hamma tiklangan job uchun ishlaydi — kredit/xabar
+   *  oqimi tugallanishi shart. */
+  var restoreTried=false;
+  function restoreActiveJobs(){
+    if(restoreTried)return; restoreTried=true;
+    var saved={}; try{ (window.afJobStore?window.afJobStore.list('imggen'):[]).forEach(function(r){ saved[r.jobId]=r; }); }catch(_){}
+    studioGet('/api/studio/gen/history?status=active&limit=10&mode=image').then(function(d){
+      var items=(d&&d.items)||[]; var live={},added=0;
+      items.forEach(function(gn){
+        if(!gn||!gn.id)return; live[gn.id]=1;
+        if(activeJobs.some(function(x){ return x.jobId===gn.id; }))return; // allaqachon kuzatilyapti
+        var rec=saved[gn.id]||{};
+        var j={seq:++jobSeq,jobId:gn.id,prompt:(gn.prompt||rec.prompt||''),label:meta.label,
+               jcost:(typeof gn.cost==='number'?gn.cost:(rec.cost||0)),cancelled:false,submitted:true,
+               pollTimer:null,progTimer:null,t0:Date.now(),sid:gn.sessionId||rec.sid||null,
+               params:gn.params||rec.params||null,modelId:gn.modelId||rec.modelId||null};
+        activeJobs.push(j); added++;
+        if(!j.sid||j.sid===st.sessionId){ j.pit={seq:j.seq,pending:true,prompt:j.prompt,cat:'image',progress:2,job:j}; st.recent.unshift(j.pit); }
+        startJobProg(j);
+        var ct=Date.parse(gn.createdAt||''); if(ct)j.t0=ct; // progress shkalasi HAQIQIY o'tgan vaqtdan
+        pollJob(j,0);
+      });
+      // serverda endi faol bo'lmagan yozuvlar diskda qolib ketmasin
+      Object.keys(saved).forEach(function(id){ if(!live[id]&&window.afJobStore)window.afJobStore.remove(id); });
+      if(added){ renderRecentGrid(); refreshGen(); }
+    }).catch(function(){ restoreTried=false; }); // tarmoq xatosi — keyingi ochilishda qayta uriniladi
   }
   function pollJob(j,tries){
     if(j.cancelled)return;
@@ -13436,6 +13459,7 @@ window.afGallery=(function(){
             j.pit=null; // endi natija — removeJob o'chirmasin
           }
           var idx=activeJobs.indexOf(j); if(idx>=0)activeJobs.splice(idx,1);
+          if(j.jobId&&window.afJobStore)window.afJobStore.remove(j.jobId); // #31: tugadi — reyestrdan chiqadi
           if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
           if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
           renderRecentGrid(); refreshGen(); setCreditChip(credits());
@@ -14555,6 +14579,9 @@ window.afGallery=(function(){
     var bsec=$('vgBitSec'); if(bsec)bsec.style.display=(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)?'':'none';
     var rh=$('vgResHint'); if(rh)rh.textContent=vm.resOpts.map(function(k){ return k+' = ✦'+(vm.perSec[k]||vm.perSec[vm.resOpts[0]]||0)+'/s'; }).join(' · ');
     var dh=$('vgDurHint'); if(dh)dh.textContent='Auto ≈ '+vm.autoSec+' seconds';
+    // #141 (PX4) — kutish vaqti MODEL bo'yicha (server `etaSec`: oxirgi 7 kun medianasi;
+    // o'lchov yig'ilmagan modelda feature zaxirasi). Eski "≈ 1–2 min" hamma model uchun bir xil edi.
+    var eh=$('vgEtaHint'); if(eh){ var lab=(typeof window.afEtaLabel==='function'&&vm.model)?window.afEtaLabel(vm.model.etaSec):''; eh.textContent=(lab?lab+' · ':'')+'credits refunded on error'; }
     // FIX3: referens hudud TO'LIQ model imkoniyatidan: frames=Kadrlar ↔ media-refs=ko'p-modal ↔ none=hech biri
     var isMedia=vm.refKind==='media-refs';
     var isNone=vm.refKind==='none';
@@ -15396,9 +15423,49 @@ window.afGallery=(function(){
 
   // YUQORI progress endi ishlatilmaydi — gen holati pastdagi So'nggi grid kartasida (0-100%).
   function renderVgJobs(){ var el=$('vgProg'); if(el){ el.classList.remove('on'); el.innerHTML=''; } }
-  function removeVgJob(j){ var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1); if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;} if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;} if(j.pit){var pi=vgRcState.items.indexOf(j.pit); if(pi>=0)vgRcState.items.splice(pi,1); j.pit=null;} renderVgRecent(); refreshVgBtn(); }
+  function removeVgJob(j){ var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1); if(j.jobId&&window.afJobStore)window.afJobStore.remove(j.jobId); if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;} if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;} if(j.pit){var pi=vgRcState.items.indexOf(j.pit); if(pi>=0)vgRcState.items.splice(pi,1); j.pit=null;} renderVgRecent(); refreshVgBtn(); }
   function startVgProg(j){ j.t0=Date.now(); j.progTimer=setInterval(function(){ var el=(Date.now()-j.t0)/1000; var pct=Math.min(97,Math.round(97*(1-Math.exp(-el/90)))); if(j.pit){ j.pit.progress=pct; if(window.afRecent)window.afRecent.updatePending($('vgRecent'),j.seq,pct); } },700); }
 
+  /** #100 (PX2) — video gen'ni HAQIQIY bekor qilish (imggen cancelJob bilan bir xil qoida:
+   *  navbatdagi job → refund; provayder boshlagan bo'lsa faqat kutish to'xtaydi). */
+  function cancelVgJob(j){
+    j.cancelled=true; removeVgJob(j);
+    if(!j.submitted||!j.jobId){ toast('Canceled — no credits charged','info'); return; }
+    studioPost('/api/studio/gen/'+j.jobId+'/cancel',{}).then(function(r){
+      if(r&&typeof r.creditsLeft==='number')setCreditChip(r.creditsLeft); else setCreditChip(credits());
+      toast('Cancelled'+(r&&r.refunded?(' — ✦'+r.refunded+' refunded'):' — no credits charged'),'success');
+    }).catch(function(err){
+      if(err&&err.code==='GENERATION_DISPATCHED')toast('Already started at the provider — stopped waiting; it will appear in History','warning');
+      else if(err&&err.code==='GENERATION_FINISHED')toast('It already finished — check History🕘','info');
+      else toast('Continuing in the background — result will appear in History','info');
+    });
+  }
+  /** #31 (PX1) — panel qayta ochilganda UCHAYOTGAN video gen'larni tiklaydi (imggen bilan bir xil naqsh). */
+  var vgRestoreTried=false;
+  function restoreVgJobs(){
+    if(vgRestoreTried)return; vgRestoreTried=true;
+    var saved={}; try{ (window.afJobStore?window.afJobStore.list('vidgen'):[]).forEach(function(r){ saved[r.jobId]=r; }); }catch(_){}
+    studioGet('/api/studio/gen/history?status=active&limit=10&mode=video').then(function(d){
+      var items=(d&&d.items)||[]; var live={},added=0;
+      items.forEach(function(gn){
+        if(!gn||!gn.id)return; live[gn.id]=1;
+        if(activeJobs.some(function(x){ return x.jobId===gn.id; }))return;
+        var rec=saved[gn.id]||{};
+        var j={seq:++jobSeq,jobId:gn.id,prompt:(gn.prompt||rec.prompt||''),
+               jcost:(typeof gn.cost==='number'?gn.cost:(rec.cost||0)),cancelled:false,submitted:true,
+               pollTimer:null,progTimer:null,t0:Date.now(),sid:gn.sessionId||rec.sid||null,
+               params:gn.params||rec.params||null,modelId:gn.modelId||rec.modelId||null,
+               modelLabel:(vm.model&&vm.model.label)||'Video model'};
+        activeJobs.push(j); added++;
+        if(!j.sid||j.sid===vm.sessionId){ j.pit={seq:j.seq,pending:true,prompt:(j.prompt||'Video'),cat:'video',progress:2,job:j}; vgRcState.items.unshift(j.pit); }
+        startVgProg(j);
+        var ct=Date.parse(gn.createdAt||''); if(ct)j.t0=ct;
+        pollVgJob(j,0);
+      });
+      Object.keys(saved).forEach(function(id){ if(!live[id]&&window.afJobStore)window.afJobStore.remove(id); });
+      if(added){ renderVgRecent(); refreshVgBtn(); }
+    }).catch(function(){ vgRestoreTried=false; });
+  }
   function pollVgJob(j,tries){
     if(j.cancelled)return;
     if(tries>VG_POLL_CAP){
@@ -15431,6 +15498,7 @@ window.afGallery=(function(){
           }
           if(sameSess)showVgResult((gn&&gn.assets)||[],j); // url dedup: unshift skip, faqat player + render
           var i=activeJobs.indexOf(j); if(i>=0)activeJobs.splice(i,1);
+          if(j.jobId&&window.afJobStore)window.afJobStore.remove(j.jobId); // #31: tugadi — reyestrdan chiqadi
           if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
           if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
           renderVgRecent(); refreshVgBtn(); setCreditChip(credits());
@@ -15643,7 +15711,7 @@ window.afGallery=(function(){
       if(!uniq.length){ if(_vrs)_vrs.style.display='none'; r.innerHTML=''; updVgRcBatch(); return; }
     }
     if(_vrs)_vrs.style.display='';
-    var ctx=vgRecentCtx(); var pctx={ onCancel:function(it){ if(it.job){ it.job.cancelled=true; removeVgJob(it.job); toast(it.job.submitted?'Continuing in the background — result will appear in History':'Canceled — no credits charged','info'); } } };
+    var ctx=vgRecentCtx(); var pctx={ onCancel:function(it){ if(it.job)cancelVgJob(it.job); } }; // #100 (PX2): haqiqiy bekor qilish
     pend.forEach(function(it){ r.appendChild(window.afRecent.pendingCard(it,pctx)); }); // gen ishlamoqda
     uniq.slice(0,12).forEach(function(it){ r.appendChild(window.afRecent.card(it,ctx)); }); // UMUMIY natija karta
     updVgRcBatch();
@@ -15819,7 +15887,10 @@ window.afGallery=(function(){
       if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
       if(!res||!res.jobId)throw new Error('Job was not created');
       if(_vgb)_vgb.classList.remove('busy');
-      j.jobId=res.jobId; j.submitted=true; startVgProg(j); pollVgJob(j,0);
+      j.jobId=res.jobId; j.submitted=true;
+      // #31 (PX1): panel yopilsa ham job diskda qoladi → keyingi ochilishда tiklanadi
+      if(window.afJobStore)window.afJobStore.add('vidgen',{jobId:j.jobId,prompt:j.prompt,cat:'video',cost:j.jcost,sid:j.sid,modelId:j.modelId,params:j.params});
+      startVgProg(j); pollVgJob(j,0);
     }).catch(function(err){
       if(_vgb)_vgb.classList.remove('busy');
       if(j.cancelled||(err&&err.message==='CANCELLED')){ removeVgJob(j); return; }
@@ -15879,7 +15950,7 @@ window.afGallery=(function(){
     var vis=(typeof vgRcState.sessTotal==='number'&&vgRcState.sessTotal>=visLoaded+vgRcState.audCount)?(vgRcState.sessTotal-vgRcState.audCount):visLoaded;
     return {vis:vis+pend,aud:vgRcState.audCount||0};
   };
-  window.axVGRefresh=function(){ setCreditChip(credits()); if(!vm.loaded)ensureVgMeta().catch(function(){}); loadVgRecent(); }; // SC_29: view ochilganda sessiya feed'i ham yuklanadi
+  window.axVGRefresh=function(){ setCreditChip(credits()); if(!vm.loaded)ensureVgMeta().catch(function(){}); loadVgRecent(); restoreVgJobs(); }; // SC_29: view ochilganda sessiya feed'i ham yuklanadi (+#31 faol joblar tiklanadi)
 
   ensureVgMeta().catch(function(){});
   renderFrameBoxes(); refreshVgBtn();
@@ -16165,7 +16236,21 @@ window.afGallery=(function(){
   window.__axToolSess.audgen=function(){ return agSessIds(); }; // massiv — notify ichida indexOf bilan tekshiriladi
   window.__axwsCounts=window.__axwsCounts||{};
   window.__axwsCounts.audgen=function(){ return {vis:ag.visCount||0,aud:ag.recent.length}; };
-  window.axAGRefresh=function(){ if(!ag.loaded)ensureAgMeta().catch(function(){}); else applyAg(); loadAgRecent(); };
+  /** #31 (PX1) — panel yopilib qayta ochilganda tugallanmagan AUDIO gen'lar poll'i tiklanadi.
+   *  Audio tool'da "ishlamoqda" kartasi yo'q (natija So'nggi feed'ga tushadi) — shu bois
+   *  bu yerda faqat poll qayta ulanadi: tugagach kredit sinxronlanadi va xabar keladi. */
+  var agRestoreTried=false;
+  function restoreAgJobs(){
+    if(agRestoreTried)return; agRestoreTried=true;
+    studioGet('/api/studio/gen/history?status=active&limit=10').then(function(d){
+      ((d&&d.items)||[]).forEach(function(gn){
+        if(!gn||!gn.id||['voice','sfx','music'].indexOf(gn.mode)<0)return;
+        if(ag.pollTimers[gn.id])return; // allaqachon kuzatilyapti
+        pollAg(gn.id,gn.prompt||'',{sid:gn.sessionId||null,mode:gn.mode||''},0);
+      });
+    }).catch(function(){ agRestoreTried=false; }); // tarmoq xatosi — keyingi ochilishda qayta uriniladi
+  }
+  window.axAGRefresh=function(){ if(!ag.loaded)ensureAgMeta().catch(function(){}); else applyAg(); loadAgRecent(); restoreAgJobs(); };
   // P25 — logout/boshqa hisob login: eski foydalanuvchining audio-gen tarixi grid'da qolib ketmasin
   window.axAGClearRecent=function(){ ag.recent=[]; ag.recentLoaded=false; renderAgRecent(); };
 

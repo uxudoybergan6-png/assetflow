@@ -203,6 +203,53 @@ sed -i '' \
 pkgutil --flatten "$WORK/component-expanded" "$WORK/frameflow-component.pkg" >/dev/null
 rm -rf "$WORK/component-expanded" "$WORK/frameflow-component.pkg.raw"
 
+# ── #147 (PX10): o'chirgich komponenti ──────────────────────────────────────
+# Windows MSI da o'chirish yo'lini OS ning o'zi beradi; `.pkg` da bunday mexanizm YO'Q edi —
+# mijoz panelni olib tashlash uchun yashirin `~/Library/…/CEP/extensions/…` yo'lini QO'LDA
+# topishi kerak bo'lardi. Endi `Uninstall FrameFlow.command` ALOHIDA komponent sifatida
+# yuboriladi. U CEP payload'iga KIRMAYDI — imzo konverti ham, mijoz paketining bayt-tengligi
+# ham (test:marketplace-preflight) tegilmaydi. Skript GENERATSIYA (installer-payload.mjs).
+UNINSTALL_IDENTIFIER="com.frameflow.uninstaller"
+UNINSTALL_LOCATION="Library/Application Support/FrameFlow"
+UNINS_PAYLOAD="$WORK/uninstaller"
+UNINS_FILE="$UNINS_PAYLOAD/Uninstall FrameFlow.command"
+mkdir -p "$UNINS_PAYLOAD"
+node "$HELPER" uninstall-script > "$UNINS_FILE"
+if [ ! -s "$UNINS_FILE" ] || ! head -1 "$UNINS_FILE" | grep -q '^#!/bin/bash'; then
+  echo "✗ O'chirgich skripti generatsiya qilinmadi — build to'xtadi."
+  exit 1
+fi
+bash -n "$UNINS_FILE"
+chmod 755 "$UNINS_FILE"
+xattr -cr "$UNINS_PAYLOAD" 2>/dev/null || true
+
+pkgbuild \
+  --root "$UNINS_PAYLOAD" \
+  --identifier "$UNINSTALL_IDENTIFIER" \
+  --version "$VERSION" \
+  --install-location "$UNINSTALL_LOCATION" \
+  "$WORK/frameflow-uninstaller.pkg.raw" >/dev/null
+
+# Bu komponent ham FAQAT foydalanuvchi papkasiga yozadi → `auth="none"` (parol so'ralmaydi),
+# payload esa AppleDouble'siz qaytadan quriladi — asosiy komponentdagi bilan bir xil sabab.
+pkgutil --expand "$WORK/frameflow-uninstaller.pkg.raw" "$WORK/uninstaller-expanded" >/dev/null
+if ! grep -q 'auth="root"' "$WORK/uninstaller-expanded/PackageInfo"; then
+  echo "✗ O'chirgich PackageInfo kutilgan auth=\"root\" atributisiz — build to'xtadi."
+  exit 1
+fi
+( cd "$UNINS_PAYLOAD" && find . -print | cpio -o --format odc --quiet ) | gzip -c \
+  > "$WORK/uninstaller-expanded/Payload"
+mkbom "$UNINS_PAYLOAD" "$WORK/uninstaller-expanded/Bom"
+UNINS_ENTRIES="$(lsbom -s "$WORK/uninstaller-expanded/Bom" | wc -l | tr -d ' ')"
+UNINS_KB="$(du -sk "$UNINS_PAYLOAD" | awk '{print $1}')"
+sed -i '' \
+  -e 's/auth="root"/auth="none"/' \
+  -e "s/numberOfFiles=\"[0-9]*\"/numberOfFiles=\"$UNINS_ENTRIES\"/" \
+  -e "s/installKBytes=\"[0-9]*\"/installKBytes=\"$UNINS_KB\"/" \
+  "$WORK/uninstaller-expanded/PackageInfo"
+pkgutil --flatten "$WORK/uninstaller-expanded" "$WORK/frameflow-uninstaller.pkg" >/dev/null
+rm -rf "$WORK/uninstaller-expanded" "$WORK/frameflow-uninstaller.pkg.raw"
+
 # ── Distribution: FAQAT foydalanuvchi domeni (root/`/Library` YO'Q) ────────
 cat > "$WORK/distribution.xml" <<DISTRIBUTION
 <?xml version="1.0" encoding="utf-8"?>
@@ -213,13 +260,18 @@ cat > "$WORK/distribution.xml" <<DISTRIBUTION
     <choices-outline>
         <line choice="default">
             <line choice="$PKG_IDENTIFIER"/>
+            <line choice="$UNINSTALL_IDENTIFIER"/>
         </line>
     </choices-outline>
     <choice id="default"/>
     <choice id="$PKG_IDENTIFIER" visible="false">
         <pkg-ref id="$PKG_IDENTIFIER"/>
     </choice>
+    <choice id="$UNINSTALL_IDENTIFIER" visible="false">
+        <pkg-ref id="$UNINSTALL_IDENTIFIER"/>
+    </choice>
     <pkg-ref id="$PKG_IDENTIFIER" version="$VERSION" onConclusion="none">frameflow-component.pkg</pkg-ref>
+    <pkg-ref id="$UNINSTALL_IDENTIFIER" version="$VERSION" onConclusion="none">frameflow-uninstaller.pkg</pkg-ref>
 </installer-gui-script>
 DISTRIBUTION
 
@@ -240,6 +292,7 @@ if [ "$DO_UNSIGNED" = "1" ]; then
   node "$HELPER" record mac pkg "$OUT" unsigned >/dev/null
   echo "✓ Imzolanmagan QA installer: $OUT"
   echo "  SHA-256: $SHA"
+  echo "  O'chirgich: ~/$UNINSTALL_LOCATION/Uninstall FrameFlow.command"
   echo "  ⚠ FAQAT lokal QA uchun — imzo/notarizatsiya yo'q, mijozga tarqatilmaydi."
   echo "  ⚠ Payload'da Adobe imzo konverti YO'Q: AE bu panelni FAQAT operator o'sha mashinada"
   echo "    CEP dasturchi rejimini (PlayerDebugMode) O'ZI QO'LDA yoqgan bo'lsa yuklaydi."

@@ -28,6 +28,8 @@ const { prisma } = await import("@creative-tools/database");
 const { syncTemplateAssetKeys } = await import("../apps/api/dist/lib/asset-state.js");
 const { isS3Configured, listTemplateS3Keys, s3KeysForAsset, s3UploadKeyForFile, deleteS3Objects } =
   await import("../apps/api/dist/lib/s3.js");
+// #96 (PL-d): hosila zip bilan uning sha256 yon-obyekti DOIM birga o'chiriladi.
+const { packDownloadCacheKeys } = await import("../apps/api/dist/lib/serve-asset.js");
 
 const DRY_RUN = process.env.DRY_RUN !== "0";
 const LIMIT = Math.max(1, Number(process.env.LIMIT) || 5000);
@@ -82,7 +84,7 @@ await Promise.all(
       if (DRY_RUN) continue;
       await syncTemplateAssetKeys(t.id, { ensure: [expected], prune: { pack: expected } });
       // Eski `.aep→.zip` yuklab olish keshi ham eski mazmunga ishora qiladi.
-      await deleteS3Objects([`templates/${t.id}/pack.dl.zip`]).catch(() => {});
+      await deleteS3Objects(packDownloadCacheKeys(t.id)).catch(() => {});
       cleaned++;
     }
   })

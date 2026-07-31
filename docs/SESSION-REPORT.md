@@ -1,26 +1,25 @@
-# Sessiya hisoboti — 2026-07-30 (BATCH 6 — OMMAVIY WEB)
+# Sessiya hisoboti — 2026-07-31 (BATCH 9 — AE PLAGIN: T9.2 + T9.3)
 
-**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`, 7-bosqich (BATCH 0–5, 7, 8 + T9.1 oldingi commitlarda)
+**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`, 7-bosqich. T9.1 (#2) allaqachon `5023f2a` da.
 
-- **Bajarildi 11/13.** #21 CF Pages build `_*` fayl/papkani chiqarib tashlaydi (17 ichki mockup + ops sahifasi
-  ommaviy edi; `_headers`/`_redirects` allowlist'da) · #23 checkout xatosi `payErrMsg()` orqali tarjima qilinadi
-  (xom `NETWORK`/HTTP kodlari yo'q) · #75 shrift yo'llari root-absolute → 2+ segmentli SPA route'da 404 yo'q.
-- **#76** `POST /api/auth/logout` (`tokenVersion++`) — chiqishdan keyin nusxa ko'chirilgan JWT o'lik. AE `PluginToken`
-  ataylab TEGILMAYDI (brauzerdan chiqish AE sessiyasini o'ldirmasin).
-- **#79 (a11y)** yagona `:focus-visible` halqa (platforma + `app.css` + `admin.css`), 122 semantik bo'lmagan
-  bosiladigan element `role="button" tabindex="0"`, Enter/Space delegatsiyasi, 12 input `aria-label`, 6 ikonkali
-  tugmaga nom. Brauzerda tekshirildi: Tab → 2px halqa, Enter → click, konsol toza.
-- **#80** tema kaliti YAGONA: `ff-theme` ∈ {noir,neon,cold,light}; eski `af-theme` bir marta ko'chiriladi;
-  `AssetFlowTheme.hasPreference()` (admin "dark-first" gate ilgari o'lik kod edi).
-- **#81** bo'sh katalog 3 holatga bo'lindi (qidiruv / filtr / chindan bo'sh) — "Clear filters" endi hech qachon
-  no-op emas; filtr yo'q bo'lsa "Refresh", qidiruv+filtr birga bo'lsa ikkinchi tugma.
-- **#82** Free = 1 loyiha, server majburlaydi (`projects.ts`, 403 `PROJECT_LIMIT`) · **#129** `_payBusy` 8 s timeout +
-  qayta urinish · **#130** `<html lang="en">` · **#132** Studio tarifi 6 bullet · **#133** "Jump back in" faqat tarix bo'lsa.
-- **Bajarilmadi (egasi):** #22 obunani bekor qilish URL'i · #131 ommaviy webni o'zbekchaga o'girish (alohida reja).
-- `npm run build -w apps/api` ✓ · `verify-public-copy` 67/67 ✓ · `studio:sync` ✓ · CF Pages build ✓ (`dist/`da `_*` yo'q).
+- **Bajarildi 20/21** (PL-b…PL-j + PX1…PX11). Qolgani: `#102/PX12` self-updater — **egasi qarori**.
+- **Kesh/loyiha:** #29 P9 ekstraktsiya papkalari endi haqiqatan o'chadi · #30 o'chirish import qilingan element
+  ID'si bo'yicha (nomi mos begona element tegilmaydi) · #140 lokal meta-store yozuvi qulf bilan.
+- **Yaxlitlik/xavfsizlik:** #96 server SHA-256 uzatiladi va tekshiriladi · #97 `evalScript` timeout + bekor qilish
+  (overlay abadiy muzlamaydi) · #98 log yuborishga `Authorization` (jimgina 401 tugadi) · #99 shrift o'rnatish
+  ROZILIK so'raydi · #138 token/prefs OS keychain/DPAPI (`assetflow-secret-store.js`) · #139 `settingsFilePath()`
+  platformaga mos.
+- **Gen oqimi:** #31 server `history?status=active` (`queued`+`running`) + panel ochilganda tiklash · #100
+  `POST /gen/:jobId/cancel` + refund + UI tugmasi · #101 "Auto-load" sozlamasi endi haqiqatan ishlaydi · #141
+  "≈1–2 min" o'rniga model bo'yicha O'LCHANGAN baho (`gen-eta.ts`, 7 kunlik mediana) · #142 o'lik kod olindi.
+- **Paket/UX:** #143 AE demo-mockup relizdan chiqdi (`_dev-ae-stage.html`) · #144 katalog kartasi = AI kartasi
+  (drag faqat haqiqiy tashlash joyi bo'lsa; Enter/Space) · #145 oflayn strip + `/livez` probe (`afNet`) · #146 CSP
+  (masofaviy skript/`<object>`/`<iframe>`/`<base>`/`<form>` bloklandi — brauzerda tasdiqlandi).
+- **Installer:** #147 `.pkg` ichida `Uninstall FrameFlow.command` (alohida komponent, `auth="none"`, ikki alohida
+  savol, ma'lumot sukut bo'yicha SAQLANADI) · #148 CSXS `<Icons>` + generatsiya qilinadigan 23×23 PNG.
+- **Testlar:** installers 262 ✓ · preflight 100 ✓ · package 59 ✓ · updater 118 ✓ · release-contract 110 ✓ ·
+  responsive + download-state ✓ · `npm run build -w apps/api` ✓. Yangi migratsiya YO'Q.
 
-⚠️ **Migratsiya kutilmoqda** (prod'ga QO'LLANMAGAN, 8 ta): `20260730160000_ls_subscription_billing`,
-`20260730180000_catalog_scale_indexes`, `20260730190000_upload_progress_shared`,
-`20260730200000_catalog_stable_order_index`, `20260730210000_user_bio`, `20260730220000_template_reject_kind`,
-`20260730230000_system_log`, `20260730240000_user_suspension`.
-⏳ **Egasi:** `backfill-asset-keys.mjs`, `cleanup-stale-pack-variants.mjs`, `cleanup-orphan-incoming.mjs` · T9.1 AE testi.
+⚠️ **AE testi kutilmoqda** — import, cancel, oflayn strip, CSP va ikonalar After Effects ichida sinalishi kerak:
+`bash plugins/after-effects-cep/scripts/install-cep.sh`.
+⚠️ **Migratsiya kutilmoqda** (oldingi batchlardan, prod'ga QO'LLANMAGAN, 8 ta — `20260730160000…20260730240000`).

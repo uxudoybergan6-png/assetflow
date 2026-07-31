@@ -48,6 +48,16 @@
             <Size><Height>720</Height><Width>380</Width></Size>
             <MinSize><Height>400</Height><Width>320</Width></MinSize>
           </Geometry>
+          <!-- #148 (PX11): ikonalarsiz panel AE "Window → Extensions" ro'yxatida bo'sh
+               to'rtburchak bilan chiqardi. Fayllar GENERATSIYA: scripts/make-panel-icons.mjs
+               (brend chaqmog'i, 23×23). Yorug'/qorong'i AE mavzusi uchun alohida rang. -->
+          <Icons>
+            <Icon Type="Normal">./icons/panel-normal.png</Icon>
+            <Icon Type="RollOver">./icons/panel-rollover.png</Icon>
+            <Icon Type="Disabled">./icons/panel-disabled.png</Icon>
+            <Icon Type="DarkNormal">./icons/panel-dark-normal.png</Icon>
+            <Icon Type="DarkRollOver">./icons/panel-dark-rollover.png</Icon>
+          </Icons>
         </UI>
       </DispatchInfo>
     </Extension>

@@ -57,16 +57,36 @@ const AssetFlowCatalog = (() => {
       .finally(() => clearTimeout(timer));
   }
 
-  /** Barqaror sozlamalar fayli yo'li (~/Library/Application Support/AssetFlow/settings.json) */
+  /**
+   * Barqaror sozlamalar fayli yo'li.
+   *
+   * #139 (PL-i): ilgari HAR platformada macOS yo'li qattiq kodlangan edi
+   * (`~/Library/Application Support/AssetFlow`) — Windows'da bu uy papkasida
+   * begona "Library" daraxti yaratardi (AppData emas), Linux'da ham noto'g'ri.
+   * Endi yo'lni `AssetFlowSecret.settingsDir()` beradi (yagona manba), va
+   * mac bo'lmagan platformada eski joydagi fayl bir marta ko'chiriladi.
+   */
   function settingsFilePath() {
     if (typeof window.__adobe_cep__ === "undefined") return "";
     try {
       const path = require("path");
-      const os = require("os");
       const fs = require("fs");
-      const dir = path.join(os.homedir(), "Library", "Application Support", "AssetFlow");
+      const dir =
+        typeof AssetFlowSecret !== "undefined" && AssetFlowSecret.settingsDir
+          ? AssetFlowSecret.settingsDir()
+          : path.join(require("os").homedir(), "Library", "Application Support", "AssetFlow");
       fs.mkdirSync(dir, { recursive: true });
-      return path.join(dir, "settings.json");
+      const p = path.join(dir, "settings.json");
+      // Migratsiya: eski (macOS-shaklidagi) fayl boshqa platformada qolgan bo'lsa
+      if (!fs.existsSync(p) && typeof AssetFlowSecret !== "undefined" && AssetFlowSecret.legacySettingsDir) {
+        try {
+          const legacy = path.join(AssetFlowSecret.legacySettingsDir(), "settings.json");
+          if (legacy !== p && fs.existsSync(legacy)) fs.copyFileSync(legacy, p);
+        } catch {
+          /* migratsiya majburiy emas */
+        }
+      }
+      return p;
     } catch {
       return "";
     }
@@ -558,6 +578,33 @@ const AssetFlowCatalog = (() => {
     return path.join(baseDir, unzipDirName(templateId, name));
   }
 
+  /**
+   * #29 (PL-b) — kesh yozuvini YAGONA joyda aniqlaymiz. P9 dan keyin ekstraksiya
+   * papkasi "Fast Light Leaks (af-zla3mz)" ko'rinishida; u `assetflow_` bilan
+   * BOSHLANMAYDI, shu sabab "Clear download cache" ning eski `assetflow_*` filtri
+   * uni hech qachon o'chirmasdi — kesh cheksiz o'sardi, UI esa "tozalandi" derdi.
+   */
+  const P9_DIR_RE = /\s\(af-[A-Za-z0-9]{1,6}\)$/;
+  function isCacheEntryName(name) {
+    const s = String(name || "");
+    return s.indexOf("assetflow_") === 0 || P9_DIR_RE.test(s);
+  }
+  /**
+   * #29 (PL-b) — nom AYNAN shu shablonning kesh yozuvimi? Papka nomi shablon
+   * NOMIdan yasalgani uchun nomga emas, `(af-<id oxirgi 6>)` suffiksiga qaraymiz:
+   * shablon keyin qayta nomlangan bo'lsa ham kesh topiladi.
+   */
+  function isTemplateCacheEntryName(name, templateId) {
+    const s = String(name || "");
+    const tid = String(templateId || "");
+    if (!s || !tid) return false;
+    if (s === `assetflow_${tid}` || s === `assetflow_${tid}_unzipped`) return true;
+    if (s.indexOf(`assetflow_${tid}.`) === 0) return true; // .zip / .aep / .mogrt
+    if (s.indexOf(`assetflow_mogrt_${tid}_`) === 0) return true; // har importda unikal
+    const suffix = ` (af-${tid.slice(-6) || "x"})`;
+    return s.length > suffix.length && s.slice(-suffix.length) === suffix;
+  }
+
   /** macOS zip axlati: __MACOSX papkasi va AppleDouble ._fayllar */
   function isJunkEntry(name) {
     return name.indexOf("._") === 0 || name === "__MACOSX" || name === ".DS_Store";
@@ -940,7 +987,8 @@ const AssetFlowCatalog = (() => {
    * Yuklab olingandan keyin yaxlitlik darvozasi: sha256 hisoblaydi; kutilgan hash
    * berilgan bo'lsa solishtiradi (mos kelmasa faylni o'chirib, aniq xato beradi —
    * buzuq/qisman pack import'ni bloklamasin); aks holda hash'ni yozib qo'yadi.
-   * TODO(FF): expected hash from catalog — hozircha faqat opts.expectedSha256.
+   * #96 (PL-d): kutilgan hash endi SERVERDAN keladi — pack endpointining
+   * `X-Pack-Sha256` header'i (yoki chaqiruvchi bergan `opts.expectedSha256`).
    */
   async function verifyDownloadedFile(fs, filePath, expectedSha256) {
     const hash = await sha256FileAsync(filePath);
@@ -1006,6 +1054,20 @@ const AssetFlowCatalog = (() => {
       const maxBytes = opts && Number(opts.maxBytes) > 0 ? Number(opts.maxBytes) : 0;
       const isHttps = (u) => /^https:\/\//i.test(String(u || ""));
       const startOrigin = urlOrigin(url);
+      // #96 (PL-d): server yuklab olinadigan AYNAN shu obyektning sha256'ini
+      // `X-Pack-Sha256` header'ida beradi. Header 302 javobida keladi (signed URL
+      // GCS/R2'ga ketadi — u yerda header yo'q), shu bois BIRINCHI javobda o'qiymiz.
+      let serverSha = "";
+      const captureSha = (res) => {
+        if (serverSha) return;
+        const v = String(res.headers["x-pack-sha256"] || "").trim();
+        if (/^[0-9a-f]{64}$/i.test(v)) {
+          serverSha = v.toLowerCase();
+          if (opts && typeof opts.onServerSha === "function") {
+            try { opts.onServerSha(serverSha); } catch (e) {}
+          }
+        }
+      };
       const holder = { req: null, ws: null, dest: destPath, cancelled: false, fail: null };
       __activeDownloads.add(holder);
       const cleanup = () => __activeDownloads.delete(holder);
@@ -1038,6 +1100,7 @@ const AssetFlowCatalog = (() => {
         // hostga ketsa header'ni tushiramiz (token leak oldini olish).
         const sameOrigin = !!hdrs && urlOrigin(u) === startOrigin && startOrigin !== "";
         const reqCb = (res) => {
+          captureSha(res);
           if (
             res.statusCode >= 300 &&
             res.statusCode < 400 &&
@@ -1175,16 +1238,18 @@ const AssetFlowCatalog = (() => {
     if (!cachedFileOk(fs, out, 0)) {
       if (typeof showToast === "function") showToast("Loading scene…");
       const onProgress = opts && opts.onProgress;
-      await downloadUrlToFile(scene.mogrtUrl, out, onProgress, downloadHeaders());
+      let sceneSha = ""; // #96 (PL-d) — server hash bersa (X-Pack-Sha256) tekshiriladi
+      await downloadUrlToFile(scene.mogrtUrl, out, onProgress, downloadHeaders(), {
+        onServerSha: (h) => { sceneSha = h; },
+      });
       if (!cachedFileOk(fs, out, 0)) {
         try {
           fs.rmSync(out, { force: true });
         } catch {}
         throw new Error("MOGRT failed to download or file is empty");
       }
-      // Yaxlitlik: sha256 record + kutilgan hash tekshiruvi (opts.expectedSha256)
-      // TODO(FF): expected hash katalog API'sidan (scene-darajali).
-      await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || "");
+      // Yaxlitlik: sha256 record + kutilgan hash tekshiruvi (server header yoki opts)
+      await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || sceneSha || "");
       _freshDownload = true;
     }
     const result = await extractMogrtFileToAep(
@@ -1265,14 +1330,19 @@ const AssetFlowCatalog = (() => {
             : "?";
         showToast(`Downloading pack (~${mb} MB)…`);
       }
+      // #96 (PL-d): server hash'i (X-Pack-Sha256) — yuklab olishdan keyin AYNAN
+      // shu qiymat bilan solishtiriladi. Ilgari `expectedSha256`ni hech kim
+      // bermasdi → yaxlitlik tekshiruvi abadiy no-op edi.
+      let serverSha = "";
+      const shaOpts = { onServerSha: (h) => { serverSha = h; } };
       try {
-        await downloadUrlToFile(url, out, onProgress, downloadHeaders());
+        await downloadUrlToFile(url, out, onProgress, downloadHeaders(), shaOpts);
       } catch (e) {
         // Limit/nashr/sessiya xatosi (403/401) — fallback bilan yashirmaymiz
         if (e && (e.status === 401 || e.status === 403)) throw e;
         if (directUrl && url === directUrl) {
           const fallback = `${apiBase()}/api/plugin/assets/${templateId}/pack`;
-          await downloadUrlToFile(fallback, out, onProgress, downloadHeaders());
+          await downloadUrlToFile(fallback, out, onProgress, downloadHeaders(), shaOpts);
         } else {
           throw e;
         }
@@ -1281,8 +1351,8 @@ const AssetFlowCatalog = (() => {
         throw new Error("Pack failed to download or file is empty");
       }
       // Yaxlitlik: sha256 hisobla + kutilgan hash bo'lsa tekshir (aks holda yozib qo'y).
-      // TODO(FF): expected hash katalog API'sidan — hozircha opts.expectedSha256.
-      await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || "");
+      // Server hash bermasa (eski API / hosila kesh hali hash'siz) — eski xulq.
+      await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || serverSha || "");
       _needRecord = true;
     }
 
@@ -1574,6 +1644,11 @@ const AssetFlowCatalog = (() => {
   // Missing shriftlar ro'yxatini ketma-ket hal qiladi. `onStatus(result, index,
   // total)` har shrift tugagach chaqiriladi (jonli UI uchun). Faqat AE (Node)
   // ichida ishlaydi; brauzer preview'da bo'sh qaytaradi.
+  //
+  // #99 (PL-g): bu funksiya OS shrift papkasiga YOZADI (Windows'da HKCU registriga
+  // ham). Foydalanuvchi ROZILIGI — chaqiruvchining mas'uliyati; panelda
+  // `confirmFontInstall()` dialogi shu vazifani bajaradi. Rozilikni so'ramasdan
+  // chaqirmang.
   async function resolveMissingFonts(fonts, onStatus) {
     const list = Array.isArray(fonts) ? fonts : [];
     const results = [];
@@ -1621,6 +1696,9 @@ const AssetFlowCatalog = (() => {
     cachedMogrtItems,
     extractMogrtItem,
     downloadDir,
+    unzipDirName,
+    isCacheEntryName,
+    isTemplateCacheEntryName,
     configuredDownloadDir,
     saveDownloadDir,
     pruneOldTempDirs,

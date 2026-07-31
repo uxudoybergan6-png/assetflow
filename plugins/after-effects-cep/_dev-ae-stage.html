@@ -1,0 +1,301 @@
+<!-- DEV-ONLY — brauzerdagi QA saxnasi (soxta After Effects oynasi).
+     #143 (PX6): ilgari bu butun mockup AssetFlow_Plugin.html ichida turardi va mijoz
+     ZXP paketiga ham tushardi (CEP'da faqat CSS bilan yashirilardi). Endi u ALOHIDA
+     faylda: package-flavors.mjs ro'yxatida yo'q → relizga hech qachon kirmaydi.
+     Panel uni FAQAT CEP tashqarisida (brauzer QA) yuklaydi. -->
+<style>
+/* AFTER EFFECTS DEMO STAGE */
+.demo-stage{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:0;
+  background:#232323;
+}
+
+.demo-badge{
+  position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:50;
+  display:flex;align-items:center;gap:10px;
+  padding:6px 14px;border-radius:4px;
+  background:#2d2d2d;
+  border:1px solid #3a3a3a;
+  font-size:11px;color:#999;
+}
+.demo-badge strong{color:#ddd;font-weight:600}
+.demo-badge a{color:#9ecbff;text-decoration:none;margin-left:6px}
+.demo-badge a:hover{text-decoration:underline}
+.demo-badge .dot{width:6px;height:6px;border-radius:50%;background:#46a046}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* AE App chrome */
+.ae-app{
+  grid-column:1;
+  display:flex;flex-direction:column;
+  min-width:0;min-height:100vh;
+  border-right:1px solid #111;
+}
+
+.ae-menubar{
+  height:28px;background:#2d2d2d;border-bottom:1px solid #111;
+  display:flex;align-items:center;padding:0 12px;gap:16px;
+  font-size:11px;color:#999;flex-shrink:0;
+}
+.ae-menubar span{cursor:default}
+.ae-menubar span:hover{color:#ddd}
+.ae-title{flex:1;text-align:center;color:#666;font-size:var(--fs-xs)}
+
+.ae-toolbar{
+  height:36px;background:#2a2a2a;border-bottom:1px solid #111;
+  display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0;
+}
+.ae-tool{
+  width:28px;height:24px;border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:#888;cursor:default;
+  border:1px solid transparent;
+}
+.ae-tool.active{background:#3a3a3a;border-color:#555;color:#ddd}
+.ae-tool-sep{width:1px;height:18px;background:#444;margin:0 4px}
+
+.ae-main{
+  flex:1;display:grid;
+  grid-template-columns:240px 1fr;
+  grid-template-rows:1fr 220px;
+  min-height:0;
+}
+
+/* Project panel */
+.ae-panel{
+  background:#232323;border:1px solid #111;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.ae-panel-head{
+  height:26px;background:#2d2d2d;border-bottom:1px solid #111;
+  display:flex;align-items:center;padding:0 10px;
+  font-size:11px;color:#999;flex-shrink:0;
+}
+.ae-panel-head .tab{color:#ddd;font-weight:500}
+.project-panel{grid-row:1/3;grid-column:1;border-right:none}
+
+.project-search{
+  margin:8px;padding:5px 8px;background:#1a1a1a;
+  border:1px solid #3a3a3a;border-radius:3px;
+  font-size:var(--fs-xs);color:#666;
+}
+.project-tree{padding:4px 0;overflow-y:auto;flex:1;font-size:11px}
+.proj-folder{padding:4px 10px;color:#999;display:flex;align-items:center;gap:6px;cursor:default}
+.proj-folder.open{color:#bbb}
+.proj-item{
+  padding:3px 10px 3px 22px;display:flex;align-items:center;gap:7px;
+  color:#aaa;cursor:default;transition:background .15s;
+}
+.proj-item:hover,.proj-item.added{background:#333;color:#ddd}
+.proj-item.added .proj-ico{color:#6eb5ff}
+.proj-ico{font-size:var(--fs-xs);width:14px;text-align:center}
+.proj-ico.comp{color:#9d72ff}
+.proj-ico.folder{color:#c9a227}
+
+/* Composition viewer */
+.comp-panel{grid-row:1;grid-column:2;display:flex;flex-direction:column}
+.comp-tabs{
+  height:26px;background:#2d2d2d;border-bottom:1px solid #111;
+  display:flex;align-items:flex-end;padding:0 8px;gap:2px;
+}
+.comp-tab{
+  padding:5px 14px 4px;font-size:var(--fs-xs);color:#888;
+  background:#232323;border:1px solid #111;border-bottom:none;
+  border-radius:3px 3px 0 0;cursor:default;
+}
+.comp-tab.active{background:#1a1a1a;color:#ddd;border-color:#333}
+
+.comp-viewer{
+  flex:1;background:#1a1a1a;position:relative;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background-image:
+    linear-gradient(45deg,#222 25%,transparent 25%),
+    linear-gradient(-45deg,#222 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#222 75%),
+    linear-gradient(-45deg,transparent 75%,#222 75%);
+  background-size:16px 16px;
+  background-position:0 0,0 8px,8px -8px,-8px 0;
+  background-color:#1a1a1a;
+}
+.comp-viewer video,.comp-viewer img{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(88%,100%);max-height:88%;
+  aspect-ratio:16/9;height:auto;object-fit:cover;z-index:2;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08);
+}
+.comp-viewer::after{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(88%,100%);aspect-ratio:16/9;max-height:88%;
+  border:1px solid rgba(110,181,255,.18);pointer-events:none;z-index:3;
+}
+.comp-viewer video{display:none}
+.comp-viewer.has-video video{display:block}
+.comp-viewer.has-video .preview-label{display:none}
+.comp-viewer.has-poster .preview-label{display:none}
+.comp-viewer.has-poster .monitor-poster{display:block}
+.monitor-poster{display:none}
+
+.preview-label{
+  font-size:11px;color:#555;text-align:center;z-index:1;
+  padding:20px;
+}
+.preview-label.active{color:#888}
+
+.comp-controls{
+  height:32px;background:#2d2d2d;border-top:1px solid #111;
+  display:flex;align-items:center;padding:0 10px;gap:12px;
+  font-size:var(--fs-xs);color:#888;
+}
+.comp-controls .time{color:#6eb5ff;font-family:monospace;font-size:11px}
+.comp-controls .zoom{margin-left:auto;color:#666}
+
+/* Timeline - AE style */
+.timeline-panel{grid-row:2;grid-column:2}
+.timeline-toolbar{
+  height:28px;background:#2d2d2d;border-bottom:1px solid #111;
+  display:flex;align-items:center;padding:0 8px;gap:6px;font-size:var(--fs-xs);color:#777;
+}
+.timeline-toolbar .active-tab{color:#ddd;background:#333;padding:2px 8px;border-radius:2px}
+
+.drop-zone{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+  transition:background .2s;
+}
+.drop-zone.dragover{background:rgba(110,181,255,.06);box-shadow:inset 0 0 0 1px #6eb5ff}
+
+.timeline-grid{
+  flex:1;display:grid;grid-template-columns:180px 1fr;overflow:hidden;
+}
+.layer-col{
+  background:#232323;border-right:1px solid #111;overflow-y:auto;
+}
+.layer-col-head{
+  height:24px;background:#2a2a2a;border-bottom:1px solid #111;
+  display:grid;grid-template-columns:24px 20px 20px 1fr;
+  align-items:center;font-size:var(--fs-xs);color:#666;padding:0 4px;
+}
+.time-col{overflow-x:auto;overflow-y:auto;position:relative}
+.time-ruler{
+  height:24px;background:#2a2a2a;border-bottom:1px solid #111;
+  position:relative;min-width:100%;
+  background-image:repeating-linear-gradient(90deg,#333 0 1px,transparent 1px 40px);
+}
+.playhead{
+  position:absolute;top:0;bottom:0;width:1px;background:#e84242;z-index:5;
+  left:120px;pointer-events:none;
+}
+.playhead::before{
+  content:'';position:absolute;top:0;left:-4px;
+  border:5px solid transparent;border-top-color:#e84242;
+}
+
+.ae-layer{
+  display:grid;grid-template-columns:24px 20px 20px 1fr;
+  align-items:center;height:28px;border-bottom:1px solid #1a1a1a;
+  font-size:var(--fs-xs);color:#aaa;
+}
+.ae-layer:hover{background:#2a2a2a}
+.ae-layer.selected{background:#333;color:#ddd}
+.layer-num{text-align:center;color:#666;font-size:var(--fs-xs)}
+.layer-sw{color:#666;font-size:var(--fs-xs);text-align:center;cursor:default}
+.layer-label{
+  display:flex;align-items:center;gap:6px;padding-right:6px;min-width:0;
+}
+.layer-color{width:3px;height:18px;border-radius:1px;flex-shrink:0}
+.layer-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.time-layer{
+  height:28px;border-bottom:1px solid #1a1a1a;position:relative;
+  min-width:600px;
+}
+.time-bar{
+  position:absolute;top:6px;height:16px;border-radius:2px;
+  border:1px solid rgba(255,255,255,.15);
+  min-width:40px;
+}
+</style>
+
+<div class="demo-badge">
+  <span class="dot"></span>
+  <span><strong>FrameFlow</strong> — After Effects plugin</span>
+</div>
+
+<div class="ae-app">
+  <div class="ae-menubar">
+    <span>File</span><span>Edit</span><span>Composition</span><span>Layer</span><span>Effect</span>
+    <span>Animation</span><span>Window</span><span>Help</span>
+    <span class="ae-title">Main Comp · 1920×1080 · 25fps</span>
+  </div>
+  <div class="ae-toolbar">
+    <div class="ae-tool active" title="Selection">↖</div>
+    <div class="ae-tool" title="Hand">✋</div>
+    <div class="ae-tool" title="Zoom">🔍</div>
+    <div class="ae-tool-sep"></div>
+    <div class="ae-tool" title="Position">▦</div>
+    <div class="ae-tool" title="Rotation">↻</div>
+    <div class="ae-tool-sep"></div>
+    <div class="ae-tool active" title="Play">▶</div>
+    <div class="ae-tool" title="RAM Preview">⏵</div>
+  </div>
+
+  <div class="ae-main">
+    <div class="ae-panel project-panel">
+      <div class="ae-panel-head"><span class="tab">Project</span></div>
+      <div class="project-search">Search Project...</div>
+      <div class="project-tree" id="binList">
+        <div class="proj-folder open">▾ <span class="proj-ico folder">📁</span> Assets</div>
+        <div class="proj-item"><span class="proj-ico comp">◆</span> Main Comp</div>
+        <div class="proj-item"><span class="proj-ico">▣</span> Background.jpg</div>
+        <div class="proj-folder open">▾ <span class="proj-ico folder">📁</span> Imported</div>
+      </div>
+    </div>
+
+    <div class="ae-panel comp-panel">
+      <div class="comp-tabs"><div class="comp-tab active">Main Comp · 1920×1080 · 16:9</div></div>
+      <div class="comp-viewer" id="monitorBody">
+        <div class="preview-label" id="previewText">Composition preview<br><span style="font-size:var(--fs-xs);color:#444">Drag asset from plugin panel</span></div>
+        <video id="monitorVideo" muted loop playsinline preload="metadata"></video>
+      </div>
+      <div class="comp-controls">
+        <span class="time" id="aeTimecode">0:00:00:00</span>
+        <span>|</span><span>1920 × 1080</span><span>|</span><span>25 fps</span>
+        <span class="zoom">100%</span>
+      </div>
+    </div>
+
+    <div class="ae-panel timeline-panel">
+      <div class="timeline-toolbar">
+        <span class="active-tab">Timeline</span><span>|</span><span>Main Comp</span>
+        <span style="margin-left:auto;color:#6eb5ff;font-size:var(--fs-xs)">Drop files here ↓</span>
+      </div>
+      <div class="drop-zone" id="dropZone">
+        <div class="timeline-grid">
+          <div class="layer-col">
+            <div class="layer-col-head"><span>#</span><span>👁</span><span>🔒</span><span>Layer Name</span></div>
+            <div id="layerNames">
+              <div class="ae-layer selected">
+                <span class="layer-num">1</span><span class="layer-sw">●</span><span class="layer-sw">○</span>
+                <div class="layer-label"><span class="layer-color" style="background:#6eb5ff"></span><span class="layer-name">Background.jpg</span></div>
+              </div>
+              <div class="ae-layer">
+                <span class="layer-num">2</span><span class="layer-sw">●</span><span class="layer-sw">○</span>
+                <div class="layer-label"><span class="layer-color" style="background:#46a046"></span><span class="layer-name">Audio — Music.wav</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="time-col">
+            <div class="time-ruler"><div class="playhead"></div></div>
+            <div id="layers">
+              <div class="time-layer"><div class="time-bar" style="left:0;width:70%;background:rgba(110,181,255,.35);border-color:#6eb5ff"></div></div>
+              <div class="time-layer"><div class="time-bar" style="left:5%;width:55%;background:rgba(70,160,70,.3);border-color:#46a046"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

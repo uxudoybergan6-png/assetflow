@@ -23,19 +23,75 @@ const AssetFlowAccount = (() => {
     return (c.apiBaseUrl || DEFAULT_API).replace(/\/$/, "");
   }
 
+  /**
+   * #138 (PL-h) — sessiya tokeni endi OS sirlar omborida (macOS Keychain /
+   * Windows DPAPI / 0600 fayl), `prefs.json` da OCHIQ matnda EMAS.
+   * `AssetFlowSecret` mavjud bo'lmasa yoki backend ishlamasa — eski xulq
+   * (prefs.json) saqlanadi, aks holda foydalanuvchi umuman kira olmay qolardi.
+   */
+  function secretStore() {
+    try {
+      if (typeof AssetFlowSecret !== "undefined" && AssetFlowSecret.available())
+        return AssetFlowSecret;
+    } catch {
+      /* */
+    }
+    return null;
+  }
+
   function token() {
+    const store = secretStore();
+    if (store) {
+      const t = (store.get() || "").trim();
+      if (t) return t;
+      // Migratsiya: eski ochiq token bo'lsa — omborga ko'chirib, prefs'dan o'chiramiz
+      const legacy = prefsToken();
+      if (legacy && store.set(legacy)) {
+        stripPrefsToken();
+        return legacy;
+      }
+      return legacy;
+    }
+    return prefsToken();
+  }
+
+  function prefsToken() {
     const c =
       typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs().client || {} : {};
     return (c.token || "").trim();
   }
 
+  /** prefs.json ichidagi ochiq tokenni o'chiradi (ombor egallagach) */
+  function stripPrefsToken() {
+    try {
+      if (typeof AssetFlowStore === "undefined") return;
+      const prefs = AssetFlowStore.loadPrefs();
+      if (!prefs.client || !prefs.client.token) return;
+      prefs.client = { ...prefs.client, token: "" };
+      AssetFlowStore.savePrefs(prefs);
+    } catch {
+      /* */
+    }
+  }
+
   function saveToken(t) {
+    const store = secretStore();
+    const stored = store ? store.set(t) : false;
     const prefs = typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs() : { client: {} };
-    prefs.client = { ...(prefs.client || {}), apiBaseUrl: apiBase(), token: t };
+    // Ombor qabul qilgan bo'lsa — diskdagi nusxa BO'SH qoladi (ochiq token yo'q)
+    prefs.client = { ...(prefs.client || {}), apiBaseUrl: apiBase(), token: stored ? "" : t };
     if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
+    // #98 (PL-f): login'gacha yig'ilgan loglar endi yuborilishi mumkin
+    try {
+      if (typeof AssetFlowLog !== "undefined" && AssetFlowLog.flush) AssetFlowLog.flush();
+    } catch {
+      /* log hech qachon login'ni buzmasin */
+    }
   }
 
   function clearToken() {
+    const store = secretStore();
+    if (store) store.clear();
     const prefs = typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs() : { client: {} };
     prefs.client = { ...(prefs.client || {}), apiBaseUrl: apiBase(), token: "" };
     if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);

@@ -90,6 +90,7 @@ import { preflightSafetyCheck } from "../lib/preflight-safety.js";
 import { validateMentionIntegrity } from "../lib/enhance-mentions.js";
 import { moderateContent, collectImageRefUrls } from "../lib/moderation.js";
 import { writeAuditLog } from "../lib/audit-log.js";
+import { measuredEtaSeconds, fallbackEtaSeconds } from "../lib/gen-eta.js";
 
 export const studioGenRouter = Router();
 
@@ -760,15 +761,25 @@ studioGenRouter.get(
   }
 );
 
-/** GET /gen/history — foydalanuvchining BARCHA tugagan gen'lari (sessiyalardan qat'i nazar). */
+/** GET /gen/history — foydalanuvchining BARCHA tugagan gen'lari (sessiyalardan qat'i nazar).
+ *
+ *  #31 (PX1) — `?status=active` UCHAYOTGAN gen'larni qaytaradi (`queued` + `running`).
+ *  Ilgari bu yerda `status: "done"` qattiq kodlangan edi → panel yopilsa (yoki qayta
+ *  yuklansa) uchayotgan job'ni TIKLASH imkonsiz edi: klient massivi yo'qolardi va
+ *  server ham ularni ko'rsatmasdi. Standart qiymat o'zgarmagan (`done`) — mavjud
+ *  "So'nggi" gridlari eski xatti-harakatni saqlaydi. */
 studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
   await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   const limit = Math.min(60, Math.max(1, Number(req.query.limit) || 30));
   // ?mode=video → faqat shu turdagi gen'lar (video tool So'nggi gridi rasm gen'larni tortmasin).
   const modeRaw = req.query.mode ? String(req.query.mode) : "";
   const mode = (GEN_MODES as readonly string[]).includes(modeRaw) ? modeRaw : "";
+  const statusFilter =
+    String(req.query.status || "") === "active"
+      ? { status: { in: ["queued", "running"] } }
+      : { status: "done" };
   const items = await prisma.generation.findMany({
-    where: { userId: req.user!.userId, status: "done", ...(mode ? { mode } : {}) },
+    where: { userId: req.user!.userId, ...statusFilter, ...(mode ? { mode } : {}) },
     include: { assets: true },
     orderBy: { createdAt: "desc" },
     take: limit,
@@ -832,16 +843,25 @@ studioGenRouter.delete("/gen/references/:id", async (req: Request, res: Response
 });
 
 /** GET /gen/models?mode= — model katalog. */
-studioGenRouter.get("/gen/models", (req: Request, res: Response) => {
+studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
   const mode = req.query.mode ? String(req.query.mode) : undefined;
   // R4_07 — Topaz enhance/upscale OPERATSIYALARI (opType) composer model picker'ida KO'RINMAYDI
   // (ular generativ model emas; R4_08 gen/library kartalarida "Use ▾" bilan ochiladi). Katalogda
   // qoladi (cost-quote/pricing panel getModelById orqali ko'radi) — faqat bu ro'yxatdan filtrlanadi.
   const base = (mode ? getModelsByMode(mode) : GEN_MODELS).filter((m) => !m.opType);
+  // #141 (PX4) — etaSec: O'LCHANGAN mediana (oxirgi 7 kun tarixi), ma'lumot yetmasa
+  // feature bo'yicha zaxira. Klient "≈ 1–2 min" qattiq matni o'rniga shuni ko'rsatadi.
+  const eta = await measuredEtaSeconds();
   res.json({
     // refKind'ni HAR modelga qo'shamiz (So'nggi-grid "Referens" model-aware bo'lishi uchun).
     // P30 (29c) — policyStrictness ham (klient "qattiq siyosat" ogohlantirishi + boshqa-model taklifi uchun).
-    models: base.map((m) => ({ ...m, refKind: getRefKind(m), policyStrictness: modelPolicyStrictness(m) })),
+    models: base.map((m) => ({
+      ...m,
+      refKind: getRefKind(m),
+      policyStrictness: modelPolicyStrictness(m),
+      etaSec: eta[m.id] ?? fallbackEtaSeconds(m),
+      etaMeasured: eta[m.id] != null,
+    })),
     configured: isOpenRouterConfigured(),
   });
 });
@@ -2066,6 +2086,74 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
     }
   }
   res.json(rejection ? { ...gen, rejection } : gen);
+});
+
+/** POST /gen/:jobId/cancel — #100 (PX2) UCHAYOTGAN gen'ni BEKOR QILISH.
+ *
+ *  Ilgari bekor qilish umuman yo'q edi: klientdagi "Cancel" faqat kartani yashirardi —
+ *  job serverda davom etar, kredit qaytmasdi, DELETE esa 409 berardi ("avval bekor qil"),
+ *  ya'ni chiqish yo'li YO'Q edi.
+ *
+ *  HALOL chegara: provayderga YUBORILGAN ishni orqaga qaytarib bo'lmaydi (biz uchun hisob
+ *  allaqachon ochilgan). Shu bois:
+ *    • `queued` VA provayder jobi yo'q → haqiqiy bekor qilish: `failed` + slot + TO'LIQ refund.
+ *    • `running` yoki `__providerJob` bor → 409 `GENERATION_DISPATCHED`; klient faqat
+ *      kutishni to'xtatadi, natija tugagach History'da paydo bo'ladi (kredit yechilgan holda).
+ *  Atomiklik `updateMany({status:"queued"})` bilan — processor ham shu shart bilan
+ *  `running`ga o'tadi, demak ikkovidan faqat BITTASI yutadi. */
+studioGenRouter.post("/gen/:jobId/cancel", async (req: Request, res: Response) => {
+  const gen = await prisma.generation.findUnique({ where: { id: String(req.params.jobId) } });
+  if (!gen || gen.userId !== req.user!.userId) {
+    res.status(404).json({ error: "Generation not found" });
+    return;
+  }
+  if (gen.status !== "queued" && gen.status !== "running") {
+    res.status(409).json({
+      error: "This generation already finished",
+      code: "GENERATION_FINISHED",
+      status: gen.status,
+    });
+    return;
+  }
+  const params = (gen.params ?? {}) as Record<string, unknown>;
+  const dispatched = gen.status === "running" || !!params.__providerJob;
+  if (dispatched) {
+    res.status(409).json({
+      error:
+        "This generation already started at the provider — it cannot be cancelled. It will appear in History when it finishes.",
+      code: "GENERATION_DISPATCHED",
+      status: gen.status,
+      refunded: 0,
+    });
+    return;
+  }
+  const upd = await prisma.generation.updateMany({
+    where: { id: gen.id, status: "queued" },
+    data: { status: "failed", error: "CANCELLED_BY_USER: Cancelled by you — credits refunded." },
+  });
+  if (upd.count === 0) {
+    // Bekor qilayotganda processor jobni ilib ketdi — endi provayderda (yuqoridagi qoida).
+    res.status(409).json({
+      error:
+        "This generation just started at the provider — it cannot be cancelled. It will appear in History when it finishes.",
+      code: "GENERATION_DISPATCHED",
+      status: "running",
+      refunded: 0,
+    });
+    return;
+  }
+  await releaseGenerationSlot(gen.userId);
+  await refundAiCredits(gen.userId, gen.cost, { generationId: gen.id });
+  const prof = await ensurePluginProfile(gen.userId);
+  await writeAuditLog({
+    actorId: gen.userId,
+    action: "generation.cancelled",
+    targetType: "generation",
+    targetId: gen.id,
+    detail: `user cancelled a queued ${gen.mode} generation`,
+    meta: { mode: gen.mode, modelId: gen.modelId, refunded: gen.cost },
+  }).catch(() => {});
+  res.json({ ok: true, cancelled: true, refunded: gen.cost, creditsLeft: prof?.aiCredits ?? null });
 });
 
 /** DELETE /gen/:jobId — gen natijani o'chiradi (R2 obyektlari ham). Faqat egasi. */
