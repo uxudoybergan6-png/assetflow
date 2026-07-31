@@ -171,7 +171,8 @@ select option{background:#222}
 .scan-folder-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .scan-folder-select{flex:1;min-width:140px;height:30px;border-radius:7px;background:var(--surface3);color:var(--text);border:1px solid var(--border);padding:0 8px;font-size:11px}
 .scan-card-actions{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
-.scan-mini-btn{height:26px;padding:0 9px;border-radius:6px;font-size:var(--fs-xs);font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--surface3);color:var(--text);white-space:nowrap}
+/* D1: hit-target ≥30px */
+.scan-mini-btn{height:30px;padding:0 9px;border-radius:6px;font-size:var(--fs-xs);font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--surface3);color:var(--text);white-space:nowrap}
 .scan-mini-btn.blue{background:var(--select);color:#fff;border-color:var(--select)}
 .scan-mini-btn:hover{opacity:.88}
 .wf-hint{font-size:var(--fs-xs);color:var(--muted);line-height:1.4}
@@ -371,6 +372,11 @@ select option{background:#222}
 .admin-btn:hover{border-color:rgba(255,255,255,.2)}
 .admin-btn.danger{color:#fca5a5;border-color:rgba(248,113,113,.35)}
 .admin-btn.danger:hover{background:rgba(248,113,113,.1)}
+
+/* D1 (a11y) — panelda fokus halqasi umuman yo'q edi: Tab bilan yurganda qaysi element
+   tanlanganini bilib bo'lmasdi. Tokenlar orqali → tema o'zgarsa halqa ham ergashadi. */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:1px}
 </style>
 </head>
 <body>
@@ -446,7 +452,7 @@ select option{background:#222}
         <option value="REJECTED">Rejected</option>
         <option value="DRAFT">Draft</option>
       </select>
-      <button class="btn-refresh" onclick="loadTemplates()" title="Refresh">↻</button>
+      <button class="btn-refresh" onclick="loadTemplates()" title="Refresh" aria-label="Refresh templates">↻</button>
     </div>
 
     <div class="list-area" id="listArea">
@@ -464,7 +470,7 @@ select option{background:#222}
 
     <div class="admin-sheet-head">
       <h3>Admin account</h3>
-      <button class="admin-sheet-close" onclick="closeAdminAccount()">×</button>
+      <button class="admin-sheet-close" onclick="closeAdminAccount()" aria-label="Close">×</button>
     </div>
 
     <!-- Profil -->
@@ -522,7 +528,7 @@ select option{background:#222}
   <div class="scan-modal">
     <div class="scan-head">
       <span id="scanTitle">Find scenes</span>
-      <button onclick="closeScanModal()">×</button>
+      <button onclick="closeScanModal()" aria-label="Close">×</button>
     </div>
     <div class="scan-folder-bar" id="scanFolderBar" style="display:none">
       <label style="font-size:11px;color:var(--muted);white-space:nowrap">Scene folder:</label>
@@ -2833,7 +2839,7 @@ function applyDlSearch() {
         </div>
         <div class="dl-item-actions">
           ${d.aepPath && IS_CEP ? `<button class="dl-btn-open" onclick="adminOpenInAE('${escAttrJs(d.id)}')">▶ AE</button>` : ''}
-          <button class="dl-btn-del" onclick="adminDeleteDownloaded('${escAttrJs(d.id)}')">🗑</button>
+          <button class="dl-btn-del" onclick="adminDeleteDownloaded('${escAttrJs(d.id)}')" aria-label="Delete download" title="Delete">🗑</button>
         </div>
       </div>
     </div>`;
@@ -3131,6 +3137,19 @@ window.adminResetFolder = adminResetFolder;
 window.adminSaveFolder = adminSaveFolder;
 window.adminSaveApi = adminSaveApi;
 window.adminResetApi = adminResetApi;
+
+// ── D1 (a11y): global Escape — ochiq overlay/sheet'ni yopadi ──────────────
+// Ilgari modal FAQAT × yoki scrim bosilganda yopilardi; klaviatura foydalanuvchisi qamalib
+// qolardi. Eng ustki (oxirgi) ochiq overlay yopiladi; mavjud close funksiyalari qayta ishlatiladi.
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  const open = Array.from(document.querySelectorAll('.scan-overlay.open, .admin-sheet-overlay.open'));
+  const top = open[open.length - 1];
+  if (!top) return;
+  if (top.id === 'scanOverlay') closeScanModal();
+  else if (top.id === 'adminSheetOverlay') closeAdminAccount();
+  else top.classList.remove('open');
+});
 
 // ── Init ───────────────────────────────────────────────────────────────────
 (function init() {

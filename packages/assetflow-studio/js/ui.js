@@ -175,3 +175,70 @@ function areaChart(data, w, h, color){
     <path d="${line}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
 }
+
+/* ============================================================
+   D1 (a11y) — div-checkbox klaviatura qo'llab-quvvatlashi
+   ------------------------------------------------------------
+   Mahsulotda `.checkbox` divlari (login "Remember me"/Terms, admin-login,
+   contributor rights-attestation, admin approve/remove tasdiqlari) faqat
+   `onclick` bilan ishlardi: Tab bilan yetib bo'lmasdi, Space/Enter ishlamasdi,
+   screen reader holatni ko'rmasdi. Ular innerHTML orqali DINAMIK ham
+   render qilinadi, shuning uchun bitta joyda tuzatish uchun:
+     1) delegatsiya bilan Space/Enter → click,
+     2) MutationObserver bilan yangi tugilgan `.checkbox`ga role/tabindex,
+     3) `.on` klass o'zgarganda `aria-checked` sinxroni.
+   Mavjud `onclick`/`toggle('on')` mantiqqa TEGMAYDI (faqat ustiga qo'shiladi).
+   ============================================================ */
+(function () {
+  function upgradeCheckbox(el) {
+    if (!el || el.dataset.a11y === "1") return;
+    el.dataset.a11y = "1";
+    if (!el.hasAttribute("role")) el.setAttribute("role", "checkbox");
+    if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
+    el.setAttribute("aria-checked", el.classList.contains("on") ? "true" : "false");
+  }
+  function scan(root) {
+    if (!root || root.nodeType !== 1) return;
+    if (root.classList && root.classList.contains("checkbox")) upgradeCheckbox(root);
+    root.querySelectorAll && root.querySelectorAll(".checkbox").forEach(upgradeCheckbox);
+  }
+  // Space/Enter → click (delegatsiya: dinamik render qilinganlar ham qamrab olinadi).
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== " " && e.key !== "Enter" && e.key !== "Spacebar") return;
+    const box = e.target && e.target.closest && e.target.closest(".checkbox");
+    if (!box) return;
+    e.preventDefault(); // Space sahifani siljitmasin
+    box.click();
+  });
+  const obs = new MutationObserver(function (muts) {
+    for (const m of muts) {
+      if (m.type === "childList") m.addedNodes.forEach(scan);
+      // `.on` klass onclick'da toggle qilinadi — aria-checked shu yerda ergashadi.
+      else if (m.type === "attributes" && m.target.classList.contains("checkbox")) {
+        m.target.setAttribute("aria-checked", m.target.classList.contains("on") ? "true" : "false");
+      }
+    }
+  });
+  function start() {
+    scan(document.body);
+    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
+})();
+
+/* ============================================================
+   D1 (a11y) — `div`/`tr` + onclick qatorlari uchun klaviatura
+   ------------------------------------------------------------
+   Opt-in: elementga `data-kbd-click` (+ `role="button" tabindex="0"`) qo'yiladi,
+   Enter/Space uni "bosadi". Delegatsiya — innerHTML bilan qayta render qilinsa
+   ham ishlaydi (plagin naqshi: AssetFlow_Plugin.html #144).
+   Haqiqiy `<button>`/`<a>` elementlariga TEGMAYDI (ular o'zi ishlaydi).
+   ============================================================ */
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+  const el = e.target;
+  if (!el || !el.matches || !el.matches("[data-kbd-click]")) return;
+  e.preventDefault();
+  el.click();
+});

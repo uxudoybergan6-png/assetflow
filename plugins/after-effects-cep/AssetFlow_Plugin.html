@@ -2596,7 +2596,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .addbtn{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--mut);background:var(--card3);border:1px solid var(--line2);border-radius:9px;padding:6px 10px;cursor:pointer}
 .axig .addbtn:hover{border-color:var(--acc2);color:var(--acc)}.axig .addbtn .pl{display:flex}
 .axig .pbox{background:var(--card);border:1px solid var(--line2);border-radius:14px;padding:12px;transition:border-color .12s;position:relative}
-.axig .pbox:focus-within{border-color:var(--border)}
+/* D1 (a11y): ilgari `border-color:var(--border)` edi — `--line2` AYNAN `var(--border)`ga
+   alias (:2185), ya'ni fokus holati ko'rinmasdi (no-op). Endi aksent halqa (3 temada ham). */
+.axig .pbox:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
 .axig .pbox textarea{width:100%;background:transparent;border:0;color:var(--txt);font-family:inherit;font-size:13.5px;resize:none;outline:none;min-height:170px;max-height:300px;overflow-y:auto;line-height:1.5;box-sizing:border-box}
 .axig .pbox textarea::placeholder{color:var(--mut2)}
 /* @ mention dropdown (referens autocomplete — tepaga ochiladi) */
@@ -3506,7 +3508,10 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axws-limitnote.on{display:flex}
 .axws-limitnote.on{display:flex}
 .axws-limitnote svg{flex:none}
-.axws-promptwrap{position:relative}
+.axws-promptwrap{position:relative;border-radius:10px;transition:box-shadow .12s ease}
+/* D1 (a11y): kompozer prompt maydoni klaviatura fokusida ko'rinadigan halqa oladi
+   (chipedit'da `outline:none` — ilgari fokus umuman ko'rinmasdi). Tokenlar orqali → 3 tema. */
+.axws-promptwrap:focus-within{box-shadow:0 0 0 1px var(--accent),0 0 0 4px var(--accent-glow)}
 /* #R1-FIX: chipedit uslublari eski `.axig .pbox` scope'ida qolgan edi — yangi dockda .pbox yo'q,
    shuning uchun prompt 22px ko'rinmas chiziqqa aylanib, placeholder umuman chiqmasdi. */
 .axws-promptwrap .chipwrap{position:relative}

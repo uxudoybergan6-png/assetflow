@@ -171,7 +171,7 @@ window.afterRender.overview = async function(){
     const threads = (data.items || data.threads || []).slice(0, 4);
     const box = document.getElementById('ovMsgs');
     if (!box || !threads.length) return;
-    box.innerHTML = threads.map(th => `<div class="row center gap-12" style="padding:12px 18px;border-bottom:1px solid var(--line-soft);cursor:pointer" onclick="route('messages')">
+    box.innerHTML = threads.map(th => `<div class="row center gap-12" style="padding:12px 18px;border-bottom:1px solid var(--line-soft);cursor:pointer" role="button" tabindex="0" data-kbd-click onclick="route('messages')">
       <div class="col grow" style="gap:2px;min-width:0">
         <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(th.subject || 'Message')}</span>
         <span class="small">${esc(fmtLocalDate(th.lastMessageAt))}</span>
@@ -214,7 +214,7 @@ function renderMy(){
 function myTable(ts){
   return `<div class="card"><div class="table-wrap"><table class="data" style="min-width:820px">
     <thead><tr><th>Template</th><th>Status</th><th>Created</th><th class="th-num">Downloads / imports</th><th>Admin note</th><th style="width:130px"></th></tr></thead>
-    <tbody>${ts.map(t=>`<tr style="cursor:pointer" onclick="openTplDrawer('${t.id}')">
+    <tbody>${ts.map(t=>`<tr style="cursor:pointer" tabindex="0" data-kbd-click onclick="openTplDrawer('${t.id}')">
       <td><div class="tmpl-cell"><div class="row-thumb">${cThumb(t)}</div><div class="tmpl-meta"><span class="nm">${esc(t.name)}</span><span class="sub">${esc(t.cat)}</span></div></div></td>
       <td>${badge(t.status)}${t.status==='approved'?'<div class="small" style="color:var(--green);margin-top:3px;font-size:10.5px">Live in AE</div>':''}${scanBadge(t.packScanStatus)?`<div style="margin-top:3px">${scanBadge(t.packScanStatus)}</div>`:''}${transcodeBadge(t.previewTranscodeStatus)?`<div style="margin-top:3px">${transcodeBadge(t.previewTranscodeStatus)}</div>`:''}</td>
       <td class="cell-muted mono">${esc(t.created)}</td>
@@ -232,7 +232,7 @@ function myTable(ts){
 }
 function myGrid(ts){
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:16px">
-    ${ts.map(t=>`<div class="card" style="overflow:hidden;cursor:pointer" onclick="openTplDrawer('${t.id}')">
+    ${ts.map(t=>`<div class="card" style="overflow:hidden;cursor:pointer" role="button" tabindex="0" data-kbd-click onclick="openTplDrawer('${t.id}')">
       <div class="thumb ${t.grad} grain" style="width:100%;aspect-ratio:16/10">
         ${cThumbMedia(t)}
         ${t.dur?`<span class="dur">${esc(t.dur)}</span>`:''}<div style="position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-start">${badge(t.status)}${scanBadge(t.packScanStatus)}${transcodeBadge(t.previewTranscodeStatus)}</div></div>
@@ -1642,7 +1642,7 @@ async function renderCMsg() {
       <div class="card-head"><h3>Messages</h3><span class="nav-badge brand">${contributorUnreadCount()}</span></div>
       <div class="col" style="overflow-y:auto">
         ${C_THREADS.map(
-          (t, i) => `<div class="mod-item ${i === CMSG_SEL ? "sel" : ""}" onclick="selectContributorThread(${i})">
+          (t, i) => `<div class="mod-item ${i === CMSG_SEL ? "sel" : ""}" role="button" tabindex="0" data-kbd-click onclick="selectContributorThread(${i})">
           <div class="kpi-ico" style="width:38px;height:38px;flex:0 0 auto;background:var(--${t.kind}-dim);color:var(--${t.kind})">${ic(t.isBroadcast ? "megaphone" : "message")}</div>
           <div class="col grow" style="gap:2px;min-width:0"><div class="row between"><span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.sub)}</span><span class="sub" style="font-size:10.5px;color:var(--tx-3)">${esc(t.t)}</span></div><span class="small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px">${esc(t.last)}</span></div>
           ${t.unread ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--violet-bright);flex:0 0 auto"></span>' : ""}
