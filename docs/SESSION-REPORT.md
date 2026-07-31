@@ -1,16 +1,15 @@
-# Sessiya hisoboti — 2026-07-31 (PRODUCTION INSIDENT: DB DOWN)
+# Sessiya hisoboti — 2026-07-31
 
-**Vazifa:** `api.getframeflow.app/health` → `db: down`, `/api/plugin/catalog` 500 — sababini topish.
+**1) DB DOWN insident (root cause topildi):** Neon PostgreSQL bepul tarifining oylik compute-kvotasi
+tugagan (*"exceeded the compute time quota"*). `DATABASE_URL` to'g'ri, storage ok, loglar toza.
+Sabab: Cloud Run `minScale=1` + reconciler har 10 daq DB so'rovi → autosuspend samarasiz → oy oxirida kvota tugaydi (har oy takrorlanadi).
+**Kutilmoqda:** Neon upgrade (egasi) yoki 1-avg reset; reconciler intervalini oshirish; 8 migratsiya hali prod'da emas.
 
-**Topildi (root cause):** Neon PostgreSQL bepul tarifining oylik compute-vaqt kvotasi tugagan.
-psql bilan to'g'ridan-to'g'ri ulanishda Neon xatosi: *"Your account or project has exceeded the
-compute time quota. Upgrade your plan to increase limits."* `DATABASE_URL` to'g'ri, TCP ochiq,
-storage ok, Cloud Run loglari toza — muammo faqat Neon kvotasi, deploy/secret emas.
+**2) To'liq dizayn/UX/UI audit (10 sirt):** plagin (Home/Browse, AI Tools, CEP Admin), web (Landing,
+Katalog/Detal, AI Studio), Contributor, Admin, Auth, dizayn-tizim — agent-audit + jonli production + spot-verify (6/6).
+**Natija: 67 finding (2×P0, 19×P1, 27×P2, 19×P3):**
+- `docs/DIZAYN-AUDIT-2026-07-31.md` — hisobot
+- `docs/DIZAYN-AUDIT-FINDINGS.json` — to'liq reyestr (fayl:qator dalil + fix matni)
+- `docs/DIZAYN-FIX-SYSTEM-PROMPT.md` — Claude Code'ga tayyor tuzatish system prompt (BATCH D0–D9)
 
-**Nega tugadi:** Cloud Run `minScale=1` + `cpu-throttling=false` (24/7 yoniq instans) +
-`template-reconcile.ts` har 10 daqiqada DB so'rovi → Neon autosuspend (5 daq) samarasiz,
-compute deyarli doim uyg'oq → oy oxirida (30–31 iyul) kvota tugadi. Har oy takrorlanadi.
-
-**Kutilmoqda:** (1) darhol tiklash — Neon planini upgrade (egasi, billing) YOKI 1-avgust kvota
-resetini kutish (Prisma o'zi qayta ulanadi, restart shart emas); (2) takror bo'lmasligi uchun
-reconciler intervalini oshirish / paid plan; (3) oldingi batchlardan 8 migratsiya hali prod'ga qo'llanmagan.
+**Keyingi qadam:** D0 (Neon kvota + CF Pages stale redeploy + eski pages.dev domen) → D1–D8 fix-kampaniya, har batch alohida commit.
