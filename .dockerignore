@@ -10,8 +10,16 @@ scratchpad
 cloudrun-env.yaml
 _to_delete
 
-# API uchun kerak emas — npm install sekinlashtiradi
-packages/assetflow-studio
-plugins/after-effects-cep
+# API uchun kerak emas — npm install sekinlashtiradi.
+# #113 (I11) — LEKIN package.json'lari QOLADI: `npm ci` lockfile bilan bayt-bayt
+# mos workspace daraxtini talab qiladi. Ilgari Dockerfile soxta stub yozardi
+# (`@creative-tools/assetflow-studio`, bog'liqliksiz), lockfile'da esa
+# `@creative-tools/frameflow-studio` + express/http-proxy-middleware bor —
+# nomuvofiqlikda `npm ci` yiqilardi. Endi HAQIQIY manifestlar konteynerga tushadi,
+# tarkib esa baribir chiqarilgan.
+packages/assetflow-studio/**
+!packages/assetflow-studio/package.json
+plugins/after-effects-cep/**
+!plugins/after-effects-cep/package.json
 design-preview
 docs

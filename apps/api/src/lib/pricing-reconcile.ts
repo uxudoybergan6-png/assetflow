@@ -228,27 +228,96 @@ export async function listProviderInvoices(month?: string) {
   });
 }
 
+/** O'tgan oy yorlig'i ("YYYY-MM") — berilgan (yoki joriy) vaqtga nisbatan. */
+function previousMonthLabel(now = new Date()): string {
+  const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  return `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 /**
- * Cron-uslub scheduler — env PRICING_RECON_SCHEDULE=on bo'lsa yoqiladi (default OFF; ko'p-instansda
- * dublikat alertni oldini olish uchun). Har 24 soatda tekshiradi; UTC oyning 1-kunida O'TGAN oy
- * uchun reconciliation qiladi. Tashqi cron (Cloud Scheduler) bo'lsa — GET /api/admin/pricing/reconcile
- * yoki bu funksiyani to'g'ridan chaqirish afzal.
+ * #154 (I17) — BIR MARTALIK CLAIM. Reconciliation hisobot + ALERT XATI yuboradi, shu bois
+ * bir oy uchun IKKI marta ishlashi kerak emas (ko'p instans / restart). `SystemLog.id`
+ * (String @id, default YO'Q) deterministik kalit sifatida ishlatiladi: `create` P2002
+ * bersa — kimdir allaqachon bajargan. Yangi jadval/migratsiya talab qilmaydi.
+ */
+async function claimMonthlyRun(month: string): Promise<boolean> {
+  try {
+    await prisma.systemLog.create({
+      data: {
+        id: `reconcile-${month}`,
+        level: "info",
+        source: "pricing-reconcile",
+        sourceLabel: "Narx rekonsiliatsiyasi",
+        message: `Oylik reconciliation boshlandi: ${month}`,
+        action: "pricing.reconcile.claim",
+      },
+    });
+    return true;
+  } catch {
+    return false; // P2002 (allaqachon bor) yoki DB muammosi — ikkalasida ham ishlamaymiz
+  }
+}
+
+/**
+ * Cron-uslub scheduler — env PRICING_RECON_SCHEDULE=on bo'lsa yoqiladi (default OFF).
+ * Tashqi cron (Cloud Scheduler) bo'lsa — POST /api/admin/pricing/reconcile afzal.
+ *
+ * #154 (I17) — ILGARI ISHLAMASDI: `setInterval(tick, 24h)` BOOT vaqtidan sanardi va tick
+ * faqat "UTC 1-kun" bo'lsa ish qilardi. Cloud Run instansi deploy/scale-in sabab kamdan-kam
+ * 24 soatdan ortiq yashaydi, har restart taymerni noldan boshlaydi → 1-kunning aynan o'sha
+ * daqiqasiga tushish ehtimoli deyarli nol. Endi:
+ *   • birinchi tick ABSOLYUT vaqtga (keyingi UTC 03:00) bog'lanadi, keyin har 24 soat;
+ *   • boot'da ham bir marta tekshiriladi — o'tgan oy hisoboti hali qilinmagan bo'lsa
+ *     (oyning 1-kuni instans o'chiq bo'lgan bo'lsa ham) darhol bajariladi;
+ *   • bir oy uchun bitta ishlash `claimMonthlyRun` bilan kafolatlanadi (dublikat alert yo'q).
  */
 export function startReconciliationScheduler(): void {
   if (process.env.PRICING_RECON_SCHEDULE !== "on") return;
   const DAY = 86_400_000;
+  const RUN_HOUR_UTC = 3;
+
   const tick = async () => {
+    // `previousMonthLabel` doim TUGAGAN oyni beradi — qaysi kuni ishlashi muhim emas,
+    // claim bir oyda bir marta bajarilishini kafolatlaydi (ilgari "faqat 1-kun" sharti
+    // instans qisqa umri sabab deyarli hech qachon bajarilmasdi).
+    const month = previousMonthLabel();
     try {
-      const now = new Date();
-      if (now.getUTCDate() !== 1) return;
-      const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-      const month = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
+      if (!(await claimMonthlyRun(month))) return;
+    } catch {
+      return;
+    }
+    try {
       const r = await runMonthlyReconciliation({ month });
-      console.log(`[reconcile] ${month}: marja ${r.actualMargin ?? r.realizedMargin ?? "n/a"}x, alert=${r.alert.sent}`);
+      console.log(
+        `[reconcile] ${month}: marja ${r.actualMargin ?? r.realizedMargin ?? "n/a"}x, alert=${r.alert.sent}`
+      );
     } catch (e) {
       console.error("[reconcile] scheduler xato:", e);
+      // Claim'ni ORQAGA qaytaramiz — aks holda xato bo'lgan oy hech qachon qayta urinilmaydi.
+      await prisma.systemLog.delete({ where: { id: `reconcile-${month}` } }).catch(() => {});
     }
   };
-  setInterval(tick, DAY);
-  console.log("[reconcile] oylik scheduler yoqildi (PRICING_RECON_SCHEDULE=on)");
+
+  // Boot'da bir marta (kechiktirilgan — boot yukini bosmaslik uchun): o'tgan oy hisoboti
+  // o'tkazib yuborilган bo'lsa shu yerda tutiladi (claim dublikatni to'sadi).
+  const boot = setTimeout(() => void tick(), 60_000);
+  if (typeof boot.unref === "function") boot.unref();
+
+  // Keyingi UTC 03:00 gacha kutamiz, so'ng har 24 soat — jadval BOOT vaqtidan mustaqil.
+  const now = new Date();
+  const next = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), RUN_HOUR_UTC, 0, 0)
+  );
+  if (next.getTime() <= now.getTime()) next.setUTCDate(next.getUTCDate() + 1);
+  const firstDelay = next.getTime() - now.getTime();
+  const align = setTimeout(() => {
+    void tick();
+    const daily = setInterval(() => void tick(), DAY);
+    if (typeof daily.unref === "function") daily.unref();
+  }, firstDelay);
+  if (typeof align.unref === "function") align.unref();
+
+  console.log(
+    `[reconcile] oylik scheduler yoqildi (PRICING_RECON_SCHEDULE=on) — birinchi tekshiruv ${next.toISOString()}`
+  );
 }

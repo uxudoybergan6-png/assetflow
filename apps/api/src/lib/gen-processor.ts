@@ -1368,11 +1368,28 @@ async function moderateGeneratedOutput(gen: {
   throw new Error(`MODERATION_OUTPUT_BLOCKED: ${result.reason || "output did not pass moderation"}`);
 }
 
+/**
+ * #109 (I7) — RESUME IJARASI (lease). `queued` jobni bitta instans atomik `updateMany`
+ * bilan egallaydi (queued→running), ammo `running` jobni QAYTA tiklash (resume) hech
+ * qanday claim'siz edi: max-instances 10 da har instansning 30 soniyalik resume jadvali
+ * AYNAN o'sha jobni oladi → bir provayder natijasi bir necha marta yuklanadi
+ * (dublikat GenAsset, dublikat storage, dublikat moderatsiya).
+ *
+ * Yangi migratsiyasiz atomik ijara: `updatedAt` ustuni. Egallash = `updateMany` bilan
+ * `status='running' AND updatedAt < now-LEASE` — Prisma har update'da `@updatedAt`ni
+ * yangilaydi, shu bois IKKINCHI instansning shu shartli update'i 0 qator topadi.
+ * Ish davomida ijara har `LEASE/3` da yangilanadi (heartbeat) — instans o'lsa ijara
+ * o'z-o'zidan tugaydi va boshqa instans jobni oladi (20 daqiqalik stuck-cutoff'dan ancha
+ * oldin). PUL ZONASIGA TEGMAYDI — status/refund mantig'i o'zgarmaydi.
+ */
+const GEN_RESUME_LEASE_MS = Math.max(60_000, Number(process.env.GEN_RESUME_LEASE_MS) || 180_000);
+
 export async function processGeneration(genId: string): Promise<void> {
   const gen = await prisma.generation.findUnique({ where: { id: genId } });
   if (!gen) return;
   const canResume = isResumableRunningGeneration(gen);
   if (gen.status !== "queued" && !canResume) return;
+  let leaseTimer: ReturnType<typeof setInterval> | null = null;
 
   const fail = async (reason: string) => {
     const safeReason = normalizeGenerationError(reason).slice(0, 480);
@@ -1419,7 +1436,27 @@ export async function processGeneration(genId: string): Promise<void> {
         data: { status: "running" },
       });
       if (claimed.count === 0) return;
+    } else {
+      // #109 (I7) — resume: ijarani atomik egallaymiz. Boshqa instans hozir shu job
+      // ustida ishlayotgan bo'lsa (updatedAt yangi) count=0 → jimgina chiqamiz.
+      const claimed = await prisma.generation.updateMany({
+        where: {
+          id: genId,
+          status: "running",
+          updatedAt: { lt: new Date(Date.now() - GEN_RESUME_LEASE_MS) },
+        },
+        data: { status: "running" }, // no-op qiymat — maqsad `updatedAt`ni yangilash (ijara)
+      });
+      if (claimed.count === 0) return;
     }
+    // Ijarani ish davomida yangilab turamiz (heartbeat) — uzun video pollingida boshqa
+    // instans jobni "tashlab ketilgan" deb o'ylab olib qo'ymasin.
+    leaseTimer = setInterval(() => {
+      void prisma.generation
+        .updateMany({ where: { id: genId, status: "running" }, data: { status: "running" } })
+        .catch(() => {});
+    }, Math.max(20_000, Math.floor(GEN_RESUME_LEASE_MS / 3)));
+    if (typeof leaseTimer.unref === "function") leaseTimer.unref();
     const model = getModelById(gen.modelId);
     if (!model) return void (await fail("Unknown model"));
 
@@ -1774,6 +1811,8 @@ export async function processGeneration(genId: string): Promise<void> {
     // xatolari kontekst bilan yuboriladi (DSN yo'q → no-op).
     captureException(e, { area: "gen-processor", genId });
     await fail(e instanceof Error ? e.message : String(e));
+  } finally {
+    if (leaseTimer) clearInterval(leaseTimer); // #109 (I7) — ijara heartbeat'i to'xtaydi
   }
 }
 

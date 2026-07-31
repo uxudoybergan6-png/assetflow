@@ -152,9 +152,22 @@ app.get("/livez", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// Readiness — HAQIQIY bog'liqlik tekshiruvi: DB (SELECT 1) + storage (HeadBucket).
-// Biror bog'liqlik ishlamasa 503 (degraded) — platforma trafikni yubormaydi.
-app.get("/health", async (_req, res) => {
+// #34 (I3) — SIGTERM kelganda readiness DARHOL 503 bo'ladi (drain): platforma yangi
+// trafikni boshqa revisionga yuboradi, uchayotgan so'rovlar esa tugatiladi.
+let shuttingDown = false;
+
+// #111 (I9) — /health kesh. Har probe'да DB `SELECT 1` + storage HeadBucket qilinardi:
+// Cloud Run startup (10s), liveness va tashqi monitoring birgalikda bo'sh bazani doimiy
+// uyg'otib turadi (Neon compute-soati) va HeadBucket har safar tarmoqqa chiqadi. Endi
+// natija 5 soniya keshlanadi — degraded holat ham 5s dan ortiq yashirinmaydi, probe
+// failureThreshold (3×10s / 3×30s) buni bemalol qamrab oladi. Bir vaqtda kelgan
+// probe'lar BITTA tekshiruvni baham ko'radi (stampede yo'q).
+const HEALTH_CACHE_MS = 5_000;
+type HealthResult = { healthy: boolean; checks: Record<string, string> };
+let healthCache: { at: number; result: HealthResult } | null = null;
+let healthInFlight: Promise<HealthResult> | null = null;
+
+async function probeHealth(): Promise<HealthResult> {
   const checks: Record<string, string> = {};
   let healthy = true;
   try {
@@ -166,15 +179,40 @@ app.get("/health", async (_req, res) => {
     captureException(e);
   }
   if (isS3Configured()) {
-    const ok = await checkS3Health();
+    // Hech qachon throw qilmasin — probe xatosi 500 emas, "down" bo'lishi kerak.
+    const ok = await checkS3Health().catch(() => false);
     checks.storage = ok ? "ok" : "down";
     if (!ok) healthy = false;
   } else {
     checks.storage = "not_configured";
   }
+  return { healthy, checks };
+}
+
+// Readiness — HAQIQIY bog'liqlik tekshiruvi: DB (SELECT 1) + storage (HeadBucket).
+// Biror bog'liqlik ishlamasa 503 (degraded) — platforma trafikni yubormaydi.
+app.get("/health", async (_req, res) => {
+  // Drain: kesh CHETLAB o'tiladi — to'xtayotgan instans darhol trafikdan chiqsin.
+  if (shuttingDown) {
+    res
+      .status(503)
+      .json({ status: "draining", service: "creative-tools-api", checks: { process: "shutting_down" } });
+    return;
+  }
+  const now = Date.now();
+  let result: HealthResult;
+  if (healthCache && now - healthCache.at < HEALTH_CACHE_MS) {
+    result = healthCache.result;
+  } else {
+    healthInFlight ??= probeHealth().finally(() => {
+      healthInFlight = null;
+    });
+    result = await healthInFlight;
+    healthCache = { at: Date.now(), result };
+  }
   res
-    .status(healthy ? 200 : 503)
-    .json({ status: healthy ? "ok" : "degraded", service: "creative-tools-api", checks });
+    .status(result.healthy ? 200 : 503)
+    .json({ status: result.healthy ? "ok" : "degraded", service: "creative-tools-api", checks: result.checks });
 });
 
 // FAZA 3 (C) — yengil GLOBAL per-IP rate-limit (per-route limiterlarga QO'SHIMCHA
@@ -356,6 +394,15 @@ function validateEnv() {
   if (isProd && !process.env.BACKUP_GCS_BUCKET?.trim())
     warnings.push("BACKUP_GCS_BUCKET yo'q — DB backup GCS'ga yuklanmaydi (ma'lumot yo'qotish xavfi). docs/PROD-ENV-CHECKLIST.md");
 
+  // #108 (I6) — SENTRY_DSN yo'qligi ilgari HECH QAYERDA aytilmasdi: `captureException`
+  // jimgina no-op bo'lardi, ya'ni productionда xatolar hech kimga yetib bormasdi va buni
+  // bilishning yo'li yo'q edi. Endi boot'da ochiq ogohlantiriladi (kod ishlayveradi).
+  if (isProd && !process.env.SENTRY_DSN?.trim())
+    warnings.push(
+      "SENTRY_DSN yo'q — xato monitoringi O'CHIQ (captureException no-op): productionда 500'lar, " +
+        "gen-processor va webhook xatolari hech qayerga yozilmaydi. docs/PROD-ENV-CHECKLIST.md"
+    );
+
   // FAZA 2 (H8) — enabled model narx to'liqligi: aniq provider narxsiz model global spend
   // ceiling'ni under-count qiladi (default'ga tushadi). Ro'yxatni provider-cost.ts'ga narx
   // qo'shib yopish kerak.
@@ -380,7 +427,7 @@ validateGenModelsOrThrow();
 // (regressiya jimgina qaytmaydi). Money-zone o'qish-faqat — hech narsa o'zgartirmaydi.
 assertPricingFloorsOrThrow();
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   const stripe = process.env.STRIPE_SECRET_KEY?.trim();
   const stripeNote = stripe?.startsWith("sk_")
     ? "Stripe: enabled"
@@ -419,3 +466,50 @@ app.listen(PORT, "0.0.0.0", () => {
     );
   }
 });
+
+/**
+ * #34 (I3) — GRACEFUL SHUTDOWN. Ilgari SIGTERM/SIGINT umuman ushlanmasdi: Node default
+ * xatti-harakati — protsessni DARHOL o'ldirish. Cloud Run revision almashganda yoki
+ * scale-in bo'lganda uchayotgan so'rov (upload, gen POST, webhook) o'rtasidan uzilardi
+ * va Prisma pool'i tozalanmasdi.
+ *
+ * Tartib: readiness'ni 503 qilamiz (platforma yangi trafik yubormaydi) → yangi ulanish
+ * qabul qilishni to'xtatamiz → uchayotgan so'rovlar tugaguncha kutamiz (drain) →
+ * Prisma disconnect → toza chiqish. Cloud Run SIGTERM'dan keyin ~10s beradi, shu bois
+ * qattiq shift default 10s (SHUTDOWN_TIMEOUT_MS bilan sozlanadi) — o'sha vaqtda
+ * tugamagan so'rov baribir uziladi, lekin toza chiqish yo'li urinib ko'rilgan bo'ladi.
+ *
+ * ⚠️ Fon ishlari (gen-processor, ingest, reconciler) ATAYLAB kutilmaydi: ular DB'da
+ * atomik holat bilan yuritiladi (queued/running claim + reconcile) — yangi instans
+ * ularni davom ettiradi. Kutish shiftni bekorga to'ldirardi.
+ */
+const SHUTDOWN_TIMEOUT_MS = Math.max(1_000, Number(process.env.SHUTDOWN_TIMEOUT_MS) || 10_000);
+function shutdown(signal: string): void {
+  if (shuttingDown) return;
+  shuttingDown = true; // → /health darhol 503 "draining"
+  console.log(`[shutdown] ${signal} qabul qilindi — drain boshlandi (${SHUTDOWN_TIMEOUT_MS}ms shift)`);
+
+  // Qattiq shift: drain cho'zilib ketsa ham protsess osilib qolmasin.
+  const hard = setTimeout(() => {
+    console.error("[shutdown] drain shifti tugadi — majburan chiqilmoqda");
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+  if (typeof hard.unref === "function") hard.unref();
+
+  server.close((err) => {
+    if (err) console.error("[shutdown] server.close xato:", err);
+    prisma
+      .$disconnect()
+      .catch((e) => console.error("[shutdown] prisma disconnect xato:", e))
+      .finally(() => {
+        clearTimeout(hard);
+        console.log("[shutdown] toza yakunlandi");
+        process.exit(0);
+      });
+  });
+  // Keep-alive ulanishlar drain'ni cho'zmasin (Node 18+): bo'sh ulanishlar darhol yopiladi.
+  const closeIdle = (server as unknown as { closeIdleConnections?: () => void }).closeIdleConnections;
+  if (typeof closeIdle === "function") closeIdle.call(server);
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

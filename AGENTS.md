@@ -137,7 +137,7 @@ Artefaktlarga yozilgan o'zgarishlar yo'qoladi. HAR DOIM root `js/` va `styles/` 
 npm run pm2:start
 npm run check:stack
 npm run verify:pipeline
-API_URL=https://assetflow-rqbq.onrender.com node scripts/verify-pipeline.mjs
+API_URL=https://assetflow-rqbq.onrender.com node scripts/verify-pipeline.mjs --allow-remote   # ⚠️ yozadi (test shablon+hisob), oxirida tozalaydi
 npm run studio:sync
 bash plugins/after-effects-cep/scripts/install-cep.sh
 npm run migrate:deploy -w @creative-tools/database

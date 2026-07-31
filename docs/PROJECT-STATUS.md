@@ -444,7 +444,7 @@ npm run check:stack           # stack holatini tekshirish
 
 # 5. Pipeline tekshirish
 npm run verify:pipeline
-API_URL=https://assetflow-rqbq.onrender.com node scripts/verify-pipeline.mjs   # production'ga qarshi
+API_URL=https://assetflow-rqbq.onrender.com node scripts/verify-pipeline.mjs --allow-remote   # prod: yozadi, oxirida tozalaydi
 ```
 
 ### Portlar (pm2 / ecosystem.config.cjs)

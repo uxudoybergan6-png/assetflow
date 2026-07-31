@@ -7,6 +7,8 @@ name: CI
 #     DATABASE_URL kerak qiladi; migratsiya faqat Render deploy bosqichida bajariladi.
 #   - `verify:pipeline` / `check:stack` skriptlari ISHLAB TURGAN API talab qiladi —
 #     shuning uchun CI'da ishlatilmaydi (ularni faqat live env'ga qarshi qo'lda ishlating).
+#     `verify:pipeline` bundan tashqari YOZADI (test shablon nashr qiladi) — #35 (I4).
+# Qolgan BARCHA `test:*` skriptlari `build` job'ida qadalgan — #36 (I5).
 #
 # `windows-installer` job'i — Windows'da FAQAT tekshirib bo'ladigan bo'shliqni yopadi:
 # haqiqiy WiX build · MSI ICE validatsiyasi · MSI'dan OLDINGI o'rnatma qoldiqlari ustidan
@@ -38,7 +40,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -57,6 +59,41 @@ jobs:
       # validator · jimgina o'rnatish/o'chirish · eski ro'yxat · sentinel · artefakt yuklanmasligi).
       - name: Windows installer CI shartnomasi (statik regressiya)
         run: npm run test:ci-windows-installer
+
+      # #36 (I5) — ilgari 8 ta `test:*` skriptdan FAQAT bittasi CI'da ishlardi: qolgan
+      # 7 tasi (759 assert) faqat qo'lda chaqirilganda tekshirilardi, ya'ni ular
+      # himoyalayotgan regressiyalar (paket sirlari, updater yuklab olish chegarasi,
+      # release imzo shartnomasi, installer artefakt kontrakti) main'ga jimgina
+      # kirib ketishi mumkin edi. Endi hammasi PR'da qadaladi.
+      # `continue-on-error` ATAYLAB YO'Q — bu skriptlar xavfsizlik pollari, ogohlantirish emas.
+      - name: Plugin paket xavfsizligi (sirlar, admin ID, CSP)
+        run: npm run test:plugin-package
+
+      - name: Plugin updater xavfsizligi (imzo, yuklab olish chegarasi)
+        run: npm run test:plugin-updater
+
+      - name: Release shartnomasi (imzolangan URL, legacy opt-in)
+        run: npm run test:release-contract
+
+      - name: Marketplace preflight (imzolanmagan QA build izolyatsiyasi)
+        run: npm run test:marketplace-preflight
+
+      # Linux'da .pkg qurilmaydi — skript IS_MAC bilan mac-ga xos bosqichlarni
+      # o'zi o'tkazib yuboradi (kontrakt/ro'yxat assertlari baribir ishlaydi).
+      - name: Installer artefakt kontrakti
+        run: npm run test:plugin-installers
+
+      - name: Panel responsive kontrakti (plagin zichlik qatlami)
+        run: npm run test:plugin-responsive
+
+      - name: Studio yuklab olish holati (plagin download state mashinasi)
+        run: npm run test:plugin-download-state
+
+      # scripts/test-dependency-security-floors.mjs npm skript sifatida UMUMAN
+      # ulanmagan edi (faqat qo'lda `node …` bilan) — package-lock xavfsizlik
+      # pollari (minimal versiyalar) hech kim tekshirmasdan pasayishi mumkin edi.
+      - name: Bog'liqlik xavfsizlik pollari (package-lock minimal versiyalar)
+        run: npm run test:dep-floors
 
   windows-installer:
     name: Windows installer (real MSI build + per-user install/uninstall)
@@ -79,7 +116,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           # setup-node v7 keshni avtomatik yoqishi mumkin — bu job'da ATAYLAB kerak emas
           # (Windows npm ci hozircha keshsiz; xatti-harakatni o'zgartirmaslik uchun aniq o'chirilgan).
           package-manager-cache: false

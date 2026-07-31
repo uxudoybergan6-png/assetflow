@@ -1,25 +1,30 @@
-# Sessiya hisoboti — 2026-07-31 (BATCH 9 — AE PLAGIN: T9.2 + T9.3)
+# Sessiya hisoboti — 2026-07-31 (BATCH 10 — INFRA / DEPLOY / RELIABILITY)
 
-**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`, 7-bosqich. T9.1 (#2) allaqachon `5023f2a` da.
+**Manba:** `docs/REJA-CLAUDE-2026-07-30.md`, 8-bosqich. **Bajarildi 13/13.** Yangi migratsiya YO'Q.
 
-- **Bajarildi 20/21** (PL-b…PL-j + PX1…PX11). Qolgani: `#102/PX12` self-updater — **egasi qarori**.
-- **Kesh/loyiha:** #29 P9 ekstraktsiya papkalari endi haqiqatan o'chadi · #30 o'chirish import qilingan element
-  ID'si bo'yicha (nomi mos begona element tegilmaydi) · #140 lokal meta-store yozuvi qulf bilan.
-- **Yaxlitlik/xavfsizlik:** #96 server SHA-256 uzatiladi va tekshiriladi · #97 `evalScript` timeout + bekor qilish
-  (overlay abadiy muzlamaydi) · #98 log yuborishga `Authorization` (jimgina 401 tugadi) · #99 shrift o'rnatish
-  ROZILIK so'raydi · #138 token/prefs OS keychain/DPAPI (`assetflow-secret-store.js`) · #139 `settingsFilePath()`
-  platformaga mos.
-- **Gen oqimi:** #31 server `history?status=active` (`queued`+`running`) + panel ochilganda tiklash · #100
-  `POST /gen/:jobId/cancel` + refund + UI tugmasi · #101 "Auto-load" sozlamasi endi haqiqatan ishlaydi · #141
-  "≈1–2 min" o'rniga model bo'yicha O'LCHANGAN baho (`gen-eta.ts`, 7 kunlik mediana) · #142 o'lik kod olindi.
-- **Paket/UX:** #143 AE demo-mockup relizdan chiqdi (`_dev-ae-stage.html`) · #144 katalog kartasi = AI kartasi
-  (drag faqat haqiqiy tashlash joyi bo'lsa; Enter/Space) · #145 oflayn strip + `/livez` probe (`afNet`) · #146 CSP
-  (masofaviy skript/`<object>`/`<iframe>`/`<base>`/`<form>` bloklandi — brauzerda tasdiqlandi).
-- **Installer:** #147 `.pkg` ichida `Uninstall FrameFlow.command` (alohida komponent, `auth="none"`, ikki alohida
-  savol, ma'lumot sukut bo'yicha SAQLANADI) · #148 CSXS `<Icons>` + generatsiya qilinadigan 23×23 PNG.
-- **Testlar:** installers 262 ✓ · preflight 100 ✓ · package 59 ✓ · updater 118 ✓ · release-contract 110 ✓ ·
-  responsive + download-state ✓ · `npm run build -w apps/api` ✓. Yangi migratsiya YO'Q.
+- **Runtime:** #34 `SIGTERM`/`SIGINT` graceful shutdown (`/health` darhol 503 "draining" → LB chiqaradi,
+  `server.close` + Prisma disconnect, 10s qattiq shift) · #111 `/health` 5s kesh + umumiy `in-flight`
+  promise (probe stampede tugadi) · #108 productionда `SENTRY_DSN` yo'qligi endi boot ogohlantirishi.
+- **Atomiklik (migratsiyasiz — mavjud ustunlar ijara sifatida):** #109 `running` generatsiyalar `updatedAt`
+  ijarasi bilan egallanadi + heartbeat (ikki instans bir jobni ikki marta ishlamaydi) · #110 transcode va
+  embedding rekonsileri `find-then-touch` emas, shartli `updateMany` (10 instans = 10 ffmpeg tugadi) ·
+  #154 oylik narx rekonsiliatsiyasi absolyut UTC 03:00 ga bog'landi + `SystemLog.id` bilan oyiga bir marta
+  (ilgari boot-drift tufayli HECH QACHON ishlamasdi; xatoda claim qaytariladi).
+- **Deploy:** #33 `deploy-cloudrun.sh` — migratsiya gate + o'zgarmas commit-SHA teg + qo'lda-deploy
+  ogohlantirishi · #153 `deploy-ingest-worker.sh` `--env-vars-file` + `--set-env-vars` (o'zaro inkor →
+  job hech qachon yaratilmasdi) vaqtinchalik yaml nusxasi bilan tuzatildi · #113 Docker `npm install`
+  → `npm ci` (soxta stub manifestlar olindi, `.dockerignore` haqiqiy `package.json`larni kiritadi) ·
+  #114 Node 20 (EOL) → **Node 22**: Dockerfile, `ci.yml` ×2, `deploy-cloudrun.yml`, `engines`.
+- **CI:** #36 ilgari 8 ta `test:*` dan faqat 1 tasi ishlardi → qolgan 7 tasi + yangi `test:dep-floors`
+  qadaldi · #112 yangi `deploy-cdn-worker.yml` (`public-keys.ts` yoki Worker o'zgarsa avto-deploy,
+  secret yo'q bo'lsa fail-closed) · #152 `migration_lock.toml` allaqachon bor va git'da — ish kerak emas.
+- **#35** `verify-pipeline.mjs` endi lokal bo'lmagan API'ni BLOKLAYDI (`--allow-remote` shart) va test
+  shablon + hisobni oxirida (xatoda ham) tozalaydi; hujjatlardagi buyruq yangilandi.
+- **Testlar:** 7 ta paket testi ✓ (installers 262 · preflight 100 · package 59 · updater 118 ·
+  release 110 · responsive · download-state) · dep-floors ✓ · `npm run build -w apps/api` ✓ ·
+  cdn-proxy `typecheck` ✓ · `npm ci --dry-run` lockfile sinxron ✓.
 
-⚠️ **AE testi kutilmoqda** — import, cancel, oflayn strip, CSP va ikonalar After Effects ichida sinalishi kerak:
-`bash plugins/after-effects-cep/scripts/install-cep.sh`.
+⚠️ **Egasidan kerak:** `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` repo secretlari (aks holda CDN
+Worker workflow'i ataylab yiqiladi) va `SENTRY_DSN`. Docker build lokal daemon yo'qligi sababli
+sinalmadi — `npm ci` mosligi `--dry-run` bilan tekshirildi.
 ⚠️ **Migratsiya kutilmoqda** (oldingi batchlardan, prod'ga QO'LLANMAGAN, 8 ta — `20260730160000…20260730240000`).

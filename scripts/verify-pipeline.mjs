@@ -2,8 +2,32 @@
 /**
  * Contributor → Admin → Plugin katalog zanjirini tekshiradi.
  * npm run studio / dev:api ishlab turgan bo'lishi kerak.
+ *
+ * #35 (I4) — ⚠️ BU SKRIPT YOZADI: haqiqiy contributor hisobi ochadi va shablonni
+ * APPROVED + published qiladi, ya'ni u PLAGIN KATALOGIDA ko'rinadi. Ilgari hech narsa
+ * tozalanmasdi va prod'ga qarshi ishlatish hujjatlashtirilgan edi → har ishga tushirish
+ * mijoz katalogiga soxta "E2E Template …" qoldirardi.
+ *
+ * Endi:
+ *   • LOKAL bo'lmagan API'ga qarshi ishlash BLOKLANGAN — ataylab `--allow-remote`
+ *     bayrog'i (yoki VERIFY_ALLOW_REMOTE=1) kerak;
+ *   • test shabloni va test hisobi OXIRIDA (xatoda ham) TOZALANADI.
  */
+const argv = process.argv.slice(2);
 const API = (process.env.API_URL || "http://localhost:4000").replace(/\/$/, "");
+const ALLOW_REMOTE = argv.includes("--allow-remote") || process.env.VERIFY_ALLOW_REMOTE === "1";
+const IS_LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(API);
+
+if (!IS_LOCAL && !ALLOW_REMOTE) {
+  console.error(
+    `\n✗ ${API} — LOKAL emas.\n\n` +
+      "Bu skript haqiqiy shablon yaratadi va uni PUBLISHED qiladi (plagin katalogida ko'rinadi).\n" +
+      "Production/staging'ga qarshi ishlatish uchun aniq ruxsat kerak:\n\n" +
+      `  API_URL=${API} node scripts/verify-pipeline.mjs --allow-remote\n\n` +
+      "Yaratilgan yozuvlar oxirida tozalanadi, lekin moderatsiya/audit izlari qoladi.\n"
+  );
+  process.exit(2);
+}
 
 async function req(path, { method = "GET", body, token } = {}) {
   const headers = {};
@@ -42,6 +66,46 @@ const stamp = Date.now();
 const contribEmail = `pipeline-test-${stamp}@test.local`;
 const contribPass = "testpass12345";
 
+// #35 (I4) — tozalash uchun holat (main ichida emas: `finally` ham ko'rishi kerak).
+let contribToken;
+let adminToken;
+let templateId;
+
+/** Test artefaktlarini o'chiradi: shablon (admin — APPROVED bo'lsa faqat admin o'chira
+ *  oladi) va test contributor hisobi. Best-effort — xato tekshiruv natijasini buzmaydi. */
+async function cleanup() {
+  console.log("\n--- Tozalash ---");
+  if (templateId) {
+    // Admin tokeni bo'lmasa olishga urinamiz (register bosqichidan keyin yiqilgan holat).
+    if (!adminToken) {
+      adminToken = await req("/api/auth/login", {
+        method: "POST",
+        body: { email: "admin@assetflow.uz", password: "admin123" },
+      })
+        .then((r) => r.token)
+        .catch(() => undefined);
+    }
+    if (adminToken) {
+      try {
+        await req(`/api/contributor/templates/${templateId}`, { method: "DELETE", token: adminToken });
+        ok(`test shabloni o'chirildi: ${templateId}`);
+      } catch (e) {
+        console.error(`  ✗ shablon o'chmadi (${templateId}): ${e.message} — QO'LDA o'chiring`);
+      }
+    } else {
+      console.error(`  ✗ admin tokeni yo'q — shablon ${templateId} QOLDI, qo'lda o'chiring`);
+    }
+  }
+  if (contribToken) {
+    try {
+      await req("/api/account", { method: "DELETE", token: contribToken, body: { confirm: "DELETE" } });
+      ok(`test hisobi o'chirildi: ${contribEmail}`);
+    } catch (e) {
+      console.error(`  ✗ hisob o'chmadi (${contribEmail}): ${e.message} — QO'LDA o'chiring`);
+    }
+  }
+}
+
 async function main() {
   console.log("\n=== AssetFlow: Contributor → Admin → Plugin ===\n");
   console.log(`API: ${API}\n`);
@@ -52,7 +116,6 @@ async function main() {
   else ok("API /health");
 
   // 1. Contributor register + login
-  let contribToken;
   try {
     const reg = await req("/api/auth/register", {
       method: "POST",
@@ -71,7 +134,6 @@ async function main() {
   }
 
   // 2. Create + submit template
-  let templateId;
   try {
     const created = await req("/api/contributor/templates", {
       method: "POST",
@@ -110,7 +172,6 @@ async function main() {
   else ok(`Plugin katalog: ${before} ta (yangi shablon yo'q — to'g'ri)`);
 
   // 4. Admin moderation list
-  let adminToken;
   try {
     const admin = await req("/api/auth/login", {
       method: "POST",
@@ -178,7 +239,15 @@ async function main() {
   console.log("  Plugin       AE Browse → server katalog (localhost:4000)\n");
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// #35 (I4) — tozalash MUVAFFAQIYAT va XATO holatida ham ishlaydi (`process.exit` emas:
+// aks holda `finally` bajarilmasdan qolardi).
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exitCode = 1;
+  })
+  .finally(() =>
+    cleanup().catch((e) => {
+      console.error("  ✗ tozalash xato:", e.message);
+    })
+  );

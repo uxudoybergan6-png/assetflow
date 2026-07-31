@@ -28,6 +28,10 @@ const TRANSCODE_FAIL_MS = 45 * 60 * 1000;
 const TRANSCODE_BATCH = 10;
 /** Bir pass'da qayta embed qilinadigan maksimal shablon (AI chaqiruvlari ketma-ket). */
 const EMBED_BATCH = 5;
+/** #110 (I8) — embedding ijarasi: shundan yaqinroq tegilgan qator o'tkazib yuboriladi
+ *  (approve paytidagi asosiy embed yo'li yoki boshqa instansning passi hali ishlayotgan
+ *  bo'lishi mumkin). Pass intervalidan biroz kichik — har pass'da yangi qator ko'radi. */
+const EMBED_STUCK_MS = 5 * 60 * 1000;
 const RECONCILE_INTERVAL_MS = 10 * 60 * 1000;
 
 /** Cutoff'dan oshgan "pending" transcode'larni qayta ishga tushiradi. Qaytaradi: nechta re-run. */
@@ -39,17 +43,24 @@ export async function reconcileStuckTranscodes(): Promise<number> {
     take: TRANSCODE_BATCH,
     orderBy: { updatedAt: "asc" },
   });
+  let started = 0;
   for (const t of stuck) {
-    // "Touch" — updatedAt yangilanadi, shu bois uzoq transcode hali ishlayotganda
-    // keyingi pass'lar uni qayta-qayta enqueue qilmaydi (cutoff yana boshidan sanaladi).
-    await prisma.contributorTemplate.update({
-      where: { id: t.id },
+    // #110 (I8) — ATOMIK EGALLASH (find-then-touch EMAS). Ilgari topilgan qatorni
+    // shartsiz `update` qilardi: max-instances 10 da har instansning 10 daqiqalik
+    // pass'i AYNAN o'sha qatorni topib, hammasi ffmpeg transcode'ini qayta ishga
+    // tushirardi (bir xil ishning 10 nusxasi, CPU va vaqt behuda). Endi "touch"
+    // `updateMany` + ASL shart (`pending` va `updatedAt < cutoff`) bilan bajariladi:
+    // birinchi instans updatedAt'ni yangilaydi → qolganlarida count=0 → o'tkazib yuboriladi.
+    const claimed = await prisma.contributorTemplate.updateMany({
+      where: { id: t.id, previewTranscodeStatus: "pending", updatedAt: { lt: cutoff } },
       data: { previewTranscodeStatus: "pending" },
     });
+    if (claimed.count === 0) continue; // boshqa instans (yoki pass) allaqachon oldi
+    started++;
     console.log(`[template-reconcile] qotib qolgan transcode qayta ishga tushdi: ${t.id}`);
     transcodePreviewInBackground(t.id);
   }
-  return stuck.length;
+  return started;
 }
 
 /**
@@ -77,11 +88,15 @@ export async function sweepStaleTranscodes(): Promise<number> {
 /** APPROVED+published, lekin embedding'i yo'q shablonlarni bounded partiyada qayta embed qiladi. */
 export async function reconcileMissingEmbeddings(): Promise<number> {
   if (!isAiConfigured()) return 0;
+  // #110 (I8) — embedding uchun ham ijara: yaqinda tegilgan qator (approve paytidagi
+  // asosiy yo'l yoki boshqa instansning shu passi) qayta embed qilinmaydi.
+  const cutoff = new Date(Date.now() - EMBED_STUCK_MS);
   const rows = await prisma.contributorTemplate.findMany({
     where: {
       reviewStatus: TemplateReviewStatus.APPROVED,
       published: true,
       embedding: { equals: Prisma.AnyNull },
+      updatedAt: { lt: cutoff },
     },
     select: { id: true, name: true },
     take: EMBED_BATCH,
@@ -89,6 +104,18 @@ export async function reconcileMissingEmbeddings(): Promise<number> {
   });
   let done = 0;
   for (const r of rows) {
+    // Atomik egallash — `published: true` shu yerda no-op qiymat (where sharti bilan bir xil),
+    // maqsad `updatedAt`ni yangilash: boshqa instans shu qatorni ijara muddatigacha olmaydi.
+    const claimed = await prisma.contributorTemplate.updateMany({
+      where: {
+        id: r.id,
+        published: true,
+        embedding: { equals: Prisma.AnyNull },
+        updatedAt: { lt: cutoff },
+      },
+      data: { published: true },
+    });
+    if (claimed.count === 0) continue;
     const res = await embedTemplate(r.id);
     if (res.ok) {
       done++;

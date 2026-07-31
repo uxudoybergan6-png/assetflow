@@ -1,0 +1,80 @@
+name: Deploy CDN proxy Worker
+
+# #112 (I10) — workers/cdn-proxy Worker'i `apps/api/src/lib/public-keys.ts` dagi
+# `isPublicReadKey()` ruxsat ro'yxatini TO'G'RIDAN-TO'G'RI import qiladi (edge'da
+# qaysi obyekt ochiq ekanini AYNAN shu funksiya hal qiladi). Lekin Worker faqat
+# QO'LDA `wrangler deploy` bilan chiqarilardi: ruxsat ro'yxati API'da o'zgarsa
+# (yangi prefiks ochilsa yoki eskisi yopilsa) edge ESKI qoidani ushlab turardi —
+# ya'ni CDN va API bir-biriga zid ruxsat berardi (yopilgan asset edge'da ochiq
+# qolishi mumkin). Endi ro'yxat yoki Worker manbasi o'zgarsa deploy AVTOMATIK.
+#
+# Kerakli repo secretlar (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN   — "Edit Cloudflare Workers" ruxsatli token
+#   CLOUDFLARE_ACCOUNT_ID  — Cloudflare hisob ID'si
+# Worker maxfiylari (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY) bu yerda EMAS —
+# ular `wrangler secret put` bilan bir marta qo'yiladi va deploy'da tegilmaydi.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "workers/cdn-proxy/**"
+      - "apps/api/src/lib/public-keys.ts"
+      - ".github/workflows/deploy-cdn-worker.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-cdn-worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: workers/cdn-proxy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: workers/cdn-proxy/package-lock.json
+
+      # Secretlar yo'q bo'lsa JIMGINA o'tib ketmaydi — deploy qilinmagani BILINSIN
+      # (aks holda ruxsat ro'yxati drift qilishda davom etardi).
+      - name: Secretlar tekshiruvi (fail-closed)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          missing=""
+          [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Repo secret yetishmaydi:$missing — CDN Worker deploy qilinmadi." >&2
+            echo "::error::isPublicReadKey ruxsat ro'yxati edge'da ESKI holatda qoladi. docs/PROD-ENV-CHECKLIST.md" >&2
+            exit 1
+          fi
+
+      - name: Install deps
+        run: npm ci
+
+      # Tip xatosi bilan deploy bo'lmasin: Worker API'ning public-keys manbasini
+      # import qiladi, ya'ni API tarafidagi imzo o'zgarsa shu yerda ushlanadi.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Deploy (wrangler)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
