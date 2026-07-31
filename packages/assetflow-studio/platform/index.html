@@ -15216,14 +15216,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:14px;padding:0 40px}
   .ff .va-strip .gt{aspect-ratio:16/10;border-radius:12px;cursor:pointer}
   .ff .va-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:18px;padding:0 40px 42px}
-  .ff .va-tc{cursor:pointer;min-width:0}
-  .ff .va-tc .th{aspect-ratio:16/10}
-  .ff .va-tc .th .va-badge{position:absolute;top:9px;left:9px;z-index:1}
-  .ff .va-tc .th .dur{position:absolute;right:9px;bottom:9px;font:600 10px var(--mono);padding:2px 6px;border-radius:4px;background:rgba(6,8,11,.7);color:#DFE5EC;z-index:1}
-  .ff .va-tc .meta{display:flex;align-items:center;gap:8px;padding:9px 2px 0}
-  .ff .va-tc .tt{font-weight:600;font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ff .va-tc .app{display:flex;align-items:center;gap:5px;font:500 10px var(--mono);color:var(--muted)}
-  .ff .va-tc .app i{width:7px;height:7px;border-radius:50%;background:#B794F6;display:inline-block}
+  /* D5 (#16) — bu yerda `.va-tc` karta avlodi bor edi (8 qoida + mobil override): FAZA C/D dan
+     keyin barcha kartalar `.va-rc` ga o'tgan, HTML'da bironta `va-tc` qolmagan. O'chirildi. */
   .ff .va-empty{border:1px dashed rgba(255,255,255,.1);border-radius:14px;padding:30px 24px;text-align:center;margin:0 40px}
   /* ── FAZA C · Home enrichment — rich card (va-rc) · shelves (va-sh) · featured models (va-fm) ── */
   .ff .va-sec .cnt{font:500 10px var(--mono);color:var(--muted2)}
@@ -15239,12 +15233,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-btn:active,.ff .va-set:active,.ff .va-axuse:active{transform:scale(.98)}
   .ff .ffa-pop,.ff .va-fpop,.ff .va-setpop{animation:mo-pop-in var(--mo-enter) var(--mo-ease-out)}
   @keyframes mo-pop-in{from{opacity:0;transform:scale(.97) translateY(4px)}to{opacity:1;transform:none}}
-  .ff .va-toast,.ff .va-toastwrap>*{animation:mo-rise-in var(--mo-enter) var(--mo-ease-out)}
+  /* D5 (#17) — `.va-toastwrap` selektori o'lik edi (bunday konteyner yo'q: toast bitta,
+     `sc-if` bilan chiqadi). Toast uslubi endi shu `.va-toast` klassida (inline'dan ko'chirildi). */
+  .ff .va-toast{animation:mo-rise-in var(--mo-enter) var(--mo-ease-out)}
   @keyframes mo-rise-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   @media(prefers-reduced-motion:reduce){
     .ff .va-rc .med,.ff .va-btn{transition:none!important}
     .ff .va-rc:hover .med,.ff .va-rc:active .med,.ff .va-btn:active,.ff .va-set:active,.ff .va-axuse:active{transform:none!important}
-    .ff .ffa-pop,.ff .va-fpop,.ff .va-setpop,.ff .va-toast,.ff .va-toastwrap>*{animation:none!important}
+    .ff .ffa-pop,.ff .va-fpop,.ff .va-setpop,.ff .va-toast{animation:none!important}
   }
   .ff .va-rc .med .badges{position:absolute;top:10px;left:10px;display:flex;gap:5px;z-index:2}
   .ff .va-rc .med .dur{position:absolute;right:10px;bottom:10px;font:600 10px var(--mono);padding:2.5px 7px;border-radius:4px;background:rgba(6,8,11,.72);color:#DFE5EC;z-index:2}
@@ -15370,7 +15366,6 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     .ff .va-strip::-webkit-scrollbar{display:none}
     .ff .va-strip .gt{width:124px;flex:none;aspect-ratio:1/1;border-radius:10px}
     .ff .va-cards{grid-template-columns:1fr 1fr;gap:11px;padding:0 16px 20px}
-    .ff .va-tc .tt{font-size:11px}
     .ff .va-empty{margin:0 16px}
     .ff .va-main{padding-bottom:78px}
   }
@@ -15445,7 +15440,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-alert{display:block;margin-top:12px;padding:12px;border-radius:9px;border:1px solid var(--border);background:var(--th-accent-soft)}
   .ff .va-alert b{display:block;font:600 10px var(--mono);letter-spacing:.08em;color:var(--th-accent);margin-bottom:4px}
   .ff .va-alert span{display:block;font-size:11px;color:var(--text-2);line-height:1.5}
-  .ff .va-rel4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  /* D5 (#15) — qat'iy 4 ustun: 4 tadan kam o'xshash shablon bo'lsa qator oxirida bo'sh
+     kataklar qolardi (related MAKS 4 ta). `auto-fit` (`auto-fill` EMAS) — bo'sh treklarni
+     yig'ib tashlaydi, shuning uchun 1-3 karta ham joyni to'liq egallaydi. */
+  .ff .va-rel4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
   /* ── detail actions (fav · project · share) — mockup detail-actions ── */
   .ff .va-dact{display:flex;gap:6px;margin-top:12px}
   .ff .va-dact .fav{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-2);cursor:pointer;padding:9px;font:600 10.5px 'Hanken Grotesk',sans-serif;transition:border-color .16s,color .16s}
@@ -15702,6 +15700,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-ledtot .t .k{font:600 10px var(--mono);letter-spacing:.08em;color:var(--muted2)}
   .ff .va-ledtot .t .v{font:700 14px var(--mono);color:var(--text)}
   .ff .va-ledtot .t .v.ref{color:var(--lime)}
+  /* D5 (#17) — toast: ilgari 14 xossali inline `style` edi va foni `rgba(20,20,30,.95)`,
+     Retry matni `#0a0a0a` — ya'ni tema tokenlaridan tashqarida (light/neon temada fon
+     to'g'ri kelmasdi). Endi klassda + `--th-surface`/`--th-on-accent` tokenlarida. */
+  /* Markazlash `translate` xossasida (transform'da EMAS): `mo-rise-in` transform'ni yozadi va
+     kirish animatsiyasi davomida -50% X yo'qolib toast chapga sirg'anardi. Endi ikkisi qo'shiladi. */
+  .ff .va-toast{position:fixed;bottom:28px;left:50%;translate:-50% 0;z-index:200;display:inline-flex;align-items:center;gap:10px;max-width:min(560px,92vw);padding:13px 20px;border-radius:13px;background:color-mix(in srgb,var(--th-surface) 94%,transparent);border:1px solid var(--bd2);backdrop-filter:blur(12px);box-shadow:0 16px 40px -10px rgba(0,0,0,.7);font-size:14.5px;font-weight:600;color:var(--txt)}
+  .ff .va-toast>i.lead{font-size:18px;flex:none}
+  .ff .va-toast .rt{flex:none;margin-left:4px;padding:5px 12px;border-radius:8px;background:var(--th-accent);color:var(--th-on-accent);font-weight:700;font-size:13px;cursor:pointer}
   /* P30 (29c) — provayder kontent rad etilishi banneri (halol) */
   .ff .va-rejbanner{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);z-index:201;display:flex;align-items:center;gap:12px;max-width:min(620px,94vw);padding:13px 16px;border-radius:14px;background:var(--surface);border:1px solid color-mix(in srgb,var(--th-danger) 40%,var(--hair2));box-shadow:0 18px 44px -12px rgba(0,0,0,.6);animation:ffRise .25s ease}
   .ff .va-rejbanner>i.lead{color:var(--th-danger);font-size:20px;flex:none}
@@ -15815,9 +15821,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-sesschip.new{background:var(--limedim);border-color:color-mix(in srgb,var(--lime) 30%,transparent);color:var(--lime)}
   .ff .va-sesschip .cv{width:16px;height:16px;border-radius:5px;background-size:cover !important;background-position:center !important;flex:none}
   /* QA-FIX #13 — loyiha detal kartasida "olib tashlash" tugmasi */
-  .ff .va-projrm{position:absolute;top:9px;right:9px;width:26px;height:26px;border-radius:8px;background:rgba(10,12,16,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;color:#DFE5EC;font-size:13px;cursor:pointer;opacity:0;transition:opacity .15s;z-index:3}
+  /* D5 (#14) — 26px hit-area barmoq uchun kichik edi: 32px (mobil tegish minimumi). */
+  .ff .va-projrm{position:absolute;top:9px;right:9px;width:32px;height:32px;border-radius:9px;background:rgba(10,12,16,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;color:#DFE5EC;font-size:14px;cursor:pointer;opacity:0;transition:opacity .15s;z-index:3}
   .ff .va-rc:hover .va-projrm{opacity:1}
   .ff .va-projrm:hover{border-color:var(--th-danger);color:var(--th-danger)}
+  /* D5 (#14) — "armed" (2-klik tasdiq) holati ko'rinadigan bo'lsin: qurollanganda tugma
+     hover'siz ham ko'rinadi (aks holda foydalanuvchi 2-klikni ko'r-ko'rona bosardi). */
+  .ff .va-projrm.armed{opacity:1;border-color:var(--th-danger);color:var(--th-danger);box-shadow:0 0 0 2px var(--th-danger) inset}
   @media(max-width:760px){ .ff .va-projrm{opacity:1} }
   /* main column */
   .ff .va-axmainc{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);background-size:20px 20px}
@@ -16665,7 +16675,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                         <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                         <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                       </div>
-                      <div class="meta"><span class="tt">{{ r.n }}</span><span class="sub"><i style="background:{{ r.ac }}"></i>{{ r.a }}</span></div>
+                      <div class="meta"><span class="tt" title="{{ r.n }}">{{ r.n }}</span><span class="sub"><i style="background:{{ r.ac }}"></i>{{ r.a }}</span></div>
                       <div class="cat">{{ r.catMeta }}</div>
                     </div>
                   </sc-for>
@@ -16843,7 +16853,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                   <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                 </div>
-                <div class="meta"><span class="tt">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
                 <div class="cat">{{ t.catMeta }}</div>
               </div>
             </sc-for>
@@ -16873,7 +16883,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                       <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                     </div>
-                    <div class="meta"><span class="tt">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
                     <div class="cat">{{ t.catMeta }}</div>
                   </div>
                 </sc-for>
@@ -16901,7 +16911,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                       <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                     </div>
-                    <div class="meta"><span class="tt">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
                     <div class="cat">{{ t.catMeta }}</div>
                   </div>
                 </sc-for>
@@ -16929,7 +16939,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                       <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                     </div>
-                    <div class="meta"><span class="tt">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
                     <div class="cat">{{ t.catMeta }}</div>
                   </div>
                 </sc-for>
@@ -17017,7 +17027,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                     <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                   </div>
-                  <div class="meta"><span class="tt">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                  <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
                   <div class="cat">{{ t.catMeta }}</div>
                 </div>
               </sc-for>
@@ -17596,9 +17606,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     <sc-if value="{{ t.isAud }}" hint-placeholder-val="{{ false }}"><span class="va-audtile"><svg viewBox="0 0 30 14" fill="currentColor"><rect x="0" y="5" width="2" height="4" rx="1"></rect><rect x="4" y="2" width="2" height="10" rx="1"></rect><rect x="8" y="4" width="2" height="6" rx="1"></rect><rect x="12" y="0" width="2" height="14" rx="1"></rect><rect x="16" y="3" width="2" height="8" rx="1"></rect><rect x="20" y="5" width="2" height="4" rx="1"></rect><rect x="24" y="2" width="2" height="10" rx="1"></rect><rect x="28" y="6" width="2" height="3" rx="1"></rect></svg></span></sc-if>
                     <span class="va-typeicon"><i class="ph-fill ph-{{ t.tIcon }}"></i></span>
                     <sc-if value="{{ t.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
-                    <span data-item="{{ t.itemId }}" onclick="{{ removeProjItem }}" class="va-projrm" title="Remove from project" role="button" tabindex="0"><i class="ph ph-x"></i></span>
+                    <span data-item="{{ t.itemId }}" onclick="{{ removeProjItem }}" class="{{ t.rmCls }}" title="{{ t.rmTitle }}" aria-label="{{ t.rmTitle }}" role="button" tabindex="0"><i class="ph ph-x"></i></span>
                   </div>
-                  <div class="meta"><span class="tt">{{ t.title }}</span><span class="sub">{{ t.sub }}</span></div>
+                  <div class="meta"><span class="tt" title="{{ t.title }}">{{ t.title }}</span><span class="sub">{{ t.sub }}</span></div>
                 </div>
               </sc-for>
             </div>
@@ -17612,7 +17622,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <!-- MOBILE BOTTOM TAB BAR (A5 va-mtabs) -->
     <nav class="va-mtabs">
       <a data-screen="dashboard" onclick="{{ onNav }}" class="{{ btmDashCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-home"></use></svg>Home</a>
-      <a data-screen="templates" onclick="{{ onNav }}" class="{{ btmTplCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-grid"></use></svg>Catalog</a>
+      <!-- D5 (#16) — mobil tab "Catalog" deb turardi: ekranning har joyida nom "Stock Catalog",
+           tor ekran qisqartmasi esa "Stock" (seg tab bilan bir xil, 22337-qator). -->
+      <a data-screen="templates" onclick="{{ onNav }}" class="{{ btmTplCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-grid"></use></svg>Stock</a>
       <a data-screen="aistudio" onclick="{{ onNav }}" class="{{ btmAiCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg>AI</a>
       <a data-screen="account" onclick="{{ onNav }}" class="{{ btmAccCls }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-user"></use></svg>Account</a>
     </nav>
@@ -17890,7 +17902,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
   <!-- TOAST -->
   <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:200;display:inline-flex;align-items:center;gap:10px;padding:13px 20px;border-radius:13px;background:rgba(20,20,30,.95);border:1px solid var(--bd2);backdrop-filter:blur(12px);box-shadow:0 16px 40px -10px rgba(0,0,0,.7);font-size:14.5px;font-weight:600;color:var(--txt);animation:ffRise .25s ease;max-width:min(560px,92vw)"><i class="{{ toastIcon }}" style="color:{{ toastIconColor }};font-size:18px;flex:none"></i>{{ toast }}<sc-if value="{{ toastRetry }}" hint-placeholder-val="{{ false }}"><b onclick="{{ toastRetryClick }}" style="cursor:pointer;margin-left:4px;padding:5px 12px;border-radius:8px;background:var(--th-accent,#c8ff5a);color:#0a0a0a;font-weight:700;font-size:13px;flex:none">Retry</b></sc-if></div>
+    <div class="va-toast" role="status" aria-live="polite"><i class="{{ toastIcon }} lead" style="color:{{ toastIconColor }}"></i>{{ toast }}<sc-if value="{{ toastRetry }}" hint-placeholder-val="{{ false }}"><b class="rt" onclick="{{ toastRetryClick }}">Retry</b></sc-if></div>
   </sc-if>
   <!-- P30 (29c) — provayder kontent rad etilishi banneri: halol sabab + ✦N qaytarildi + boshqa model taklifi -->
   <sc-if value="{{ rejectBannerOn }}" hint-placeholder-val="{{ false }}">
@@ -18310,6 +18322,7 @@ class Component extends DCLogic {
     projOpen: null,        // ochilgan loyiha detali: {id,name,items:[...]}
     projLoading: false,
     projDelArm: false,     // o'chirish tugmasi ikki bosqichli tasdiq
+    projItemArm: null,     // D5 (#14) — loyiha ELEMENTINI olib tashlash: armed itemId (2-klik)
     projSelect: false,     // SC_34 — Projects ro'yxati select-rejimi (sessiya rail P6 naqshi)
     projSel: {},           // SC_34 — tanlangan loyiha id'lari
     projBulkArm: false,    // SC_34 — bulk delete 2-bosqichli tasdiq (§D armed naqshi)
@@ -18951,10 +18964,18 @@ class Component extends DCLogic {
       const ffIsMedia = (el) => !!(el && el.classList && el.classList.contains('va-media'));
       // workspace kartasi (.va-axres) bo'lsa — qoplama shu kartaga; ochiq sahifalarda ota element.
       const ffMediaHost = (el) => (el.closest ? (el.closest('.va-axres') || el.parentElement) : el.parentElement);
-      window.addEventListener('load', this._onMediaLoad = (ev) => { try {
+      // D5 (#18) — `load` DOCUMENT'da (window'da EMAS): DOM spetsifikatsiyasiga ko'ra element
+      // `load` hodisasining tarqalish yo'lida Window YO'Q (window.onload bilan aralashmasligi
+      // uchun maxsus istisno) — ya'ni `window.addEventListener('load',…,true)` <img> uchun
+      // HECH QACHON ishlamaydi (brauzerda o'lchandi: doc-cap-load bor, win-cap-load yo'q).
+      document.addEventListener('load', this._onMediaLoad = (ev) => { try {
         const el = ev.target;
         if (!ffIsMedia(el)) return;
-        const host = el.closest ? el.closest('.va-axres') : null;
+        // D5 (#18) — ilgari faqat `.va-axres` (workspace kartasi) qabul qilinardi va boshqa
+        // joyda `return` bo'lardi: katalog/detal/loyiha kartalarida `.va-skel` shimmer HECH
+        // QACHON o'chmasdi (rasm yuklangan bo'lsa ham ustidan pulsatsiya ketardi). Endi
+        // xato-handler bilan bir xil `ffMediaHost` — `.va-skel` aynan ota elementda.
+        const host = ffMediaHost(el);
         if (!host) return;
         // P10#5 — skeletonni darhol olib tashla + _mediaLoaded'ga belgila (setState YO'Q).
         host.classList.remove('va-skel');
@@ -19115,7 +19136,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._onMediaError) window.removeEventListener('error', this._onMediaError, true); if (this._onMediaLoad) { window.removeEventListener('load', this._onMediaLoad, true); window.removeEventListener('loadedmetadata', this._onMediaLoad, true); } if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._onMediaError) window.removeEventListener('error', this._onMediaError, true); if (this._onMediaLoad) { document.removeEventListener('load', this._onMediaLoad, true); window.removeEventListener('loadedmetadata', this._onMediaLoad, true); } if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); this._syncModalFx(); }
@@ -20093,6 +20114,22 @@ class Component extends DCLogic {
       this.setState(s => ({ projects: [{ id: p.id, name: p.name, count: 0, covers: [], updatedAt: p.updatedAt }].concat(s.projects) }));
       await this.addToProject(p.id);
     } catch (e) { this.toast(this.errMsg(e)); }
+  }
+  // D5 (#14) — "Loyihadan olib tashlash" qaytarilmas DELETE edi va bitta klikda ketardi
+  // (tasdiq yo'q, ilovaning o'z `deleteGenArmed`/SC_34 naqshi chetlab o'tilgan). Birinchi klik
+  // qurollantiradi (ko'rinadigan armed holat + toast), ikkinchisi (AYNI element) olib tashlaydi.
+  removeProjItemArmed(itemId) {
+    if (!itemId) return;
+    if (this.state.projItemArm !== itemId) {
+      clearTimeout(this._projItemT);
+      this.setState({ projItemArm: itemId });
+      this.toast('Click again to remove', 'warning'); // native confirm() EMAS
+      this._projItemT = setTimeout(() => { if (this.state.projItemArm === itemId) this.setState({ projItemArm: null }); }, 3500);
+      return;
+    }
+    clearTimeout(this._projItemT);
+    this.setState({ projItemArm: null });
+    this.removeProjItemById(itemId);
   }
   async removeProjItemById(itemId) {
     const p = this.state.projOpen; if (!p) return;
@@ -22232,11 +22269,15 @@ class Component extends DCLogic {
     });
     // Ochilgan loyiha detali — gen'lar mapGen orqali (lightbox mos), shablonlar katalog kartasi (rcOf)
     const projOpen = this.state.projOpen;
+    // D5 (#14) — armed holat KARTA bo'yicha: faqat bosilgan element qizil bo'ladi.
+    const projRm = (id) => (this.state.projItemArm === id
+      ? { rmCls: 'va-projrm armed', rmTitle: 'Click again to remove' }
+      : { rmCls: 'va-projrm', rmTitle: 'Remove from project' });
     const projItemsView = (projOpen ? projOpen.items : []).map(it => {
       if (it.kind === 'gen' && it.gen) {
         const g = this.mapGen(it.gen);
         const md = genMediaOf(g);
-        return { itemId: it.id, isGen: true, isTpl: false, kindStr: 'gen', refId: g.id, tIcon: tIconOf(g.type), title: g.label || 'Generation', sub: fmtAgo(g.at), ...md, isVideo: g.type === 'video' };
+        return { itemId: it.id, isGen: true, isTpl: false, kindStr: 'gen', refId: g.id, tIcon: tIconOf(g.type), title: g.label || 'Generation', sub: fmtAgo(g.at), ...md, isVideo: g.type === 'video', ...projRm(it.id) };
       }
       const t = it.template || {};
       const cat = this.state.catalog.find(x => x.id === String(t.id)) ||
@@ -22249,6 +22290,7 @@ class Component extends DCLogic {
         mcls: cat.thumbUrl ? ' va-skel' : '',
         g: cat.thumbUrl ? '' : this.grad(cat.h || this.hueOf(String(t.id))),
         asp: cat.ar || '16 / 10',
+        ...projRm(it.id),
       };
     });
     // ── FAZA C · kolleksiya tokchalari (real katalogdan kesim; rcOf yuqorida — FAZA D bilan umumiy) ──
@@ -23133,7 +23175,7 @@ class Component extends DCLogic {
       projSelectAll: (e) => { if (e) e.stopPropagation(); if (this.state.projBulkBusy) return; this.setState(st => { const sel = {}; st.projects.forEach(p => { sel[p.id] = true; }); return { projSel: sel }; }); },
       projSelectClear: (e) => { if (e) e.stopPropagation(); if (this.state.projBulkBusy) return; this.setState({ projSel: {}, projBulkArm: false }); },
       projBulkDelete: (e) => { if (e) e.stopPropagation(); this.bulkDeleteProjects(); },
-      backToProjects: () => this.setState({ projOpen: null, projDelArm: false }),
+      backToProjects: () => { clearTimeout(this._projItemT); this.setState({ projOpen: null, projDelArm: false, projItemArm: null }); },
       renameProject: () => { const p = this.state.projOpen; if (p) this.setState({ nameModal: { kind: 'renameProject', ctx: p.id, icon: 'pencil-simple', title: 'Rename project', cta: 'Save', ph: 'Project name', value: p.name } }); },
       deleteProject: () => this.deleteProjectArmed(),
       goAistudio: () => this.go('aistudio'),
@@ -23150,7 +23192,7 @@ class Component extends DCLogic {
           else this.toast('Template is no longer available');
         }
       },
-      removeProjItem: (e) => { e.stopPropagation(); this.removeProjItemById(e.currentTarget.dataset.item); },
+      removeProjItem: (e) => { e.stopPropagation(); this.removeProjItemArmed(e.currentTarget.dataset.item); },
       // "Add to project" tanlagichi (gen + shablon)
       addPick: this.state.addPick,
       addPickProjects: this.state.projects.map(p => { const cv = p.covers && p.covers[0] && p.covers[0].thumb; return { id: p.id, n: p.name, d: (p.count || 0) + ' item' + (p.count === 1 ? '' : 's'), cv: cv ? media(cv, 0) : this.grad(this.hueOf(p.id)), noCv: !cv }; }),

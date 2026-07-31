@@ -305,12 +305,19 @@ if (delegMatch) {
     }
   }
 
+  // D5 (#18) — listener QAYSI nodega ulanganini ham yozamiz: element `load` hodisasi
+  // spetsifikatsiya bo'yicha `window`ga chiqmaydi (faqat `document`gacha), shuning uchun
+  // `load` DOCUMENT'da bo'lishi kontrakt (audit N6).
   const registered = [];
   const fakeWindow = {
-    addEventListener: (type, fn, capture) => registered.push({ type, fn, capture }),
+    addEventListener: (type, fn, capture) => registered.push({ on: "window", type, fn, capture }),
     removeEventListener: () => {},
   };
-  const fakeDocument = { createElement: (t) => new FakeEl(t) };
+  const fakeDocument = {
+    createElement: (t) => new FakeEl(t),
+    addEventListener: (type, fn, capture) => registered.push({ on: "document", type, fn, capture }),
+    removeEventListener: () => {},
+  };
   const component = {};
   let bootErr = null;
   try {
@@ -323,10 +330,12 @@ if (delegMatch) {
   const fire = (type, target) => {
     for (const r of registered) if (r.type === type) r.fn({ target });
   };
-  const hasCapture = (type) => registered.some((r) => r.type === type && r.capture === true);
+  const hasCapture = (type, on) => registered.some((r) => r.type === type && r.capture === true && (!on || r.on === on));
 
   check("error/load/loadedmetadata — uchalasi ham capture fazasida ulangan",
     hasCapture("error") && hasCapture("load") && hasCapture("loadedmetadata"));
+  check("`load` DOCUMENT'da ulangan (window'da EMAS — element load hodisasi window'ga chiqmaydi)",
+    hasCapture("load", "document") && !registered.some((r) => r.type === "load" && r.on === "window"));
 
   // (a) Workspace rasm xatosi: 1-xato = cache-bust retry, qoplama YO'Q.
   const host = new FakeEl("div", ["va-axres", "va-skel"]);

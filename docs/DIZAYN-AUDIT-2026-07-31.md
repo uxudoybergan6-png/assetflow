@@ -130,3 +130,19 @@ D4'da avatar gradienti tokenlarga o'tkazildi (hardcode binafsha ketdi), lekin yo
 11px qalin matn uchun AA (4.5:1) dan past. Eski hardcode gradient ham shunga yaqin edi (4.37:1),
 ya'ni regressiya emas; bosh harflar yonida ism matni ham ko'rinadi. **Tavsiya:** N1 bilan birga D6'da
 yorug' tema uchun bir pog'ona to'q "ink" varianti.
+
+**N5 (P3, `platform/index.html:15712`) — `.va-rejbanner` markazlashuvi kirish animatsiyasi davomida buziladi.**
+D5 (#17) toastda o'lchangan naqsh: `transform:translateX(-50%)` bilan markazlashgan `position:fixed`
+element `animation:ffRise` (from `translateY(12px)`) ni oladi — animatsiya transform'ni butunlay
+yozadi, shuning uchun ~250 ms davomida element ekran markazidan chapga (`left:50%` nuqtasiga)
+sirg'aladi. Toastda markazlash `translate:-50% 0` xossasiga o'tkazilib tuzatildi (ikkisi qo'shiladi);
+`.va-rejbanner` da AYNI defekt qoldi (P30 banneri, kamdan-kam chiqadi). **Tavsiya:** D6'da bir xil
+almashtirish (`transform:translateX(-50%)` → `translate:-50% 0`).
+
+**N6 (P2, `platform/index.html` — sinf: hodisa-delegatsiya) — element `load` hodisasi `window`ga chiqmaydi.**
+DOM spetsifikatsiyasiga ko'ra element `load` hodisasining tarqalish yo'lida Window YO'Q (`window.onload`
+bilan aralashmasligi uchun istisno) — brauzerda o'lchandi: `<img>` uchun `document` capture listener
+ishlaydi, `window` capture listener HECH QACHON chaqirilmaydi (`error` va `loadedmetadata` esa ikkalasida
+ham ishlaydi). D5 (#18) da media skeleton listeneri `document`ga ko'chirildi. Boshqa sirtlar (plagin,
+contributor studio) grep bilan tekshirildi — bu naqsh boshqa joyda YO'Q, ya'ni faqat shu bitta joy
+zararlangan edi. Yozib qo'yildi: kelajakda media delegatsiyasi yozilganda `document` ishlatilsin.
