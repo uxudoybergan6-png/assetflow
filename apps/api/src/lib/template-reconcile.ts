@@ -4,6 +4,7 @@ import { embedTemplate } from "./ai/embed-templates.js";
 import { isAiConfigured } from "./ai/workers-ai.js";
 import { captureException } from "./sentry.js";
 import { reconcileMissingAssetKeys } from "./asset-state.js";
+import { startAdaptiveTimer } from "./idle-timer.js"; // D0 — idle-aware fon jadvali
 
 /**
  * FAZA 3 (B) — qotib qolgan shablon-fon ishlarini tiklovchi reconciler'lar
@@ -33,6 +34,11 @@ const EMBED_BATCH = 5;
  *  bo'lishi mumkin). Pass intervalidan biroz kichik — har pass'da yangi qator ko'radi. */
 const EMBED_STUCK_MS = 5 * 60 * 1000;
 const RECONCILE_INTERVAL_MS = 10 * 60 * 1000;
+/** D0 — ish topilmagan ketma-ket passlarda kechikish shu qiymatgacha ikkilanadi (Neon uxlasin). */
+const RECONCILE_IDLE_MAX_MS = Math.max(
+  RECONCILE_INTERVAL_MS,
+  Number(process.env.RECONCILE_IDLE_MAX_MS) || 60 * 60 * 1000,
+);
 
 /** Cutoff'dan oshgan "pending" transcode'larni qayta ishga tushiradi. Qaytaradi: nechta re-run. */
 export async function reconcileStuckTranscodes(): Promise<number> {
@@ -127,37 +133,52 @@ export async function reconcileMissingEmbeddings(): Promise<number> {
   return done;
 }
 
-async function runReconcilePass(): Promise<void> {
+/** Pass ish topdimi (D0 idle-backoff signali). */
+async function runReconcilePass(): Promise<boolean> {
+  let hadWork = false;
   try {
     // #19 (T5.1) — o'qish yo'li endi S3 LIST qilmaydi; kesh yo'q qatorlar shu
     // yerda (va fon navbatida) to'ldiriladi. Katta katalog uchun bir martalik
     // `backfill-asset-keys` skripti tezroq.
     const filled = await reconcileMissingAssetKeys();
     if (filled) console.log(`[template-reconcile] asset kesh to'ldirildi: ${filled}`);
+    if (filled) hadWork = true;
   } catch (e) {
     console.error("[template-reconcile] asset-kesh pass xato:", e);
     captureException(e, { area: "template-reconcile.assetKeys" });
   }
   try {
-    await reconcileStuckTranscodes();
+    const restarted = await reconcileStuckTranscodes();
     // Tartib MUHIM: avval qayta urinish (30 daq), keyin taslim (45 daq).
     const failed = await sweepStaleTranscodes();
     if (failed) console.log(`[template-reconcile] stale transcode "failed" qilindi: ${failed}`);
+    if (restarted || failed) hadWork = true;
   } catch (e) {
     console.error("[template-reconcile] transcode pass xato:", e);
     captureException(e, { area: "template-reconcile.transcode" });
   }
   try {
-    await reconcileMissingEmbeddings();
+    const embedded = await reconcileMissingEmbeddings();
+    if (embedded) hadWork = true;
   } catch (e) {
     console.error("[template-reconcile] embedding pass xato:", e);
     captureException(e, { area: "template-reconcile.embed" });
   }
+  return hadWork;
 }
 
-/** Startup pass (kechiktirilgan) + davriy timer — index.ts listen callback'ida chaqiriladi. */
+/**
+ * Startup pass (kechiktirilgan) + davriy IDLE-AWARE jadval — index.ts listen callback'ida chaqiriladi.
+ * D0 (2026-07-31): ilgari qat'iy 10 daqiqalik `setInterval` edi — bo'sh baza ham har 10 daqiqada
+ * uyg'onardi va Neon compute-kvotasi oy oxirida tugardi (P0 insident). Endi pass ish topmasa
+ * kechikish `RECONCILE_IDLE_MAX_MS`gacha ikkilanadi; ish topilsa darhol 10 daqiqaga qaytadi.
+ */
 export function startTemplateReconcilers(): void {
-  setTimeout(() => void runReconcilePass(), 15_000);
-  const timer = setInterval(() => void runReconcilePass(), RECONCILE_INTERVAL_MS);
-  if (typeof timer.unref === "function") timer.unref();
+  startAdaptiveTimer({
+    name: "template-reconcile",
+    baseMs: RECONCILE_INTERVAL_MS,
+    maxMs: RECONCILE_IDLE_MAX_MS,
+    firstDelayMs: 15_000,
+    task: runReconcilePass,
+  });
 }

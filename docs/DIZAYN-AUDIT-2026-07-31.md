@@ -15,6 +15,29 @@
 | P0-2 | **Frontend deploy eskirgan** — manbada bor SEO/OG bloki (BATCH 11) productionda yo'q | Jonli `getframeflow.app` root HTML'da `meta description`/OG teglar yo'q, `<html lang="">` bo'sh; manba `platform/index.html:2,16-20`da hammasi bor. CF Pages redeploy kerak |
 | P0-3 | Eski `assetflow-20j.pages.dev` domenida login `StudioApi.isLocalApi()` true deb bilib foydalanuvchiga **"npm run dev:api"** dev-xabarini ko'rsatadi | Jonli tekshirildi; `login.html:195` faqat local uchun mo'ljallangan tarmoq. Eski domen → yangi domenga redirect qilinishi yoki o'chirilishi kerak |
 
+### D0 natijasi (2026-07-31, fix-kampaniya)
+
+- **P0-1 — ROOT CAUSE TUZATILDI (kod).** Kvota tugashining haqiqiy sababi `minScale=1` emas, **fon
+  timerlarining qat'iy intervali** edi: `savedRefCleanupTimer` **har 2 daqiqada**, gen resume **har
+  30 sekundda** DB so'rovi yuborardi. Neon compute ~5 daqiqa TO'LIQ jimlikdan keyin suspend bo'ladi
+  → hech kim mahsulotdan foydalanmasa ham compute 24/7 hisoblanardi. Yechim: yangi
+  `apps/api/src/lib/idle-timer.ts` (`startAdaptiveTimer`) — pass ish topsa baza interval, ketma-ket
+  bo'sh passlarda kechikish 1 soatgacha ikkilanadi, yangi ish `nudge()` bilan darhol bazaga tushadi.
+  Qo'llanildi: gen resume (30s), global gen reconcile (10 daq), saved-ref cleanup (2 daq),
+  template-reconcile (10 daq). **Pul zonasi tegilmagan** — refund kechikishi aktiv/nudge holatida
+  ilgarigidek (`cutoff + baza interval`); orqaga chekinish FAQAT non-terminal gen NOL bo'lganda.
+- **Cloud Run `minScale=0` — RAD ETILDI (qaror).** `--no-cpu-throttling --min-instances 1` saqlanadi:
+  minScale=0 bo'lsa fon gen/ingest ishlari sovuq startlar orasida yo'qoladi (memory: "Cloud Run
+  fire-and-forget" tuzog'i). DB uyqusi endi timer darajasida hal qilingan.
+- **Egasi tomonidan:** Neon plan upgrade yoki 1-avgust kvota reseti; `db:"ok"` bo'lgach 8 kutayotgan
+  migratsiya (`npm run migrate:deploy -w @creative-tools/database`).
+- **P0-2 — NO CHANGE NEEDED.** Jonli `getframeflow.app` qayta tekshirildi (2026-07-31): `<html lang="en">`,
+  `meta name="description"`, canonical va 5 ta OG/twitter tegi BOR. CF Pages deploy yetib kelgan.
+- **P0-3 — NO CHANGE NEEDED (kodda), egasi qarori.** `assetflow-20j.pages.dev` endi AYNAN shu
+  kontentni beradi (dev-xabar yo'q) va `canonical` `getframeflow.app`ga ishlaydi → SEO dublikat
+  yopilgan. Host-asosidagi redirect CF Pages `_redirects`da mumkin emas; egasi CF panelida
+  pages.dev subdomenini o'chirsin yoki redirect rule qo'ysin.
+
 ---
 
 ## 1 · P1 findinglar (professional taassurotni buzadi) — 17 ta

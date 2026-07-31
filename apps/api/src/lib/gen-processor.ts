@@ -10,6 +10,7 @@ import {
 } from "./s3.js";
 import { detectMediaFormat } from "./ai/workers-ai.js";
 import { enforceStorageRetention } from "./storage-quota.js";
+import { startAdaptiveTimer } from "./idle-timer.js"; // D0 — idle-aware fon jadvali
 import { byteplusTokensToUsd, recordMeasuredProviderCost } from "./ledger.js"; // P24 — o'lchangan token→USD
 import {
   extractVideoPosterFrame,
@@ -1999,6 +2000,7 @@ export async function reconcileAllStuckGenerations(): Promise<number> {
     orderBy: { createdAt: "asc" },
     take: 500,
   });
+  genNonTerminalSeen = stuck.length; // D0: idle-backoff signali (refund kutayotgan ish bormi)
   let refunded = 0;
   for (const g of stuck) {
     const cutoff = new Date(Date.now() - stuckTimeoutMs(g));
@@ -2093,10 +2095,12 @@ export function processGenerationInBackground(genId: string): void {
   if (genWaitingSet.has(genId) || genActiveSet.has(genId)) return;
   genWaiting.push(genId);
   genWaitingSet.add(genId);
+  // D0: ish paydo bo'ldi → idle-backoff'dagi fon jadvalini baza intervalga qaytar.
+  nudgeGenSchedules();
   genRunNext();
 }
 
-async function resumePendingGenerations(): Promise<void> {
+async function resumePendingGenerations(): Promise<number> {
   const pending = await prisma.generation.findMany({
     where: { status: { in: ["queued", "running"] } },
     select: { id: true, mode: true, status: true, params: true },
@@ -2108,40 +2112,56 @@ async function resumePendingGenerations(): Promise<void> {
       processGenerationInBackground(gen.id);
     }
   }
+  return pending.length;
 }
 
-const genResumeTimer = setInterval(() => {
-  resumePendingGenerations().catch((e) => {
-    console.error("[studio-gen] pending resume xato:", e);
-  });
-}, 30_000);
-if (typeof genResumeTimer.unref === "function") genResumeTimer.unref();
-setTimeout(() => {
-  resumePendingGenerations().catch((e) => {
-    console.error("[studio-gen] initial resume xato:", e);
-  });
-}, 1000);
+// D0: jadval IDLE-AWARE (idle-timer.ts) — pass ish topsa baza intervalda qoladi, ketma-ket
+// bo'sh passlarda kechikish maxMs'gacha ikkilanadi. Bo'sh baza uxlaydi (Neon compute kvotasi).
+const genResumeSchedule = startAdaptiveTimer({
+  name: "gen-resume",
+  baseMs: 30_000,
+  maxMs: Math.max(60_000, Number(process.env.GEN_IDLE_MAX_INTERVAL_MS) || 60 * 60_000),
+  firstDelayMs: 1_000,
+  task: async () => (await resumePendingGenerations()) > 0,
+});
 
 // P1: stuck gen refund'i endi panel ochilishiga bog'liq EMAS — global reconcile FON JADVALIDA.
 // Har o'tishda cutoff'dan (20 daq) oshган queued/running genlar fail+refund bo'ladi →
 // foydalanuvchi panelni qayta ochmasa ham krediti bounded vaqtda (cutoff + interval) qaytadi.
-// Interval env orqali sozlanadi (default 10 daq). Neon compute-soatlarini tejash uchun uzoq
-// tanlangan: cutoff (20 daq) yonida 10 daq detektsiya kechikishi ahamiyatsiz, lekin bo'sh
-// bazani soatiga 60 marta emas 6 marta uyg'otadi.
+// Interval env orqali sozlanadi (default 10 daq) va D0'dan keyin IDLE-AWARE: terminal bo'lmagan
+// gen bo'lsa (ya'ni refund kutayotgan ish bor) baza 10 daqiqada qoladi — pul zonasi kechikishi
+// ILGARIGIDEK. Faqat NOL non-terminal gen bo'lganda orqaga chekinadi (refund qilinadigan narsa
+// yo'q), bo'sh bazani soatiga 6 marta uyg'otmaydi. Yangi gen → nudgeGenSchedules() bazaga tushiradi.
 const GEN_RECONCILE_INTERVAL_MS = Math.max(
   60_000,
   Number(process.env.GEN_RECONCILE_INTERVAL_MS) || 600_000,
 );
-const genReconcileTimer = setInterval(() => {
-  reconcileAllStuckGenerations().catch((e) => {
-    console.error("[studio-gen] global reconcile xato:", e);
-  });
-}, GEN_RECONCILE_INTERVAL_MS);
-if (typeof genReconcileTimer.unref === "function") genReconcileTimer.unref();
-// Startup: bir martalik backfill (eski refund-siz failed genlar) + darhol bir global reconcile.
+/** Oxirgi passda ko'rilgan terminal bo'lmagan gen soni (idle-backoff qarori uchun). */
+let genNonTerminalSeen = 0;
+const genReconcileSchedule = startAdaptiveTimer({
+  name: "gen-reconcile",
+  baseMs: GEN_RECONCILE_INTERVAL_MS,
+  maxMs: Math.max(
+    GEN_RECONCILE_INTERVAL_MS,
+    Number(process.env.GEN_IDLE_MAX_INTERVAL_MS) || 60 * 60_000,
+  ),
+  firstDelayMs: 2_000,
+  task: async () => {
+    await reconcileAllStuckGenerations();
+    return genNonTerminalSeen > 0;
+  },
+});
+
+/** Yangi gen navbatga tushganda fon jadvalini baza intervalga qaytaradi (idle-backoff'dan chiqish). */
+export function nudgeGenSchedules(): void {
+  genResumeSchedule.nudge();
+  genReconcileSchedule.nudge();
+}
+
+// Startup: bir martalik backfill (eski refund-siz failed genlar). Global reconcile va resume'ning
+// birinchi passi yuqoridagi jadval `firstDelayMs`ida bajariladi.
 setTimeout(() => {
   backfillUnrefundedFailures().catch((e) => console.error("[studio-gen] P1 backfill xato:", e));
-  reconcileAllStuckGenerations().catch((e) => console.error("[studio-gen] initial reconcile xato:", e));
 }, 2000);
 
 // ─────────────────────────────────────────────────────────────────────────────

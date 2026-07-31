@@ -70,6 +70,7 @@ import {
   suggestRealFaceAlternative,
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
+import { startAdaptiveTimer } from "../lib/idle-timer.js"; // D0 — idle-aware fon jadvali
 import { priceGeneration } from "../lib/model-pricing.js";
 import { writeProviderSpend } from "../lib/ledger.js";
 import { estimateProviderUsd } from "../lib/provider-cost.js";
@@ -385,12 +386,16 @@ async function touchSavedReferences(
   });
 }
 
-const savedRefCleanupTimer = setInterval(() => {
-  cleanupExpiredSavedReferences().catch((e) => {
-    console.error("[studio-gen] saved refs cleanup xato:", e);
-  });
-}, 2 * 60 * 1000);
-if (typeof savedRefCleanupTimer.unref === "function") savedRefCleanupTimer.unref();
+// D0 (Neon compute-kvota fix): ilgari QAT'IY 2 daqiqada ishlardi — bu bo'sh bazani hech qachon
+// uxlatmaydi (Neon ~5 daq jimlikdan keyin suspend). Endi idle-aware: tozalanadigan yozuv bo'lsa
+// 2 daqiqada qoladi, bo'sh passlarda 1 soatgacha chekinadi. Per-user tozalash baribir /credits
+// va /gen yo'llarida sinxron bajariladi — foydalanuvchi ko'radigan xatti-harakat o'zgarmaydi.
+startAdaptiveTimer({
+  name: "saved-ref-cleanup",
+  baseMs: 2 * 60 * 1000,
+  maxMs: 60 * 60 * 1000,
+  task: async () => (await cleanupExpiredSavedReferences()) > 0,
+});
 
 /** GET /credits — kredit balansi. */
 studioGenRouter.get("/credits", async (req: Request, res: Response) => {
