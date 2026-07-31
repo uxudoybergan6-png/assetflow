@@ -976,6 +976,19 @@ model PluginContentConfig {
   updatedAt   DateTime @updatedAt
 }
 
+// ── SC_62 — CMS konfiguratsiya versiya tarixi (undo/restore). Har saqlashda
+// YANGI holat snapshot'i yoziladi; admin oxirgi N versiyani ko'rib qaytara oladi.
+// FK YO'Q (ledger naqshi) — o'chirilgan admin bilan ham qator qoladi.
+model ContentConfigRevision {
+  id        String   @id @default(cuid())
+  kind      String // "landing" | "plugin"
+  data      Json     @default("{}")
+  savedById String?
+  createdAt DateTime @default(now())
+
+  @@index([kind, createdAt])
+}
+
 // ── P11 — Plagin relizlari (in-panel update kanali). ADDITIVE: mavjud modellarga
 // tegilmaydi. mandatory yoki minSupportedVersion ostidagi klient bloklanadi (update majburiy).
 // downloadKey = LEGACY .zxp (faqat qo'lda yuklab olish sahifasi uchun; Task 2'dan keyin

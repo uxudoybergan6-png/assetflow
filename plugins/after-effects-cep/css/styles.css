@@ -327,6 +327,13 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .fhome-cattile .ct-tx{min-width:0}
 .fhome-cattile .ct-nm{font:650 11.5px/1.15 var(--font-sans);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fhome-cattile .ct-ct{margin-top:2px;font:500 9px/1 var(--font-mono);color:var(--muted)}
+/* SC_60 — kategoriya taylida admin CMS media (rasm/GIF/video) + scrim; matn ustida qoladi */
+.fhome-cattile{position:relative;overflow:hidden}
+.fhome-cattile .ct-media{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.fhome-cattile .ct-scrim{position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(8,10,14,.78),rgba(8,10,14,.38))}
+.fhome-cattile .ct-ic,.fhome-cattile .ct-tx{position:relative;z-index:2}
+.fhome-cattile.has-media .ct-nm{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.fhome-cattile.has-media .ct-ic{background:rgba(8,10,14,.45);color:#fff}
 .fhome-cta{margin-top:14px;display:flex;align-items:center}
 .fhome-btn-ai{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:9px 13px;border:0;border-radius:10px;background:var(--grad);color:var(--on-accent);font:700 10px/1 var(--font-sans);white-space:nowrap;box-shadow:0 8px 28px var(--glow);cursor:pointer}
 .fhome-btn-stock{display:inline-flex;align-items:center;justify-content:center;min-height:36px;margin-left:7px;padding:9px 13px;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:rgba(5,6,10,.58);color:#fff;font:700 10px/1 var(--font-sans);white-space:nowrap;cursor:pointer}

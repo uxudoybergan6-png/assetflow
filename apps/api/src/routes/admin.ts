@@ -22,7 +22,10 @@ import {
   isS3Configured,
   getS3ObjectMeta,
   sha256OfS3Object,
+  listS3ObjectsByPrefix,
+  deleteS3Objects,
 } from "../lib/s3.js";
+import { listContentRevisions, getContentRevision } from "../lib/content-revisions.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 // #91 (A3) — admin Settings ekrani uchun HAQIQIY limitlar/retention (read-only ko'rsatiladi).
 import { CLOUD_RUN_REQUEST_LIMIT_BYTES, MAX_REF_UPLOAD_BYTES } from "../lib/upload-limits.js";
@@ -67,6 +70,7 @@ import {
   getLandingConfig,
   saveLandingConfig,
   resetLandingConfig,
+  replaceLandingConfigBlob,
 } from "../lib/landing-config.js";
 import {
   DEFAULT_PLUGIN_CONTENT_CONFIG,
@@ -74,6 +78,7 @@ import {
   getPluginContentConfig,
   savePluginContentConfig,
   resetPluginContentConfig,
+  replacePluginContentConfigBlob,
 } from "../lib/plugin-content-config.js";
 import {
   isZxpReleaseKey,
@@ -105,11 +110,17 @@ function safeUploadFileName(name: string): string {
   return cleaned || "file";
 }
 
+// SC_63 — CMS media hajm shipi (advisory: presigned PUT'ni server to'xtata olmaydi,
+// lekin URL berishdan OLDIN e'lon qilingan hajm tekshiriladi — ref-upload-url naqshi).
+const CMS_MEDIA_MAX_IMAGE_BYTES = 40 * 1024 * 1024; // rasm/GIF — 40MB
+const CMS_MEDIA_MAX_VIDEO_BYTES = 150 * 1024 * 1024; // qisqa video loop — 150MB
+
 adminRouter.post("/upload-url", async (req, res) => {
-  const { fileName, contentType, folder } = req.body as {
+  const { fileName, contentType, folder, sizeBytes } = req.body as {
     fileName?: string;
     contentType?: string;
     folder?: string;
+    sizeBytes?: number;
   };
 
   if (!fileName || !contentType) {
@@ -118,14 +129,26 @@ adminRouter.post("/upload-url", async (req, res) => {
   }
 
   const safeFolder = safeUploadFolder(folder);
-  // SC_02 — CMS media papkalari (CDN'da ommaviy): faqat image/* yoki mp4/webm video.
+  // SC_02 — CMS media papkalari (CDN'da ommaviy): faqat image/* (GIF ham shu yerda)
+  // yoki mp4/webm video.
   if (
     CMS_MEDIA_FOLDERS.has(safeFolder) &&
     !CMS_MEDIA_CONTENT_TYPES.test(contentType) &&
     !CMS_MEDIA_VIDEO_TYPES.has(contentType)
   ) {
-    res.status(400).json({ error: "Only image/* or video/mp4|webm allowed for CMS media uploads" });
+    res.status(400).json({ error: "Only image/* (incl. GIF) or video/mp4|webm allowed for CMS media uploads" });
     return;
+  }
+  // SC_63 — hajm shipi (agar klient e'lon qilsa)
+  if (CMS_MEDIA_FOLDERS.has(safeFolder) && Number.isFinite(sizeBytes) && (sizeBytes as number) > 0) {
+    const isVideo = CMS_MEDIA_VIDEO_TYPES.has(contentType);
+    const cap = isVideo ? CMS_MEDIA_MAX_VIDEO_BYTES : CMS_MEDIA_MAX_IMAGE_BYTES;
+    if ((sizeBytes as number) > cap) {
+      res.status(400).json({
+        error: `File too large — ${isVideo ? "video" : "image"} CMS media must be under ${Math.round(cap / (1024 * 1024))} MB`,
+      });
+      return;
+    }
   }
 
   const key = `${safeFolder}/${Date.now()}-${safeUploadFileName(fileName)}`;
@@ -142,7 +165,138 @@ adminRouter.post("/upload-url", async (req, res) => {
   }
 
   const uploadUrl = await getSignedUploadUrl(key, contentType);
+  // SC_63 — CMS media yuklashlari endi audit'da (ilgari izsiz edi)
+  if (CMS_MEDIA_FOLDERS.has(safeFolder)) {
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: "site_media.upload_url",
+      targetType: "siteMedia",
+      targetId: key.slice(0, 180),
+      detail: `${contentType}${Number.isFinite(sizeBytes) ? ` · ${sizeBytes} bytes` : ""}`,
+    });
+  }
   res.json({ uploadUrl, key, publicUrl: getPublicUrl(key) });
+});
+
+// ── SC_63 — Sayt media kutubxonasi (CMS'ga yuklangan fayllar) ────────────────
+// landing/ + site/plugin/ prefikslari ostidagi obyektlar ro'yxati; har biri uchun
+// konfiguratsiyada ishlatilayotgan joylari (usedBy) hisoblanadi — o'chirishdan
+// oldin ogohlantirish uchun. Kalitlar FLAT (subpath yo'q) — public-keys bilan mos.
+const SITE_MEDIA_PREFIXES = ["landing/", "site/plugin/"] as const;
+
+function siteMediaKindFromKey(key: string): "image" | "video" | "gif" | "other" {
+  const ext = (key.split(".").pop() || "").toLowerCase();
+  if (ext === "gif") return "gif";
+  if (["png", "jpg", "jpeg", "webp", "avif", "svg"].includes(ext)) return "image";
+  if (["mp4", "webm", "mov"].includes(ext)) return "video";
+  return "other";
+}
+
+/** Konfiguratsiya blobi ichidan barcha mediaUrl qiymatlarini yo'li bilan yig'adi. */
+function collectMediaUrls(node: unknown, path: string, out: { path: string; url: string }[]): void {
+  if (!node || typeof node !== "object") return;
+  if (Array.isArray(node)) {
+    node.forEach((v, i) => collectMediaUrls(v, `${path}[${i}]`, out));
+    return;
+  }
+  for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+    if (k === "mediaUrl" && typeof v === "string" && v) out.push({ path, url: v });
+    else collectMediaUrls(v, path ? `${path}.${k}` : k, out);
+  }
+}
+
+adminRouter.get("/site-media", async (_req, res) => {
+  if (!isS3Configured()) {
+    res.json({ items: [], configured: false });
+    return;
+  }
+  const [landingList, pluginList, landingCfg, pluginCfg] = await Promise.all([
+    listS3ObjectsByPrefix("landing/"),
+    listS3ObjectsByPrefix("site/plugin/"),
+    getLandingConfig(),
+    getPluginContentConfig(),
+  ]);
+  const used: { path: string; url: string }[] = [];
+  collectMediaUrls(landingCfg.config, "website", used);
+  collectMediaUrls(pluginCfg.config, "plugin", used);
+  const items = landingList
+    .concat(pluginList)
+    // faqat flat kalitlar (CDN public bo'ladiganlar)
+    .filter((o) => /^landing\/[^/]+$/.test(o.key) || /^site\/plugin\/[^/]+$/.test(o.key))
+    .map((o) => {
+      const usedBy = used.filter((u) => u.url.endsWith("/" + o.key) || u.url === getPublicUrl(o.key)).map((u) => u.path);
+      return {
+        key: o.key,
+        folder: o.key.startsWith("landing/") ? "landing" : "site/plugin",
+        publicUrl: getPublicUrl(o.key),
+        sizeBytes: o.sizeBytes,
+        lastModified: o.lastModified,
+        kind: siteMediaKindFromKey(o.key),
+        usedBy,
+      };
+    })
+    .sort((a, b) => (b.lastModified || "").localeCompare(a.lastModified || ""));
+  res.json({ items, configured: true });
+});
+
+adminRouter.delete("/site-media", async (req, res) => {
+  const { key, force } = req.body as { key?: string; force?: boolean };
+  if (!key || typeof key !== "string" || !SITE_MEDIA_PREFIXES.some((p) => key.startsWith(p))) {
+    res.status(400).json({ error: "key must be under landing/ or site/plugin/" });
+    return;
+  }
+  if (!/^landing\/[^/]+$/.test(key) && !/^site\/plugin\/[^/]+$/.test(key)) {
+    res.status(400).json({ error: "Invalid media key" });
+    return;
+  }
+  // Ishlatilayotgan faylni himoya qilamiz (force bilan chetlab o'tish mumkin)
+  const [landingCfg, pluginCfg] = await Promise.all([getLandingConfig(), getPluginContentConfig()]);
+  const used: { path: string; url: string }[] = [];
+  collectMediaUrls(landingCfg.config, "website", used);
+  collectMediaUrls(pluginCfg.config, "plugin", used);
+  const usedBy = used.filter((u) => u.url.endsWith("/" + key) || u.url === getPublicUrl(key)).map((u) => u.path);
+  if (usedBy.length && !force) {
+    res.status(409).json({ error: "Media is in use", usedBy });
+    return;
+  }
+  await deleteS3Objects([key]);
+  await writeAuditLog({
+    actorId: req.user!.userId,
+    action: "site_media.delete",
+    targetType: "siteMedia",
+    targetId: key.slice(0, 180),
+    detail: usedBy.length ? `forced · was used by ${usedBy.join(", ")}`.slice(0, 200) : "unused",
+  });
+  res.json({ ok: true, usedBy });
+});
+
+// ── SC_62 — CMS konfiguratsiya versiya tarixi (undo/restore) ─────────────────
+adminRouter.get("/content-revisions", async (req, res) => {
+  const kind = req.query.kind === "plugin" ? "plugin" : "landing";
+  const items = await listContentRevisions(kind);
+  res.json({ items, kind });
+});
+
+adminRouter.post("/content-revisions/:id/restore", async (req, res) => {
+  const rev = await getContentRevision(String(req.params.id || ""));
+  if (!rev) {
+    res.status(404).json({ error: "Revision not found" });
+    return;
+  }
+  const actor = req.user!.userId;
+  const blob = (rev.data && typeof rev.data === "object" ? rev.data : {}) as Record<string, unknown>;
+  const config =
+    rev.kind === "plugin"
+      ? await replacePluginContentConfigBlob(blob, actor)
+      : await replaceLandingConfigBlob(blob, actor);
+  await writeAuditLog({
+    actorId: actor,
+    action: rev.kind === "plugin" ? "plugin_content.restore" : "landing_config.restore",
+    targetType: rev.kind === "plugin" ? "pluginContentConfig" : "landingConfig",
+    targetId: "singleton",
+    detail: `revision ${rev.id}`,
+  });
+  res.json({ config, kind: rev.kind });
 });
 
 /**

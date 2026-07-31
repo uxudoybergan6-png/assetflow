@@ -15884,16 +15884,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   <!-- ============ MARKETING CHROME ============ -->
   <sc-if value="{{ showMarketing }}" hint-placeholder-val="{{ true }}">
   <div>
-    <!-- BATCH6 PROMO-STRIP — nozik, yopiladigan; matn hero-badge CMS'dan (yangi CMS kalit yaratilmadi) -->
-    <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
-    <sc-if value="{{ promoOpen }}" hint-placeholder-val="{{ true }}">
+    <!-- v2 PROMO-STRIP — endi MAXSUS CMS kalitlari (promo.*): matn/CTA/ko'rinish admin'dan,
+         yopish localStorage'da (kontent o'zgarsa qayta chiqadi) -->
+    <sc-if value="{{ promoShow }}" hint-placeholder-val="{{ true }}">
       <div class="ffl-promo">
-        <span class="ffl-promo-tag">{{ lcHeroBadgeTag }}</span>
-        <span class="ffl-promo-txt">{{ lcHeroBadgeText }}</span>
-        <button class="ffl-promo-try" onclick="{{ goRegister }}">Try it<i class="ph ph-arrow-right" style="font-size:11px"></i></button>
+        <span class="ffl-promo-tag">{{ lcPromoTag }}</span>
+        <span class="ffl-promo-txt">{{ lcPromoText }}</span>
+        <button class="ffl-promo-try" onclick="{{ goRegister }}">{{ lcPromoCta }}<i class="ph ph-arrow-right" style="font-size:11px"></i></button>
         <button class="ffl-promo-x" onclick="{{ dismissPromo }}" aria-label="Dismiss announcement">×</button>
       </div>
-    </sc-if>
     </sc-if>
     <!-- MARKETING TOP-NAV — flat at top, frosted on scroll -->
     <header class="{{ navCls }}" data-pop-root="nav">
@@ -15917,12 +15916,11 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 </div>
                 <div class="ffl-mega-col">
                   <div class="ffl-mega-head"><span class="ffm-eyebrow">LIVE MODELS</span><small>Production-ready engines &amp; utilities</small></div>
-                  <!-- gen-models bilan sinxron saqla, BATCH7'da CMS/endpoint -->
+                  <!-- v2 Sayt CMS — megaModels.rows admin'dan (gen-models drift xavfi yopildi) -->
                   <div class="ffl-mega-rows models">
-                    <button role="menuitem" onclick="{{ goAistudio }}"><i>S2</i><span><b>Seedance 2.0</b><small>Reference-led video · 480p–4K · 4–15s</small></span><em>TOP</em><strong>✦8–60/s</strong></button>
-                    <button role="menuitem" onclick="{{ goAistudio }}"><i>NB</i><span><b>Nano Banana 2</b><small>Fast multi-reference image · 1K–4K</small></span><em>NEW</em><strong>✦4–16</strong></button>
-                    <button role="menuitem" onclick="{{ goAistudio }}"><i>V3</i><span><b>Veo 3.1</b><small>Premium video · start/end frames + audio</small></span><em>PREMIUM</em><strong>✦30/s</strong></button>
-                    <button role="menuitem" onclick="{{ goAistudio }}"><i>UP</i><span><b>Video Upscale · Topaz</b><small>Resolution-aware 720p / 1080p / 4K</small></span><strong>✦2/3/9</strong></button>
+                    <sc-for list="{{ megaModelsView }}" as="m" hint-placeholder-count="4">
+                      <button role="menuitem" onclick="{{ goAistudio }}"><i>{{ m.initials }}</i><span><b>{{ m.title }}</b><small>{{ m.sub }}</small></span><sc-if value="{{ m.hasBadge }}" hint-placeholder-val="{{ true }}"><em>{{ m.badge }}</em></sc-if><strong>{{ m.price }}</strong></button>
+                    </sc-for>
                   </div>
                 </div>
               </div>
@@ -15931,7 +15929,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <a class="ffm-link" onclick="{{ goTemplates }}" role="button" tabindex="0">{{ lcNavTemplates }}</a>
           <a class="ffm-link" onclick="{{ goAistudio }}" role="button" tabindex="0">{{ lcNavAistudio }}</a>
           <a class="{{ navPricingCls }}" onclick="{{ goPricing }}" role="button" tabindex="0">{{ lcNavPricing }}</a>
-          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}" role="button" tabindex="0">{{ lcNavPlugin }}<span class="ffm-new">NEW</span></a>
+          <a class="{{ navPluginCls }}" onclick="{{ goPlugin }}" role="button" tabindex="0">{{ lcNavPlugin }}<sc-if value="{{ hasNavPluginBadge }}" hint-placeholder-val="{{ true }}"><span class="ffm-new">{{ lcNavPluginBadge }}</span></sc-if></a>
         </span>
         <span class="ffm-navcta" style="width:14px"></span>
         <a class="ffm-btn2 sm ffm-navcta" onclick="{{ goLogin }}" role="button" tabindex="0">{{ lcNavSignIn }}</a>
@@ -15969,15 +15967,18 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </div>
         <div class="ffl-billboard" data-rv="" data-rv-delay="200">
           <div class="ffl-art ffl-art-aurora"><span class="orb orb-a"></span><span class="orb orb-b"></span><span class="floor"></span></div>
-          <span class="ffl-media-label">{{ lcMockBadge }}</span><span class="ffl-media-time">00:08</span>
-          <div class="ffl-bb-cap"><strong>{{ lcMockTitle }}</strong><span>4K · cinematic motion</span></div>
+          <!-- v2 — admin yuklagan billboard media (rasm/GIF/video); bo'sh = CSS-art qoladi -->
+          <sc-if value="{{ hmHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ hmUrl }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if>
+          <sc-if value="{{ hmIsVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ hmUrl }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if>
+          <span class="ffl-media-label">{{ lcMockBadge }}</span><span class="ffl-media-time">{{ lcHmTime }}</span>
+          <div class="ffl-bb-cap"><strong>{{ lcMockTitle }}</strong><span>{{ lcHmCaption }}</span></div>
         </div>
       </section>
 
-      <!-- TICKER — nozik oqar matn (statik kuratsiya · BATCH7: CMS) -->
-      <section class="ffl-ticker" style="order:5" aria-label="FrameFlow selects">
-        <span>FRAMEFLOW SELECTS</span>
-        <div class="ffl-ticker-mq"><div class="ffl-ticker-track"><em>TYPOGRAPHY ↗</em><em>PRODUCT FILMS ↗</em><em>SOCIAL CUTS ↗</em><em>TITLE SYSTEMS ↗</em><em>MOTION POSTERS ↗</em><em>SEEDANCE 2.0 ↗</em><em>TYPOGRAPHY ↗</em><em>PRODUCT FILMS ↗</em><em>SOCIAL CUTS ↗</em><em>TITLE SYSTEMS ↗</em><em>MOTION POSTERS ↗</em><em>SEEDANCE 2.0 ↗</em></div></div>
+      <!-- TICKER — v2 Sayt CMS (label + items admin'dan; tartib/ko'rinish landingSections'da) -->
+      <section class="ffl-ticker" style="{{ lsTicker }}" aria-label="FrameFlow selects">
+        <span>{{ lcTickerLabel }}</span>
+        <div class="ffl-ticker-mq"><div class="ffl-ticker-track"><sc-for list="{{ tickerView }}" as="tk" hint-placeholder-count="12"><em>{{ tk.text }}</em></sc-for></div></div>
       </section>
 
       <!-- STATS — jonli count-up (real mahsulot statistikasi) -->
@@ -15989,24 +15990,24 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </div>
       </section>
 
-      <!-- CINEMA — haftalik billboard (kino-ramka; statik kuratsiya · BATCH7: CMS) -->
-      <section class="ffl-sect" style="order:15">
+      <!-- CINEMA — v2 Sayt CMS (barcha matnlar + media admin'dan; tartib landingSections'da) -->
+      <section class="ffl-sect" style="{{ lsCinema }}">
         <div class="ffl-shead" data-rv="">
-          <div><div class="ffm-eyebrow">MADE WITH AI STUDIO</div><div class="ffm-d44" style="margin-top:10px">One idea. Full-screen impact.</div></div>
+          <div><div class="ffm-eyebrow">{{ lcCinEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcCinTitle }}</div></div>
           <span style="flex:1"></span>
-          <a class="ffl-lnk" onclick="{{ goAistudio }}" role="button" tabindex="0">Build a scene<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
+          <a class="ffl-lnk" onclick="{{ goAistudio }}" role="button" tabindex="0">{{ lcCinLink }}<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
         </div>
         <div class="ffl-cinema" data-rv="" data-rv-delay="120">
-          <div class="ffl-cinema-bar"><span>CONCEPT PREVIEW</span><i></i><span>SEEDANCE 2.0 · 4K</span></div>
-          <div class="ffl-cinema-media ffl-art ffl-art-sunset"><span class="sun"></span><span class="horizon"></span><div class="ffl-cinema-word">AFTER<br>LIGHT</div><button class="ffl-cplay" aria-label="Play billboard preview"><i class="ph-fill ph-play"></i></button></div>
-          <div class="ffl-cinema-foot"><div><b>After Light — product film study</b><span>Start/end frames · native audio · 8 seconds</span></div><strong>✦ 480</strong></div>
+          <div class="ffl-cinema-bar"><span>{{ lcCinBarLeft }}</span><i></i><span>{{ lcCinBarRight }}</span></div>
+          <div class="ffl-cinema-media ffl-art ffl-art-sunset"><sc-if value="{{ cinHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ cinUrl }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if><sc-if value="{{ cinIsVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ cinUrl }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if><span class="sun"></span><span class="horizon"></span><div class="ffl-cinema-word" style="white-space:pre-line">{{ lcCinWord }}</div><button class="ffl-cplay" aria-label="Play billboard preview"><i class="ph-fill ph-play"></i></button></div>
+          <div class="ffl-cinema-foot"><div><b>{{ lcCinFootTitle }}</b><span>{{ lcCinFootSub }}</span></div><strong>{{ lcCinCost }}</strong></div>
         </div>
       </section>
 
       <!-- SHOWCASE FEED — «Made with FrameFlow» masonry (konsept namuna kartalari, real katalog EMAS) -->
       <section class="ffl-sect" style="{{ lsShowcase }}">
         <div class="ffl-shead" data-rv="">
-          <div><div class="ffm-eyebrow">{{ lcShowEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcShowTitle }}</div><div style="margin-top:6px;font-size:11px;color:var(--muted)">Concept previews — styles you can create, not live catalog listings</div></div>
+          <div><div class="ffm-eyebrow">{{ lcShowEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcShowTitle }}</div><div style="margin-top:6px;font-size:11px;color:var(--muted)">{{ lcFeedNote }}</div></div>
           <span style="flex:1"></span>
           <div class="ffl-cattabs">
             <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.clsL }}" role="button" tabindex="0">{{ c.label }}</span></sc-for>
@@ -16015,7 +16016,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <div class="ffl-masonry" data-rv="" data-rv-delay="120">
           <sc-for list="{{ feedCards }}" as="c" hint-placeholder-count="11">
             <article class="{{ c.sp }}" data-id="{{ c.id }}" onclick="{{ openDetail }}">
-              <div class="ffl-fart" style="background:{{ c.g }}">
+              <div class="ffl-fart" style="background:{{ c.g }};position:relative;overflow:hidden">
+                <sc-if value="{{ c.fHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ c.fmedia }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if>
+                <sc-if value="{{ c.fIsVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ c.fmedia }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if>
                 <span class="{{ c.badgeClsL }}">{{ c.badge }}</span>
                 <span class="ffl-appc"><span class="d" style="background:{{ c.ac }}"></span>{{ c.a }}</span>
                 <span class="ffl-tdur">{{ c.d }}</span>
@@ -16028,18 +16031,17 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <div style="text-align:center;margin-top:32px"><a class="ffl-lnk ffl-lnk--pill" onclick="{{ goTemplates }}" role="button" tabindex="0">{{ lcShowLink }}<i class="ph ph-arrow-right" style="font-size:13px"></i></a></div>
       </section>
 
-      <!-- VIRAL PRESETS — tab pill + karta reyka (statik kuratsiya · BATCH7: CMS) -->
-      <section class="ffl-sect ffl-preset-sect" style="order:25">
+      <!-- VIRAL PRESETS — v2 Sayt CMS (4 karta: matn + media admin'dan; tartib landingSections'da) -->
+      <section class="ffl-sect ffl-preset-sect" style="{{ lsPresets }}">
         <div class="ffl-shead" data-rv="">
-          <div><div class="ffm-eyebrow">START FASTER</div><div class="ffm-d44" style="margin-top:10px">One-click creative presets</div></div>
+          <div><div class="ffm-eyebrow">{{ lcPresetEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcPresetTitle }}</div></div>
           <span style="flex:1"></span>
-          <a class="ffl-lnk" onclick="{{ goAistudio }}" role="button" tabindex="0">View all presets<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
+          <a class="ffl-lnk" onclick="{{ goAistudio }}" role="button" tabindex="0">{{ lcPresetLink }}<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
         </div>
         <div class="ffl-preset-rail" data-rv="" data-rv-delay="120">
-          <article onclick="{{ goAistudio }}"><span class="ffl-preset-no">01</span><div class="ffl-preset-art ffm-g7"></div><strong>Editorial portrait</strong><small>Nano Banana Pro · ✦ 8</small></article>
-          <article onclick="{{ goAistudio }}"><span class="ffl-preset-no">02</span><div class="ffl-preset-art ffm-g3"></div><strong>Cinematic dolly</strong><small>Veo 3.1 Lite · ✦ 24+</small></article>
-          <article onclick="{{ goAistudio }}"><span class="ffl-preset-no">03</span><div class="ffl-preset-art ffm-g4"></div><strong>Product refraction</strong><small>Imagen 4 Ultra · ✦ 6+</small></article>
-          <article onclick="{{ goAistudio }}"><span class="ffl-preset-no">04</span><div class="ffl-preset-art ffm-g5"></div><strong>Type explosion</strong><small>FrameFlow template · Pro</small></article>
+          <sc-for list="{{ presetsView }}" as="p" hint-placeholder-count="4">
+            <article onclick="{{ goAistudio }}"><span class="ffl-preset-no">{{ p.no }}</span><div class="{{ p.artCls }}" style="position:relative;overflow:hidden"><sc-if value="{{ p.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ p.media }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if><sc-if value="{{ p.isVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ p.media }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if></div><strong>{{ p.title }}</strong><small>{{ p.sub }}</small></article>
+          </sc-for>
         </div>
       </section>
 
@@ -16055,11 +16057,11 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="ffl-res-stack">
             <div class="ffl-res back ffm-g2"></div>
             <div class="ffl-res mid ffm-g7"></div>
-            <div class="ffl-res front ffm-g4"><span>NANO BANANA PRO · 2K</span></div>
+            <div class="ffl-res front ffm-g4"><span>{{ lcAiStackLabel }}</span></div>
           </div>
           <div class="ffl-minicomposer">
             <p><span data-ffl-type=""></span><span class="ffl-caret"></span></p>
-            <div><span>✦ Image</span><span>Nano Banana Pro</span><span>2K</span><b>✦ 14</b><button onclick="{{ goAistudio }}">Generate ↗</button></div>
+            <div><span>{{ lcAiChipMode }}</span><span>{{ lcAiChipModel }}</span><span>{{ lcAiChipRes }}</span><b>{{ lcAiChipCost }}</b><button onclick="{{ goAistudio }}">{{ lcAiChipGen }}</button></div>
           </div>
         </div>
         <div class="ffl-toolrail">
@@ -16072,13 +16074,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       <!-- PLAGIN LENTASI — kinematik panel + AE oynasi mock -->
       <section class="ffl-plugband" style="{{ lsPluginPromo }}">
         <div class="ffl-plugband-win" data-rv="">
-          <div class="wbar"><i></i><i></i><i></i><span>FrameFlow · After Effects</span></div>
+          <div class="wbar"><i></i><i></i><i></i><span>{{ lcPpWinTitle }}</span></div>
           <div class="pbody">
             <aside><b><i class="ph-fill ph-lightning"></i></b><i class="ph ph-house"></i><i class="ph ph-squares-four"></i><i class="ph ph-sparkle"></i></aside>
             <div>
-              <div class="psearch"><i class="ph ph-magnifying-glass"></i>Search the catalog…</div>
+              <div class="psearch"><i class="ph ph-magnifying-glass"></i>{{ lcPpWinSearch }}</div>
               <div class="pgrid"><i class="ffm-g7"></i><i class="ffm-g4"></i><i class="ffm-g6"></i></div>
-              <button>Import to project</button>
+              <button>{{ lcPpWinImport }}</button>
             </div>
           </div>
         </div>
@@ -16127,12 +16129,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       <section class="ffl-finalcta" data-rv="" style="{{ lsFinalCta }}">
         <div class="in">
           <div class="z">
-            <div class="ffm-eyebrow" style="justify-content:center">YOUR NEXT FRAME IS WAITING</div>
+            <div class="ffm-eyebrow" style="justify-content:center">{{ lcFcEyebrow }}</div>
             <div class="ffm-d36" style="margin-top:14px">{{ lcFcTitle }}</div>
             <div class="ffl-finalcta-sub">{{ lcFcSub }}</div>
             <div class="ffl-finalcta-cta">
               <button class="ffm-btn lg ffl-ctaglow" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:15px"></i>{{ lcFcCta }}</button>
-              <button class="ffm-btn2 lg" onclick="{{ goTemplates }}">Browse templates</button>
+              <button class="ffm-btn2 lg" onclick="{{ goTemplates }}">{{ lcFcSecondary }}</button>
             </div>
             <div class="ffl-credline" style="margin-top:16px"><i class="ph-fill ph-seal-check"></i>{{ lcFcCredline }}</div>
           </div>
@@ -16148,12 +16150,12 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="ffm-eyebrow" style="justify-content:center">{{ lcPrEyebrow }}</div>
           <h1>{{ lcPrTitle }}</h1>
           <p>{{ lcPrSub }}</p>
-          <div class="billing-note"><span>MONTHLY PLANS</span><b>Refund eligibility is explained in the Refund Policy</b></div>
+          <div class="billing-note"><span>{{ lcPrBillingNote }}</span><b>{{ lcPrBillingSub }}</b></div>
         </div>
         <div class="pricing-grid">
           <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
             <article class="{{ p.priceCardCls }}">
-              <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span class="popular-label">MOST POPULAR</span></sc-if>
+              <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span class="popular-label">{{ lcPrPopular }}</span></sc-if>
               <span class="pk">{{ p.name }}</span>
               <h3>{{ p.sub }}</h3>
               <div class="price">${{ p.price }}<small>/mo</small></div>
@@ -16166,8 +16168,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           </sc-for>
         </div>
         <div class="compare-strip">
-          <span>ALL PLANS INCLUDE</span>
-          <div class="ci"><b>✓ Browser AI Studio</b><b>✓ Template previews</b><b>✓ Commercial license</b><b>✓ Refund Policy applies</b></div>
+          <span>{{ lcPrCompareTitle }}</span>
+          <div class="ci"><sc-for list="{{ pricingCompareView }}" as="ci" hint-placeholder-count="4"><b>✓ {{ ci.t }}</b></sc-for></div>
         </div>
         <section class="pg-faq">
           <div class="ffm-d36">{{ lcPrFaqTitle }}</div>
@@ -16197,13 +16199,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <small>{{ lcPgVersion }}</small>
           </div>
           <div class="plugin-window" aria-hidden="true">
-            <div class="window-bar"><i></i><i></i><i></i><span>FrameFlow · After Effects</span></div>
+            <div class="window-bar"><i></i><i></i><i></i><span>{{ lcPgWinTitle }}</span></div>
             <div class="plugin-ui">
               <aside><b><i class="ph-fill ph-lightning"></i></b><i class="ph ph-house"></i><i class="ph ph-squares-four"></i><i class="ph ph-sparkle"></i><i class="ph ph-download-simple"></i></aside>
               <div class="plugin-main">
-                <div class="plugin-search"><i class="ph ph-magnifying-glass"></i> Search templates</div>
+                <div class="plugin-search"><i class="ph ph-magnifying-glass"></i> {{ lcPgWinSearch }}</div>
                 <div class="plugin-cards"><span class="art-red"></span><span class="art-glass"></span><span class="art-green"></span><span class="art-sunset"></span></div>
-                <div class="plugin-import"><b>Football Championship</b><button>Import</button></div>
+                <div class="plugin-import"><b>{{ lcPgMockName }}</b><button>{{ lcPgMockImport }}</button></div>
               </div>
             </div>
           </div>
@@ -16258,6 +16260,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   <!-- ============ APP SHELL — FAZA 5 Variant A (editorial · top nav) ============ -->
   <sc-if value="{{ showApp }}" hint-placeholder-val="{{ false }}">
   <div class="va-app">
+    <!-- v2 — admin e'lon paneli (promo.showInApp yoqilganda app ichida ham) -->
+    <sc-if value="{{ promoShowApp }}" hint-placeholder-val="{{ false }}">
+      <div class="ffl-promo" style="position:relative;z-index:60">
+        <span class="ffl-promo-tag">{{ lcPromoTag }}</span>
+        <span class="ffl-promo-txt">{{ lcPromoText }}</span>
+        <button class="ffl-promo-x" onclick="{{ dismissPromo }}" aria-label="Dismiss announcement">×</button>
+      </div>
+    </sc-if>
     <!-- inline SVG icon set (mockup verbatim) -->
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <defs>
@@ -16461,7 +16471,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <div class="hcopy">
               <div class="va-kick">{{ heroKick }}</div>
               <div class="va-hi" style="margin-top:10px">{{ heroGreeting }}, <em>{{ userFirst }}</em>.</div>
-              <div class="va-hs">Pick up where you left off, or start something new.</div>
+              <div class="va-hs">{{ lcAppHeroSub }}</div>
             </div>
             <div class="va-credcard">
               <div class="va-kick">CREDIT BALANCE</div>
@@ -16471,18 +16481,17 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
           </div>
           <div class="va-qa">
-            <button class="qc" data-screen="templates" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-grid"></use></svg></span>
-              <div class="qt">Find a template</div><div class="qd">Browse the template library</div></button>
-            <button class="qc" data-screen="aistudio" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-spark"></use></svg></span>
-              <div class="qt">Create with AI</div><div class="qd">Image · Video · Voiceover · SFX</div></button>
-            <button class="qc" data-screen="plugin" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="#i-puzzle"></use></svg></span>
-              <div class="qt">Install the plugin</div><div class="qd">Browse &amp; import inside After Effects</div></button>
+            <!-- v2 Sayt CMS — appHome.quick (matnlar admin'dan; ikon/target kodda) -->
+            <sc-for list="{{ appQuickView }}" as="q" hint-placeholder-count="3">
+              <button class="qc" data-screen="{{ q.screen }}" onclick="{{ onNav }}"><span class="qi"><svg class="va-ic"><use href="{{ q.icon }}"></use></svg></span>
+                <div class="qt">{{ q.qt }}</div><div class="qd">{{ q.qd }}</div></button>
+            </sc-for>
           </div>
           <!-- #133 (X12) — "Jump back in" sarlavhasi ilgari HAR DOIM chiqardi: hech qachon
                generatsiya qilmagan YANGI foydalanuvchi ham "qaytib kel" degan sarlavha ostida
                "No generations yet" ni ko'rardi. Endi sarlavha faqat tarix BOR bo'lsa. -->
           <sc-if value="{{ hasDashGens }}" hint-placeholder-val="{{ true }}">
-            <div class="va-sec"><h3>Jump back in</h3><span class="all" onclick="{{ goAistudio }}" role="button" tabindex="0">Open AI Studio <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec"><h3>{{ lcSecJump }}</h3><span class="all" onclick="{{ goAistudio }}" role="button" tabindex="0">{{ lcSecJumpLink }} <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-strip">
               <sc-for list="{{ dashGensView }}" as="g" hint-placeholder-count="5">
                 <div data-id="{{ g.id }}" onclick="{{ openLightbox }}" class="va-thumb gt{{ g.mcls }}" style="background:{{ g.g }}" role="button" tabindex="0">
@@ -16496,21 +16505,21 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
           </sc-if>
           <sc-if value="{{ noDashGens }}" hint-placeholder-val="{{ false }}">
-            <div class="va-sec"><h3>Start creating</h3></div>
+            <div class="va-sec"><h3>{{ lcSecStart }}</h3></div>
             <div class="va-empty">
               <span style="width:40px;height:40px;border-radius:50%;background:var(--f1);border:1px solid rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:18px;color:var(--lime)"><svg class="va-ic"><use href="#i-spark"></use></svg></span>
-              <div style="font-size:14px;font-weight:600;margin:10px 0 4px">No generations yet</div>
-              <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Create your first image or video in AI Studio</div>
-              <button class="va-btn lime" onclick="{{ goAistudio }}">Open AI Studio</button>
+              <div style="font-size:14px;font-weight:600;margin:10px 0 4px">{{ lcEmptyTitle }}</div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:14px">{{ lcEmptySub }}</div>
+              <button class="va-btn lime" onclick="{{ goAistudio }}">{{ lcEmptyBtn }}</button>
             </div>
           </sc-if>
           <!-- FAZA C · Featured models — Option A: spotlight + 2×2 rail (mobile: uniform 172px cards) -->
           <sc-if value="{{ featLoading }}" hint-placeholder-val="{{ false }}">
-            <div class="va-sec"><h3>Featured models</h3></div>
+            <div class="va-sec"><h3>{{ lcSecFeatured }}</h3></div>
             <div class="va-homeload"><span class="star">✦</span> Warming up the models…</div>
           </sc-if>
           <sc-if value="{{ hasFeatured }}" hint-placeholder-val="{{ false }}">
-            <div class="va-sec"><h3>Featured models</h3><span class="all" onclick="{{ goAistudio }}" role="button" tabindex="0">Open AI Studio <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec"><h3>{{ lcSecFeatured }}</h3><span class="all" onclick="{{ goAistudio }}" role="button" tabindex="0">{{ lcSecJumpLink }} <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-fma">
               <div class="va-fmhero va-thumb" style="background:{{ featHero.g }}" data-mode="{{ featHero.mode }}" data-id="{{ featHero.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
                 <span class="spot">✦ MODEL OF THE WEEK</span>
@@ -16544,7 +16553,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
           </sc-if>
           <sc-if value="{{ hasRec }}" hint-placeholder-val="{{ true }}">
-          <div class="va-sec"><h3>Recommended for you</h3><span class="all" onclick="{{ goTemplates }}" role="button" tabindex="0">Browse all templates <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+          <div class="va-sec"><h3>{{ lcSecRec }}</h3><span class="all" onclick="{{ goTemplates }}" role="button" tabindex="0">{{ lcRecLink }} <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
           <div class="va-rcgrid">
             <sc-for list="{{ recTemplates }}" as="t" hint-placeholder-count="4">
               <div data-id="{{ t.id }}" onclick="{{ openDetail }}" class="va-rc" role="button" tabindex="0">
@@ -16573,7 +16582,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           </sc-if>
           <sc-if value="{{ hasTrend }}" hint-placeholder-val="{{ false }}">
             <!-- §F (P33) — halol yorliq: bu kesim aslida YAQINDA YANGILANGAN (updated desc), download/popularity hisobi YO'Q. "Trending/Most popular" soxta edi. -->
-            <div class="va-sec" style="padding-top:26px"><h3>Recently updated</h3><span class="cnt">FRESH PICKS</span><span class="all" onclick="{{ goTemplates }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec" style="padding-top:26px"><h3>{{ lcShelfFresh }}</h3><span class="cnt">{{ lcShelfFreshKick }}</span><span class="all" onclick="{{ goTemplates }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-shwrap">
               <div class="va-sh">
                 <sc-for list="{{ shelfTrend }}" as="t" hint-placeholder-count="5">
@@ -16601,7 +16610,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
           </sc-if>
           <sc-if value="{{ hasShelfCat }}" hint-placeholder-val="{{ false }}">
-            <div class="va-sec" style="padding-top:18px"><h3>{{ shelfCatTitle }}</h3><span class="cnt">CURATED · CATEGORY</span><span class="all" onclick="{{ openShelfCat }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec" style="padding-top:18px"><h3>{{ shelfCatTitle }}</h3><span class="cnt">{{ lcShelfCatKick }}</span><span class="all" onclick="{{ openShelfCat }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-shwrap">
               <div class="va-sh">
                 <sc-for list="{{ shelfCat }}" as="t" hint-placeholder-count="5">
@@ -16629,7 +16638,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
           </sc-if>
           <sc-if value="{{ hasShelfNew }}" hint-placeholder-val="{{ false }}">
-            <div class="va-sec" style="padding-top:18px"><h3>New this week</h3><span class="cnt">LATEST APPROVED</span><span class="all" onclick="{{ openShelfNew }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
+            <div class="va-sec" style="padding-top:18px"><h3>{{ lcShelfNew }}</h3><span class="cnt">{{ lcShelfNewKick }}</span><span class="all" onclick="{{ openShelfNew }}" role="button" tabindex="0">View all <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
             <div class="va-shwrap">
               <div class="va-sh">
                 <sc-for list="{{ shelfNew }}" as="t" hint-placeholder-count="5">
@@ -16675,9 +16684,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <!-- TEMPLATES — Variant A A2 (search hero · category chips · filter chip bar) -->
         <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
           <div class="va-cathero">
-            <div class="va-kick">FRAMEFLOW MARKETPLACE</div>
-            <h2>A stock catalog that cuts<br>your edit time.</h2>
-            <div class="va-bigsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Try “glitch logo”, “wedding titles”, “lower thirds”…" aria-label="Search templates"><kbd>⌘ K</kbd></div>
+            <div class="va-kick">{{ lcCatKicker }}</div>
+            <h2 style="white-space:pre-line">{{ lcCatTitle }}</h2>
+            <div class="va-bigsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="{{ lcCatSearchPh }}" aria-label="Search templates"><kbd>⌘ K</kbd></div>
             <div class="va-catchips">
               <sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><span data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.chipCls }}" role="button" tabindex="0">{{ x.label }}</span></sc-for>
             </div>
@@ -16707,7 +16716,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                CSS columns sort tartibini ustun bo'ylab o'qiydi (Artlist-accepted).
                TODO(FF): chapdan-o'ngga rank kerak bo'lsa JS round-robin taqsimlash. -->
           <sc-if value="{{ catalogLoading }}" hint-placeholder-val="{{ false }}">
-            <div class="va-homeload" style="margin:26px 40px"><span class="star">✦</span> Hanging the template wall…</div>
+            <div class="va-homeload" style="margin:26px 40px"><span class="star">✦</span> {{ lcCatLoading }}</div>
           </sc-if>
           <!-- FIX A2 (P6) — katalog yuklanmadi (hech narsa yo'q): halol xato bloki + Try again -->
           <sc-if value="{{ browseErrEmpty }}" hint-placeholder-val="{{ false }}">
@@ -18233,7 +18242,7 @@ class Component extends DCLogic {
   // renderda ham landing hozirgi ko'rinishda qoladi; server merged config qaytaradi).
   landingDefaults = {
     theme: { accent: '', font: 'hanken' }, // BATCH6: accent'ni 3-tema tizimi boshqaradi (CMS custom-accent override o'chirilgan)
-    nav: { templates: 'Stock Catalog', aiStudio: 'AI Studio', pricing: 'Pricing', plugin: 'Plugin', signIn: 'Sign in', cta: 'Start for free' },
+    nav: { templates: 'Stock Catalog', aiStudio: 'AI Studio', pricing: 'Pricing', plugin: 'Plugin', signIn: 'Sign in', cta: 'Start for free', pluginBadge: 'NEW' },
     hero: {
       badgeTag: 'NEW', badgeText: 'AI Video 2.0 is here',
       title: 'Templates, AI video and audio —', titleAccent: 'one creative space',
@@ -18252,6 +18261,52 @@ class Component extends DCLogic {
         { label: 'TEMPLATE', dur: '0:05', mediaUrl: '', mediaType: '' },
       ],
     },
+    // ── v2 sayt CMS bo'limlari (server DEFAULT_LANDING_CONFIG bilan AYNI) ──
+    heroMedia: { mediaUrl: '', mediaType: '', time: '00:08', caption: '4K · cinematic motion' },
+    promo: { enabled: true, tag: 'NEW', text: 'AI Video 2.0 is here', ctaLabel: 'Try it', showInApp: false },
+    ticker: {
+      label: 'FRAMEFLOW SELECTS',
+      items: ['TYPOGRAPHY ↗', 'PRODUCT FILMS ↗', 'SOCIAL CUTS ↗', 'TITLE SYSTEMS ↗', 'MOTION POSTERS ↗', 'SEEDANCE 2.0 ↗'],
+    },
+    cinema: {
+      eyebrow: 'MADE WITH AI STUDIO', title: 'One idea. Full-screen impact.', linkLabel: 'Build a scene',
+      barLeft: 'CONCEPT PREVIEW', barRight: 'SEEDANCE 2.0 · 4K', word: 'AFTER\nLIGHT',
+      footTitle: 'After Light — product film study', footSub: 'Start/end frames · native audio · 8 seconds',
+      cost: '✦ 480', mediaUrl: '', mediaType: '',
+    },
+    presetsRail: {
+      eyebrow: 'START FASTER', title: 'One-click creative presets', linkLabel: 'View all presets',
+      items: [
+        { title: 'Editorial portrait', sub: 'Nano Banana Pro · ✦ 8', mediaUrl: '', mediaType: '' },
+        { title: 'Cinematic dolly', sub: 'Veo 3.1 Lite · ✦ 24+', mediaUrl: '', mediaType: '' },
+        { title: 'Product refraction', sub: 'Imagen 4 Ultra · ✦ 6+', mediaUrl: '', mediaType: '' },
+        { title: 'Type explosion', sub: 'FrameFlow template · Pro', mediaUrl: '', mediaType: '' },
+      ],
+    },
+    feed: {
+      note: 'Concept previews — styles you can create, not live catalog listings',
+      cards: [
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+        { title: '', cat: '', dur: '', badge: '', mediaUrl: '', mediaType: '' },
+      ],
+    },
+    megaModels: {
+      rows: [
+        { initials: 'S2', title: 'Seedance 2.0', sub: 'Reference-led video · 480p–4K · 4–15s', badge: 'TOP', price: '✦8–60/s' },
+        { initials: 'NB', title: 'Nano Banana 2', sub: 'Fast multi-reference image · 1K–4K', badge: 'NEW', price: '✦4–16' },
+        { initials: 'V3', title: 'Veo 3.1', sub: 'Premium video · start/end frames + audio', badge: 'PREMIUM', price: '✦30/s' },
+        { initials: 'UP', title: 'Video Upscale · Topaz', sub: 'Resolution-aware 720p / 1080p / 4K', badge: '', price: '✦2/3/9' },
+      ],
+    },
     stats: [
       { value: 50, suffix: '', label: 'Free AI credits to start' },
       { value: 4, suffix: '', label: 'AI tools — image · video · voice · SFX' },
@@ -18260,7 +18315,8 @@ class Component extends DCLogic {
     ],
     // ── To'liq sayt CMS — pastki bo'limlar + pricing/plugin sahifalar (server defaultlari bilan AYNI) ──
     landingSections: [
-      { key: 'stats', visible: true }, { key: 'showcase', visible: true }, { key: 'aiPromo', visible: true },
+      { key: 'ticker', visible: true }, { key: 'stats', visible: true }, { key: 'cinema', visible: true },
+      { key: 'showcase', visible: true }, { key: 'presets', visible: true }, { key: 'aiPromo', visible: true },
       { key: 'pluginPromo', visible: true }, { key: 'pricingTeaser', visible: true },
       { key: 'faq', visible: true }, { key: 'finalCta', visible: true },
     ],
@@ -18281,12 +18337,15 @@ class Component extends DCLogic {
         'Clean backdrop for a modern logo animation, studio lighting…',
         'Slow motion on the shore, golden hour, film grain…',
       ],
+      stackLabel: 'NANO BANANA PRO · 2K',
+      chipMode: '✦ Image', chipModel: 'Nano Banana Pro', chipRes: '2K', chipCost: '✦ 14', chipGenerate: 'Generate ↗',
     },
     pluginPromo: {
       eyebrow: '03 — PLUGIN', title: 'The FrameFlow plugin — right inside After Effects',
       desc: 'Catalog, import and AI Studio — in the panel. Works with your platform account and credits.',
       ctaLabel: 'Download the plugin (.zxp)',
       chips: ['After Effects 2022+', 'In-panel catalog', 'AI Studio'],
+      winTitle: 'FrameFlow · After Effects', winSearch: 'Search the catalog…', winImport: 'Import to project',
     },
     pricingTeaser: {
       eyebrow: '04 — PRICING', title: 'Start free, scale up when you need to',
@@ -18306,6 +18365,29 @@ class Component extends DCLogic {
     finalCta: {
       title: 'Start free today', sub: 'Sign up — get 50 AI credits on us. No card required.',
       ctaLabel: 'Start for free', credline: 'Refund eligibility is explained in the Refund Policy',
+      eyebrow: 'YOUR NEXT FRAME IS WAITING', secondaryLabel: 'Browse templates',
+    },
+    appHome: {
+      heroSub: 'Pick up where you left off, or start something new.',
+      quick: [
+        { title: 'Find a template', desc: 'Browse the template library' },
+        { title: 'Create with AI', desc: 'Image · Video · Voiceover · SFX' },
+        { title: 'Install the plugin', desc: 'Browse & import inside After Effects' },
+      ],
+      shelfCat: 'Lower Thirds',
+      secJump: 'Jump back in', secJumpLink: 'Open AI Studio', secStart: 'Start creating',
+      emptyTitle: 'No generations yet', emptySub: 'Create your first image or video in AI Studio', emptyBtn: 'Open AI Studio',
+      secFeatured: 'Featured models', secRec: 'Recommended for you', recLink: 'Browse all templates',
+      shelfFreshKick: 'FRESH PICKS', shelfFresh: 'Recently updated',
+      shelfCatKick: 'CURATED · CATEGORY', shelfNewKick: 'LATEST APPROVED', shelfNew: 'New this week',
+    },
+    catalogPage: {
+      kicker: 'FRAMEFLOW MARKETPLACE',
+      title: 'A stock catalog that cuts\nyour edit time.',
+      searchPlaceholder: 'Try "glitch logo", "wedding titles", "lower thirds"…',
+      loading: 'Hanging the template wall…',
+      emptyTitle: 'Nothing found',
+      emptySub: 'Try a different search or loosen the filters.',
     },
     footer: {
       tagline: 'Templates and an AI studio for motion designers and video creators.',
@@ -18320,6 +18402,9 @@ class Component extends DCLogic {
     pricingPage: {
       eyebrow: 'PRICING', title: 'Choose the plan that fits you',
       sub: 'Start free, scale up when you need to. Cancel anytime.', faqTitle: 'Questions',
+      billingNote: 'MONTHLY PLANS', billingSub: 'Refund eligibility is explained in the Refund Policy',
+      popularLabel: 'MOST POPULAR', compareTitle: 'ALL PLANS INCLUDE',
+      compareItems: ['Browser AI Studio', 'Template previews', 'Commercial license', 'Refund Policy applies'],
     },
     plans: [
       { name: 'Free', price: 0, credits: '50 credits/mo', sub: 'For trying it out', cta: 'Get started',
@@ -18342,6 +18427,8 @@ class Component extends DCLogic {
         { t: 'Install with a compatible ZXP installer', d: 'Install quickly with any compatible ZXP installer.' },
         { t: 'Connect your account', d: 'Enter your platform key — templates and credits are ready.' },
       ],
+      winTitle: 'FrameFlow · After Effects', winSearch: 'Search templates',
+      mockName: 'Football Championship', mockImport: 'Import',
     },
   };
   // Kuratsiyalangan, o'z-serverda turadigan font to'plami (CDN'siz) — admin "Website" tanlovi.
@@ -18364,12 +18451,22 @@ class Component extends DCLogic {
     };
     const oArr = (base, over) => base.map((el, i) => o(el, Array.isArray(over) ? over[i] : null));
     const sArr = (base, over) => (Array.isArray(over) && over.length && over.every(v => typeof v === 'string') ? over.slice(0, 12) : base);
-    // Bo'lim tartibi: saqlangan tartib ustun, noma'lum kalit tushadi, yetishmagani oxiriga
+    // Bo'lim tartibi: saqlangan tartib ustun, noma'lum kalit tushadi; yetishmagan
+    // (yangi qo'shilgan) bo'lim DEFAULT POZITSIYASIGA kiritiladi (oxiriga tushmasin)
     const known = {}; d.landingSections.forEach(x => { known[x.key] = 1; });
     const secs = (Array.isArray(s.landingSections) ? s.landingSections : [])
       .filter(x => x && known[x.key]).map(x => ({ key: x.key, visible: x.visible !== false }));
     const seen = {}; secs.forEach(x => { seen[x.key] = 1; });
-    const landingSections = secs.concat(d.landingSections.filter(x => !seen[x.key]));
+    const landingSections = secs.slice();
+    d.landingSections.filter(x => !seen[x.key]).forEach(m => {
+      const defIdx = d.landingSections.findIndex(x => x.key === m.key);
+      let insertAt = -1;
+      for (let i = defIdx - 1; i >= 0 && insertAt < 0; i--) {
+        const p = landingSections.findIndex(x => x.key === d.landingSections[i].key);
+        if (p >= 0) insertAt = p + 1;
+      }
+      landingSections.splice(insertAt < 0 ? 0 : insertAt, 0, { key: m.key, visible: m.visible });
+    });
     return {
       theme: o(d.theme, s.theme),
       nav: o(d.nav, s.nav),
@@ -18379,6 +18476,25 @@ class Component extends DCLogic {
         badge: (s.mockup && s.mockup.badge) || d.mockup.badge,
         cards: oArr(d.mockup.cards, s.mockup && s.mockup.cards),
       },
+      heroMedia: o(d.heroMedia, s.heroMedia),
+      promo: o(d.promo, s.promo),
+      ticker: {
+        label: (s.ticker && s.ticker.label) || d.ticker.label,
+        items: sArr(d.ticker.items, s.ticker && s.ticker.items),
+      },
+      cinema: o(d.cinema, s.cinema),
+      presetsRail: Object.assign(o({ eyebrow: d.presetsRail.eyebrow, title: d.presetsRail.title, linkLabel: d.presetsRail.linkLabel }, s.presetsRail), {
+        items: oArr(d.presetsRail.items, s.presetsRail && s.presetsRail.items),
+      }),
+      feed: {
+        note: (s.feed && s.feed.note) || d.feed.note,
+        cards: oArr(d.feed.cards, s.feed && s.feed.cards),
+      },
+      megaModels: { rows: oArr(d.megaModels.rows, s.megaModels && s.megaModels.rows) },
+      appHome: Object.assign(o(d.appHome, s.appHome), {
+        quick: oArr(d.appHome.quick, s.appHome && s.appHome.quick),
+      }),
+      catalogPage: o(d.catalogPage, s.catalogPage),
       stats: oArr(d.stats, s.stats),
       landingSections,
       showcase: o(d.showcase, s.showcase),
@@ -21139,8 +21255,28 @@ class Component extends DCLogic {
     const marqRow2 = row2base.concat(row2base);
     // BATCH6 — «Made with FrameFlow» masonry feed: REAL shablon manbasi (marquee bilan bir xil),
     // har kartaga aspect-sinf beriladi (mockup masonry balandliklari). Media yo'q bo'lsa gradient qoladi.
+    // v2 Sayt CMS — admin feed.cards[i] to'ldirgan slot demo kartani BOSIB o'tadi
+    // (sarlavha/kategoriya/badge + media); bo'sh slotda joriy demo karta qoladi.
     const FEED_SPANS = ['ffl-fc-tall', 'ffl-fc-sq', 'ffl-fc-wide', 'ffl-fc-port', 'ffl-fc-tall', 'ffl-fc-sq', 'ffl-fc-port', 'ffl-fc-wide', 'ffl-fc-sq', 'ffl-fc-tall', 'ffl-fc-port'];
-    const feedCards = row1base.concat(row2base).slice(0, 11).map((t, i) => ({ ...t, sp: 'ffl-fcard ' + FEED_SPANS[i % FEED_SPANS.length] }));
+    const lcFeed = lc.feed;
+    const feedCards = row1base.concat(row2base).slice(0, 11).map((t, i) => {
+      const ov = (lcFeed.cards && lcFeed.cards[i]) || {};
+      const url = ov.mediaUrl || '';
+      const fIsVideo = !!url && (ov.mediaType === 'video' || /\.(mp4|webm|mov)(\?|$)/i.test(url));
+      const badge = ov.badge || t.badge || (t.pro ? 'PRO' : 'FREE');
+      return {
+        ...t,
+        sp: 'ffl-fcard ' + FEED_SPANS[i % FEED_SPANS.length],
+        n: ov.title || t.n,
+        c: ov.cat || t.c,
+        d: ov.dur || t.d,
+        badge,
+        badgeClsL: /free/i.test(badge) ? 'ffl-bfree' : 'ffl-bpro',
+        fmedia: url,
+        fHasImg: !!url && !fIsVideo,
+        fIsVideo,
+      };
+    });
 
     const studioIcon = {
       'Rasm yaratish': { ibg: 'var(--limedim)', icol: 'var(--lime)' },
@@ -21801,14 +21937,15 @@ class Component extends DCLogic {
       .map(c => c.v)
       .concat(this.state.fCat !== 'All' ? [this.pillLabel(this.state.fCat)] : [])
       .join(' · ');
+    // v2 — katalog CHIN bo'sh holati matni admin CMS'dan (qidiruv/filtr variantlari dinamik qoladi)
     const emptyTitle = qTrim
       ? ('No results for “' + qTrim + '”')
-      : (hasActiveFilters ? 'Nothing matches these filters' : 'Nothing here yet');
+      : (hasActiveFilters ? 'Nothing matches these filters' : (lc.catalogPage.emptyTitle || 'Nothing here yet'));
     const emptyDesc = qTrim
       ? ('Searched ' + (scopePill ? ('within ' + scopePill) : 'the whole catalog') + ' — try a different phrase or clear the search.')
       : (hasActiveFilters
         ? ('Active filters: ' + emptyFilterList + ' — clear them to see the whole catalog.')
-        : 'This catalog is empty right now — new assets are added regularly. Check back soon.');
+        : (lc.catalogPage.emptySub || 'This catalog is empty right now — new assets are added regularly. Check back soon.'));
     const emptyClearLabel = qTrim
       ? 'Clear search'
       : (hasActiveFilters ? ('Clear filters · ' + filterCount) : 'Refresh');
@@ -22030,10 +22167,12 @@ class Component extends DCLogic {
     // TODO(FF): real "downloads / 7 days" endpointi (DownloadEvent, Faza F) kelganda shu kesim almashadi.
     const shelfTrend = smallCatalog ? [] : shelfSrc.slice().sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 10).map(t => rcOf(t));
     const hasTrend = shelfTrend.length > 0 && this.state.catalogReady;
-    // Kategoriya tokchasi — "Lower Thirds" bo'lsa o'sha, bo'lmasa eng katta kategoriya
+    // Kategoriya tokchasi — v2: admin tanlagan kategoriya (appHome.shelfCat) birinchi;
+    // topilmasa eng katta kategoriya
     const shelfCatCount = {};
     shelfSrc.forEach(t => { shelfCatCount[t.c] = (shelfCatCount[t.c] || 0) + 1; });
-    const shelfCatName = smallCatalog ? null : (shelfCatCount['Lower Thirds'] ? 'Lower Thirds'
+    const shelfCatPref = lc.appHome.shelfCat || 'Lower Thirds';
+    const shelfCatName = smallCatalog ? null : (shelfCatCount[shelfCatPref] ? shelfCatPref
       : (Object.keys(shelfCatCount).sort((a, b) => shelfCatCount[b] - shelfCatCount[a])[0] || null));
     const shelfCat = shelfCatName ? shelfSrc.filter(t => t.c === shelfCatName).slice(0, 10).map(t => rcOf(t)) : [];
     const hasShelfCat = shelfCat.length > 0 && this.state.catalogReady;
@@ -22091,9 +22230,10 @@ class Component extends DCLogic {
     const userFirst = userName.split(' ')[0];
     const resetShortDate = sub && sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
     const creditResetShort = isFreePlan ? ('Free plan · ✦ ' + creditMaxFmt + '/mo') : (planShort + (resetShortDate ? ' · resets ' + resetShortDate : ' plan'));
-    // A2b gating eslatmasi — faqat matn, yuklab olish oqimi (packLink) o'zgarmagan
+    // A2b gating eslatmasi — faqat matn, yuklab olish oqimi (packLink) o'zgarmagan.
+    // v2 — Pro narxi endi CMS plans[1].price'dan (qattiq $19 o'rniga; displey nusxa bilan sinxron)
     const detailGate = dRaw ? (dRaw.pro
-      ? (isFreePlan ? 'Included with Pro — $19/mo. On the Free plan downloads stay HD + watermarked.' : ('Included with your ' + planShort + ' plan.'))
+      ? (isFreePlan ? ('Included with Pro — $' + lc.plans[1].price + '/mo. On the Free plan downloads stay HD + watermarked.') : ('Included with your ' + planShort + ' plan.'))
       : 'Free template — included on every plan.') : '';
     // Hisob — obuna/kredit ko'rsatkichlari (real reja holatidan)
     const curPlanRow = plansCur.find(p => p.cur) || null;
@@ -22156,6 +22296,36 @@ class Component extends DCLogic {
     });
     const heroCardsA = heroCardsAll.slice(0, 2); // genslot'dan oldingi 2 karta
     const heroCardsB = heroCardsAll.slice(2);    // genslot'dan keyingi 4 karta
+    // ── v2 Sayt CMS — hero billboard media / promo / ticker / cinema / presets / mega ──
+    const isVideoUrl = (url, mt) => !!url && (mt === 'video' || /\.(mp4|webm|mov)(\?|$)/i.test(url));
+    const hmUrl = lc.heroMedia.mediaUrl || '';
+    const hmIsVideo = isVideoUrl(hmUrl, lc.heroMedia.mediaType);
+    const hmHasImg = !!hmUrl && !hmIsVideo;
+    // Promo strip — dedicated kalitlar + localStorage'da yopish holati (kontent o'zgarsa qayta chiqadi)
+    const promoKey = 'v2|' + (lc.promo.tag || '') + '|' + (lc.promo.text || '');
+    let promoDismissed = false;
+    try { promoDismissed = localStorage.getItem('ff_promo_dismissed') === promoKey; } catch (e) {}
+    const promoShow = !!(lc.promo.enabled && lc.promo.text && this.state.promoOpen && !promoDismissed && s === 'landing');
+    const promoShowApp = !!(lc.promo.enabled && lc.promo.showInApp && lc.promo.text && this.state.promoOpen && !promoDismissed && !marketing && s !== 'auth');
+    this._promoKey = promoKey;
+    const tickerView = lc.ticker.items.concat(lc.ticker.items).map(text => ({ text }));
+    const cinUrl = lc.cinema.mediaUrl || '';
+    const cinIsVideo = isVideoUrl(cinUrl, lc.cinema.mediaType);
+    const cinHasImg = !!cinUrl && !cinIsVideo;
+    const PRESET_ART = ['ffm-g7', 'ffm-g3', 'ffm-g4', 'ffm-g5'];
+    const presetsView = lc.presetsRail.items.map((p, i) => {
+      const url = p.mediaUrl || '';
+      const isVid = isVideoUrl(url, p.mediaType);
+      return {
+        no: '0' + (i + 1), title: p.title, sub: p.sub, artCls: 'ffl-preset-art ' + PRESET_ART[i % PRESET_ART.length],
+        media: url, hasImg: !!url && !isVid, isVideo: isVid,
+      };
+    });
+    const megaModelsView = lc.megaModels.rows.map(m => ({ ...m, hasBadge: !!m.badge }));
+    const quickIcons = ['#i-grid', '#i-spark', '#i-puzzle'];
+    const quickScreens = ['templates', 'aistudio', 'plugin'];
+    const appQuickView = lc.appHome.quick.map((q, i) => ({ qt: q.title, qd: q.desc, icon: quickIcons[i] || '#i-grid', screen: quickScreens[i] || 'templates' }));
+    const pricingCompareView = lc.pricingPage.compareItems.map(t => ({ t }));
     // Theme — faqat marketing ekranlarda (app UI default accent/fontda qoladi).
     const lcFontStack = this.landingFontStacks[lc.theme.font] || this.landingFontStacks.hanken;
     const pageFontStack = marketing ? lcFontStack : this.landingFontStacks.hanken;
@@ -22220,15 +22390,46 @@ class Component extends DCLogic {
       landStatsView, heroCardsA, heroCardsB, pageFontStack, themeVarsCss,
       lcNavTemplates: lc.nav.templates, lcNavAistudio: lc.nav.aiStudio, lcNavPricing: lc.nav.pricing,
       lcNavPlugin: lc.nav.plugin, lcNavSignIn: lc.nav.signIn, lcNavCta: lc.nav.cta,
+      lcNavPluginBadge: lc.nav.pluginBadge, hasNavPluginBadge: !!lc.nav.pluginBadge,
       lcHeroBadgeTag: lc.hero.badgeTag, lcHeroBadgeText: lc.hero.badgeText,
       lcHeroTitle: lc.hero.title, lcHeroTitleAccent: lc.hero.titleAccent, lcHeroSub: lc.hero.sub,
       lcHeroCtaPrimary: lc.hero.ctaPrimary, lcHeroCtaSecondary: lc.hero.ctaSecondary,
       lcHeroCredline: lc.hero.credline,
       lcMockTitle: lc.mockup.title, lcMockBadge: lc.mockup.badge,
+      // v2 — hero billboard media + promo + ticker + cinema + presets + mega modellar
+      hmUrl, hmIsVideo, hmHasImg, lcHmTime: lc.heroMedia.time, lcHmCaption: lc.heroMedia.caption,
+      promoShow, promoShowApp, lcPromoTag: lc.promo.tag, lcPromoText: lc.promo.text, lcPromoCta: lc.promo.ctaLabel,
+      lcTickerLabel: lc.ticker.label, tickerView,
+      lcCinEyebrow: lc.cinema.eyebrow, lcCinTitle: lc.cinema.title, lcCinLink: lc.cinema.linkLabel,
+      lcCinBarLeft: lc.cinema.barLeft, lcCinBarRight: lc.cinema.barRight, lcCinWord: lc.cinema.word,
+      lcCinFootTitle: lc.cinema.footTitle, lcCinFootSub: lc.cinema.footSub, lcCinCost: lc.cinema.cost,
+      cinUrl, cinHasImg, cinIsVideo,
+      lcPresetEyebrow: lc.presetsRail.eyebrow, lcPresetTitle: lc.presetsRail.title, lcPresetLink: lc.presetsRail.linkLabel,
+      presetsView, megaModelsView,
+      lcFeedNote: lc.feed.note,
+      // v2 — webapp Home + katalog + pricing qo'shimchalari
+      lcAppHeroSub: lc.appHome.heroSub, appQuickView,
+      lcSecJump: lc.appHome.secJump, lcSecJumpLink: lc.appHome.secJumpLink, lcSecStart: lc.appHome.secStart,
+      lcEmptyTitle: lc.appHome.emptyTitle, lcEmptySub: lc.appHome.emptySub, lcEmptyBtn: lc.appHome.emptyBtn,
+      lcSecFeatured: lc.appHome.secFeatured, lcSecRec: lc.appHome.secRec, lcRecLink: lc.appHome.recLink,
+      lcShelfFreshKick: lc.appHome.shelfFreshKick, lcShelfFresh: lc.appHome.shelfFresh,
+      lcShelfCatKick: lc.appHome.shelfCatKick, lcShelfNewKick: lc.appHome.shelfNewKick, lcShelfNew: lc.appHome.shelfNew,
+      lcCatKicker: lc.catalogPage.kicker, lcCatTitle: lc.catalogPage.title,
+      lcCatSearchPh: lc.catalogPage.searchPlaceholder, lcCatLoading: lc.catalogPage.loading,
+      lcCatEmptyTitle: lc.catalogPage.emptyTitle, lcCatEmptySub: lc.catalogPage.emptySub,
+      lcPrBillingNote: lc.pricingPage.billingNote, lcPrBillingSub: lc.pricingPage.billingSub,
+      lcPrPopular: lc.pricingPage.popularLabel, lcPrCompareTitle: lc.pricingPage.compareTitle, pricingCompareView,
+      lcFcEyebrow: lc.finalCta.eyebrow, lcFcSecondary: lc.finalCta.secondaryLabel,
+      lcAiStackLabel: lc.aiPromo.stackLabel, lcAiChipMode: lc.aiPromo.chipMode, lcAiChipModel: lc.aiPromo.chipModel,
+      lcAiChipRes: lc.aiPromo.chipRes, lcAiChipCost: lc.aiPromo.chipCost, lcAiChipGen: lc.aiPromo.chipGenerate,
+      lcPpWinTitle: lc.pluginPromo.winTitle, lcPpWinSearch: lc.pluginPromo.winSearch, lcPpWinImport: lc.pluginPromo.winImport,
+      lcPgWinTitle: lc.pluginPage.winTitle, lcPgWinSearch: lc.pluginPage.winSearch,
+      lcPgMockName: lc.pluginPage.mockName, lcPgMockImport: lc.pluginPage.mockImport,
       // Sayt CMS — bo'lim tartibi/ko'rinishi
       lsStats: secStyle('stats'), lsShowcase: secStyle('showcase'), lsAiPromo: secStyle('aiPromo'),
       lsPluginPromo: secStyle('pluginPromo'), lsPricingTeaser: secStyle('pricingTeaser'),
       lsFaq: secStyle('faq'), lsFinalCta: secStyle('finalCta'),
+      lsTicker: secStyle('ticker'), lsCinema: secStyle('cinema'), lsPresets: secStyle('presets'),
       // Sayt CMS — pastki bo'limlar
       lcShowEyebrow: lc.showcase.eyebrow, lcShowTitle: lc.showcase.title, lcShowLink: lc.showcase.linkLabel,
       lcAiEyebrow: lc.aiPromo.eyebrow, lcAiTitle: lc.aiPromo.title, lcAiDesc: lc.aiPromo.desc, lcAiCta: lc.aiPromo.ctaLabel,
@@ -22311,7 +22512,12 @@ class Component extends DCLogic {
       toggleNav: () => this.setState(st => ({ navOpen: !st.navOpen })),
       toggleMega: (e) => { if (e) e.stopPropagation(); this.setState(st => ({ megaOpen: !st.megaOpen })); },
       closeMega: () => { if (this.state.megaOpen) this.setState({ megaOpen: false }); },
-      dismissPromo: (e) => { if (e) e.stopPropagation(); this.setState({ promoOpen: false }); },
+      dismissPromo: (e) => {
+        if (e) e.stopPropagation();
+        // v2 — yopish endi qat'iy: kontent o'zgarmaguncha qayta chiqmaydi (localStorage)
+        try { if (this._promoKey) localStorage.setItem('ff_promo_dismissed', this._promoKey); } catch (er) {}
+        this.setState({ promoOpen: false });
+      },
       onNav: (e) => this.go(e.currentTarget.dataset.screen),
       onCat: (e) => this.setState({ activeCat: e.currentTarget.dataset.cat }),
       onFaq: (e) => { const i = +e.currentTarget.dataset.idx; this.setState(st => ({ openFaq: st.openFaq === i ? -1 : i })); },

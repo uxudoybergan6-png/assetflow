@@ -1,5 +1,6 @@
 import { prisma, Prisma } from "@creative-tools/database";
 import { z } from "zod";
+import { recordContentRevision } from "./content-revisions.js";
 
 // ── Plugin CMS — konfiguratsiya manbai (landing-config.ts naqshi 1:1) ────────
 // Bitta PluginContentConfig qatori (id=1) JSON blob saqlaydi; bu fayl DEFAULT
@@ -23,6 +24,27 @@ export interface PluginAiLauncherCard {
   mediaType: "" | "image" | "video";
 }
 
+// SC_60: Home "Browse by category" tayllari — label + ixtiyoriy fon media.
+// nav kaliti KODDA qoladi (routing kontrakti); indeks tartibi FHOME_CATS bilan AYNI:
+// 0=video, 1=motion, 2=graphics, 3=luts, 4=music, 5=sfx.
+export interface PluginCategoryTile {
+  label: string; // bo'sh = built-in label
+  mediaUrl: string;
+  mediaType: "" | "image" | "video";
+}
+
+// SC_61: server boshqaradigan e'lon paneli (plagin ichida strip).
+// ctaAction faqat ichki ekranlar (xavfsiz allow-list) — URL ochilmaydi.
+export interface PluginAnnouncement {
+  enabled: boolean;
+  id: string; // dismiss kaliti — yangi e'lon uchun YANGI id bering (bo'sh = matndan hosil)
+  tone: "info" | "promo" | "warn";
+  text: string;
+  ctaLabel: string;
+  ctaAction: "" | "aistudio" | "catalog" | "home" | "account";
+  dismissable: boolean;
+}
+
 export interface PluginContentConfigData {
   home: {
     hero: {
@@ -31,6 +53,7 @@ export interface PluginContentConfigData {
       sub: string;
       ctaPrimary: string;
       ctaSecondary: string;
+      promptPlaceholder: string; // SC_60: hero prompt input placeholder
       mediaUrl: string;
       mediaType: "" | "image" | "video";
       // mediaMode: "auto" — foydalanuvchining oxirgi generatsiyasi ustun;
@@ -54,12 +77,16 @@ export interface PluginContentConfigData {
       newReleases: { title: string; templateIds: string[] };
       topTemplates: { title: string; templateIds: string[] };
     };
+    // SC_60: kategoriya tayllari (6) — indeks: video/motion/graphics/luts/music/sfx
+    categoryTiles: PluginCategoryTile[];
   };
   guest: {
     // \n — qator uzilish pozitsiyasi (plagin <br> ga aylantiradi, textContent+split)
     title: string;
     sub: string;
     features: PluginGuestFeature[]; // 3 ta — #homeGuest .gu-f bloklari
+    peekKicker: string; // "A PEEK AT THE CATALOG"
+    registerNote: string; // "New here? Create a free account…"
   };
   aiLauncher: {
     title: string;
@@ -67,6 +94,8 @@ export interface PluginContentConfigData {
     // o'chirilgan; modellashtirilmaydi.
     cards: PluginAiLauncherCard[]; // 3 ta: image/video/audio; bo'sh = plagin o'z matnini saqlaydi
   };
+  // SC_61: e'lon paneli — Home + Katalog tepasida strip
+  announcement: PluginAnnouncement;
 }
 
 // DEFAULTS = plaginning joriy ko'rinishi (AssetFlow_Plugin.html bilan AYNI matnlar).
@@ -78,6 +107,7 @@ export const DEFAULT_PLUGIN_CONTENT_CONFIG: PluginContentConfigData = {
       sub: "Generate a key visual or start from a production-ready After Effects template.",
       ctaPrimary: "✦ Open AI Studio",
       ctaSecondary: "Open Stock Catalog",
+      promptPlaceholder: "Describe your next shot…",
       mediaUrl: "",
       mediaType: "",
       mediaMode: "auto",
@@ -95,6 +125,15 @@ export const DEFAULT_PLUGIN_CONTENT_CONFIG: PluginContentConfigData = {
       newReleases: { title: "New releases", templateIds: [] },
       topTemplates: { title: "Top templates", templateIds: [] },
     },
+    // SC_60 — bo'sh label = plagin built-in label; media bo'sh = ikon-tayl.
+    categoryTiles: [
+      { label: "", mediaUrl: "", mediaType: "" },
+      { label: "", mediaUrl: "", mediaType: "" },
+      { label: "", mediaUrl: "", mediaType: "" },
+      { label: "", mediaUrl: "", mediaType: "" },
+      { label: "", mediaUrl: "", mediaType: "" },
+      { label: "", mediaUrl: "", mediaType: "" },
+    ],
   },
   guest: {
     title: "Make After Effects\nmove faster.",
@@ -104,6 +143,8 @@ export const DEFAULT_PLUGIN_CONTENT_CONFIG: PluginContentConfigData = {
       { title: "Generate image, video, voice & SFX", sub: "Credit-based AI studio. Free plan starts with ✦ 50." },
       { title: "One library, everywhere", sub: "Imports, projects and gens sync with getframeflow.app." },
     ],
+    peekKicker: "A PEEK AT THE CATALOG",
+    registerNote: "New here? Create a free account — takes a minute.",
   },
   aiLauncher: {
     title: "AI Tools",
@@ -112,6 +153,15 @@ export const DEFAULT_PLUGIN_CONTENT_CONFIG: PluginContentConfigData = {
       { title: "", desc: "", mediaUrl: "", mediaType: "" },
       { title: "", desc: "", mediaUrl: "", mediaType: "" },
     ],
+  },
+  announcement: {
+    enabled: false,
+    id: "",
+    tone: "info",
+    text: "",
+    ctaLabel: "",
+    ctaAction: "",
+    dismissable: true,
   },
 };
 
@@ -147,6 +197,7 @@ export const pluginContentConfigSchema = z
             sub: shortText.optional(),
             ctaPrimary: shortText.optional(),
             ctaSecondary: shortText.optional(),
+            promptPlaceholder: shortText.optional(),
             mediaUrl: mediaUrl.optional(),
             mediaType: mediaType.optional(),
             mediaMode: z.enum(["auto", "media-first"]).optional(),
@@ -174,6 +225,17 @@ export const pluginContentConfigSchema = z
               .optional(),
           })
           .optional(),
+        // SC_60: kategoriya tayllari (label + media; nav kaliti kodda)
+        categoryTiles: z
+          .array(
+            z.object({
+              label: z.string().max(40).optional(),
+              mediaUrl: mediaUrl.optional(),
+              mediaType: mediaType.optional(),
+            })
+          )
+          .length(6)
+          .optional(),
       })
       .optional(),
     guest: z
@@ -181,12 +243,26 @@ export const pluginContentConfigSchema = z
         title: shortText.optional(),
         sub: shortText.optional(),
         features: z.array(guestFeatureSchema).max(3).optional(),
+        peekKicker: shortText.optional(),
+        registerNote: shortText.optional(),
       })
       .optional(),
     aiLauncher: z
       .object({
         title: shortText.optional(),
         cards: z.array(aiCardSchema).length(3).optional(),
+      })
+      .optional(),
+    // SC_61: e'lon paneli
+    announcement: z
+      .object({
+        enabled: z.boolean().optional(),
+        id: z.string().max(60).optional(),
+        tone: z.enum(["info", "promo", "warn"]).optional(),
+        text: shortText.optional(),
+        ctaLabel: z.string().max(40).optional(),
+        ctaAction: z.enum(["", "aistudio", "catalog", "home", "account"]).optional(),
+        dismissable: z.boolean().optional(),
       })
       .optional(),
   })
@@ -221,15 +297,20 @@ function mergeConfig(stored: unknown): PluginContentConfigData {
         newReleases: railList(d.home.rails.newReleases, s.home?.rails?.newReleases),
         topTemplates: railList(d.home.rails.topTemplates, s.home?.rails?.topTemplates),
       },
+      categoryTiles: objArr(d.home.categoryTiles, s.home?.categoryTiles),
     },
     guest: {
-      ...obj({ title: d.guest.title, sub: d.guest.sub }, s.guest),
+      ...obj(
+        { title: d.guest.title, sub: d.guest.sub, peekKicker: d.guest.peekKicker, registerNote: d.guest.registerNote },
+        s.guest
+      ),
       features: objArr(d.guest.features, s.guest?.features),
     },
     aiLauncher: {
       title: (typeof s.aiLauncher?.title === "string" && s.aiLauncher.title) || d.aiLauncher.title,
       cards: objArr(d.aiLauncher.cards, s.aiLauncher?.cards),
     },
+    announcement: obj(d.announcement, s.announcement),
   };
 }
 
@@ -281,7 +362,24 @@ export async function savePluginContentConfig(
     update: { data: next as Prisma.InputJsonValue, updatedById },
   });
   bustPluginContentConfigCache();
+  // SC_62 — versiya tarixi: yangi saqlangan blob snapshot (jim muvaffaqiyatsizlik OK)
+  await recordContentRevision("plugin", next, updatedById);
   return mergeConfig(next);
+}
+
+/** SC_62 restore — saqlangan blob TO'LIQ almashtiriladi (revision snapshot'idan). */
+export async function replacePluginContentConfigBlob(
+  data: Record<string, unknown>,
+  updatedById: string | null
+): Promise<PluginContentConfigData> {
+  const blob = (data && typeof data === "object" ? data : {}) as Prisma.InputJsonValue;
+  await prisma.pluginContentConfig.upsert({
+    where: { id: 1 },
+    create: { id: 1, data: blob, updatedById },
+    update: { data: blob, updatedById },
+  });
+  bustPluginContentConfigCache();
+  return mergeConfig(data);
 }
 
 /** Reset — saqlangan qatorni o'chiradi; plagin defaultlarga (joriy kontent) qaytadi. */

@@ -316,6 +316,43 @@ export async function listTemplateS3Keys(templateId: string): Promise<Set<string
   return set;
 }
 
+/** CMS media kutubxonasi uchun: prefiks ostidagi obyektlar (kalit + hajm + sana).
+ *  maxTotal — himoya shipi (kutubxona ekrani uchun 2000 yetarli). */
+export interface S3ListedObject {
+  key: string;
+  sizeBytes: number;
+  lastModified: string | null;
+}
+export async function listS3ObjectsByPrefix(
+  prefix: string,
+  maxTotal = 2000
+): Promise<S3ListedObject[]> {
+  if (!isS3Configured()) return [];
+  const out: S3ListedObject[] = [];
+  let token: string | undefined;
+  do {
+    const res = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: token,
+        MaxKeys: Math.min(1000, maxTotal - out.length),
+      })
+    );
+    for (const obj of res.Contents ?? []) {
+      if (!obj.Key) continue;
+      out.push({
+        key: obj.Key,
+        sizeBytes: Number(obj.Size ?? 0),
+        lastModified: obj.LastModified ? obj.LastModified.toISOString() : null,
+      });
+      if (out.length >= maxTotal) return out;
+    }
+    token = res.NextContinuationToken;
+  } while (token);
+  return out;
+}
+
 /** Lokal disk + R2/S3 — preview/thumb/pack mavjudligi.
  *  knownS3Keys berilsa HeadObject chaqirilmaydi (N+1 oldini olish). */
 export async function templateAssetFlags(

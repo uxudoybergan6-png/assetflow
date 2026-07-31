@@ -18,15 +18,16 @@ function wsEsc(s) {
     .replace(/"/g, "&quot;");
 }
 
-/* Landing'dagi 6 preview-karta o'rni (tartib platformadagi resgrid bilan AYNI) */
-const WS_CARD_SLOTS = [
-  { hint: "Square card 1 — top row, left", grad: "linear-gradient(138deg,#20153A,#8F4FD1 62%,#0F0A1C)" },
-  { hint: "Square card 2 — top row", grad: "linear-gradient(138deg,#3A2A12,#BE8428 62%,#171006)" },
-  { hint: "Square card 3 — after the generating slot", grad: "linear-gradient(138deg,#0F312C,#1F7A5F 62%,#08150F)" },
-  { hint: "Wide video card — bottom row", grad: "linear-gradient(138deg,#2A1E49,#6C3FA8 62%,#130E24)", wide: true },
-  { hint: "Template card A — bottom row", grad: "linear-gradient(138deg,#1A2A4E,#33549E 62%,#0C1220)" },
-  { hint: "Template card B — bottom row", grad: "linear-gradient(138deg,#0E2A3A,#2596A8 62%,#06141B)" },
+/* v2 — feed slotlari uchun ko'rsatma gradientlar (platformadagi masonry bilan uyg'un) */
+const WS_FEED_GRADS = [
+  "linear-gradient(138deg,#20153A,#8F4FD1 62%,#0F0A1C)",
+  "linear-gradient(138deg,#3A2A12,#BE8428 62%,#171006)",
+  "linear-gradient(138deg,#0F312C,#1F7A5F 62%,#08150F)",
+  "linear-gradient(138deg,#2A1E49,#6C3FA8 62%,#130E24)",
+  "linear-gradient(138deg,#1A2A4E,#33549E 62%,#0C1220)",
+  "linear-gradient(138deg,#0E2A3A,#2596A8 62%,#06141B)",
 ];
+const WS_FEED_SHAPES = ["tall", "square", "wide", "portrait", "tall", "square", "portrait", "wide", "square", "tall", "portrait"];
 
 const WS_ACCENT_PRESETS = [
   { hex: "#d8ff3e", name: "Lime (default)" },
@@ -46,8 +47,11 @@ const WS_FONTS = [
 
 /* Landing bo'limlari — admin ro'yxatidagi nomlar (kalitlar platforma bilan AYNI) */
 const WS_SECTION_LABELS = {
+  ticker: "Ticker strip",
   stats: "Stats row",
+  cinema: "Cinema billboard",
   showcase: "Templates showcase",
+  presets: "Presets rail",
   aiPromo: "AI Studio promo",
   pluginPromo: "Plugin promo",
   pricingTeaser: "Pricing teaser",
@@ -115,32 +119,47 @@ function wsCard(title, sub, body) {
   </div>`;
 }
 
-/* ── Media kartalar (hero mockup) ─────────────────────────── */
+/* ── v2 — universal media blok (istalgan {mediaUrl,mediaType} slot uchun) ──
+   path — konfiguratsiyadagi slot yo'li (masalan "heroMedia", "cinema",
+   "presetsRail.items.2", "feed.cards.7"). Yuklash/olib tashlash shu yo'lga yozadi. */
+function wsPathGet(obj, path) {
+  let cur = obj;
+  for (const part of path.split(".")) {
+    const k = /^\d+$/.test(part) ? Number(part) : part;
+    if (cur == null) return null;
+    cur = cur[k];
+  }
+  return cur;
+}
 
-function wsCardEditor(c, i) {
-  const slot = WS_CARD_SLOTS[i];
-  const hasMedia = !!c.mediaUrl;
-  const isVideo = c.mediaType === "video";
+function wsMediaBlock(path, slot, opts) {
+  opts = opts || {};
+  const hasMedia = !!(slot && slot.mediaUrl);
+  const isVideo = slot && slot.mediaType === "video";
+  const grad = opts.grad || "linear-gradient(138deg,#151A22,#1E2733 62%,#0C1016)";
   const thumb = hasMedia
     ? (isVideo
-        ? `<video src="${wsEsc(c.mediaUrl)}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>`
-        : `<img src="${wsEsc(c.mediaUrl)}" alt="" style="width:100%;height:100%;object-fit:cover">`)
-    : `<span style="font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.65)">GRADIENT</span>`;
-  return `<div class="adx-card" style="padding:14px" data-ws-card="${i}">
-    <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${wsEsc(slot.hint)}</div>
-    <div style="display:flex;gap:12px">
-      <div style="width:${slot.wide ? 150 : 92}px;height:64px;flex:none;border-radius:9px;overflow:hidden;background:${slot.grad};display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08)">${thumb}</div>
-      <div style="flex:1;min-width:0;display:grid;grid-template-columns:1fr 76px;gap:8px">
-        <div>${axFlab("LABEL")}${wsInput(`mockup.cards.${i}.label`, c.label, { mono: true })}</div>
-        <div>${axFlab("DURATION")}${wsInput(`mockup.cards.${i}.dur`, c.dur, { mono: true, ph: "—" })}</div>
+        ? `<video src="${wsEsc(slot.mediaUrl)}" muted loop autoplay playsinline onerror="wsMediaErr(this)" style="width:100%;height:100%;object-fit:cover"></video>`
+        : `<img src="${wsEsc(slot.mediaUrl)}" alt="" onerror="wsMediaErr(this)" style="width:100%;height:100%;object-fit:cover">`)
+    : `<span style="font:600 9px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.6)">${wsEsc(opts.emptyLabel || "GRADIENT")}</span>`;
+  return `<div style="display:flex;gap:12px;align-items:center">
+    <div style="width:${opts.w || 130}px;height:${opts.h || 72}px;flex:none;border-radius:9px;overflow:hidden;background:${grad};display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08)">${thumb}</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="adx-btn2 sm" onclick="wsPickMedia('${path}')"><i class="ph ph-upload-simple"></i>${hasMedia ? "Replace media" : "Upload media"}</button>
+        ${hasMedia ? `<button class="adx-btn2 sm" onclick="wsClearMedia('${path}')"><i class="ph ph-x"></i>Remove</button>` : ""}
+        <span class="ws-upstat" data-ws-upstat="${path}" style="font-size:10px;color:var(--muted)"></span>
       </div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
-      <button class="adx-btn2 sm" onclick="wsPickMedia(${i})"><i class="ph ph-upload-simple"></i>${hasMedia ? "Replace media" : "Upload media"}</button>
-      ${hasMedia ? `<button class="adx-btn2 sm" onclick="wsClearMedia(${i})"><i class="ph ph-x"></i>Remove (use gradient)</button>` : `<span style="font-size:10px;color:var(--muted)">No media — the landing shows the gradient placeholder</span>`}
-      <span class="ws-upstat" data-ws-upstat="${i}" style="font-size:10px;color:var(--muted)"></span>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">${opts.hint || "Image, GIF or a short MP4/WebM loop."}</div>
     </div>
   </div>`;
+}
+
+/* Media URL yuklanmadi (CDN 403 / o'chirilgan fayl) — buzilgan ikonka o'rniga aniq holat */
+function wsMediaErr(el) {
+  const box = el && el.parentNode;
+  if (!box) return;
+  box.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;color:#C79A62;text-align:center;padding:0 6px"><i class="ph ph-warning" style="font-size:15px"></i><span style="font:600 8px 'IBM Plex Mono',monospace;letter-spacing:.05em">MEDIA UNREACHABLE</span></div>`;
 }
 
 /* ── Theme ─────────────────────────────────────────────────── */
@@ -209,6 +228,7 @@ function wsTabHero() {
     ["nav.templates", "TEMPLATES LINK", c.nav.templates], ["nav.aiStudio", "AI STUDIO LINK", c.nav.aiStudio],
     ["nav.pricing", "PRICING LINK", c.nav.pricing], ["nav.plugin", "PLUGIN LINK", c.nav.plugin],
     ["nav.signIn", "SIGN-IN BUTTON", c.nav.signIn], ["nav.cta", "NAV CTA BUTTON", c.nav.cta],
+    ["nav.pluginBadge", "PLUGIN LINK PIP (EMPTY = HIDDEN)", c.nav.pluginBadge],
   ].map(([f, l, v]) => `<div>${axFlab(l)}${wsInput(f, v)}</div>`).join("");
   const statRows = c.stats.map((s, i) => `
     <div style="display:grid;grid-template-columns:110px 90px 1fr;gap:10px;margin-bottom:10px">
@@ -237,12 +257,40 @@ function wsTabHero() {
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
       ${wsCard("Live preview", "Updates as you type — hero, stats and the section order strip.", `<div id="wsPreview">${wsPreviewHtml(c)}</div>`)}
-      ${wsCard("Preview mockup cards", `The "AI Studio" window in the hero. Upload real media (image or short video) into each card — empty cards keep their gradient.`, `
+      ${wsCard("Hero billboard", `The big media card next to the hero copy. Upload an image, GIF or short video — empty keeps the built-in aurora art.`, `
         <div style="display:grid;grid-template-columns:60px 1fr;gap:12px;margin-bottom:12px">
           <div>${axFlab("BADGE")}${wsInput("mockup.badge", c.mockup.badge, { mono: true })}</div>
-          <div>${axFlab("WINDOW TITLE")}${wsInput("mockup.title", c.mockup.title, { mono: true })}</div>
+          <div>${axFlab("CAPTION TITLE")}${wsInput("mockup.title", c.mockup.title, { mono: true })}</div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px">${c.mockup.cards.map(wsCardEditor).join("")}</div>`)}
+        <div style="display:grid;grid-template-columns:90px 1fr;gap:12px;margin-bottom:14px">
+          <div>${axFlab("TIME CHIP")}${wsInput("heroMedia.time", c.heroMedia.time, { mono: true, ph: "00:08" })}</div>
+          <div>${axFlab("CAPTION SUBLINE")}${wsInput("heroMedia.caption", c.heroMedia.caption)}</div>
+        </div>
+        ${axFlab("BILLBOARD MEDIA")}
+        ${wsMediaBlock("heroMedia", c.heroMedia, { grad: "linear-gradient(138deg,#2A1E49,#6C3FA8 62%,#130E24)", emptyLabel: "AURORA ART", hint: "Image, GIF or a short MP4/WebM loop — shown inside the hero billboard frame." })}`)}
+      ${wsCard("Announcement strip (promo bar)", "The thin dismissable strip above the landing nav. Visitors who dismiss it will see it again when you change the text.", `
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+          <button class="adx-tog ${c.promo.enabled ? "on" : "off"}" onclick="wsTogglePath('promo.enabled')"><i></i></button>
+          <span style="font-size:12px;font-weight:600">${c.promo.enabled ? "Visible" : "Hidden"}</span>
+          <span style="flex:1"></span>
+          <label style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)">
+            <button class="adx-tog ${c.promo.showInApp ? "on" : "off"}" onclick="wsTogglePath('promo.showInApp')"><i></i></button>
+            Also show inside the logged-in app
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns:80px 1fr 110px;gap:10px">
+          <div>${axFlab("TAG")}${wsInput("promo.tag", c.promo.tag, { mono: true })}</div>
+          <div>${axFlab("TEXT")}${wsInput("promo.text", c.promo.text)}</div>
+          <div>${axFlab("CTA LABEL")}${wsInput("promo.ctaLabel", c.promo.ctaLabel)}</div>
+        </div>`)}
+      ${wsCard("Explore menu — live models", "The four model rows inside the nav “Explore” mega-menu. Keep prices in sync with the real model catalog.", c.megaModels.rows.map((m, i) => `
+        <div style="display:grid;grid-template-columns:56px 1fr 1.4fr 90px 90px;gap:8px;margin-bottom:8px">
+          <div>${i === 0 ? axFlab("INITIALS") : ""}${wsInput(`megaModels.rows.${i}.initials`, m.initials, { mono: true })}</div>
+          <div>${i === 0 ? axFlab("MODEL") : ""}${wsInput(`megaModels.rows.${i}.title`, m.title)}</div>
+          <div>${i === 0 ? axFlab("SUBTITLE") : ""}${wsInput(`megaModels.rows.${i}.sub`, m.sub)}</div>
+          <div>${i === 0 ? axFlab("BADGE") : ""}${wsInput(`megaModels.rows.${i}.badge`, m.badge, { mono: true, ph: "—" })}</div>
+          <div>${i === 0 ? axFlab("PRICE") : ""}${wsInput(`megaModels.rows.${i}.price`, m.price, { mono: true })}</div>
+        </div>`).join(""))}
     </div>
   </div>`;
 }
@@ -266,12 +314,45 @@ function wsTabLanding() {
   return `<div class="adx-grid2" style="align-items:start">
     <div style="display:flex;flex-direction:column;gap:16px">
       ${wsSectionOrderCard()}
+      ${wsCard("Ticker strip", "The thin scrolling text band under the hero.", `
+        <div style="margin-bottom:10px">${axFlab("LEFT LABEL")}${wsInput("ticker.label", c.ticker.label, { mono: true })}</div>
+        ${axFlab("ITEMS (ONE PER LINE, MAX 12)")}${wsArea("ticker.items", c.ticker.items, 4, { type: "lines" })}`)}
+      ${wsCard("Cinema billboard", "The full-width “Made with AI Studio” frame. Upload media to replace the sunset art.", `
+        <div style="display:grid;grid-template-columns:170px 1fr;gap:10px;margin-bottom:10px">
+          <div>${axFlab("EYEBROW")}${wsInput("cinema.eyebrow", c.cinema.eyebrow, { mono: true })}</div>
+          <div>${axFlab("TITLE")}${wsInput("cinema.title", c.cinema.title)}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>${axFlab("LINK LABEL")}${wsInput("cinema.linkLabel", c.cinema.linkLabel)}</div>
+          <div>${axFlab("BAR LEFT")}${wsInput("cinema.barLeft", c.cinema.barLeft, { mono: true })}</div>
+          <div>${axFlab("BAR RIGHT")}${wsInput("cinema.barRight", c.cinema.barRight, { mono: true })}</div>
+        </div>
+        <div style="margin-bottom:10px">${axFlab("BIG WORD (\\n = LINE BREAK)")}${wsArea("cinema.word", c.cinema.word, 2)}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 90px;gap:10px;margin-bottom:12px">
+          <div>${axFlab("FOOT TITLE")}${wsInput("cinema.footTitle", c.cinema.footTitle)}</div>
+          <div>${axFlab("FOOT SUBLINE")}${wsInput("cinema.footSub", c.cinema.footSub)}</div>
+          <div>${axFlab("COST CHIP")}${wsInput("cinema.cost", c.cinema.cost, { mono: true })}</div>
+        </div>
+        ${axFlab("BILLBOARD MEDIA")}
+        ${wsMediaBlock("cinema", c.cinema, { grad: "linear-gradient(138deg,#3A2A12,#BE8428 62%,#171006)", emptyLabel: "SUNSET ART", w: 150, h: 64 })}`)}
       ${wsCard("Templates showcase", "", `
-        <div style="display:grid;grid-template-columns:150px 1fr 110px;gap:12px">
+        <div style="display:grid;grid-template-columns:150px 1fr 110px;gap:12px;margin-bottom:10px">
           <div>${axFlab("EYEBROW")}${wsInput("showcase.eyebrow", c.showcase.eyebrow, { mono: true })}</div>
           <div>${axFlab("TITLE")}${wsInput("showcase.title", c.showcase.title)}</div>
           <div>${axFlab("LINK LABEL")}${wsInput("showcase.linkLabel", c.showcase.linkLabel)}</div>
-        </div>`)}
+        </div>
+        <div>${axFlab("DISCLAIMER LINE (UNDER THE TITLE)")}${wsInput("feed.note", c.feed.note)}</div>`)}
+      ${wsCard("Showcase feed cards (11 slots)", "The masonry cards in the showcase. Fill a slot to replace the built-in concept card — title, category, badge and media. Empty slots keep the built-in gradient cards.", c.feed.cards.map((f, i) => `
+        <div class="adx-card" style="padding:12px;margin-bottom:8px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">SLOT ${i + 1} · ${WS_FEED_SHAPES[i] || "card"}</div>
+          <div style="display:grid;grid-template-columns:1.3fr 1fr 70px 70px;gap:8px;margin-bottom:8px">
+            <div>${wsInput(`feed.cards.${i}.title`, f.title, { ph: "empty = built-in card" })}</div>
+            <div>${wsInput(`feed.cards.${i}.cat`, f.cat, { ph: "category" })}</div>
+            <div>${wsInput(`feed.cards.${i}.dur`, f.dur, { mono: true, ph: "0:12" })}</div>
+            <div>${wsInput(`feed.cards.${i}.badge`, f.badge, { mono: true, ph: "PRO" })}</div>
+          </div>
+          ${wsMediaBlock(`feed.cards.${i}`, f, { grad: WS_FEED_GRADS[i % WS_FEED_GRADS.length], w: 92, h: 56 })}
+        </div>`).join(""))}
       ${wsCard("AI Studio promo", "", `
         <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;margin-bottom:12px">
           <div>${axFlab("EYEBROW")}${wsInput("aiPromo.eyebrow", c.aiPromo.eyebrow, { mono: true })}</div>
@@ -286,19 +367,46 @@ function wsTabLanding() {
             ${wsInput(`aiPromo.cards.${i}.desc`, cd.desc)}
             ${wsInput(`aiPromo.cards.${i}.cost`, cd.cost, { mono: true })}
           </div>`).join("")}
-        <div style="margin-top:12px">${axFlab("TYPING PROMPTS (4 LINES — THE ANIMATED PROMPT TEXTS)")}${wsArea("aiPromo.typingPrompts", c.aiPromo.typingPrompts, 4, { type: "lines" })}</div>`)}
+        <div style="margin-top:12px">${axFlab("TYPING PROMPTS (4 LINES — THE ANIMATED PROMPT TEXTS)")}${wsArea("aiPromo.typingPrompts", c.aiPromo.typingPrompts, 4, { type: "lines" })}</div>
+        <div style="margin-top:12px">${axFlab("RESULT STACK LABEL")}${wsInput("aiPromo.stackLabel", c.aiPromo.stackLabel, { mono: true })}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 70px 70px 1fr;gap:8px;margin-top:10px">
+          <div>${axFlab("CHIP: MODE")}${wsInput("aiPromo.chipMode", c.aiPromo.chipMode, { mono: true })}</div>
+          <div>${axFlab("CHIP: MODEL")}${wsInput("aiPromo.chipModel", c.aiPromo.chipModel)}</div>
+          <div>${axFlab("RES")}${wsInput("aiPromo.chipRes", c.aiPromo.chipRes, { mono: true })}</div>
+          <div>${axFlab("COST")}${wsInput("aiPromo.chipCost", c.aiPromo.chipCost, { mono: true })}</div>
+          <div>${axFlab("GENERATE BTN")}${wsInput("aiPromo.chipGenerate", c.aiPromo.chipGenerate)}</div>
+        </div>`)}
       ${wsCard("Plugin promo", "", `
         <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;margin-bottom:12px">
           <div>${axFlab("EYEBROW")}${wsInput("pluginPromo.eyebrow", c.pluginPromo.eyebrow, { mono: true })}</div>
           <div>${axFlab("TITLE")}${wsInput("pluginPromo.title", c.pluginPromo.title)}</div>
         </div>
         <div style="margin-bottom:12px">${axFlab("DESCRIPTION")}${wsArea("pluginPromo.desc", c.pluginPromo.desc, 2)}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px">
           <div>${axFlab("CTA BUTTON")}${wsInput("pluginPromo.ctaLabel", c.pluginPromo.ctaLabel)}</div>
           ${c.pluginPromo.chips.map((ch, i) => `<div>${axFlab("HOST CHIP " + (i + 1))}${wsInput(`pluginPromo.chips.${i}`, ch)}</div>`).join("")}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div>${axFlab("AE WINDOW TITLE")}${wsInput("pluginPromo.winTitle", c.pluginPromo.winTitle, { mono: true })}</div>
+          <div>${axFlab("SEARCH PLACEHOLDER")}${wsInput("pluginPromo.winSearch", c.pluginPromo.winSearch)}</div>
+          <div>${axFlab("IMPORT BUTTON")}${wsInput("pluginPromo.winImport", c.pluginPromo.winImport)}</div>
         </div>`)}
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
+      ${wsCard("Presets rail (4 cards)", "The “One-click creative presets” row. Upload media into each card — empty keeps the gradient art.", `
+        <div style="display:grid;grid-template-columns:150px 1fr 120px;gap:10px;margin-bottom:12px">
+          <div>${axFlab("EYEBROW")}${wsInput("presetsRail.eyebrow", c.presetsRail.eyebrow, { mono: true })}</div>
+          <div>${axFlab("TITLE")}${wsInput("presetsRail.title", c.presetsRail.title)}</div>
+          <div>${axFlab("LINK LABEL")}${wsInput("presetsRail.linkLabel", c.presetsRail.linkLabel)}</div>
+        </div>
+        ${c.presetsRail.items.map((p, i) => `
+          <div class="adx-card" style="padding:12px;margin-bottom:8px">
+            <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-bottom:8px">
+              <div>${i === 0 ? axFlab("CARD TITLE") : ""}${wsInput(`presetsRail.items.${i}.title`, p.title)}</div>
+              <div>${i === 0 ? axFlab("SUBTITLE") : ""}${wsInput(`presetsRail.items.${i}.sub`, p.sub, { mono: true })}</div>
+            </div>
+            ${wsMediaBlock(`presetsRail.items.${i}`, p, { grad: WS_FEED_GRADS[(i + 2) % WS_FEED_GRADS.length], w: 92, h: 56 })}
+          </div>`).join("")}`)}
       ${wsCard("Pricing teaser", "Plan cards themselves are edited on the “Pricing page” tab (shared copy).", `
         <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;margin-bottom:12px">
           <div>${axFlab("EYEBROW")}${wsInput("pricingTeaser.eyebrow", c.pricingTeaser.eyebrow, { mono: true })}</div>
@@ -317,12 +425,66 @@ function wsTabLanding() {
             <div style="margin-top:8px">${axFlab("ANSWER")}${wsArea(`faqSection.items.${i}.a`, f.a, 2)}</div>
           </div>`).join("")}`)}
       ${wsCard("Final CTA band", "", `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="margin-bottom:12px">${axFlab("EYEBROW")}${wsInput("finalCta.eyebrow", c.finalCta.eyebrow, { mono: true })}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
           <div>${axFlab("TITLE")}${wsInput("finalCta.title", c.finalCta.title)}</div>
           <div>${axFlab("CTA BUTTON")}${wsInput("finalCta.ctaLabel", c.finalCta.ctaLabel)}</div>
+          <div>${axFlab("SECONDARY BUTTON")}${wsInput("finalCta.secondaryLabel", c.finalCta.secondaryLabel)}</div>
         </div>
         <div style="margin-bottom:12px">${axFlab("SUBTITLE")}${wsInput("finalCta.sub", c.finalCta.sub)}</div>
         <div>${axFlab("CREDIT LINE")}${wsInput("finalCta.credline", c.finalCta.credline)}</div>`)}
+    </div>
+  </div>`;
+}
+
+/* ── Tab: App & Catalog (logged-in webapp Home + Stock Catalog sahifasi) ───── */
+
+function wsTabApp() {
+  const c = WS_CFG;
+  return `<div class="adx-grid2" style="align-items:start">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${wsCard("Home — hero & quick actions", "The logged-in Home screen. Icons and targets are fixed; the copy is yours.", `
+        <div style="margin-bottom:12px">${axFlab("HERO SUBLINE (UNDER THE GREETING)")}${wsInput("appHome.heroSub", c.appHome.heroSub)}</div>
+        ${c.appHome.quick.map((q, i) => `
+          <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-bottom:8px">
+            <div>${i === 0 ? axFlab("QUICK CARD TITLE") : ""}${wsInput(`appHome.quick.${i}.title`, q.title)}</div>
+            <div>${i === 0 ? axFlab("DESCRIPTION") : ""}${wsInput(`appHome.quick.${i}.desc`, q.desc)}</div>
+          </div>`).join("")}`)}
+      ${wsCard("Home — section headings", "", `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>${axFlab("JUMP BACK IN")}${wsInput("appHome.secJump", c.appHome.secJump)}</div>
+          <div>${axFlab("SECTION LINK (OPEN AI STUDIO)")}${wsInput("appHome.secJumpLink", c.appHome.secJumpLink)}</div>
+          <div>${axFlab("START CREATING (EMPTY STATE)")}${wsInput("appHome.secStart", c.appHome.secStart)}</div>
+          <div>${axFlab("FEATURED MODELS")}${wsInput("appHome.secFeatured", c.appHome.secFeatured)}</div>
+          <div>${axFlab("RECOMMENDED FOR YOU")}${wsInput("appHome.secRec", c.appHome.secRec)}</div>
+          <div>${axFlab("BROWSE-ALL LINK")}${wsInput("appHome.recLink", c.appHome.recLink)}</div>
+        </div>`)}
+      ${wsCard("Home — shelves", `The three template shelves. "Preferred category" powers the “essentials” shelf when that category has templates.`, `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>${axFlab("SHELF 1 TITLE")}${wsInput("appHome.shelfFresh", c.appHome.shelfFresh)}</div>
+          <div>${axFlab("SHELF 1 KICKER")}${wsInput("appHome.shelfFreshKick", c.appHome.shelfFreshKick, { mono: true })}</div>
+          <div>${axFlab("SHELF 2 (CATEGORY) KICKER")}${wsInput("appHome.shelfCatKick", c.appHome.shelfCatKick, { mono: true })}</div>
+          <div>${axFlab("PREFERRED CATEGORY")}${wsInput("appHome.shelfCat", c.appHome.shelfCat, { ph: "Lower Thirds" })}</div>
+          <div>${axFlab("SHELF 3 TITLE")}${wsInput("appHome.shelfNew", c.appHome.shelfNew)}</div>
+          <div>${axFlab("SHELF 3 KICKER")}${wsInput("appHome.shelfNewKick", c.appHome.shelfNewKick, { mono: true })}</div>
+        </div>`)}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${wsCard("Home — empty state", "Shown to users with no generations yet.", `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>${axFlab("TITLE")}${wsInput("appHome.emptyTitle", c.appHome.emptyTitle)}</div>
+          <div>${axFlab("BUTTON")}${wsInput("appHome.emptyBtn", c.appHome.emptyBtn)}</div>
+        </div>
+        <div>${axFlab("SUBTITLE")}${wsInput("appHome.emptySub", c.appHome.emptySub)}</div>`)}
+      ${wsCard("Stock Catalog page", "The catalog hero, search and empty-state copy.", `
+        <div style="margin-bottom:10px">${axFlab("KICKER")}${wsInput("catalogPage.kicker", c.catalogPage.kicker, { mono: true })}</div>
+        <div style="margin-bottom:10px">${axFlab("TITLE (\\n = LINE BREAK)")}${wsArea("catalogPage.title", c.catalogPage.title, 2)}</div>
+        <div style="margin-bottom:10px">${axFlab("SEARCH PLACEHOLDER")}${wsInput("catalogPage.searchPlaceholder", c.catalogPage.searchPlaceholder)}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>${axFlab("LOADING LINE")}${wsInput("catalogPage.loading", c.catalogPage.loading)}</div>
+          <div>${axFlab("EMPTY-CATALOG TITLE")}${wsInput("catalogPage.emptyTitle", c.catalogPage.emptyTitle)}</div>
+        </div>
+        <div>${axFlab("EMPTY-CATALOG SUBTITLE")}${wsInput("catalogPage.emptySub", c.catalogPage.emptySub)}</div>`)}
     </div>
   </div>`;
 }
@@ -352,11 +514,20 @@ function wsTabPricing() {
   return `
     ${axInfo(`These fields change DISPLAY copy only (what visitors see). Real billing, plan enforcement and checkout are configured elsewhere and are not affected. Keep displayed prices in sync with your actual Lemon Squeezy prices.`, "amber")}
     ${wsCard("Page header", "", `
-      <div style="display:grid;grid-template-columns:130px 1fr 1fr 130px;gap:12px">
+      <div style="display:grid;grid-template-columns:130px 1fr 1fr 130px;gap:12px;margin-bottom:12px">
         <div>${axFlab("EYEBROW")}${wsInput("pricingPage.eyebrow", c.pricingPage.eyebrow, { mono: true })}</div>
         <div>${axFlab("TITLE")}${wsInput("pricingPage.title", c.pricingPage.title)}</div>
         <div>${axFlab("SUBTITLE")}${wsInput("pricingPage.sub", c.pricingPage.sub)}</div>
         <div>${axFlab("FAQ TITLE")}${wsInput("pricingPage.faqTitle", c.pricingPage.faqTitle)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:150px 1fr 130px;gap:12px;margin-bottom:12px">
+        <div>${axFlab("BILLING NOTE")}${wsInput("pricingPage.billingNote", c.pricingPage.billingNote, { mono: true })}</div>
+        <div>${axFlab("BILLING SUBLINE")}${wsInput("pricingPage.billingSub", c.pricingPage.billingSub)}</div>
+        <div>${axFlab("POPULAR LABEL")}${wsInput("pricingPage.popularLabel", c.pricingPage.popularLabel, { mono: true })}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:150px 1fr;gap:12px">
+        <div>${axFlab("COMPARE STRIP TITLE")}${wsInput("pricingPage.compareTitle", c.pricingPage.compareTitle, { mono: true })}</div>
+        <div>${axFlab("COMPARE ITEMS (ONE PER LINE)")}${wsArea("pricingPage.compareItems", c.pricingPage.compareItems, 4, { type: "lines" })}</div>
       </div>`)}
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px">
       ${c.plans.map(wsPlanEditor).join("")}
@@ -377,11 +548,20 @@ function wsTabPlugin() {
         <div>${axFlab("VERSION NOTE")}${wsInput("pluginPage.versionNote", c.pluginPage.versionNote, { mono: true })}</div>
       </div>
       <div>${axFlab("GUARANTEE LINE")}${wsInput("pluginPage.guarantee", c.pluginPage.guarantee)}</div>`)}
-    ${wsCard("Install steps", "Three numbered steps — the numbers are automatic.", c.pluginPage.steps.map((st, i) => `
-      <div style="border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;margin-bottom:8px">
-        ${axFlab("STEP " + (i + 1) + " TITLE")}${wsInput(`pluginPage.steps.${i}.t`, st.t)}
-        <div style="margin-top:8px">${axFlab("DESCRIPTION")}${wsArea(`pluginPage.steps.${i}.d`, st.d, 2)}</div>
-      </div>`).join(""))}
+    <div style="display:flex;flex-direction:column;gap:16px">
+      ${wsCard("Install steps", "Three numbered steps — the numbers are automatic.", c.pluginPage.steps.map((st, i) => `
+        <div style="border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+          ${axFlab("STEP " + (i + 1) + " TITLE")}${wsInput(`pluginPage.steps.${i}.t`, st.t)}
+          <div style="margin-top:8px">${axFlab("DESCRIPTION")}${wsArea(`pluginPage.steps.${i}.d`, st.d, 2)}</div>
+        </div>`).join(""))}
+      ${wsCard("AE window mock", "The decorative After Effects window next to the hero.", `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>${axFlab("WINDOW TITLE")}${wsInput("pluginPage.winTitle", c.pluginPage.winTitle, { mono: true })}</div>
+          <div>${axFlab("SEARCH PLACEHOLDER")}${wsInput("pluginPage.winSearch", c.pluginPage.winSearch)}</div>
+          <div>${axFlab("TEMPLATE NAME")}${wsInput("pluginPage.mockName", c.pluginPage.mockName)}</div>
+          <div>${axFlab("IMPORT BUTTON")}${wsInput("pluginPage.mockImport", c.pluginPage.mockImport)}</div>
+        </div>`)}
+    </div>
   </div>`;
 }
 
@@ -416,6 +596,7 @@ function wsTabFooter() {
 const WS_TABS = [
   { key: "hero", label: "Hero & theme", icon: "sparkle" },
   { key: "landing", label: "Landing sections", icon: "rows" },
+  { key: "app", label: "App & Catalog", icon: "layout" },
   { key: "pricing", label: "Pricing page", icon: "tag" },
   { key: "plugin", label: "Plugin page", icon: "puzzle-piece" },
   { key: "footer", label: "Footer", icon: "dots-three-outline" },
@@ -433,6 +614,7 @@ VIEWS.website = function () {
   ).join("");
   const body =
     WS_TAB === "landing" ? wsTabLanding()
+    : WS_TAB === "app" ? wsTabApp()
     : WS_TAB === "pricing" ? wsTabPricing()
     : WS_TAB === "plugin" ? wsTabPlugin()
     : WS_TAB === "footer" ? wsTabFooter()
@@ -467,6 +649,13 @@ function wsSecToggle(i) {
   route("website");
 }
 
+/* v2 — bool konfiguratsiya kalitini almashtirish (promo.enabled kabi) */
+function wsTogglePath(path) {
+  WS_CFG = wsCollect();
+  wsSetPath(WS_CFG, path, !wsPathGet(WS_CFG, path));
+  route("website");
+}
+
 function wsRefreshPreview() {
   WS_CFG = wsCollect();
   const box = document.getElementById("wsPreview");
@@ -491,33 +680,37 @@ function wsAccentTyped(v) {
   }
 }
 
-let WS_PICK_IDX = null;
-function wsPickMedia(i) {
-  WS_PICK_IDX = i;
+/* v2 — universal media pick: WS_PICK = konfiguratsiyadagi slot yo'li ("heroMedia",
+   "cinema", "presetsRail.items.2", "feed.cards.7"…). GIF ham image/* ostida qabul. */
+let WS_PICK = null;
+function wsPickMedia(path) {
+  WS_PICK = path;
   const inp = document.getElementById("wsMediaFile");
   if (inp) { inp.value = ""; inp.click(); }
 }
 
-function wsClearMedia(i) {
+function wsClearMedia(path) {
   WS_CFG = wsCollect();
-  WS_CFG.mockup.cards[i].mediaUrl = "";
-  WS_CFG.mockup.cards[i].mediaType = "";
+  wsSetPath(WS_CFG, path + ".mediaUrl", "");
+  wsSetPath(WS_CFG, path + ".mediaType", "");
   route("website");
 }
 
-/* Media yuklash: presigned PUT (folder=landing) → publicUrl kartaga yoziladi */
+/* Media yuklash: presigned PUT (folder=landing) → publicUrl slotga yoziladi.
+   Limitlar server bilan mos: rasm/GIF 40MB, video 150MB. */
 async function wsUploadMedia(file) {
-  const i = WS_PICK_IDX;
-  if (i == null || !file) return;
-  const stat = document.querySelector(`[data-ws-upstat="${i}"]`);
+  const path = WS_PICK;
+  if (!path || !file) return;
+  const stat = document.querySelector(`[data-ws-upstat="${path}"]`);
   const isVideo = /^video\//.test(file.type);
-  if (file.size > 25 * 1024 * 1024) {
-    toast("Too large", "Landing media should be under 25 MB (short loops work best)", "warn");
+  const cap = isVideo ? 150 : 40;
+  if (file.size > cap * 1024 * 1024) {
+    toast("Too large", `${isVideo ? "Video" : "Image/GIF"} media should be under ${cap} MB (short loops work best)`, "warn");
     return;
   }
   try {
     if (stat) stat.textContent = "Uploading…";
-    const u = await StudioApi.adminUploadUrl(file.name, file.type || "application/octet-stream", "landing");
+    const u = await StudioApi.adminUploadUrl(file.name, file.type || "application/octet-stream", "landing", file.size);
     if (!u.uploadUrl) {
       toast("Storage not configured", u.message || "S3/R2 is not configured on the server", "warn");
       if (stat) stat.textContent = "";
@@ -526,9 +719,9 @@ async function wsUploadMedia(file) {
     const res = await fetch(u.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type || "application/octet-stream" } });
     if (!res.ok) throw new Error("Upload failed (HTTP " + res.status + ")");
     WS_CFG = wsCollect();
-    WS_CFG.mockup.cards[i].mediaUrl = u.publicUrl;
-    WS_CFG.mockup.cards[i].mediaType = isVideo ? "video" : "image";
-    toast("Media uploaded", "Don't forget to press Save to publish it to the landing", "success");
+    wsSetPath(WS_CFG, path + ".mediaUrl", u.publicUrl);
+    wsSetPath(WS_CFG, path + ".mediaType", isVideo ? "video" : "image");
+    toast("Media uploaded", "Don't forget to press Save to publish it", "success");
     route("website");
   } catch (e) {
     if (stat) stat.textContent = "";
@@ -552,6 +745,10 @@ async function wsSave() {
       pluginPromo: WS_CFG.pluginPromo, pricingTeaser: WS_CFG.pricingTeaser, faqSection: WS_CFG.faqSection,
       finalCta: WS_CFG.finalCta, footer: WS_CFG.footer, pricingPage: WS_CFG.pricingPage,
       plans: WS_CFG.plans, pluginPage: WS_CFG.pluginPage,
+      // v2 bo'limlari
+      heroMedia: WS_CFG.heroMedia, promo: WS_CFG.promo, ticker: WS_CFG.ticker, cinema: WS_CFG.cinema,
+      presetsRail: WS_CFG.presetsRail, feed: WS_CFG.feed, megaModels: WS_CFG.megaModels,
+      appHome: WS_CFG.appHome, catalogPage: WS_CFG.catalogPage,
     });
     WS_CFG = d.config;
     AssetFlowLog.info("Site saved", { action: "landing_save", detail: "Website tab: " + WS_TAB });
@@ -582,10 +779,58 @@ async function wsReset() {
   }
 }
 
+/* ── SC_62 — CMS versiya tarixi (Website + Plugin CMS umumiy) ─────────────── */
+async function cmsHistoryOpen(kind) {
+  try {
+    const d = await StudioApi.listContentRevisions(kind);
+    const items = (d && d.items) || [];
+    const rows = items.length
+      ? items.map((r) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid rgba(255,255,255,.07);border-radius:10px;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600">${wsEsc(typeof fmtLocalDateTime === "function" ? fmtLocalDateTime(r.createdAt) : r.createdAt)}</div>
+            <div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${wsEsc((r.savedByEmail || "unknown") + " · " + ((r.keys || []).join(", ") || "—"))}</div>
+          </div>
+          <button class="adx-btn2 sm" onclick="cmsHistoryRestore('${wsEsc(r.id)}','${kind}')">Restore</button>
+        </div>`).join("")
+      : `<div style="font-size:12px;color:var(--muted);padding:24px;text-align:center">No saved versions yet — every “Save & publish” creates one.</div>`;
+    openModal(`
+      <div class="modal-head"><div class="modal-ico">${typeof ic === "function" ? ic("clock") : ""}</div><div><h3>Version history</h3><p>${kind === "plugin" ? "Plugin CMS" : "Website"} — last ${items.length} saves, newest first</p></div></div>
+      <div class="modal-body" style="max-height:420px;overflow-y:auto">${rows}</div>
+      <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Close</button></div>`);
+  } catch (e) {
+    toast("History unavailable", e.message || "Server error", "warn");
+  }
+}
+
+async function cmsHistoryRestore(id, kind) {
+  closeModal();
+  if (!(await afConfirm({
+    title: "Restore this version",
+    sub: "The live configuration is replaced by the selected snapshot.",
+    warn: "Unsaved edits in the editor are discarded. A new history entry is NOT created until you save again.",
+    okLabel: "Restore version",
+  }))) return;
+  try {
+    await StudioApi.restoreContentRevision(id);
+    toast("Restored", "Configuration rolled back to the selected version", "success");
+    if (kind === "plugin") {
+      if (typeof PC_LOADED !== "undefined") { PC_LOADED = false; }
+      if (CURRENT === "plugincms" && typeof pcLoadConfig === "function") pcLoadConfig(true);
+    } else {
+      WS_LOADED = false;
+      if (CURRENT === "website") wsLoadConfig(true);
+    }
+  } catch (e) {
+    toast("Restore failed", e.message || "Server error", "warn");
+  }
+}
+
 window.afterRender.website = function () {
   const tba = document.getElementById("tbActions");
   if (tba && CURRENT === "website") {
     tba.innerHTML =
+      `<button class="adx-btn2 sm" onclick="cmsHistoryOpen('landing')"><i class="ph ph-clock-counter-clockwise"></i>History</button>` +
       `<button class="adx-btn2 sm" onclick="wsReset()"><i class="ph ph-arrow-counter-clockwise"></i>Reset to defaults</button>` +
       `<button class="adx-btn sm" onclick="wsSave()"><i class="ph ph-check"></i>Save & publish</button>`;
   }

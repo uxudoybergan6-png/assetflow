@@ -1,5 +1,6 @@
 import { prisma, Prisma } from "@creative-tools/database";
 import { z } from "zod";
+import { recordContentRevision } from "./content-revisions.js";
 
 // ── Landing CMS — konfiguratsiya manbai ─────────────────────────────────────
 // Bitta LandingConfig qatori (id=1) JSON blob saqlaydi; bu fayl DEFAULT
@@ -35,6 +36,40 @@ export interface SitePlanCopy {
   teaserFeats: string[]; // landing teaser'dagi 3 qator
 }
 
+// ── SITE CMS v2 — qo'shimcha bo'limlar (media-slotli kartalar + app/katalog) ──
+export interface SiteMediaSlot {
+  mediaUrl: string;
+  mediaType: "" | "image" | "video";
+}
+
+export interface LandingPromoBar {
+  enabled: boolean;
+  tag: string; // kichik badge (masalan NEW)
+  text: string;
+  ctaLabel: string;
+  showInApp: boolean; // login bo'lgan app ekranlarida ham ko'rsatish
+}
+
+export interface LandingPresetItem extends SiteMediaSlot {
+  title: string;
+  sub: string;
+}
+
+export interface LandingFeedCard extends SiteMediaSlot {
+  title: string; // bo'sh = shu slotda built-in demo karta qoladi
+  cat: string;
+  dur: string;
+  badge: string; // PRO | FREE | bo'sh
+}
+
+export interface LandingMegaModelRow {
+  initials: string;
+  title: string;
+  sub: string;
+  badge: string; // TOP/NEW/PREMIUM yoki bo'sh
+  price: string; // ko'rsatiladigan narx yorlig'i (✦…)
+}
+
 export interface LandingConfigData {
   theme: {
     // accent — istalgan HEX; landing CSS o'zgaruvchilari shu rangdan hisoblanadi.
@@ -49,6 +84,7 @@ export interface LandingConfigData {
     plugin: string;
     signIn: string;
     cta: string;
+    pluginBadge: string; // Plugin havolasidagi kichik pip (bo'sh = yashirin)
   };
   hero: {
     badgeTag: string;
@@ -63,8 +99,32 @@ export interface LandingConfigData {
   mockup: {
     title: string;
     badge: string;
-    cards: LandingMockupCard[]; // 6 ta: 3 kvadrat, 1 keng (video), 2 shablon
+    cards: LandingMockupCard[]; // LEGACY (eski hero mockup) — hozirgi landing bularni render qilmaydi
   };
+  // v2: hero billboard — media + kichik yorliqlar (vaqt/caption)
+  heroMedia: SiteMediaSlot & { time: string; caption: string };
+  // v2: e'lon paneli (promo strip) — endi hero-badge'dan MUSTAQIL
+  promo: LandingPromoBar;
+  // v2: oqar matn (ticker) bo'limi
+  ticker: { label: string; items: string[] };
+  // v2: kino-billboard bo'limi (media-slot bilan)
+  cinema: SiteMediaSlot & {
+    eyebrow: string;
+    title: string;
+    linkLabel: string;
+    barLeft: string;
+    barRight: string;
+    word: string; // \n = qator uzilishi
+    footTitle: string;
+    footSub: string;
+    cost: string;
+  };
+  // v2: preset reykasi — 4 media-slotli karta
+  presetsRail: { eyebrow: string; title: string; linkLabel: string; items: LandingPresetItem[] };
+  // v2: masonry feed — 11 slot; bo'sh slot built-in demo kartada qoladi
+  feed: { note: string; cards: LandingFeedCard[] };
+  // v2: nav mega-menyu "LIVE MODELS" ustuni (drift xavfi eng yuqori joy)
+  megaModels: { rows: LandingMegaModelRow[] }; // 4 ta
   stats: LandingStat[]; // 4 ta
   // ── To'liq sayt CMS (landing pastki bo'limlar + pricing/plugin sahifalar) ──
   // landingSections — hero'dan keyingi bo'limlar TARTIBI + ko'rinishi (hero doim birinchi).
@@ -77,11 +137,55 @@ export interface LandingConfigData {
     ctaLabel: string;
     cards: { title: string; desc: string; cost: string }[]; // 4 ta (tool kaliti kodda qoladi)
     typingPrompts: string[]; // 4 ta — yozilayotgan prompt animatsiyasi matnlari
+    stackLabel: string; // result-stack yorlig'i (masalan "NANO BANANA PRO · 2K")
+    chipMode: string;
+    chipModel: string;
+    chipRes: string;
+    chipCost: string;
+    chipGenerate: string;
   };
-  pluginPromo: { eyebrow: string; title: string; desc: string; ctaLabel: string; chips: string[] }; // chips 3 ta
+  pluginPromo: {
+    eyebrow: string;
+    title: string;
+    desc: string;
+    ctaLabel: string;
+    chips: string[]; // 3 ta
+    winTitle: string; // AE oynasi mock sarlavhasi
+    winSearch: string;
+    winImport: string;
+  };
   pricingTeaser: { eyebrow: string; title: string; sub: string; note: string; noteLink: string };
   faqSection: { title: string; items: { q: string; a: string }[] }; // 5 ta — pricing sahifada ham shu
-  finalCta: { title: string; sub: string; ctaLabel: string; credline: string };
+  finalCta: { title: string; sub: string; ctaLabel: string; credline: string; eyebrow: string; secondaryLabel: string };
+  // v2: logged-in webapp Home ekrani matnlari
+  appHome: {
+    heroSub: string;
+    quick: { title: string; desc: string }[]; // 3 ta (target ekranlar kodda)
+    shelfCat: string; // "essentials" polkasi uchun afzal kategoriya
+    secJump: string;
+    secJumpLink: string;
+    secStart: string;
+    emptyTitle: string;
+    emptySub: string;
+    emptyBtn: string;
+    secFeatured: string;
+    secRec: string;
+    recLink: string;
+    shelfFreshKick: string;
+    shelfFresh: string;
+    shelfCatKick: string;
+    shelfNewKick: string;
+    shelfNew: string;
+  };
+  // v2: Stock Catalog sahifa sarlavha/qidiruv/бo'sh holat matnlari
+  catalogPage: {
+    kicker: string;
+    title: string; // \n = qator uzilishi
+    searchPlaceholder: string;
+    loading: string;
+    emptyTitle: string;
+    emptySub: string;
+  };
   footer: {
     tagline: string;
     email: string;
@@ -89,7 +193,17 @@ export interface LandingConfigData {
     guarantee: string;
     cols: { title: string; links: string[] }[]; // 3 ustun — faqat YORLIQLAR (havola manzillari kodda)
   };
-  pricingPage: { eyebrow: string; title: string; sub: string; faqTitle: string };
+  pricingPage: {
+    eyebrow: string;
+    title: string;
+    sub: string;
+    faqTitle: string;
+    billingNote: string; // "MONTHLY PLANS" chizig'i
+    billingSub: string;
+    popularLabel: string; // "MOST POPULAR"
+    compareTitle: string; // "ALL PLANS INCLUDE"
+    compareItems: string[]; // 4 ta
+  };
   // plans — DISPLAY nusxasi (teaser + pricing sahifa); key/pop/checkout kodda qoladi.
   plans: SitePlanCopy[]; // 3 ta: free, pro, studio
   pluginPage: {
@@ -100,6 +214,10 @@ export interface LandingConfigData {
     versionNote: string;
     guarantee: string;
     steps: { t: string; d: string }[]; // 3 ta
+    winTitle: string; // AE oynasi mock
+    winSearch: string;
+    mockName: string; // mockdagi shablon nomi
+    mockImport: string;
   };
 }
 
@@ -116,6 +234,7 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     plugin: "Plugin",
     signIn: "Sign in",
     cta: "Start for free",
+    pluginBadge: "NEW",
   },
   hero: {
     badgeTag: "NEW",
@@ -139,6 +258,50 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
       { label: "TEMPLATE", dur: "0:05", mediaUrl: "", mediaType: "" },
     ],
   },
+  // v2 — hero billboard: media bo'sh = joriy CSS-art (aurora) qoladi.
+  heroMedia: { mediaUrl: "", mediaType: "", time: "00:08", caption: "4K · cinematic motion" },
+  // v2 — promo strip: default matn hero-badge bilan bir xil (joriy xulq saqlanadi).
+  promo: { enabled: true, tag: "NEW", text: "AI Video 2.0 is here", ctaLabel: "Try it", showInApp: false },
+  ticker: {
+    label: "FRAMEFLOW SELECTS",
+    items: ["TYPOGRAPHY ↗", "PRODUCT FILMS ↗", "SOCIAL CUTS ↗", "TITLE SYSTEMS ↗", "MOTION POSTERS ↗", "SEEDANCE 2.0 ↗"],
+  },
+  cinema: {
+    eyebrow: "MADE WITH AI STUDIO",
+    title: "One idea. Full-screen impact.",
+    linkLabel: "Build a scene",
+    barLeft: "CONCEPT PREVIEW",
+    barRight: "SEEDANCE 2.0 · 4K",
+    word: "AFTER\nLIGHT",
+    footTitle: "After Light — product film study",
+    footSub: "Start/end frames · native audio · 8 seconds",
+    cost: "✦ 480",
+    mediaUrl: "",
+    mediaType: "",
+  },
+  presetsRail: {
+    eyebrow: "START FASTER",
+    title: "One-click creative presets",
+    linkLabel: "View all presets",
+    items: [
+      { title: "Editorial portrait", sub: "Nano Banana Pro · ✦ 8", mediaUrl: "", mediaType: "" },
+      { title: "Cinematic dolly", sub: "Veo 3.1 Lite · ✦ 24+", mediaUrl: "", mediaType: "" },
+      { title: "Product refraction", sub: "Imagen 4 Ultra · ✦ 6+", mediaUrl: "", mediaType: "" },
+      { title: "Type explosion", sub: "FrameFlow template · Pro", mediaUrl: "", mediaType: "" },
+    ],
+  },
+  feed: {
+    note: "Concept previews — styles you can create, not live catalog listings",
+    cards: Array.from({ length: 11 }, () => ({ title: "", cat: "", dur: "", badge: "", mediaUrl: "", mediaType: "" as const })),
+  },
+  megaModels: {
+    rows: [
+      { initials: "S2", title: "Seedance 2.0", sub: "Reference-led video · 480p–4K · 4–15s", badge: "TOP", price: "✦8–60/s" },
+      { initials: "NB", title: "Nano Banana 2", sub: "Fast multi-reference image · 1K–4K", badge: "NEW", price: "✦4–16" },
+      { initials: "V3", title: "Veo 3.1", sub: "Premium video · start/end frames + audio", badge: "PREMIUM", price: "✦30/s" },
+      { initials: "UP", title: "Video Upscale · Topaz", sub: "Resolution-aware 720p / 1080p / 4K", badge: "", price: "✦2/3/9" },
+    ],
+  },
   // Launch Task B — oqib ketadigan katalog-hajm raqami olib tashlandi (haqiqiy hajmga mos emas
   // edi); Pr/DaVinci plagin yorlig'i ham olib tashlandi (plagin faqat AE'ni qo'llab-quvvatlaydi).
   // Timeless/haqiqiy qiymatlar bilan almashtirildi.
@@ -151,9 +314,14 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     { value: 6, suffix: "", label: "Content categories — video, graphics, LUTs, audio" },
     { value: 1, suffix: "connected workflow", label: "Web and After Effects" },
   ],
+  // v2 — ticker/cinema/presets endi tartib ro'yxatida (ilgari qattiq order:5/15/25 edi;
+  // default tartib joriy vizual ketma-ketlik bilan AYNI).
   landingSections: [
+    { key: "ticker", visible: true },
     { key: "stats", visible: true },
+    { key: "cinema", visible: true },
     { key: "showcase", visible: true },
+    { key: "presets", visible: true },
     { key: "aiPromo", visible: true },
     { key: "pluginPromo", visible: true },
     { key: "pricingTeaser", visible: true },
@@ -185,6 +353,12 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
       "Clean backdrop for a modern logo animation, studio lighting…",
       "Slow motion on the shore, golden hour, film grain…",
     ],
+    stackLabel: "NANO BANANA PRO · 2K",
+    chipMode: "✦ Image",
+    chipModel: "Nano Banana Pro",
+    chipRes: "2K",
+    chipCost: "✦ 14",
+    chipGenerate: "Generate ↗",
   },
   pluginPromo: {
     eyebrow: "03 — PLUGIN",
@@ -192,6 +366,9 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     desc: "Catalog, import and AI Studio — in the panel. Works with your platform account and credits.",
     ctaLabel: "Download the plugin (.zxp)",
     chips: ["After Effects 2022+", "In-panel catalog", "AI Studio"],
+    winTitle: "FrameFlow · After Effects",
+    winSearch: "Search the catalog…",
+    winImport: "Import to project",
   },
   pricingTeaser: {
     eyebrow: "04 — PRICING",
@@ -215,6 +392,39 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     sub: "Sign up — get 50 AI credits on us. No card required.",
     ctaLabel: "Start for free",
     credline: "Refund eligibility is explained in the Refund Policy",
+    eyebrow: "YOUR NEXT FRAME IS WAITING",
+    secondaryLabel: "Browse templates",
+  },
+  appHome: {
+    heroSub: "Pick up where you left off, or start something new.",
+    quick: [
+      { title: "Find a template", desc: "Browse the template library" },
+      { title: "Create with AI", desc: "Image · Video · Voiceover · SFX" },
+      { title: "Install the plugin", desc: "Browse & import inside After Effects" },
+    ],
+    shelfCat: "Lower Thirds",
+    secJump: "Jump back in",
+    secJumpLink: "Open AI Studio",
+    secStart: "Start creating",
+    emptyTitle: "No generations yet",
+    emptySub: "Create your first image or video in AI Studio",
+    emptyBtn: "Open AI Studio",
+    secFeatured: "Featured models",
+    secRec: "Recommended for you",
+    recLink: "Browse all templates",
+    shelfFreshKick: "FRESH PICKS",
+    shelfFresh: "Recently updated",
+    shelfCatKick: "CURATED · CATEGORY",
+    shelfNewKick: "LATEST APPROVED",
+    shelfNew: "New this week",
+  },
+  catalogPage: {
+    kicker: "FRAMEFLOW MARKETPLACE",
+    title: "A stock catalog that cuts\nyour edit time.",
+    searchPlaceholder: 'Try "glitch logo", "wedding titles", "lower thirds"…',
+    loading: "Hanging the template wall…",
+    emptyTitle: "Nothing found",
+    emptySub: "Try a different search or loosen the filters.",
   },
   footer: {
     tagline: "Templates and an AI studio for motion designers and video creators.",
@@ -232,6 +442,11 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     title: "Choose the plan that fits you",
     sub: "Start free, scale up when you need to. Cancel anytime.",
     faqTitle: "Questions",
+    billingNote: "MONTHLY PLANS",
+    billingSub: "Refund eligibility is explained in the Refund Policy",
+    popularLabel: "MOST POPULAR",
+    compareTitle: "ALL PLANS INCLUDE",
+    compareItems: ["Browser AI Studio", "Template previews", "Commercial license", "Refund Policy applies"],
   },
   plans: [
     {
@@ -274,6 +489,10 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
       { t: "Install with a compatible ZXP installer", d: "Install quickly with any compatible ZXP installer." },
       { t: "Connect your account", d: "Enter your platform key — templates and credits are ready." },
     ],
+    winTitle: "FrameFlow · After Effects",
+    winSearch: "Search templates",
+    mockName: "Football Championship",
+    mockImport: "Import",
   },
 };
 
@@ -297,11 +516,26 @@ const cardSchema = z.object({
 
 const statSchema = z.object({
   value: z.number().int().min(0).max(100_000_000),
-  suffix: z.string().max(12),
+  // SC_63 fix: default suffix "connected workflow" (18 belgi) 12-limitdan oshardi —
+  // Website tab saqlashi 400 bilan yiqilardi (yashirin mavjud bug).
+  suffix: z.string().max(24),
   label: shortText,
 });
 
-const SECTION_KEYS = ["stats", "showcase", "aiPromo", "pluginPromo", "pricingTeaser", "faq", "finalCta"] as const;
+const SECTION_KEYS = [
+  "ticker",
+  "stats",
+  "cinema",
+  "showcase",
+  "presets",
+  "aiPromo",
+  "pluginPromo",
+  "pricingTeaser",
+  "faq",
+  "finalCta",
+] as const;
+// v2 media-slot bo'limlari uchun umumiy zod bo'laklari
+const mediaSlot = { mediaUrl: mediaUrl.optional(), mediaType: z.enum(["", "image", "video"]).optional() };
 const featsList = z.array(z.string().max(90)).min(1).max(12);
 const planCopySchema = z.object({
   name: shortText.optional(),
@@ -329,6 +563,7 @@ export const landingConfigSchema = z
         plugin: shortText.optional(),
         signIn: shortText.optional(),
         cta: shortText.optional(),
+        pluginBadge: z.string().max(16).optional(),
       })
       .optional(),
     hero: z
@@ -350,6 +585,78 @@ export const landingConfigSchema = z
         cards: z.array(cardSchema).length(6).optional(),
       })
       .optional(),
+    // ── v2 bo'limlari ──
+    heroMedia: z.object({ ...mediaSlot, time: z.string().max(12).optional(), caption: shortText.optional() }).optional(),
+    promo: z
+      .object({
+        enabled: z.boolean().optional(),
+        tag: z.string().max(16).optional(),
+        text: shortText.optional(),
+        ctaLabel: z.string().max(40).optional(),
+        showInApp: z.boolean().optional(),
+      })
+      .optional(),
+    ticker: z
+      .object({ label: shortText.optional(), items: z.array(z.string().max(40)).min(1).max(12).optional() })
+      .optional(),
+    cinema: z
+      .object({
+        ...mediaSlot,
+        eyebrow: shortText.optional(),
+        title: shortText.optional(),
+        linkLabel: shortText.optional(),
+        barLeft: shortText.optional(),
+        barRight: shortText.optional(),
+        word: z.string().max(40).optional(),
+        footTitle: shortText.optional(),
+        footSub: shortText.optional(),
+        cost: z.string().max(16).optional(),
+      })
+      .optional(),
+    presetsRail: z
+      .object({
+        eyebrow: shortText.optional(),
+        title: shortText.optional(),
+        linkLabel: shortText.optional(),
+        items: z
+          .array(z.object({ ...mediaSlot, title: shortText.optional(), sub: shortText.optional() }))
+          .length(4)
+          .optional(),
+      })
+      .optional(),
+    feed: z
+      .object({
+        note: shortText.optional(),
+        cards: z
+          .array(
+            z.object({
+              ...mediaSlot,
+              title: z.string().max(60).optional(),
+              cat: z.string().max(40).optional(),
+              dur: z.string().max(12).optional(),
+              badge: z.string().max(12).optional(),
+            })
+          )
+          .length(11)
+          .optional(),
+      })
+      .optional(),
+    megaModels: z
+      .object({
+        rows: z
+          .array(
+            z.object({
+              initials: z.string().max(4).optional(),
+              title: shortText.optional(),
+              sub: shortText.optional(),
+              badge: z.string().max(12).optional(),
+              price: z.string().max(16).optional(),
+            })
+          )
+          .length(4)
+          .optional(),
+      })
+      .optional(),
     stats: z.array(statSchema).length(4).optional(),
     // ── To'liq sayt CMS bo'limlari ──
     landingSections: z
@@ -368,6 +675,12 @@ export const landingConfigSchema = z
         ctaLabel: shortText.optional(),
         cards: z.array(z.object({ title: shortText.optional(), desc: longText.optional(), cost: z.string().max(24).optional() })).length(4).optional(),
         typingPrompts: z.array(z.string().max(120)).min(1).max(6).optional(),
+        stackLabel: z.string().max(40).optional(),
+        chipMode: z.string().max(24).optional(),
+        chipModel: z.string().max(40).optional(),
+        chipRes: z.string().max(12).optional(),
+        chipCost: z.string().max(12).optional(),
+        chipGenerate: z.string().max(24).optional(),
       })
       .optional(),
     pluginPromo: z
@@ -377,6 +690,9 @@ export const landingConfigSchema = z
         desc: longText.optional(),
         ctaLabel: shortText.optional(),
         chips: z.array(z.string().max(40)).length(3).optional(),
+        winTitle: shortText.optional(),
+        winSearch: shortText.optional(),
+        winImport: shortText.optional(),
       })
       .optional(),
     pricingTeaser: z
@@ -400,6 +716,39 @@ export const landingConfigSchema = z
         sub: longText.optional(),
         ctaLabel: shortText.optional(),
         credline: shortText.optional(),
+        eyebrow: shortText.optional(),
+        secondaryLabel: shortText.optional(),
+      })
+      .optional(),
+    appHome: z
+      .object({
+        heroSub: longText.optional(),
+        quick: z.array(z.object({ title: shortText.optional(), desc: shortText.optional() })).length(3).optional(),
+        shelfCat: z.string().max(40).optional(),
+        secJump: shortText.optional(),
+        secJumpLink: shortText.optional(),
+        secStart: shortText.optional(),
+        emptyTitle: shortText.optional(),
+        emptySub: longText.optional(),
+        emptyBtn: shortText.optional(),
+        secFeatured: shortText.optional(),
+        secRec: shortText.optional(),
+        recLink: shortText.optional(),
+        shelfFreshKick: shortText.optional(),
+        shelfFresh: shortText.optional(),
+        shelfCatKick: shortText.optional(),
+        shelfNewKick: shortText.optional(),
+        shelfNew: shortText.optional(),
+      })
+      .optional(),
+    catalogPage: z
+      .object({
+        kicker: shortText.optional(),
+        title: z.string().max(120).optional(),
+        searchPlaceholder: shortText.optional(),
+        loading: shortText.optional(),
+        emptyTitle: shortText.optional(),
+        emptySub: longText.optional(),
       })
       .optional(),
     footer: z
@@ -417,6 +766,11 @@ export const landingConfigSchema = z
         title: shortText.optional(),
         sub: longText.optional(),
         faqTitle: shortText.optional(),
+        billingNote: shortText.optional(),
+        billingSub: shortText.optional(),
+        popularLabel: z.string().max(24).optional(),
+        compareTitle: shortText.optional(),
+        compareItems: z.array(z.string().max(60)).min(1).max(6).optional(),
       })
       .optional(),
     plans: z.array(planCopySchema).length(3).optional(),
@@ -429,6 +783,10 @@ export const landingConfigSchema = z
         versionNote: shortText.optional(),
         guarantee: shortText.optional(),
         steps: z.array(z.object({ t: shortText.optional(), d: longText.optional() })).length(3).optional(),
+        winTitle: shortText.optional(),
+        winSearch: shortText.optional(),
+        mockName: shortText.optional(),
+        mockImport: shortText.optional(),
       })
       .optional(),
   })
@@ -450,8 +808,9 @@ function mergeConfig(stored: unknown): LandingConfigData {
   // Satr-massiv: valid bo'lsa butunicha, aks holda default
   const strArr = (base: string[], over: any): string[] =>
     Array.isArray(over) && over.length && over.every((v) => typeof v === "string") ? over.slice(0, 12) : base;
-  // landingSections: saqlangan TARTIB ustun; noma'lum kalitlar tushiriladi, yetishmaganlar
-  // default tartibda oxiriga qo'shiladi (yangi bo'lim qo'shilsa eski saqlangan config buzilmasin).
+  // landingSections: saqlangan TARTIB ustun; noma'lum kalitlar tushiriladi. Yetishmagan
+  // (yangi qo'shilgan) bo'limlar DEFAULT POZITSIYASIGA qo'yiladi — default ro'yxatdagi
+  // eng yaqin oldingi qo'shni topilib, undan keyin kiritiladi (oxiriga tushib qolmasin).
   const known = new Set(d.landingSections.map((x) => x.key));
   const storedSecs: LandingSectionOrder[] = Array.isArray(s.landingSections)
     ? s.landingSections
@@ -459,7 +818,16 @@ function mergeConfig(stored: unknown): LandingConfigData {
         .map((x: any) => ({ key: String(x.key), visible: x.visible !== false }))
     : [];
   const seen = new Set(storedSecs.map((x) => x.key));
-  const landingSections = storedSecs.concat(d.landingSections.filter((x) => !seen.has(x.key)));
+  const landingSections = storedSecs.slice();
+  for (const m of d.landingSections.filter((x) => !seen.has(x.key))) {
+    const defIdx = d.landingSections.findIndex((x) => x.key === m.key);
+    let insertAt = -1;
+    for (let i = defIdx - 1; i >= 0 && insertAt < 0; i--) {
+      const p = landingSections.findIndex((x) => x.key === d.landingSections[i].key);
+      if (p >= 0) insertAt = p + 1;
+    }
+    landingSections.splice(insertAt < 0 ? 0 : insertAt, 0, { key: m.key, visible: m.visible });
+  }
   const plans = d.plans.map((p, i) => {
     const o = Array.isArray(s.plans) ? s.plans[i] : null;
     const merged = obj(p, o);
@@ -475,12 +843,42 @@ function mergeConfig(stored: unknown): LandingConfigData {
       ...obj({ title: d.mockup.title, badge: d.mockup.badge }, s.mockup),
       cards: objArr(d.mockup.cards, s.mockup?.cards),
     },
+    heroMedia: obj(d.heroMedia, s.heroMedia),
+    promo: obj(d.promo, s.promo),
+    ticker: {
+      label: (typeof s.ticker?.label === "string" && s.ticker.label) || d.ticker.label,
+      items: strArr(d.ticker.items, s.ticker?.items),
+    },
+    cinema: obj(d.cinema, s.cinema),
+    presetsRail: {
+      ...obj(
+        { eyebrow: d.presetsRail.eyebrow, title: d.presetsRail.title, linkLabel: d.presetsRail.linkLabel },
+        s.presetsRail
+      ),
+      items: objArr(d.presetsRail.items, s.presetsRail?.items),
+    },
+    feed: {
+      note: (typeof s.feed?.note === "string" && s.feed.note) || d.feed.note,
+      cards: objArr(d.feed.cards, s.feed?.cards),
+    },
+    megaModels: { rows: objArr(d.megaModels.rows, s.megaModels?.rows) },
     stats: objArr(d.stats, s.stats),
     landingSections,
     showcase: obj(d.showcase, s.showcase),
     aiPromo: {
       ...obj(
-        { eyebrow: d.aiPromo.eyebrow, title: d.aiPromo.title, desc: d.aiPromo.desc, ctaLabel: d.aiPromo.ctaLabel },
+        {
+          eyebrow: d.aiPromo.eyebrow,
+          title: d.aiPromo.title,
+          desc: d.aiPromo.desc,
+          ctaLabel: d.aiPromo.ctaLabel,
+          stackLabel: d.aiPromo.stackLabel,
+          chipMode: d.aiPromo.chipMode,
+          chipModel: d.aiPromo.chipModel,
+          chipRes: d.aiPromo.chipRes,
+          chipCost: d.aiPromo.chipCost,
+          chipGenerate: d.aiPromo.chipGenerate,
+        },
         s.aiPromo
       ),
       cards: objArr(d.aiPromo.cards, s.aiPromo?.cards),
@@ -488,7 +886,15 @@ function mergeConfig(stored: unknown): LandingConfigData {
     },
     pluginPromo: {
       ...obj(
-        { eyebrow: d.pluginPromo.eyebrow, title: d.pluginPromo.title, desc: d.pluginPromo.desc, ctaLabel: d.pluginPromo.ctaLabel },
+        {
+          eyebrow: d.pluginPromo.eyebrow,
+          title: d.pluginPromo.title,
+          desc: d.pluginPromo.desc,
+          ctaLabel: d.pluginPromo.ctaLabel,
+          winTitle: d.pluginPromo.winTitle,
+          winSearch: d.pluginPromo.winSearch,
+          winImport: d.pluginPromo.winImport,
+        },
         s.pluginPromo
       ),
       chips: strArr(d.pluginPromo.chips, s.pluginPromo?.chips),
@@ -499,6 +905,31 @@ function mergeConfig(stored: unknown): LandingConfigData {
       items: objArr(d.faqSection.items, s.faqSection?.items),
     },
     finalCta: obj(d.finalCta, s.finalCta),
+    appHome: {
+      ...obj(
+        {
+          heroSub: d.appHome.heroSub,
+          shelfCat: d.appHome.shelfCat,
+          secJump: d.appHome.secJump,
+          secJumpLink: d.appHome.secJumpLink,
+          secStart: d.appHome.secStart,
+          emptyTitle: d.appHome.emptyTitle,
+          emptySub: d.appHome.emptySub,
+          emptyBtn: d.appHome.emptyBtn,
+          secFeatured: d.appHome.secFeatured,
+          secRec: d.appHome.secRec,
+          recLink: d.appHome.recLink,
+          shelfFreshKick: d.appHome.shelfFreshKick,
+          shelfFresh: d.appHome.shelfFresh,
+          shelfCatKick: d.appHome.shelfCatKick,
+          shelfNewKick: d.appHome.shelfNewKick,
+          shelfNew: d.appHome.shelfNew,
+        },
+        s.appHome
+      ),
+      quick: objArr(d.appHome.quick, s.appHome?.quick),
+    },
+    catalogPage: obj(d.catalogPage, s.catalogPage),
     footer: {
       ...obj(
         { tagline: d.footer.tagline, email: d.footer.email, copyright: d.footer.copyright, guarantee: d.footer.guarantee },
@@ -509,13 +940,30 @@ function mergeConfig(stored: unknown): LandingConfigData {
         return { title: (o && typeof o.title === "string" && o.title) || c.title, links: strArr(c.links, o?.links) };
       }),
     },
-    pricingPage: obj(d.pricingPage, s.pricingPage),
+    pricingPage: {
+      ...obj(
+        {
+          eyebrow: d.pricingPage.eyebrow,
+          title: d.pricingPage.title,
+          sub: d.pricingPage.sub,
+          faqTitle: d.pricingPage.faqTitle,
+          billingNote: d.pricingPage.billingNote,
+          billingSub: d.pricingPage.billingSub,
+          popularLabel: d.pricingPage.popularLabel,
+          compareTitle: d.pricingPage.compareTitle,
+        },
+        s.pricingPage
+      ),
+      compareItems: strArr(d.pricingPage.compareItems, s.pricingPage?.compareItems),
+    },
     plans,
     pluginPage: {
       ...obj(
         {
           badge: d.pluginPage.badge, title: d.pluginPage.title, sub: d.pluginPage.sub,
           ctaLabel: d.pluginPage.ctaLabel, versionNote: d.pluginPage.versionNote, guarantee: d.pluginPage.guarantee,
+          winTitle: d.pluginPage.winTitle, winSearch: d.pluginPage.winSearch,
+          mockName: d.pluginPage.mockName, mockImport: d.pluginPage.mockImport,
         },
         s.pluginPage
       ),
@@ -574,7 +1022,24 @@ export async function saveLandingConfig(
     update: { data: next as Prisma.InputJsonValue, updatedById },
   });
   bustLandingConfigCache();
+  // SC_62 — versiya tarixi: yangi saqlangan blob snapshot (jim muvaffaqiyatsizlik OK)
+  await recordContentRevision("landing", next, updatedById);
   return mergeConfig(next);
+}
+
+/** SC_62 restore — saqlangan blob TO'LIQ almashtiriladi (revision snapshot'idan). */
+export async function replaceLandingConfigBlob(
+  data: Record<string, unknown>,
+  updatedById: string | null
+): Promise<LandingConfigData> {
+  const blob = (data && typeof data === "object" ? data : {}) as Prisma.InputJsonValue;
+  await prisma.landingConfig.upsert({
+    where: { id: 1 },
+    create: { id: 1, data: blob, updatedById },
+    update: { data: blob, updatedById },
+  });
+  bustLandingConfigCache();
+  return mergeConfig(data);
 }
 
 /** Reset — saqlangan qatorni o'chiradi; landing defaultlarga (joriy kontent) qaytadi. */

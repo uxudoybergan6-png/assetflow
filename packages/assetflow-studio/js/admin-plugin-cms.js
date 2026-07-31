@@ -122,6 +122,70 @@ function pcMediaErr(el) {
 
 /* ── Asosiy view ───────────────────────────────────────────── */
 
+/* ── SC_60/61 — jonli mini-preview (plagin paneli ko'rinishi) ───────────────── */
+const PC_CAT_BUILTIN = ["Video Templates", "Motion Graphics", "Graphics", "LUTs", "Music", "SFX"];
+
+function pcPreviewHtml(c) {
+  const h = c.home.hero;
+  const a = c.announcement || {};
+  const annTone = a.tone === "promo" ? "background:rgba(216,255,62,.10);color:#d8ff3e;border-bottom:1px solid rgba(216,255,62,.3)"
+    : a.tone === "warn" ? "background:rgba(255,178,124,.12);color:#FFB27C;border-bottom:1px solid rgba(255,178,124,.28)"
+    : "background:rgba(124,196,255,.10);color:#9CCBFF;border-bottom:1px solid rgba(124,196,255,.26)";
+  const ann = a.enabled && a.text
+    ? `<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;font-size:9.5px;${annTone}"><span style="width:5px;height:5px;border-radius:50%;background:currentColor"></span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${pcEsc(a.text)}</span>${a.ctaLabel ? `<b style="border:1px solid currentColor;border-radius:99px;padding:1px 7px;font-weight:600">${pcEsc(a.ctaLabel)}</b>` : ""}<span style="opacity:.6">×</span></div>`
+    : "";
+  const heroBg = h.mediaUrl
+    ? (h.mediaType === "video"
+        ? `<video src="${pcEsc(h.mediaUrl)}" muted loop autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5"></video>`
+        : `<img src="${pcEsc(h.mediaUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5">`)
+    : "";
+  const aiCards = (c.aiLauncher.cards || []).map((cd, i) => {
+    const nm = cd.title || ["Generate image", "Generate video", "Generate audio"][i];
+    const med = cd.mediaUrl
+      ? (cd.mediaType === "video"
+          ? `<video src="${pcEsc(cd.mediaUrl)}" muted loop autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55"></video>`
+          : `<img src="${pcEsc(cd.mediaUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55">`)
+      : "";
+    return `<div style="position:relative;overflow:hidden;flex:1;border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:10px 8px;background:rgba(255,255,255,.03)">${med}<div style="position:relative;font:650 9px/1.2 'Inter',sans-serif;color:#F2F5F8">${pcEsc(nm)}</div><div style="position:relative;font-size:7.5px;color:rgba(255,255,255,.55);margin-top:3px">${pcEsc(cd.desc || "live models")}</div></div>`;
+  }).join("");
+  const tiles = (c.home.categoryTiles || []).map((t, i) => {
+    const label = t.label || PC_CAT_BUILTIN[i];
+    const med = t.mediaUrl
+      ? (t.mediaType === "video"
+          ? `<video src="${pcEsc(t.mediaUrl)}" muted loop autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6"></video>`
+          : `<img src="${pcEsc(t.mediaUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6">`)
+      : "";
+    return `<div style="position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:7px 8px;background:rgba(255,255,255,.02)">${med}<span style="position:relative;font:600 8px/1 'Inter',sans-serif;color:#E7ECF3;text-shadow:0 1px 4px rgba(0,0,0,.6)">${pcEsc(label)}</span></div>`;
+  }).join("");
+  return `<div style="background:#0B0E13;border:1px solid rgba(255,255,255,.09);border-radius:13px;overflow:hidden">
+    ${ann}
+    <div style="position:relative;overflow:hidden;padding:18px 16px;background:linear-gradient(120deg,#12161F,#1A1430 80%)">
+      ${heroBg}
+      <div style="position:relative">
+        <div style="font:700 7.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.55)">${pcEsc((h.kicker || "").toUpperCase())}</div>
+        <div style="font:800 15px/1.2 'Inter',sans-serif;color:#F4F6FA;margin-top:5px;max-width:300px">${pcEsc(h.title)}</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.6);margin-top:5px;max-width:320px">${pcEsc(h.sub)}</div>
+        <div style="display:flex;gap:6px;margin-top:9px">
+          <span style="padding:4px 10px;border-radius:7px;background:#d8ff3e;color:#0a0d02;font:700 8.5px 'Inter',sans-serif">${pcEsc(h.ctaPrimary)}</span>
+          <span style="padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#EDF1F7;font:600 8.5px 'Inter',sans-serif">${pcEsc(h.ctaSecondary)}</span>
+        </div>
+        <div style="margin-top:8px;border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:4px 10px;font-size:8px;color:rgba(255,255,255,.45);max-width:280px">${pcEsc(h.promptPlaceholder || "Describe your next shot…")}</div>
+      </div>
+    </div>
+    <div style="padding:10px 12px">
+      <div style="font:700 8px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:6px">${pcEsc(c.aiLauncher.title || "AI Tools").toUpperCase()}</div>
+      <div style="display:flex;gap:6px">${aiCards}</div>
+      <div style="font:700 8px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.5);margin:10px 0 6px">${pcEsc(c.home.sections.categories || "Browse by category").toUpperCase()}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${tiles}</div>
+    </div>
+  </div>`;
+}
+
+function pcRefreshPreview() {
+  const box = document.getElementById("pcPreview");
+  if (box && PC_CFG) box.innerHTML = pcPreviewHtml(pcCollect());
+}
+
 VIEWS.plugincms = function () {
   if (PC_LOAD_ERR) {
     return `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Failed to load</div><div style="font-size:11px;color:var(--muted2)">${pcEsc(PC_LOAD_ERR)}</div><button class="adx-btn sm" style="margin-top:12px" onclick="PC_LOAD_ERR=null;PC_LOADED=false;route('plugincms')">Try again</button></div>`;
@@ -154,27 +218,62 @@ VIEWS.plugincms = function () {
           <div style="margin-bottom:12px">${axFlab("KICKER (SMALL LINE ABOVE THE TITLE)")}${pcInput("home.hero.kicker", h.kicker)}</div>
           <div style="margin-bottom:12px">${axFlab("TITLE")}${pcInput("home.hero.title", h.title)}</div>
           <div style="margin-bottom:12px">${axFlab("SUBTITLE")}${pcArea("home.hero.sub", h.sub, 2)}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
             <div>${axFlab("PRIMARY CTA (AI STUDIO)")}${pcInput("home.hero.ctaPrimary", h.ctaPrimary)}</div>
             <div>${axFlab("SECONDARY CTA (STOCK CATALOG)")}${pcInput("home.hero.ctaSecondary", h.ctaSecondary)}</div>
           </div>
+          <div style="margin-bottom:14px">${axFlab("PROMPT PLACEHOLDER (HERO INPUT)")}${pcInput("home.hero.promptPlaceholder", h.promptPlaceholder || "", { ph: "Describe your next shot…" })}</div>
           ${axFlab("BACKGROUND MEDIA")}
-          ${pcMediaBlock("hero", h.mediaUrl, h.mediaType, "Image or short video behind the hero copy. Keep it dark/subtle — the copy renders on top.")}
+          ${pcMediaBlock("hero", h.mediaUrl, h.mediaType, "Image, GIF or short video behind the hero copy. Keep it dark/subtle — the copy renders on top.")}
           <div style="margin-top:12px">${axFlab("MEDIA MODE")}
             <select class="adx-input" data-pc="home.hero.mediaMode">
               <option value="auto" ${h.mediaMode !== "media-first" ? "selected" : ""}>auto (user's last generation wins)</option>
               <option value="media-first" ${h.mediaMode === "media-first" ? "selected" : ""}>media-first (this media always shows)</option>
             </select>
           </div>`)}
-        ${pcCard("Section headings", "Headings of the Home sections. (There is no start-cards group — those cards were removed from the plugin.)", `
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        ${pcCard("Announcement bar", "A thin server-driven strip at the top of every user's plugin. Turn it on for releases, promos or maintenance notes — no reinstall needed.", `
+          <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+            <button class="adx-tog ${c.announcement.enabled ? "on" : "off"}" onclick="pcToggleAnn('enabled')"><i></i></button>
+            <span style="font-size:12px;font-weight:600">${c.announcement.enabled ? "Visible in the plugin" : "Hidden"}</span>
+            <span style="flex:1"></span>
+            <label style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)">
+              <button class="adx-tog ${c.announcement.dismissable !== false ? "on" : "off"}" onclick="pcToggleAnn('dismissable')"><i></i></button>
+              Users can dismiss
+            </label>
+          </div>
+          <div style="margin-bottom:10px">${axFlab("TEXT")}${pcInput("announcement.text", c.announcement.text, { ph: "e.g. New: Seedance 2.0 video is live — try it in AI Tools" })}</div>
+          <div style="display:grid;grid-template-columns:110px 1fr 130px 1fr;gap:10px">
+            <div>${axFlab("TONE")}
+              <select class="adx-input" data-pc="announcement.tone">
+                <option value="info" ${c.announcement.tone !== "promo" && c.announcement.tone !== "warn" ? "selected" : ""}>info (blue)</option>
+                <option value="promo" ${c.announcement.tone === "promo" ? "selected" : ""}>promo (lime)</option>
+                <option value="warn" ${c.announcement.tone === "warn" ? "selected" : ""}>warn (amber)</option>
+              </select>
+            </div>
+            <div>${axFlab("CTA LABEL (OPTIONAL)")}${pcInput("announcement.ctaLabel", c.announcement.ctaLabel, { ph: "Open AI Tools" })}</div>
+            <div>${axFlab("CTA TARGET")}
+              <select class="adx-input" data-pc="announcement.ctaAction">
+                <option value="" ${!c.announcement.ctaAction ? "selected" : ""}>— none —</option>
+                <option value="aistudio" ${c.announcement.ctaAction === "aistudio" ? "selected" : ""}>AI Tools</option>
+                <option value="catalog" ${c.announcement.ctaAction === "catalog" ? "selected" : ""}>Stock Catalog</option>
+                <option value="home" ${c.announcement.ctaAction === "home" ? "selected" : ""}>Home</option>
+              </select>
+            </div>
+            <div>${axFlab("ANNOUNCEMENT ID")}${pcInput("announcement.id", c.announcement.id, { mono: true, ph: "release-1.2 (new id → re-shows)" })}</div>
+          </div>`)}
+        ${pcCard("Section headings", "Headings of the Home sections.", `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div>${axFlab("RECENT WORKS")}${pcInput("home.sections.recent", c.home.sections.recent)}</div>
-            <div>${axFlab("TEMPLATE SHELF")}${pcInput("home.sections.shelf", c.home.sections.shelf)}</div>
-            <div>${axFlab("BROWSE-ALL LINK")}${pcInput("home.sections.browseAll", c.home.sections.browseAll)}</div>
             <div>${axFlab("CONTINUE A SESSION")}${pcInput("home.sections.continueSessions", (c.home.sections.continueSessions) || "Continue a session")}</div>
             <div>${axFlab("EXPLORE")}${pcInput("home.sections.explore", (c.home.sections.explore) || "Explore")}</div>
             <div>${axFlab("BROWSE BY CATEGORY")}${pcInput("home.sections.categories", (c.home.sections.categories) || "Browse by category")}</div>
           </div>`)}
+        ${pcCard("Category tiles (6)", "The “Browse by category” tiles on Home. Custom label + optional background media per tile (targets are fixed). Empty label keeps the built-in name.", (c.home.categoryTiles || []).map((t, i) => `
+          <div class="adx-card" style="padding:12px;margin-bottom:8px">
+            <div style="font:700 9px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">TILE ${i + 1} · ${pcEsc(PC_CAT_BUILTIN[i] || "")}</div>
+            <div style="margin-bottom:8px">${pcInput(`home.categoryTiles.${i}.label`, t.label, { ph: "empty = " + (PC_CAT_BUILTIN[i] || "built-in") })}</div>
+            ${pcMediaBlock(`cat.${i}`, t.mediaUrl, t.mediaType, "Optional tile background (image/GIF/short video) with a dark scrim.")}
+          </div>`).join(""))}
         ${pcCard("Home rails", "Two admin-curated, auto-scrolling template rails on Home (plugin + web). Paste template IDs — one per line (or comma-separated), max 12 each, in the order they should appear. IDs that no longer exist or are unpublished are skipped; an empty rail is hidden.", `
           <div style="margin-bottom:14px">
             <div style="margin-bottom:8px">${axFlab("NEW RELEASES — RAIL TITLE")}${pcInput("home.rails.newReleases.title", (c.home.rails && c.home.rails.newReleases && c.home.rails.newReleases.title) || "New releases")}</div>
@@ -188,9 +287,14 @@ VIEWS.plugincms = function () {
           </div>`)}
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
+        ${pcCard("Live preview", "A compact mock of the plugin panel — updates as you type (announcement, hero, AI cards, category tiles).", `<div id="pcPreview">${pcPreviewHtml(c)}</div>`)}
         ${pcCard("Guest screen", "What signed-out users see. Line breaks in the title/subtitle are kept.", `
           <div style="margin-bottom:12px">${axFlab("TITLE (\\n = LINE BREAK)")}${pcArea("guest.title", c.guest.title, 2)}</div>
           <div style="margin-bottom:12px">${axFlab("SUBTITLE")}${pcArea("guest.sub", c.guest.sub, 2)}</div>
+          <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:10px;margin-bottom:12px">
+            <div>${axFlab("PEEK SECTION KICKER")}${pcInput("guest.peekKicker", c.guest.peekKicker || "", { ph: "A PEEK AT THE CATALOG" })}</div>
+            <div>${axFlab("REGISTER NOTE")}${pcInput("guest.registerNote", c.guest.registerNote || "", { ph: "New here? Create a free account…" })}</div>
+          </div>
           ${axFlab("FEATURES (3)")}
           ${guestFeats}`)}
         ${pcCard("AI Tools launcher", "The AI Tools landing screen. Empty card fields keep the plugin's built-in text / live model names.", `
@@ -200,6 +304,16 @@ VIEWS.plugincms = function () {
     </div>
     <input type="file" id="pcMediaFile" accept="image/*,video/mp4,video/webm" style="display:none">`;
 };
+
+/* SC_61 — announcement bool kalitlari (enabled/dismissable) */
+function pcToggleAnn(key) {
+  PC_CFG = pcCollect();
+  if (!PC_CFG.announcement) PC_CFG.announcement = { enabled: false, id: "", tone: "info", text: "", ctaLabel: "", ctaAction: "", dismissable: true };
+  PC_CFG.announcement[key] = key === "dismissable" ? PC_CFG.announcement.dismissable === false : !PC_CFG.announcement[key];
+  PC_DIRTY = true;
+  route("plugincms");
+  pcRenderActions();
+}
 
 /* ── Amallar ───────────────────────────────────────────────── */
 
@@ -212,8 +326,16 @@ function pcPickMedia(target) {
 
 function pcMediaRef(cfg, target) {
   if (target === "hero") return cfg.home.hero;
-  const m = /^card\.(\d)$/.exec(target);
-  return m ? cfg.aiLauncher.cards[Number(m[1])] : null;
+  const mc = /^card\.(\d)$/.exec(target);
+  if (mc) return cfg.aiLauncher.cards[Number(mc[1])];
+  // SC_60 — kategoriya tayli media slotlari
+  const mt = /^cat\.(\d)$/.exec(target);
+  if (mt) {
+    if (!Array.isArray(cfg.home.categoryTiles)) cfg.home.categoryTiles = [];
+    while (cfg.home.categoryTiles.length <= Number(mt[1])) cfg.home.categoryTiles.push({ label: "", mediaUrl: "", mediaType: "" });
+    return cfg.home.categoryTiles[Number(mt[1])];
+  }
+  return null;
 }
 
 function pcClearMedia(target) {
@@ -231,13 +353,14 @@ async function pcUploadMedia(file) {
   if (!target || !file) return;
   const stat = document.querySelector(`[data-pc-upstat="${target}"]`);
   const isVideo = /^video\//.test(file.type);
-  if (file.size > 25 * 1024 * 1024) {
-    toast("Too large", "Plugin media should be under 25 MB (short loops work best)", "warn");
+  const cap = isVideo ? 150 : 40; // server bilan mos: rasm/GIF 40MB, video 150MB
+  if (file.size > cap * 1024 * 1024) {
+    toast("Too large", `${isVideo ? "Video" : "Image/GIF"} media should be under ${cap} MB (short loops work best)`, "warn");
     return;
   }
   try {
     if (stat) stat.textContent = "Uploading…";
-    const u = await StudioApi.adminUploadUrl(file.name, file.type || "application/octet-stream", "site/plugin");
+    const u = await StudioApi.adminUploadUrl(file.name, file.type || "application/octet-stream", "site/plugin", file.size);
     if (!u.uploadUrl) {
       toast("Storage not configured", u.message || "S3/R2 is not configured on the server", "warn");
       if (stat) stat.textContent = "";
@@ -266,6 +389,7 @@ async function pcSave() {
       home: PC_CFG.home,
       guest: PC_CFG.guest,
       aiLauncher: PC_CFG.aiLauncher,
+      announcement: PC_CFG.announcement,
     });
     PC_CFG = d.config;
     PC_DIRTY = false;
@@ -304,6 +428,7 @@ function pcRenderActions() {
   if (!tba || CURRENT !== "plugincms") return;
   tba.innerHTML =
     (PC_DIRTY ? `<span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:#FFB27C;margin-right:6px"><i class="ph ph-circle-fill" style="font-size:7px"></i>Unsaved changes</span>` : "") +
+    `<button class="adx-btn2 sm" onclick="cmsHistoryOpen('plugin')"><i class="ph ph-clock-counter-clockwise"></i>History</button>` +
     `<button class="adx-btn2 sm" onclick="pcReset()"><i class="ph ph-arrow-counter-clockwise"></i>Reset to defaults</button>` +
     `<button class="adx-btn sm" onclick="pcSave()"><i class="ph ph-check"></i>Save & publish</button>`;
 }
@@ -314,11 +439,11 @@ window.afterRender.plugincms = function () {
   const view = document.getElementById("view");
   if (view && !view.__pcBound) {
     view.__pcBound = 1;
-    // input (matn) + change (select) — dirty holatni belgilash
+    // input (matn) + change (select) — dirty holat + jonli preview
     const markDirty = (e) => {
-      if (e.target && (e.target.matches("[data-pc]") || e.target.matches("[data-pc-rail]")) && CURRENT === "plugincms" && !PC_DIRTY) {
-        PC_DIRTY = true;
-        pcRenderActions();
+      if (e.target && (e.target.matches("[data-pc]") || e.target.matches("[data-pc-rail]")) && CURRENT === "plugincms") {
+        if (!PC_DIRTY) { PC_DIRTY = true; pcRenderActions(); }
+        pcRefreshPreview();
       }
     };
     view.addEventListener("input", markDirty);

@@ -1,27 +1,19 @@
-# Sessiya hisoboti — 2026-07-31 (Neon → Cloud SQL: CI + deploy oqimi)
+# Sessiya hisoboti — 2026-08-01 · CMS v2: Web+Plagin 100% admin boshqaruvi
 
-**Nima qilindi**
-- CI qizilligi #1: `test-ci-windows-installer.mjs` `node-version = "20"` ni QATTIQ kutardi
-  (loyiha Node 22'da). Kutilgan major endi YAGONA manbadan (`package.json` → `engines.node`)
-  olinadi + `Dockerfile` ↔ `engines` moslik tekshiruvi. 163→169 assert.
-- CI qizilligi #2: panel ikonalari `zlib.deflateSync` bilan yozilardi — chiqish zlib
-  VERSIYASIGA bog'liq (lokal Node 25 ≠ CI Node 22) → "bayt-ba-bayt bir xil" testi qizil.
-  Endi PNG IDAT "stored" bloklar bilan qo'lda yoziladi → har qanday Node'da bir xil bayt.
-  Pikselllar o'zgarmadi (IDAT inflate solishtirildi), fayl 227B → 2.2KB.
-  **CI endi YASHIL** (ikkala ish) — `c79a19d` dan beri birinchi marta.
-- `scripts/cloudsql-proxy.sh` (YANGI): Auth Proxy qadalgan versiya + SHA-256 bilan
-  `/cloudsql/<INSTANCE>` socket'ini CI/Cloud Shell'da Cloud Run'dagidek qiladi →
-  `DATABASE_URL` O'ZGARISHSIZ ishlatiladi. CI'da ishga tushdi va tayyor bo'ldi ✅
-- `deploy-cloudrun.yml` + `deploy-cloudrun.sh`: proxy → migratsiya → `migrate:status` isboti →
-  deploy'da `--add-cloudsql-instances`. `db-backup.yml` ham xuddi shu proxy'ga o'tdi.
+**Nima qilindi:** Sayt CMS (LandingConfig) 9 yangi bo'lim bilan kengaytirildi — hero billboard media,
+promo strip (maxsus kalitlar + app ichida), ticker, cinema, presets (4 media-slot), feed (11 media-slot),
+mega-menu modellari, webapp Home (heroSub/quick/tokchalar), Katalog sahifa matnlari. Plagin CMS:
+e'lon paneli (tone/CTA/dismiss), 6 kategoriya tayli (label+media), prompt placeholder, guest kicker.
+Yangi: Media kutubxonasi admin ekrani (`admin-media.js`, GET/DELETE /api/admin/site-media, usedBy),
+versiya tarixi (`ContentConfigRevision` jadval + migratsiya + History/Restore UI), upload hardening
+(hajm shipi 40/150MB + audit + GIF aniq). Admin Website: 6 tab (yangi App & Catalog), universal
+media-slot editor (16 upload nuqtasi), Plugin CMS jonli mini-preview.
 
-**Nima topildi (BLOKER — ega hal qiladi)**
-- Migratsiya `P1013: invalid port number` bilan yiqildi. Sabab: `CLOUDRUN_ENV_YAML`
-  sirida DB parolida kodlanmagan **`/`** bor. URL'da `/` authority'ni tugatadi →
-  xost `frameflow_app`, port `<parol boshi>`. Bu migratsiyani ham, JONLI konteynerni ham yiqitadi.
-- Kerak: parolda `/` → `%2F` (yoki parolni faqat harf/raqamga almashtirish), so'ng
-  `gh secret set CLOUDRUN_ENV_YAML` va deploy qayta ishga tushirish.
-- `scripts/check-db-url.mjs` qo'shildi — sabab endi qiymatni chop etmasdan aniq aytiladi.
+**Topildi:** (1) mockup.cards media admin'da yuklansa ham landingda RENDER QILINMASDI (o'lik
+heroCardsA/B) — hero billboard yangi heroMedia bilan ulandi; (2) stats.suffix zod max(12) default
+"connected workflow"dan kichik — Website saqlash 400 bilan yiqilardi (max 24 qilindi); (3) plagin
+CMS'da 2 o'lik binding (shelf/browseAll) editor'dan olib tashlandi.
 
-**Kutilmoqda:** sir tuzatilgach → deploy → `migrate status` → `/health` db:ok → verify-pipeline.
-Hozir `/health` = `degraded`, `db: down` (Neon o'lik, Cloud SQL'ga hali ulanmadi).
+**Isbot:** API tsc/build ✓ · verify-public-copy 137/137 ✓ · test:plugin-responsive ✓ · lokal jonli:
+admin login→Save/Restore/History ✓, plagin bootda e'lon/tayl/dismiss ✓ · CF Pages build ✓.
+**Kutilmoqda:** push (CI migrate-gate avval migratsiyani qo'llaydi), keyin prod smoke.

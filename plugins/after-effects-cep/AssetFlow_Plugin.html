@@ -130,6 +130,23 @@ body{
 .offbar .obr:hover{background:rgba(255,178,124,.18)}
 .offbar .obr[disabled]{opacity:.55;cursor:default}
 
+/* SC_61 — admin e'lon paneli (server content-config'dan; offbar naqshi) */
+.af-announce{display:none;flex-shrink:0;align-items:center;gap:8px;padding:6px 12px;
+  background:rgba(124,196,255,.10);border-bottom:1px solid rgba(124,196,255,.26);
+  font-size:var(--fs-xs,11px);color:#9CCBFF;line-height:1.35}
+.af-announce.on{display:flex}
+.af-announce.tone-promo{background:color-mix(in srgb,var(--lime,#d8ff3e) 10%,transparent);
+  border-bottom-color:color-mix(in srgb,var(--lime,#d8ff3e) 30%,transparent);color:var(--lime,#d8ff3e)}
+.af-announce.tone-warn{background:rgba(255,178,124,.12);border-bottom-color:rgba(255,178,124,.28);color:#FFB27C}
+.af-announce .and{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0;opacity:.8}
+.af-announce .ant{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.af-announce .anb{border:1px solid currentColor;border-radius:999px;padding:2px 9px;cursor:pointer;
+  font-weight:600;white-space:nowrap;background:transparent;color:inherit;font-size:inherit;opacity:.92}
+.af-announce .anb:hover{opacity:1;background:rgba(255,255,255,.06)}
+.af-announce .anx{border:0;background:transparent;color:inherit;cursor:pointer;font-size:13px;
+  line-height:1;padding:2px 4px;opacity:.7}
+.af-announce .anx:hover{opacity:1}
+
 .panel-body{display:flex;flex:1;overflow:hidden;position:relative;min-height:0}
 
 /* Envato-style app shell */
@@ -3897,6 +3914,14 @@ html.cep-mode .af-topbar{height:44px}
           <span class="obd" aria-hidden="true"></span>
           <span class="obt" id="offBarText">No connection — check your network</span>
           <button type="button" class="obr" id="offBarRetry">Retry</button>
+        </div>
+
+        <!-- SC_61 — admin e'lon paneli (content-config announcement; sukutda yashirin) -->
+        <div class="af-announce" id="afAnnounce" role="status" aria-live="polite">
+          <span class="and" aria-hidden="true"></span>
+          <span class="ant" id="afAnnounceText"></span>
+          <button type="button" class="anb" id="afAnnounceCta" hidden></button>
+          <button type="button" class="anx" id="afAnnounceX" aria-label="Dismiss">×</button>
         </div>
 
         <div class="panel-body">
@@ -8054,10 +8079,34 @@ function renderHomeCategories(){
   // Ishonchli jami paydo bo'lsa (masalan kelajakda facet endpoint) shu yerdan ulanadi.
   var counts=null;
   host.innerHTML='';
-  FHOME_CATS.forEach(function(c){
+  // SC_60 — admin CMS tayl override'lari: label (bo'sh=built-in) + ixtiyoriy fon media
+  var tiles=window.__afCmsCatTiles||null;
+  FHOME_CATS.forEach(function(c,idx){
+    var ov=(tiles&&tiles[idx])||{};
+    var label=ov.label||c.label;
     var n=(counts&&typeof counts[c.nav]==='number')?counts[c.nav]:null;
     var el=document.createElement('button'); el.type='button'; el.className='fhome-cattile';
-    el.innerHTML='<span class="ct-ic">'+c.ic+'</span><span class="ct-tx"><span class="ct-nm">'+hmEsc(c.label)+'</span>'+((n!=null)?('<span class="ct-ct">'+n+' item'+(n===1?'':'s')+'</span>'):'')+'</span>';
+    el.innerHTML='<span class="ct-ic">'+c.ic+'</span><span class="ct-tx"><span class="ct-nm">'+hmEsc(label)+'</span>'+((n!=null)?('<span class="ct-ct">'+n+' item'+(n===1?'':'s')+'</span>'):'')+'</span>';
+    if(ov.mediaUrl){
+      el.classList.add('has-media');
+      var med;
+      if(ov.mediaType==='video'){
+        med=document.createElement('video');
+        med.muted=true; med.loop=true; med.autoplay=true; med.playsInline=true;
+        med.setAttribute('muted',''); med.setAttribute('playsinline','');
+        med.src=ov.mediaUrl;
+      }else{
+        med=document.createElement('img');
+        med.src=ov.mediaUrl; med.alt=''; med.loading='lazy';
+      }
+      med.className='ct-media';
+      med.addEventListener('error',function(){
+        try{ med.remove(); var sc=el.querySelector('.ct-scrim'); if(sc)sc.remove(); el.classList.remove('has-media'); }catch(e){}
+      });
+      var scrim=document.createElement('span'); scrim.className='ct-scrim';
+      el.insertBefore(scrim,el.firstChild);
+      el.insertBefore(med,el.firstChild);
+    }
     el.addEventListener('click',function(){ try{ homeGo(c.nav); }catch(e){} });
     host.appendChild(el);
   });
@@ -8208,6 +8257,11 @@ function afCmsApply(){
     afCmsSetText('.fhome-sub',h.sub);
     afCmsSetText('.fhome-btn-ai',h.ctaPrimary);
     afCmsSetText('.fhome-btn-stock',h.ctaSecondary);
+    // SC_60: hero prompt placeholder (bo'sh = built-in qoladi)
+    if(h.promptPlaceholder){
+      var hp=document.getElementById('homeHeroPrompt');
+      if(hp)hp.setAttribute('placeholder',h.promptPlaceholder);
+    }
     var s=(c.home&&c.home.sections)||{};
     afCmsSetText('#fhomeRecentSec .fhome-sechd h2',s.recent);
     afCmsSetText('#fhomeShelfSec .fhome-sechd h2',s.shelf);
@@ -8235,12 +8289,54 @@ function afCmsApply(){
         lt.appendChild(document.createTextNode(' '+c.aiLauncher.title));
       }
     }
+    // SC_60: guest ekran qo'shimcha matnlari
+    afCmsSetText('#homeGuest .sec .kick',g.peekKicker);
+    afCmsSetText('#homeGuest .gu-mk',g.registerNote);
     // AI launcher kartalari (title/desc/media override) — render AI IIFE ichida o'qiydi
     window.__afCmsAiCards=(c.aiLauncher&&c.aiLauncher.cards)||null;
     if(typeof window.__afAiRenderCatGrid==='function')window.__afAiRenderCatGrid();
+    // SC_60: kategoriya tayllari (label + media) — renderHomeCategories o'qiydi
+    window.__afCmsCatTiles=(c.home&&c.home.categoryTiles)||null;
+    if(typeof renderHomeCategories==='function')try{renderHomeCategories();}catch(_e){}
     // Hero fon media (mediaMode ustuvorligi renderHomeHero/afCmsHeroMedia'da)
     afCmsHeroMedia();
+    // SC_61: e'lon paneli
+    afCmsAnnounce(c.announcement||null);
   }catch(e){ try{console.warn('[cms] apply:',e);}catch(_){} }
+}
+/* ══ SC_61: admin e'lon paneli — server content-config announcement ══
+   Yopish localStorage'da (id bo'yicha; id bo'sh = matn hash o'rnida). CTA faqat
+   ichki ekranlar (allow-list) — mavjud seg tugmalari bosiladi, URL ochilmaydi. */
+function afAnnKey(a){ return 'af_announce_dismissed'; }
+function afAnnId(a){ return (a&&a.id)||('t:'+String((a&&a.text)||'').slice(0,80)); }
+function afCmsAnnounce(a){
+  var bar=document.getElementById('afAnnounce'); if(!bar)return;
+  var show=!!(a&&a.enabled&&a.text);
+  if(show){
+    try{ if(localStorage.getItem(afAnnKey(a))===afAnnId(a))show=false; }catch(e){}
+  }
+  if(!show){ bar.classList.remove('on'); return; }
+  bar.classList.remove('tone-promo','tone-warn');
+  if(a.tone==='promo')bar.classList.add('tone-promo');
+  else if(a.tone==='warn')bar.classList.add('tone-warn');
+  var t=document.getElementById('afAnnounceText'); if(t)t.textContent=a.text;
+  var cta=document.getElementById('afAnnounceCta');
+  var ACT={aistudio:'afSegAi',catalog:'afSegKatalog',home:'afSegHome',account:'afSegHome'};
+  if(cta){
+    if(a.ctaLabel&&a.ctaAction&&ACT[a.ctaAction]){
+      cta.hidden=false; cta.textContent=a.ctaLabel;
+      cta.onclick=function(){ try{ var b=document.getElementById(ACT[a.ctaAction]); if(b)b.click(); }catch(e){} };
+    }else{ cta.hidden=true; cta.onclick=null; }
+  }
+  var x=document.getElementById('afAnnounceX');
+  if(x){
+    x.style.display=(a.dismissable===false)?'none':'';
+    x.onclick=function(){
+      try{ localStorage.setItem(afAnnKey(a),afAnnId(a)); }catch(e){}
+      bar.classList.remove('on');
+    };
+  }
+  bar.classList.add('on');
 }
 /* Hero fon media: media-first → doim admin media; auto → faqat oxirgi gen thumb yo'q bo'lsa.
    Video xato/kodek muammosi → element o'chadi, mavjud gradient/thumb yo'li ko'rinadi. */

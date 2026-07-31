@@ -911,12 +911,29 @@ const StudioApi = (() => {
   async function resetPluginContentConfig() {
     return request("/api/admin/plugin-content-config", { method: "DELETE" });
   }
-  /** Admin media upload: presigned PUT URL (folder whitelist serverda). */
-  async function adminUploadUrl(fileName, contentType, folder) {
+  /** Admin media upload: presigned PUT URL (folder whitelist serverda).
+   *  sizeBytes ixtiyoriy — server hajm shipini URL berishdan oldin tekshiradi. */
+  async function adminUploadUrl(fileName, contentType, folder, sizeBytes) {
     return request("/api/admin/upload-url", {
       method: "POST",
-      body: { fileName, contentType, folder },
+      body: { fileName, contentType, folder, sizeBytes },
     });
+  }
+
+  /* ── SC_63 — Sayt media kutubxonasi ── */
+  async function listSiteMedia() {
+    return request("/api/admin/site-media");
+  }
+  async function deleteSiteMedia(key, force) {
+    return request("/api/admin/site-media", { method: "DELETE", body: { key, force: !!force } });
+  }
+
+  /* ── SC_62 — CMS konfiguratsiya versiya tarixi ── */
+  async function listContentRevisions(kind) {
+    return request(`/api/admin/content-revisions?kind=${encodeURIComponent(kind || "landing")}`);
+  }
+  async function restoreContentRevision(id) {
+    return request(`/api/admin/content-revisions/${encodeURIComponent(id)}/restore`, { method: "POST" });
   }
 
   /* P11 — plagin relizlari */
@@ -1064,6 +1081,10 @@ const StudioApi = (() => {
     publishPluginRelease,
     deletePluginRelease,
     adminUploadUrl,
+    listSiteMedia,
+    deleteSiteMedia,
+    listContentRevisions,
+    restoreContentRevision,
     listAdminUsers,
     setUserRole,
     dismissContributorRequest,
