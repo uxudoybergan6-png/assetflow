@@ -1,8 +1,8 @@
 /* ============================================================
    AssetFlow — Contributor Dashboard (Overview) · phase 2a
    Layout: 1:1 with design-preview/studio-dashboard.html mockup.
-   This file REDEFINES VIEWS.overview from contributor-views.js
-   (loaded AFTER contributor-views.js in index.html → takes precedence).
+   This file DEFINES VIEWS.overview (the old duplicate in contributor-views.js
+   was removed in D4 — this is the only Overview implementation).
    Connected to real data (TEMPLATES + DL_7). NO fake numbers.
    ============================================================ */
 (function () {
@@ -117,7 +117,24 @@
     });
   };
 
+  /* D4 (#2) — boot skeleti: KPI kartalari + jadval o'rniga skelet (ilgari hammasi 0 va
+     "No templates" ko'rinardi — yuklovchi hisoblari yo'qolgandek). */
+  function ovSkeleton() {
+    var kpis = "";
+    for (var i = 0; i < 4; i++) kpis += '<div class="skeleton skeleton-kpi"></div>';
+    return '<div class="col gap-20" aria-busy="true">' +
+      '<section class="stat-grid" aria-label="Loading metrics">' + kpis + "</section>" +
+      '<div class="dash-grid">' +
+        '<div class="card"><div class="card-pad"><div class="skeleton" style="height:200px"></div></div></div>' +
+        '<div class="col gap-12"><h3>Your templates</h3>' + skelTableCard(4) + "</div>" +
+      "</div></div>";
+  }
+
   VIEWS.overview = function () {
+    if (typeof tplLoading === "function" && tplLoading()) return ovSkeleton();
+    if (typeof tplLoadError === "function" && tplLoadError()) {
+      return '<div class="col gap-20">' + tplErrorCard() + "</div>";
+    }
     var ts = tByContributor(contributorId());
     var ap = ts.filter(function (t) { return t.status === "approved"; }).length;
     var pe = ts.filter(function (t) { return t.status === "pending"; }).length;
@@ -130,7 +147,11 @@
     var ch = overviewChartData();
 
     return '<div class="col gap-20">' +
-      '<div class="page-head"><div><h1 class="h2">Dashboard</h1><div class="lead">' +
+      // D4 (#12) — bu yerda IKKINCHI `<h1>Dashboard</h1>` bor edi: topbar sarlavhasi
+      // "Overview" deydi (nav yorlig'i ham shunday), ya'ni bitta ekranda ikki nom va
+      // ikki h1. Sarlavha topbar'da qoldi (boshqa ekranlarda ham shunday), bu yerda
+      // faqat tavsif + asosiy amal.
+      '<div class="page-head"><div><div class="lead" style="margin-top:0">' +
         (first ? "Welcome, " + esc(first) + " — " : "") +
         "your status today and your templates.</div></div>" +
         '<button class="btn btn-primary btn-lg" onclick="startNewUpload()">' + ic("upload") +

@@ -40,10 +40,6 @@ function cThumbMedia(t){
   if (!hasMedia) return `<div class="play"><span>${ic('play')}</span></div>`;
   return `<div style="position:absolute;inset:0">${StudioMedia.renderThumb(t,'lg')}</div>`;
 }
-function kpiCard(o){
-  return `<div class="kpi"><div class="kpi-top"><div class="kpi-ico" style="background:var(--${o.c}-dim);color:var(--${o.c})">${ic(o.ic)}</div><span class="kpi-label">${o.label}</span></div>
-    <div class="kpi-val">${o.val}</div><div class="kpi-foot">${o.trend!=null?`<span class="trend ${o.trend>0?'up':'down'}">${ic(o.trend>0?'trendUp':'trendDn')}${Math.abs(o.trend)}%</span>`:''}<span>${o.foot||''}</span></div></div>`;
-}
 function infoBanner(text, kind){ return `<div class="info-banner ${kind||''}">${ic('ext')}<span>${text}</span></div>`; }
 
 /** #15 Preview background-transcode status badge — only shown for 'pending'/'failed'.
@@ -81,107 +77,51 @@ function scanNotice(t){
   return `<div style="margin-top:10px">${b}${detail}</div>`;
 }
 
+/* D4 (#10) — bu yerda VIEWS.overview va afterRender.overview ning ESKI nusxasi (~100 qator)
+   turgan edi: contributor-dashboard.js index.html da KEYIN yuklanib ikkisini ham to'liq qayta
+   ta'riflaydi, ya'ni bu kod hech qachon bajarilmasdi (drift xavfi). U bilan birga faqat shu
+   blokda ishlatilgan `kpiCard` helperi ham o'chirildi.
+   Overview'ning JONLI manbasi: js/contributor-dashboard.js. */
+
 /* ============================================================
-   OVERVIEW
+   D4 (#2) — YUKLASH HOLATI: skelet + xato kartasi
+   ------------------------------------------------------------
+   TEMPLATES tarmoqdan kelguncha ekranlar "No templates" empty-state ko'rsatardi —
+   yuklovchi o'z ishlarini yo'qolgan deb o'ylashi mumkin edi. Bayroqlar
+   contributor/index.html boot'ida (`loadContributorTemplates`) yoqiladi.
+   Naqsh plagin Browse a7 holat tizimidan olingan (skelet → xato → bo'sh).
    ============================================================ */
-VIEWS.overview = function(){
-  const ts = tByContributor(contributorId());
-  const ap=ts.filter(t=>t.status==='approved').length, pe=ts.filter(t=>t.status==='pending').length,
-        sr=ts.filter(t=>t.status==='soft').length, hr=ts.filter(t=>t.status==='hard').length;
-  const dl=ts.reduce((a,t)=>a+(t.dl||0),0);
-  const im=ts.reduce((a,t)=>a+(t.imports||0),0);
-  const needsAction = ts.filter(t=>t.status==='soft' || t.status==='draft');
-  const sc = subscriberCounts();
-  const freeP = planById('free');
-  const proP = planById('pro');
-  return `<div class="col gap-20">
-    ${infoBanner('Subscribers use the AE plugin in <b>Free</b> or <b>Pro</b> mode. Your approved templates appear in <b>After Effects \u2192 FrameFlow Browse</b>.')}
-
-    <div class="plan-mini-row">
-      <div class="plan-mini plan-mini-free">
-        <span class="label">Free subscribers</span>
-        <span class="num" style="font-size:22px;font-weight:700">${sc.free}</span>
-        <span class="small">${formatPlanLimit(freeP)} downloads</span>
-      </div>
-      <div class="plan-mini plan-mini-pro">
-        <span class="label">Pro subscribers</span>
-        <span class="num" style="font-size:22px;font-weight:700">${sc.pro}</span>
-        <span class="small">${planPriceLabel(proP)} · ${formatPlanLimit(proP)}</span>
-      </div>
-      <div class="plan-mini">
-        <span class="label">Downloads / imports</span>
-        <span class="num" style="font-size:22px;font-weight:700">${dl.toLocaleString()} <span style="font-size:13px;font-weight:500;color:var(--text-dim)">/ ${im.toLocaleString()} imports</span></span>
-        <span class="small">across ${ap} approved templates</span>
-      </div>
+function tplLoading(){ return !!window._TPL_LOADING; }
+function tplLoadError(){ return window._TPL_ERROR || null; }
+/** Bitta skelet qator: thumb + 2 matn chizig'i + badge. */
+function skelRow(){
+  return `<div class="row center gap-12" style="padding:13px 18px;border-bottom:1px solid var(--line-soft)">
+    <div class="skeleton" style="width:54px;height:34px;flex:none"></div>
+    <div class="col grow" style="gap:7px;min-width:0">
+      <div class="skeleton skeleton-line w40" style="margin-bottom:0"></div>
+      <div class="skeleton skeleton-line w60" style="height:10px;margin-bottom:0"></div>
     </div>
-
-    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-      ${kpiCard({label:'Total uploaded',val:ts.length,ic:'layers',c:'violet',foot:'all statuses'})}
-      ${kpiCard({label:'Approved',val:ap,ic:'checkCircle',c:'green',foot:'live in AE'})}
-      ${kpiCard({label:'Pending',val:pe,ic:'clock',c:'yellow',foot:'in moderation'})}
-      ${kpiCard({label:'Rejected',val:sr+hr,ic:'xCircle',c:'orange',foot:`${sr} soft \u00b7 ${hr} hard`})}
-    </div>
-
-    <div class="ov-grid">
-      <!-- next step + needs action -->
-      <div class="col gap-16">
-        <div class="card" style="background:linear-gradient(120deg,var(--violet-dim),transparent);border-color:var(--violet-line)">
-          <div class="card-pad row between center gap-16 wrap">
-            <div class="col gap-4"><span class="h3">Next step</span><span class="small" style="max-width:380px">Upload a new motion template \u2014 once it passes moderation it goes live in the AE catalog.</span></div>
-            <button class="btn btn-primary btn-lg" onclick="startNewUpload()">${ic('upload')} Upload new template</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><div><h3>Needs attention</h3><span class="small">Soft rejects and drafts</span></div></div>
-          <div class="col">
-            ${needsAction.length? needsAction.map(t=>`<div class="row center gap-12" style="padding:13px 18px;border-bottom:1px solid var(--line-soft)">
-              <div class="row-thumb" style="width:54px;height:34px">${cThumb(t)}</div>
-              <div class="col grow" style="gap:3px;min-width:0"><span class="cell-strong">${esc(t.name)}</span><span class="small">${t.status==='soft'?'Soft reject \u2014 fix and resubmit':'Draft \u2014 not yet submitted'}</span></div>
-              ${badge(t.status)}
-              ${t.status==='draft'?`<button class="btn btn-primary btn-sm" onclick="submitDraftToModeration('${t.id}')">${ic('upload')} Submit</button>`:''}
-              <button class="btn btn-ghost btn-sm" onclick="openTplDrawer('${t.id}')">View</button>
-            </div>`).join('') : `<div class="empty" style="padding:34px"><div class="ico">${ic('checkCircle')}</div><h3>All good</h3><p>No templates need attention.</p></div>`}
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><h3>Activity history</h3></div>
-          <div class="card-pad">${ts.length ? `<div class="timeline">${ts.slice(0,5).map(t=>`<div class="tl-item"><div class="tl-dot" style="background:var(--${t.status==='approved'?'green':'violet'})">${ic(t.status==='approved'?'check':'upload')}</div><div class="tl-title">${esc(t.name)}</div><div class="tl-meta">${badge(t.status)} \u00b7 ${esc(t.created||'')}</div></div>`).join('')}</div>` : `<div class="empty" style="padding:24px"><p class="small">No activity yet</p></div>`}
-          </div>
-        </div>
-      </div>
-
-      <!-- recent admin messages -->
-      <div class="card">
-        <div class="card-head"><div><h3>Admin messages</h3><span class="small">Recent</span></div><button class="btn btn-subtle btn-sm" onclick="route('messages')">View all ${ic('chevR')}</button></div>
-        <div class="col" id="ovMsgs">
-          <div class="empty" style="padding:34px"><div class="ico">${ic('message')}</div><h3>No messages</h3><p class="small">Admin replies will appear here</p></div>
-        </div>
-      </div>
-    </div>
+    <div class="skeleton" style="width:78px;height:20px;border-radius:999px;flex:none"></div>
   </div>`;
-};
-
-/** When Overview opens, loads admin messages from the API and fills the panel */
-window.afterRender.overview = async function(){
-  if (!StudioApi.token()) return;
-  try {
-    const data = await StudioApi.listMessageThreads();
-    const threads = (data.items || data.threads || []).slice(0, 4);
-    const box = document.getElementById('ovMsgs');
-    if (!box || !threads.length) return;
-    box.innerHTML = threads.map(th => `<div class="row center gap-12" style="padding:12px 18px;border-bottom:1px solid var(--line-soft);cursor:pointer" role="button" tabindex="0" data-kbd-click onclick="route('messages')">
-      <div class="col grow" style="gap:2px;min-width:0">
-        <span class="cell-strong" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(th.subject || 'Message')}</span>
-        <span class="small">${esc(fmtLocalDate(th.lastMessageAt))}</span>
-      </div>
-      ${th.unreadCount ? `<span class="badge badge-pending"><span class="dot"></span>${esc(th.unreadCount)} new</span>` : ''}
-    </div>`).join('');
-  } catch (e) {
-    /* messages panel is optional \u2014 overview is not blocked */
-  }
-};
+}
+function skelTableCard(rows){
+  const n = rows || 4;
+  return `<div class="card" aria-busy="true" aria-label="Loading templates"><div class="col">${
+    Array.from({ length: n }, skelRow).join('')}</div></div>`;
+}
+function skelChipRow(){
+  return `<div class="toolbar between" aria-hidden="true"><div class="chips">${
+    [70, 96, 84, 92].map(w=>`<div class="skeleton" style="width:${w}px;height:30px;border-radius:999px"></div>`).join('')
+  }</div><div class="skeleton" style="width:150px;height:32px;border-radius:var(--r-sm)"></div></div>`;
+}
+/** Yuklash muvaffaqiyatsiz — jim qolmasdan Retry taklif qilamiz. */
+function tplErrorCard(){
+  return `<div class="card"><div class="empty"><div class="ico">${ic('alert')}</div>
+    <h3>Could not load your templates</h3>
+    <p>${esc(tplLoadError() || '')}</p>
+    <button class="btn btn-primary" onclick="retryContributorLoad()">${ic('refresh')} Retry</button>
+  </div></div>`;
+}
 
 /* ============================================================
    MY TEMPLATES — table + grid toggle
@@ -191,13 +131,19 @@ VIEWS.templates = function(){ return `<div id="myRoot"></div>`; };
 window.afterRender.templates = function(){ renderMy(); };
 
 function renderMy(){
+  const root = document.getElementById('myRoot');
+  if (!root) return;
+  // D4 (#2) — yuklanmagan/xato holatlar filtr chiplaridan OLDIN: chip sanoqlari 0 bo'lib
+  // "hech narsa yo'q" degan noto'g'ri xabar bermasin.
+  if (tplLoading()) { root.innerHTML = `<div class="col gap-16">${skelChipRow()}${skelTableCard(4)}</div>`; return; }
+  if (tplLoadError()) { root.innerHTML = tplErrorCard(); return; }
   let ts = tByContributor(contributorId());
   if(MY_FILTER!=='all') ts = ts.filter(t=>t.status===MY_FILTER);
   const q = (typeof CONTRIB_SEARCH !== "undefined" ? CONTRIB_SEARCH : "").trim();
   if (q) ts = ts.filter((t) => (t.name + " " + t.cat + " " + t.id).toLowerCase().includes(q));
   const all = tByContributor(contributorId());
   const cnt = s=>all.filter(t=>t.status===s).length;
-  document.getElementById('myRoot').innerHTML = `<div class="col gap-16">
+  root.innerHTML = `<div class="col gap-16">
     <div class="toolbar between">
       <div class="chips">
         ${[['all','All',all.length],['approved','Approved',cnt('approved')],['pending','Pending',cnt('pending')],['soft','Soft reject',cnt('soft')],['hard','Hard reject',cnt('hard')],['draft','Draft',cnt('draft')]].map(([k,l,n])=>
@@ -219,7 +165,9 @@ function myTable(ts){
       <td>${badge(t.status)}${t.status==='approved'?'<div class="small" style="color:var(--green);margin-top:3px;font-size:10.5px">Live in AE</div>':''}${scanBadge(t.packScanStatus)?`<div style="margin-top:3px">${scanBadge(t.packScanStatus)}</div>`:''}${transcodeBadge(t.previewTranscodeStatus)?`<div style="margin-top:3px">${transcodeBadge(t.previewTranscodeStatus)}</div>`:''}</td>
       <td class="cell-muted mono">${esc(t.created)}</td>
       <td class="cell-num cell-strong">${t.dl?t.dl.toLocaleString():'\u2014'}${t.imports?`<div class="small" style="font-size:10.5px;font-weight:400">${t.imports.toLocaleString()} imports</div>`:''}</td>
-      <td class="cell-muted" style="max-width:200px">${t.reason?`<span style="color:var(--orange)">${esc(t.reason.slice(0,46))}\u2026</span>`:'\u2014'}</td>
+      <!-- D4 (#11) \u2014 sabab HAR DOIM "\u2026" bilan tugardi (46 belgidan qisqa bo'lsa ham) va
+           to'liq matnni ko'rish imkoni yo'q edi: endi shartli qisqartirish + title. -->
+      <td class="cell-muted" style="max-width:200px">${t.reason?`<span style="color:var(--orange)" title="${esc(t.reason)}">${esc(t.reason.length>46?t.reason.slice(0,46)+'\u2026':t.reason)}</span>`:'\u2014'}</td>
       <td onclick="event.stopPropagation()"><div class="row-actions">
         ${(t.status==='draft'||t.status==='soft')?`<button class="act" title="Edit" onclick="event.stopPropagation();openEditTemplate('${t.id}')">${ic('edit')}</button>`:''}
         ${(t.status==='draft'||t.status==='soft')?`<button class="act success" title="Submit to moderation" onclick="submitDraftToModeration('${t.id}')">${ic('upload')}</button>`:''}
@@ -570,9 +518,11 @@ if (typeof StudioApi !== "undefined" && StudioApi.onSessionExpired) {
   });
 }
 // Faol yuklashda tasodifiy sahifa yopilishi — brauzer tasdig'i (+ partiyani saqlash).
+// D4 (#14) — UP_UPLOADING ham hisobga olinadi: edit-wizard/bitta fayl yuklashda sahifa
+// yopilsa ilgari hech qanday ogohlantirish yo'q edi (katta pack jimgina yo'qolardi).
 window.addEventListener("beforeunload", (e) => {
-  if (!BULK_RUNNING) return;
-  saveBulkResume();
+  if (!BULK_RUNNING && !UP_UPLOADING) return;
+  if (BULK_RUNNING) saveBulkResume();
   e.preventDefault();
   e.returnValue = "";
 });
@@ -1637,7 +1587,9 @@ async function renderCMsg() {
   const me = typeof AssetFlowAuth !== "undefined" ? AssetFlowAuth.getSession() : null;
   const myInitials = (me?.name || "S").slice(0, 2).toUpperCase();
 
-  root.innerHTML = `<div class="card" style="overflow:hidden"><div style="display:grid;grid-template-columns:320px 1fr;height:640px">
+  // D4 (#8) — inline `height:640px` o'rniga `.msg-layout` klassi: mobil media-qoida
+  // faqat display/flex-direction ni bosa olardi, balandlik esa qotib qolardi (kesilish).
+  root.innerHTML = `<div class="card" style="overflow:hidden"><div class="msg-layout">
     <div class="col" style="border-right:1px solid var(--line)">
       <div class="card-head"><h3>Messages</h3><span class="nav-badge brand">${contributorUnreadCount()}</span></div>
       <div class="col" style="overflow-y:auto">
@@ -1657,7 +1609,8 @@ async function renderCMsg() {
           const isMe = m.sender?.isMe;
           const nm = m.sender?.name || "User";
           const ini = nm.slice(0, 2).toUpperCase();
-          return `<div class="msg ${isMe ? "me" : ""}"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(140deg,#7b5cff,#4a2fb0)">${isMe ? esc(myInitials) : esc(ini)}</div><div class="msg-body"><div class="msg-name" style="color:${isMe ? "var(--tx-1)" : "var(--violet-bright)"}">${isMe ? "You" : esc(nm)}</div><div class="msg-text">${esc(m.body)}</div><div class="msg-time">${esc(formatMsgDate(m.createdAt))}</div></div></div>`;
+          // D4 (#13) — avatar gradienti tokenlarga: admin = brend, o'zim = neytral.
+          return `<div class="msg ${isMe ? "me" : ""}"><div class="avatar ${isMe ? "avatar-neutral" : "avatar-brand"}" style="width:28px;height:28px;font-size:11px">${isMe ? esc(myInitials) : esc(ini)}</div><div class="msg-body"><div class="msg-name" style="color:${isMe ? "var(--tx-1)" : "var(--violet-bright)"}">${isMe ? "You" : esc(nm)}</div><div class="msg-text">${esc(m.body)}</div><div class="msg-time">${esc(formatMsgDate(m.createdAt))}</div></div></div>`;
         }).join("")}
       </div>
       ${
@@ -1888,7 +1841,7 @@ async function renderDrawerThreadSection(t) {
           const isAdmin = m.sender?.role === "ADMIN";
           const who = m.sender?.name || m.sender?.email || (isAdmin ? "Admin" : "You");
           const when = fmtLocalDateTime(m.createdAt);
-          return `<div class="msg"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:${isAdmin ? "linear-gradient(140deg,#7b5cff,#4a2fb0)" : "var(--bg-4)"}">${esc(who.slice(0, 2).toUpperCase())}</div>
+          return `<div class="msg"><div class="avatar ${isAdmin ? "avatar-brand" : "avatar-neutral"}" style="width:28px;height:28px;font-size:11px">${esc(who.slice(0, 2).toUpperCase())}</div>
           <div class="msg-body"><div class="msg-name" style="color:var(--${isAdmin ? "violet-bright" : "tx-1"})">${esc(who)}</div><div class="msg-text">${esc(m.body)}</div><div class="msg-time">${esc(when)}</div></div></div>`;
         })
         .join("")}</div>
@@ -1921,10 +1874,22 @@ async function replyFromDrawer(threadId) {
   }
 }
 
-async function openTplDrawer(id){
+/* D4 (#5) — thread bo'limi o'rniga vaqtincha skelet: drawer DARHOL ochilishi kerak. */
+function drawerThreadPlaceholder(t){
+  if (!(t.status === "soft" || t.status === "hard")) return '<div id="drawerThread"></div>';
+  return `<div id="drawerThread"><div class="divider"></div>
+    <div class="col gap-8" aria-busy="true" aria-label="Loading conversation">
+      <div class="skeleton skeleton-line w40"></div>
+      <div class="skeleton" style="height:44px"></div>
+      <div class="skeleton" style="height:44px;width:78%"></div>
+    </div></div>`;
+}
+
+function openTplDrawer(id){
   const t=TEMPLATES.find(x=>x.id===id);
   if (!t) return;
-  const threadBlock = await renderDrawerThreadSection(t);
+  // D4 (#5) — ilgari drawer IKKI tarmoq so'rovi (threads + thread detail) tugagach ochilardi:
+  // qatorni bosgandan keyin ~1s hech qanday javob yo'q edi. Endi skelet bilan darhol ochiladi.
   openDrawer(`
     <div class="drawer-head"><span class="h3 grow">Template details</span><button class="icon-btn" onclick="closeDrawer()">${ic('x')}</button></div>
     <div class="drawer-body col gap-18">
@@ -1942,14 +1907,29 @@ async function openTplDrawer(id){
         <div class="timeline">${statusTimeline(t).map(s=>`<div class="tl-item"><div class="tl-dot" style="background:var(--${s.c})">${ic(s.ic)}</div><div class="tl-title">${s.t}</div><div class="tl-meta">${esc(s.meta)}</div>${s.note?`<div class="tl-note">${esc(s.note)}</div>`:''}</div>`).join('')}</div>
       </div>
 
-      ${threadBlock}
+      ${drawerThreadPlaceholder(t)}
     </div>
     <div class="drawer-foot">
-      ${t.status==='soft'?`<button class="btn btn-success grow" onclick="closeDrawer();resubmit('${t.id}')">${ic('refresh')} Fix and resubmit</button><button class="btn btn-ghost" onclick="closeDrawer();openEditTemplate('${t.id}')">${ic('edit')}</button>`:''}
-      ${t.status==='draft'?`<button class="btn btn-success grow" onclick="submitDraftToModeration('${t.id}')">${ic('upload')} Submit for moderation</button><button class="btn btn-ghost" onclick="closeDrawer();openEditTemplate('${t.id}')">${ic('edit')} Edit</button>`:''}
+      ${t.status==='soft'?`<button class="btn btn-success grow" onclick="closeDrawer();openEditTemplate('${t.id}')">${ic('edit')} Fix and resubmit</button><button class="btn btn-ghost" title="Resubmit without changes" aria-label="Resubmit without changes" onclick="closeDrawer();resubmit('${t.id}')">${ic('refresh')}</button>`:''}
+      ${t.status==='draft'?`<button class="btn btn-success grow" onclick="submitDraftToModeration('${t.id}')">${ic('upload')} Submit for moderation</button><button class="btn btn-ghost" title="Edit" aria-label="Edit" onclick="closeDrawer();openEditTemplate('${t.id}')">${ic('edit')} Edit</button>`:''}
       ${t.status==='approved'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close</button>`:''}
       ${t.status==='hard'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close</button>`:''}
       ${t.status==='pending'?`<button class="btn btn-ghost grow" onclick="closeDrawer()">Close · in moderation</button>`:''}
-      ${canDeleteMine(t)?`<button class="btn btn-danger-ghost" title="Delete" onclick="deleteMyTemplate('${t.id}')">${ic('trash')}</button>`:''}
+      ${canDeleteMine(t)?`<button class="btn btn-danger-ghost" title="Delete" aria-label="Delete" onclick="deleteMyTemplate('${t.id}')">${ic('trash')}</button>`:''}
     </div>`);
+
+  // Suhbat bo'limi drawer ochilgandan KEYIN to'ldiriladi (skeletni almashtiradi).
+  if (t.status === "soft" || t.status === "hard") {
+    renderDrawerThreadSection(t)
+      .then((html) => {
+        const host = document.getElementById("drawerThread");
+        if (host) host.innerHTML = html;
+      })
+      .catch(() => {
+        const host = document.getElementById("drawerThread");
+        if (host) host.innerHTML = t.reason
+          ? `<div class="divider"></div><div class="info-banner warn">${ic("reply")}<span>${esc(t.reason)}</span></div>`
+          : "";
+      });
+  }
 }

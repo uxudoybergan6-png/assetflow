@@ -123,3 +123,10 @@ boshqa SPA tugma sinflarida (`va-*`, `ffa-*`) shu tekshiruv o'tkazilmagan.
 **N3 (P3, `dist/`) — `packages/assetflow-studio/dist/` eskirgan artefakt.**
 `studio:sync`/`prepare-vercel.mjs` bu papkani QAYTA YOZMAYDI (faqat CF Pages build yozadi), shuning
 uchun grep natijalarida o'chirilgan CSS (masalan `.auth-back`) tirik ko'rinadi va auditni chalg'itadi.
+
+**N4 (P3, `styles/app.css` — N1 ning bir ko'rinishi) — `.avatar-brand` bosh harflari yorug' temada 3.7:1.**
+D4'da avatar gradienti tokenlarga o'tkazildi (hardcode binafsha ketdi), lekin yorug' temada
+`--violet-bright` = `#0d9488` va oq `--on-accent` bilan kontrast 3.73:1 (qorong'i uchida 5.45:1) —
+11px qalin matn uchun AA (4.5:1) dan past. Eski hardcode gradient ham shunga yaqin edi (4.37:1),
+ya'ni regressiya emas; bosh harflar yonida ism matni ham ko'rinadi. **Tavsiya:** N1 bilan birga D6'da
+yorug' tema uchun bir pog'ona to'q "ink" varianti.

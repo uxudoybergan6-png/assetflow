@@ -282,6 +282,11 @@ svg { display: block; }
   display: grid; place-items: center; font-weight: 700; font-size: 12px; color: #fff;
   font-family: var(--font-display);
 }
+/* D4 (#13) — portal avatarlari: ilgari har joyda inline `linear-gradient(140deg,#7b5cff,#4a2fb0)`
+   (rebrand'dan OLDINGI binafsha) hardcode qilingan edi — teal/lime portalga zid va
+   yorug' temada matn kontrasti nazoratsiz. Endi tokenlar + `--on-accent`. */
+.avatar.avatar-brand { background: linear-gradient(140deg, var(--violet-bright), var(--violet)); color: var(--on-accent); }
+.avatar.avatar-neutral { background: var(--bg-4); color: var(--tx-1); }
 
 /* ---- main column ---- */
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -783,8 +788,8 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .empty h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
 .empty p { color: var(--tx-2); font-size: 12.5px; max-width: 340px; margin: 0 auto 18px; }
 
-.skeleton { background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size: 200% 100%; animation: sk 1.4s infinite; border-radius: 6px; }
-@keyframes sk { to { background-position: -200% 0; } }
+/* D4: dublikat `.skeleton` (+ `@keyframes sk`) shu yerdan o'chirildi — quyida
+   "SKELETON LOADING" bo'limidagi variant kaskadda baribir ustun edi. */
 
 .info-banner {
   display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: var(--r-sm);
@@ -809,6 +814,16 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .toast .t-body { flex: 1; }
 .toast .t-title { font-size: 13px; font-weight: 600; }
 .toast .t-msg { font-size: 12px; color: var(--tx-2); margin-top: 2px; }
+/* D4 (#9) — qo'lda yopish: xato toast'lari 7s turadi, lekin foydalanuvchi o'qib bo'lgach
+   darhol yopishi ham kerak (sichqoncha ustida timer ham to'xtaydi — JS tarafda). */
+.toast .t-close {
+  flex: 0 0 auto; width: 24px; height: 24px; margin: -2px -4px 0 0; padding: 0;
+  display: grid; place-items: center; background: transparent; border: 0; border-radius: 6px;
+  color: var(--tx-3); cursor: pointer;
+}
+.toast .t-close:hover { background: var(--bg-4); color: var(--tx-1); }
+.toast .t-close:focus-visible { outline: 2px solid var(--violet); outline-offset: 1px; }
+.toast .t-close svg { width: 14px; height: 14px; }
 
 /* modal */
 .overlay {
@@ -856,6 +871,14 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .tl-note { font-size: 12px; color: var(--tx-1); margin-top: 6px; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 9px 11px; }
 
 /* chat */
+/* D4 (#8) — Messages ikki ustunli konteyneri (ilgari inline `height:640px`).
+   Balandlik ko'rinishga bog'landi: kichik noutbukda ham topbar/padding hisobga olinadi,
+   mobil media-qoidada esa butunlay `auto` bo'ladi. */
+.msg-layout {
+  display: grid; grid-template-columns: 320px 1fr;
+  height: 640px; height: min(640px, calc(100dvh - 200px)); min-height: 380px;
+}
+
 .msg { display: flex; gap: 9px; margin-bottom: 14px; }
 .msg .avatar { width: 28px; height: 28px; font-size: 11px; }
 .msg-body { background: var(--bg-2); border: 1px solid var(--line); border-radius: 4px 11px 11px 11px; padding: 9px 12px; max-width: 78%; }
@@ -1125,8 +1148,10 @@ table.data tbody tr:last-child td { border-bottom: none; }
 .auth-foot a { color: var(--violet-bright); font-weight: 600; }
 .auth-foot a:hover { text-decoration: underline; }
 
-.divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; color: var(--tx-3); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
-.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+/* D4: bu yerda "OR" matnli auth `.divider` bor edi — hech bir app.css sahifasi uni
+   ishlatmasdi (login sahifalarida yo'q, device.html standalone), lekin kaskadda 901-qatordagi
+   oddiy 1px `.divider`ni bosib, contributor/admin drawer'larida bo'sh `<div class="divider">`ni
+   o'rtasida 12px uzilishli IKKI chiziqqa aylantirardi. O'chirildi. */
 
 @media (max-width: 860px) {
   .auth-shell { grid-template-columns: 1fr; }
@@ -1411,6 +1436,9 @@ body.nav-open {
     display: flex !important;
     flex-direction: column !important;
     min-height: auto !important;
+    /* D4 (#8) — `height` ham bo'shatiladi: aks holda ro'yxat + suhbat 640px qutiga
+       tiqilib, telefonda pastki qismi (yozish maydoni) kesilib qolardi. */
+    height: auto !important;
   }
 
   /* .auth-* responsive — AUTH/LOGIN blokida (stack, hide emas) */

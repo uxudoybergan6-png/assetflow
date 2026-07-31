@@ -1,25 +1,20 @@
-# Sessiya hisoboti — 2026-07-31 (dizayn fix-kampaniya: D3)
+# Sessiya hisoboti — 2026-07-31 (dizayn fix-kampaniya: D4)
 
-**Oldingi:** D0 (Neon kvota, a8f92c5), D1 (a11y, 2941809), D2 (CEP Admin, e1b0733) yopilgan.
+**Oldingi:** D0 (a8f92c5), D1 (2941809), D2 (e1b0733), D3 (24e3141) yopilgan.
 
-**BATCH D3 — auth oqim birligi (9/13).** 10 fayl: `auth.ts`, `login.html`, `admin-login.html`,
-`reset-password.html`, `verify-email.html`, `device.html`, `design-system.html`, `hub.html`,
-`styles/app.css`, `platform/index.html`.
-(1) **Yo'naltirish** — `POST /reset-password` javobiga `role` qo'shildi; reset/verify sahifalarida
-`authDest(role)`: USER→`/` (platforma), CONTRIBUTOR→`/studio/login.html`, ADMIN→`/admin/login.html`;
-4 ta "orqaga" havolasi ham `/`ga (ilgari hammasi Contributor Studio = USER uchun berk yo'l).
-(2) **Qobiq birligi** — 3 standalone sahifada `light` tema hurmat qilinadi (FOUC skript + `[data-theme=light]`
-token bloki + cycle `noir→neon→cold→light`), yagona brand-mark SVG, `device` divider 8→10.5px.
-(3) **Turnstile cap** — `login.html` va SPA `renderTurnstile` da cheksiz retry → 25×200ms + inline
-yo'riqnoma banneri (`role=status`), submit xabari ham moslashtirildi (CF skriptini 404 qilib tekshirildi).
-(4) **Double-submit** — SPA `doAuth` boshida busy-guard + `disabled="{{ authBusy }}"` + `.ffm-btn:disabled`
-uslubi (3× klik → 1 `register`). (5) **Copy** — "PostgreSQL" xabari neytral; 2FA yo'li haqiqiy `<a>`
-(DOM, innerHTML emas); `?verified=1` ikki login sahifasida success-banner (`.auth-ok`, `replaceState`
-bilan tozalanadi, light temada 5.03:1). (6) Parol toggle: register×2, reset×2, device×1.
-(7) SPA registerga Terms/Privacy rozilik qatori. (8) `design-system.html` xom `${…}` bloki script-render'ga,
-swatch hex jonli `getComputedStyle`dan (tema kuzatuvchisi bilan). **#13** shu batch'da: o'lik auth CSS +
-hub soxta ✓ pill (endi lokalda haqiqiy ping, productionda ko'rsatilmaydi).
-**#3/#6/#7** D1'da bajarilgan → "no change needed". Pul zonasi tegilmagan; `build -w apps/api` yashil.
-**Yangi topildi** (audit §6): N1 light temada `--green/--red` matn kontrasti, N2 `.ffm-btn:disabled`, N3 `dist/`.
+**BATCH D4 — Contributor Studio (7/7 band, 12 finding).** Manba: `styles/app.css`, `js/ui.js`,
+`js/contributor-views.js`, `js/contributor-dashboard.js`, `contributor/index.html` (+ `studio:sync`).
+(1) O'lik CSS: auth `.msg`, `.auth-back`, dublikat `.skeleton`, auth "OR" `.divider` — oxirgisi
+kaskadda 1px `.divider`ni bosib drawer'da IKKI chiziq berardi (endi 1px, o'lchandi).
+(2) Boot skeleti: `_TPL_LOADING/_TPL_ERROR` → Overview KPI/grafik/jadval + My templates chip skeleti
+(`aria-busy`), xatoda "Could not load your templates" + Retry (:4000 o'chirib tasdiqlandi).
+(3) `syncMsgDot()`: unread=0 → nuqta yashirin, tugma `aria-label`da soni. (4) Drawer darhol ochiladi
+(thread skeleti, so'rov keyin), Esc yopadi, fokus ochgan elementga qaytadi (`_focusPanel` matn
+maydonini tanlaydi — tasdiq modalida Enter=o'chirish xavfi yo'q). (5) "Fix and resubmit" → edit-wizard
+(view=upload tasdiqlandi), tasdiqsiz resubmit ↻ tugmada; xato toast 7s + ✕ + hover pauza.
+(6) `.msg-layout`: desktop `min(640px,100dvh−200px)`, ≤768px `height:auto`; `beforeunload` guard.
+(7) O'lik 2-Overview (~100 qator) + 2-`<h1>Dashboard</h1>` ketdi (nom yagona "Overview"); reject sababi
+shartli qisqartma + `title`; avatar gradienti tokenlarga. **#3/#7** D1'da → "no change needed".
+Pul zonasi tegilmagan. **Yangi:** audit §6 N4 — light temada `.avatar-brand` harflari 3.73:1 (D6).
 
-**Keyingi qadam:** D4 (Contributor Studio) → D5–D9. Egasi: Neon upgrade / 1-avg reset, keyin 8 migratsiya.
+**Keyingi:** D5 (platforma `va-`) → D6–D9. Egasi: Neon upgrade / 1-avg reset + 8 migratsiya.

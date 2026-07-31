@@ -94,10 +94,25 @@ function toast(title, msg, kind){
   const esc=(s)=>(window.StudioMedia&&StudioMedia.escapeHtml?StudioMedia.escapeHtml(s):String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])));
   el.innerHTML=`<div class="t-ico" style="background:var(--${c}-dim);color:var(--${c})">${ic(i)}</div>
     <div class="t-body"><div class="t-title">${esc(title)}</div>${msg?`<div class="t-msg">${esc(msg)}</div>`:''}</div>`;
+  // D4 (#9) — yopish tugmasi: xato matni ko'pincha yo'riqnoma, foydalanuvchi o'qib bo'lgach
+  // o'zi yopa olishi kerak (ilgari faqat taymer bor edi).
+  const closeBtn=document.createElement('button');
+  closeBtn.type='button'; closeBtn.className='t-close'; closeBtn.setAttribute('aria-label','Dismiss');
+  closeBtn.innerHTML=ic('x');
+  el.appendChild(closeBtn);
   wrap.appendChild(el);
   // P34: bir vaqtda 3 tadan ortiq toast yig'ilib qolmasin — eng eskisi darhol yopiladi
   while (wrap.children.length > 3) wrap.children[0].remove();
-  setTimeout(()=>{ el.style.transition='opacity .3s,transform .3s'; el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(),300); }, 3200);
+  // D4 (#9) — xato/ogohlantirish 3.2s da yo'qolardi, lekin matni retry yo'riqnomasi bo'lardi
+  // ("Click «Continue» again to retry…") — o'qib ulgurilmasdi. Endi 7s + hover'da pauza.
+  const life = (kind==='danger'||kind==='error'||kind==='warn') ? 7000 : 3200;
+  let timer=null;
+  const hide=()=>{ if(timer){clearTimeout(timer);timer=null;} el.style.transition='opacity .3s,transform .3s'; el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(),300); };
+  const arm=()=>{ timer=setTimeout(hide, life); };
+  el.addEventListener('mouseenter',()=>{ if(timer){clearTimeout(timer);timer=null;} });
+  el.addEventListener('mouseleave',()=>{ if(!timer) arm(); });
+  closeBtn.addEventListener('click',hide);
+  arm();
 }
 
 // status meta
@@ -126,6 +141,24 @@ function fmtLocalDateTime(iso){
 }
 if(typeof window!=='undefined'){ window.fmtLocalDate=fmtLocalDate; window.fmtLocalDateTime=fmtLocalDateTime; }
 
+/* D4 (#7) — fokus boshqaruvi: modal/drawer ochilganda fokus ORQADA qolardi (klaviatura
+   foydalanuvchisi Tab bilan panel ichiga tushmasdi), yopilganda esa qaytmasdi.
+   Panelga tabindex="-1" + focus, yopilganda oldingi elementga qaytaramiz. */
+let _lastFocus = null;
+function _focusPanel(panel){
+  if (!panel) return;
+  _lastFocus = document.activeElement;
+  panel.setAttribute('tabindex','-1');
+  // Matn maydoni bo'lsa unga (foydalanuvchi darhol yozadi), aks holda panelning O'ZIGA —
+  // birinchi tugmani fokuslash xavfli bo'lardi (tasdiq modallarida Enter = darhol o'chirish).
+  const field = panel.querySelector('input:not([type=hidden]):not([disabled]),textarea:not([disabled])');
+  (field || panel).focus({ preventScroll: true });
+}
+function _restoreFocus(){
+  if (_lastFocus && document.contains(_lastFocus) && _lastFocus.focus) _lastFocus.focus({ preventScroll: true });
+  _lastFocus = null;
+}
+
 // modal/drawer host
 function openModal(html){
   closeModal();
@@ -134,8 +167,9 @@ function openModal(html){
   o.addEventListener('click',e=>{ if(e.target===o) closeModal(); });
   document.body.appendChild(o);
   document.addEventListener('keydown', escClose);
+  _focusPanel(o.querySelector('.modal'));
 }
-function closeModal(){ const o=document.getElementById('__modal'); if(o) o.remove(); document.removeEventListener('keydown', escClose); }
+function closeModal(){ const o=document.getElementById('__modal'); if(o){ o.remove(); _restoreFocus(); } document.removeEventListener('keydown', escClose); }
 function escClose(e){ if(e.key==='Escape'){ closeModal(); closeDrawer(); } }
 
 function openDrawer(html){
@@ -145,8 +179,9 @@ function openDrawer(html){
   const d=document.createElement('div'); d.className='drawer'; d.id='__drawer'; d.innerHTML=html;
   document.body.appendChild(s); document.body.appendChild(d);
   document.addEventListener('keydown', escClose);
+  _focusPanel(d);
 }
-function closeDrawer(){ const d=document.getElementById('__drawer'); const s=document.getElementById('__scrim'); if(d)d.remove(); if(s)s.remove(); }
+function closeDrawer(){ const d=document.getElementById('__drawer'); const s=document.getElementById('__scrim'); if(d){ d.remove(); _restoreFocus(); } if(s)s.remove(); }
 
 // tiny donut svg
 function donut(segments, size){

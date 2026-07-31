@@ -27,7 +27,8 @@
         <a class="active"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contributor</a>
       </div>
       <div class="user-chip">
-        <div class="avatar" id="userAvatar" style="background:linear-gradient(140deg,#7b5cff,#4a2fb0)">DK</div>
+        <!-- D4 (#13) — brend avatar tokenlar orqali (eski binafsha gradient hardcode emas) -->
+        <div class="avatar avatar-brand" id="userAvatar">DK</div>
         <div class="col" style="gap:1px;min-width:0">
           <span id="userName" style="font-size:12.5px;font-weight:600;white-space:nowrap">Contributor</span>
           <span style="font-size:11px;color:var(--tx-2)">Contributor</span>
@@ -56,7 +57,9 @@
         <button type="button" class="icon-btn" data-theme-toggle title="Theme">
           <span data-theme-icon><svg class="theme-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>
         </button>
-        <button type="button" class="icon-btn" onclick="route('messages')"><span class="dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+        <!-- D4 (#4) — qizil nuqta STATIK edi: 0 xabarda ham doim "o'qilmagan bor" deb turardi.
+             Endi boshlang'ich holat yashirin, `syncMsgDot()` unread bo'lsa ko'rsatadi. -->
+        <button type="button" class="icon-btn" onclick="route('messages')" aria-label="Messages" title="Messages"><span class="dot hidden" id="msgDot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
         <button type="button" class="icon-btn" onclick="AssetFlowAuth.logout()" title="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
       </div>
     </header>
@@ -121,7 +124,21 @@ function contributorNavBadge(n) {
   }
   return { badge: n.badge, badgeCls: n.badgeCls };
 }
+/* D4 (#4) — qo'ng'iroqcha nuqtasi unread soniga ergashadi (renderNav bilan bir vaqtda). */
+function syncMsgDot(){
+  const dot = document.getElementById('msgDot');
+  if (!dot) return;
+  const unread = window._STUDIO_MSG_UNREAD || 0;
+  dot.classList.toggle('hidden', !unread);
+  const btn = dot.parentElement;
+  if (btn) {
+    const lbl = unread ? `Messages — ${unread} unread` : 'Messages';
+    btn.setAttribute('aria-label', lbl);
+    btn.setAttribute('title', lbl);
+  }
+}
 function renderNav(){
+  syncMsgDot();
   document.getElementById('nav').innerHTML = NAV.map(n=>{
     if(n.grp) return `<div class="nav-group-label">${n.grp}</div>`;
     const b = contributorNavBadge(n);
@@ -182,6 +199,26 @@ function patchContributorUI(){
   AssetFlowAuth.mountBlockedBanner('blockedHost');
   AssetFlowAuth.applyBlockedRestrictions();
 }
+/* D4 (#2) — shablonlarni yuklash + holat bayroqlari (skelet / xato kartasi manbai).
+   Xato bo'lsa ilgari faqat `console.warn` bor edi — ekranda "shablon yo'q" ko'rinardi. */
+function loadContributorTemplates(){
+  window._TPL_LOADING = true;
+  window._TPL_ERROR = null;
+  return StudioTemplates.loadForContributor()
+    .catch((e) => {
+      console.warn("contributor load", e);
+      window._TPL_ERROR = (e && e.message) || "Network error";
+    })
+    .finally(() => {
+      window._TPL_LOADING = false;
+      route(CURRENT, null, true);
+    });
+}
+/** Xato kartasidagi "Retry" — darhol skelet, so'ng qayta yuklash. */
+window.retryContributorLoad = function(){
+  loadContributorTemplates();
+  route(CURRENT, null, true);
+};
 (async function bootContributor() {
   // P5 — DARHOL bo'yaymiz: renderNav + route birinchi paintdan OLDIN, tarmoqni kutmasdan.
   // Ekranlar bo'sh TEMPLATES'ni skelet bilan qoldiradi; yuklashlar parallel keyin to'ladi.
@@ -189,15 +226,16 @@ function patchContributorUI(){
   if (first) TITLES.overview[1] = "Hello, " + first;
   const boot = (location.hash || '').replace('#', '');
   const bootView = ROUTE_VIEWS.indexOf(boot) >= 0 ? boot : "overview";
+  // D4 (#2) — birinchi paintda TEMPLATES bo'sh: ekranlar "No templates" degan SOXTA
+  // empty-state ko'rsatardi. Bayroq route()'dan OLDIN qo'yiladi → skelet chiziladi.
+  window._TPL_LOADING = !!StudioApi.token();
+  window._TPL_ERROR = null;
   renderNav();
   route(bootView);
   patchContributorUI();
 
   if (StudioApi.token()) {
-    const tplJob = StudioTemplates.loadForContributor()
-      // Foydalanuvchi kutadigan yuklash — o'rnashishi bilan darhol qayta render.
-      .then(() => { route(CURRENT, null, true); })
-      .catch((e) => { console.warn("contributor load", e); });
+    const tplJob = loadContributorTemplates();
     const msgJob = (async () => {
       const { items } = await StudioApi.listMessageThreads();
       window._STUDIO_MSG_UNREAD = items.reduce((a, t) => a + (t.unreadCount || 0), 0);
