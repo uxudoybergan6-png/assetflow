@@ -1369,7 +1369,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
    Panel qiymatlari mockup a5 dan 1:1 (padding 8px 18px 18px). */
 .lim-panel{
   width:100%;max-width:440px;max-height:88vh;overflow-y:auto;box-sizing:border-box;
-  background:var(--surface-2);border:1px solid rgba(255,255,255,.10);
+  background:var(--surface-2);border:1px solid var(--border);
   border-radius:16px;padding:14px 18px 18px;
   box-shadow:0 10px 32px rgba(0,0,0,.45);
   animation:afModalIn .18s cubic-bezier(.22,1,.36,1);color:var(--text);
@@ -1394,7 +1394,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .lim2-title{font-weight:700;font-size:15px}
 .lim2-sub{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:7px}
 .lim2-feats{display:flex;flex-direction:column;gap:9px;margin:14px 0 16px}
-.lim2-feat{display:flex;align-items:center;gap:9px;font-size:11.5px;color:#DCE3ED}
+.lim2-feat{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--text-2)}
 .lim2-feat svg{flex:none;color:var(--accent)}
 .lim2-cancel{display:block;width:100%;font-size:11px;color:var(--muted);margin-top:11px;text-align:center;background:none;border:0;cursor:pointer;font-family:inherit}
 .lim2-cancel:hover{color:var(--text)}
@@ -1408,26 +1408,26 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .publish-sheet.open{display:flex}
 .publish-panel{
   width:100%;max-width:404px;height:min(640px,92vh);box-sizing:border-box;
-  background:var(--surface-2);border:1px solid rgba(255,255,255,.10);
+  background:var(--surface-2);border:1px solid var(--border);
   border-radius:16px;padding:0;overflow:hidden;display:flex;flex-direction:column;color:var(--text);
   box-shadow:0 30px 70px rgba(0,0,0,.5);
   animation:afModalIn .18s cubic-bezier(.22,1,.36,1);
 }
-.pub-head{flex:none;position:relative;padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.pub-head{flex:none;position:relative;padding:14px 16px 12px;border-bottom:1px solid var(--border)}
 .pub-title{font-weight:700;font-size:14.5px;letter-spacing:-.01em}
 .pub-sub{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.45;padding-right:26px}
-.pub-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);color:var(--muted);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+.pub-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
 .pub-close:hover{color:var(--text);background:rgba(255,255,255,.08)}
 .pub-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:14px 16px 18px}
 .publish-step{margin-bottom:14px}
 .publish-step>label{display:block;font-family:var(--font-mono);font-size:8.5px;font-weight:400;text-transform:uppercase;letter-spacing:.12em;color:var(--muted-2);margin-bottom:6px}
 /* g3 maydonlari — mockup input stili */
-.pub-body .account-input{height:40px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:11px;color:var(--text);font-size:12px}
+.pub-body .account-input{height:40px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:11px;color:var(--text);font-size:12px}
 .pub-body .account-input:focus{border-color:var(--accent);box-shadow:none}
 .pub-body textarea.account-input{font-family:inherit;height:auto}
 .pub-body select.account-input{appearance:none;cursor:pointer}
 .pub-body .account-input::placeholder{color:var(--muted-2)}
-.pub-scan{width:100%;height:40px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}
+.pub-scan{width:100%;height:40px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}
 .pub-scan:hover{background:rgba(255,255,255,.1)}
 .pub-scan svg{flex:none}
 .pub-scenes-list{display:flex;flex-direction:column;gap:2px;max-height:210px;overflow-y:auto}
@@ -1438,8 +1438,13 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pub-scene-row.fail .pub-scene-dot{background:var(--red)}
 .pub-scene-thumb{
   width:38px;height:26px;border-radius:6px;flex:none;object-fit:cover;
-  background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),linear-gradient(138deg,#2A1E49,#6C3FA8 62%,#130E24);
-  display:grid;place-items:center;font-size:10px;color:#E7ECF3;overflow:hidden;
+  /* D7 (#P1-plagin) — sahna thumbnail'ining zaxira foni: eski avlodning binafsha gradienti
+     (#2A1E49→#6C3FA8) o'rniga `var(--grad)`. Uch temada ham brend gradienti (noir oq-kul ·
+     neon lime · cold ko'k) — binafsha esa hech bir temada yo'q edi. Ustidagi radial yorug'lik
+     qatlami saqlanadi; `--grad` o'zi linear-gradient, shuning uchun ikkinchi qatlam sifatida
+     to'g'ridan-to'g'ri qo'yiladi. */
+  background:radial-gradient(120% 100% at 18% 0%,rgba(255,255,255,.14),transparent 55%),var(--grad);
+  display:grid;place-items:center;font-size:10px;color:var(--text-2);overflow:hidden;
 }
 .pub-scene-txt{flex:1;min-width:0}
 .pub-scene-name{font-weight:600;font-size:11.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1462,16 +1467,16 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pack-detail.open{display:flex}
 
 /* ---- a3 top bar (48px) ---- */
-.pd3-top{height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid rgba(255,255,255,.05)}
+.pd3-top{height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--sidebar);border-bottom:1px solid var(--border)}
 .pd3-back{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;margin:0;cursor:pointer;font-family:inherit;color:var(--muted);font-weight:600;font-size:12.5px;line-height:1}
 .pd3-back svg{color:var(--muted);flex:none}
-.pd3-back:hover{color:#E7ECF3}.pd3-back:hover svg{color:#E7ECF3}
+.pd3-back:hover{color:var(--text-2)}.pd3-back:hover svg{color:var(--text-2)}
 .pd3-top-sp{flex:1}
 /* SC_49: .pd3-topstar (Favorite) CSS o'chirildi */
 
 /* ---- a3 hero (210px @380 = aspect 38/21; kengda cho'zilmasin, aspect saqlansin) ---- */
 /* SC_14: max-width 420px olib tashlandi — media panel kengligiga mos katta ko'rinadi */
-.pd3-hero{position:relative;width:100%;margin-inline:auto;aspect-ratio:38/21;flex:none;overflow:hidden;background:#12101c}
+.pd3-hero{position:relative;width:100%;margin-inline:auto;aspect-ratio:38/21;flex:none;overflow:hidden;background:var(--surface)}
 .pd3-hero-poster,.pd3-hero-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .pd3-hero-vid{display:none;z-index:1}
 .pd3-hero.playing .pd3-hero-vid{display:block}
@@ -1479,12 +1484,12 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pd3-hero-shade{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(6,8,11,0) 55%,rgba(6,8,11,.7))}
 .pd3-hero-plan{position:absolute;top:12px;left:12px;z-index:3;font-family:var(--font-mono);font-weight:700;font-size:8.5px;letter-spacing:.06em;padding:3px 7px;border-radius:5px}
 .pd3-hero-plan.pro{background:var(--accent);color:var(--on-accent)}
-.pd3-hero-plan.free{background:rgba(8,10,14,.75);color:#E7ECF3;border:1px solid rgba(255,255,255,.16)}
+.pd3-hero-plan.free{background:rgba(8,10,14,.75);color:var(--text-2);border:1px solid var(--border)}
 .pd3-hero-ai{position:absolute;top:12px;right:12px;z-index:3;font-family:var(--font-mono);font-weight:600;font-size:8.5px;padding:3px 7px;border-radius:5px;background:rgba(8,10,14,.72);color:var(--select)}
-.pd3-hero-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:46px;height:46px;border-radius:50%;background:rgba(19,22,28,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;padding:0;transition:opacity .2s}
+.pd3-hero-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;width:46px;height:46px;border-radius:50%;background:rgba(19,22,28,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;padding:0;transition:opacity .2s}
 .pd3-hero.playing .pd3-hero-play{opacity:0}
 .pd3-hero.playing:hover .pd3-hero-play{opacity:1}
-.pd3-hero-dur{position:absolute;right:10px;bottom:10px;z-index:3;font-family:var(--font-mono);font-size:8.5px;color:#E7ECF3;background:rgba(8,10,14,.72);padding:2px 6px;border-radius:4px}
+.pd3-hero-dur{position:absolute;right:10px;bottom:10px;z-index:3;font-family:var(--font-mono);font-size:8.5px;color:var(--text-2);background:rgba(8,10,14,.72);padding:2px 6px;border-radius:4px}
 
 /* ---- a3 scrollable body ---- */
 /* SC_31: pd3-scroll — yagona skroll konteyneri (butun detalni to'liq panel balandligiga
@@ -1497,18 +1502,22 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pd3-title{font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:-.01em;color:var(--text);line-height:1.2}
 .pd3-metarow{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:7px}
 .pd3-cat{font-size:11px;color:var(--muted)}
-.pd3-appchip{display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-weight:600;font-size:8.5px;padding:2px 7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:4px;color:#E7ECF3}
+.pd3-appchip{display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-weight:600;font-size:8.5px;padding:2px 7px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:4px;color:var(--text-2)}
 .pd3-appchip i{width:5px;height:5px;border-radius:50%;flex:none}
 .pd3-mdot{width:3px;height:3px;border-radius:50%;background:var(--muted-2);flex:none}
-.pd3-av{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#A8434E,#6C3FA8);flex:none}
-.pd3-by{font-size:11px;color:#B7C0CE}
+/* D7 (#P1-plagin) — muallif avatarining zaxira gradienti ham `var(--grad)` (yuqoridagi thumbnail
+   bilan bir xil sabab). Studio tomonida ayni almashtirish D4'da qilingan (`.avatar-brand`). */
+.pd3-av{width:16px;height:16px;border-radius:50%;background:var(--grad);flex:none}
+.pd3-by{font-size:11px;color:var(--text-2)}
 .pd3-sub{font-family:var(--font-mono);font-size:9px;color:var(--muted-2);margin-top:9px}
 .pd3-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
-.pd3-tag{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);font-size:10px;color:var(--muted)}
+.pd3-tag{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--border);font-size:10px;color:var(--muted)}
 .pd3-desc{font-size:11.5px;line-height:1.6;color:var(--muted);margin-top:10px}
-.pd3-nopack{margin-top:10px;font-size:10.5px;line-height:1.45;color:#ffd866;background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.28);border-radius:9px;padding:8px 10px}
+/* D7 (#P1-plagin) — "pack yuklanmagan" banneri ham ogohlantirish tokenlarida (D7.1 dagi `.axig .warn`
+   bilan bir xil naqsh): xom `rgba(255,193,7,α)` amber uch temaning hech biriga tegishli emas edi. */
+.pd3-nopack{margin-top:10px;font-size:10.5px;line-height:1.45;color:color-mix(in srgb,var(--warning) 70%,var(--text));background:var(--warning-soft);border:1px solid color-mix(in srgb,var(--warning) 28%,transparent);border-radius:9px;padding:8px 10px}
 .pd3-fr{font-size:10.5px;color:var(--muted);margin-top:8px}
-.pd3-fr strong{color:#B7C0CE}
+.pd3-fr strong{color:var(--text-2)}
 
 /* ---- a3 primary CTA + favorite ---- */
 .pd3-cta{display:flex;gap:8px;margin-top:14px}
@@ -1516,7 +1525,7 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .pd3-import svg{flex:none}
 .pd3-import:not(:disabled):hover{transform:translateY(-1px)}
 .pd3-import:disabled{opacity:.4;cursor:not-allowed}
-.pd3-favbtn{width:44px;height:44px;flex:none;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:#E7ECF3;cursor:pointer;padding:0}
+.pd3-favbtn{width:44px;height:44px;flex:none;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-2);cursor:pointer;padding:0}
 .pd3-favbtn:hover{background:rgba(255,255,255,.09)}
 .pd3-favbtn.on{color:var(--accent);border-color:var(--accent-soft)}
 .pd3-plan{font-family:var(--font-mono);font-size:9px;color:var(--muted-2);text-align:center;margin-top:8px}
@@ -2285,11 +2294,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .car{background:radial-gradient(40px 20px at 50% 72%,rgba(255,150,40,.4),transparent 70%),linear-gradient(160deg,#1a1d22,#0b0c0f)}
 .axroot .prpl{background:linear-gradient(150deg,#2a2440,#14101a)}
 .axroot .teal{background:linear-gradient(150deg,#14302e,#0c1a18)}
-.axroot .crumb{display:flex;align-items:center;gap:9px;margin-bottom:12px}
-.axroot .crumb .bk{width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);background:var(--card);display:grid;place-items:center;color:var(--mut);cursor:pointer}
-.axroot .crumb .bk:hover{color:var(--txt)}
-.axroot .crumb .path{color:var(--mut);font-size:12px}
-.axroot .crumb .path b{color:var(--txt);font-weight:700}
+/* D7 (#P1-plagin): `.crumb` (5 qoida) O'CHIRILDI — butun repoda mos DOM/JS yo'q edi (eski
+   navigatsiya avlodidan qolgan). U hali `--line2/--card/--mut/--txt` eski alias nomlarini
+   ishlatardi, ya'ni grep bilan qidirganda tirik avlod kabi ko'rinardi va auditni chalg'itardi. */
 /* #142 (PX5): ".describe" uslublari o'chirildi — mos DOM elementi yo'q edi (o'lik kod). */
 .axroot .busybadge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--acc);border:1px solid var(--acc2);border-radius:999px;padding:4px 9px;cursor:pointer;animation:pulse 1.4s infinite}
 .axroot 50%{opacity:.5}
@@ -2877,7 +2884,11 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axsp .sp-bulk{display:none;align-items:center;flex-wrap:wrap;gap:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:8px 11px;margin:0 2px 10px} /* SC_34: wrap — 320px panelda Select all/Clear sig'sin */
 .axsp .sp-bulk.on{display:flex}
 .axsp .sp-bulk-n{font-size:11.5px;font-weight:700;color:var(--txt)}
-.axsp .sp-bulk-del{background:#ff5e5e;color:#fff;border:0;border-radius:999px;padding:6px 14px;font-weight:800;font-size:11px;cursor:pointer}
+/* D7 (#P1-plagin) — to'ldirilgan `--danger` (xom #ff5e5e emas) + QORONG'I siyoh: uch temaning
+   qizillari yorug' (#ff675f/#ff635c/#ff6c7d), oq matn bilan kontrast ~2.9:1 bo'lib 11px/800
+   yozuv uchun AA'dan (4.5:1) o'tmasdi. Qorong'i siyoh ~6:1 beradi va aksent pilyulalarining
+   (`--on-accent`) mavjud tiliga mos keladi. */
+.axsp .sp-bulk-del{background:var(--danger);color:var(--bg-deep);border:0;border-radius:999px;padding:6px 14px;font-weight:800;font-size:11px;cursor:pointer}
 .axsp .sp-bulk-del[disabled]{opacity:.5;cursor:default}
 .axsp .sp-bulk-cancel{background:transparent;border:1px solid rgba(255,255,255,.14);color:var(--mut);border-radius:999px;padding:6px 12px;font-weight:700;font-size:11px;cursor:pointer}
 .axsp .sp-check{width:20px;height:20px;flex:none;border-radius:6px;border:1.5px solid var(--mut2);display:grid;place-items:center;color:transparent}
@@ -3159,16 +3170,24 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .opt b{font-weight:600;font-size:12.5px;display:block}
 .axig .opt small{font-size:10px;color:var(--muted-2);display:block;margin-top:1px}
 .axig .opt .ocar{margin-left:auto;color:var(--muted-2);display:flex;flex:none}
-.axig .warn{background:rgba(255,178,124,.08);border:1px solid rgba(255,178,124,.26);color:#F0CBAA}
+/* D7 (#P1-plagin) — ogohlantirish/xato bannerlari TEMAGA bo'ysunadi. Ilgari fon/hoshiya/matn
+   xom `rgba(255,178,124,α)` va `#F0CBAA` edi: `--warning` uch temada uch xil tus (noir #f7c967 ·
+   neon #ffd45c · cold #ffc96c), shuning uchun banner yonidagi `.wi` ikonasi (allaqachon
+   `var(--amber)`) bilan rangi to'g'ri kelmasdi. Tus kerak bo'lganda `color-mix` — token rangi
+   saqlanadi, faqat yorqinligi matn tomon suriladi (D6 Q2 qarori bilan bir xil naqsh). */
+.axig .warn{background:var(--warning-soft);border:1px solid color-mix(in srgb,var(--warning) 26%,transparent);color:color-mix(in srgb,var(--warning) 70%,var(--text))}
 .axig .warn .wi{color:var(--amber)}
 
 /* ── b12 — chekka holatlar (kam kredit banner · sessiya modal · bo'sh hero) ── */
-.axig .lowcred{display:none;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:rgba(255,107,94,.08);border:1px solid rgba(255,107,94,.26);margin-bottom:10px;cursor:pointer}
+/* D7 (#P1-plagin) — `.warn` bilan bir xil sabab: xom `rgba(255,107,94,α)` = eski #ff6b5e, holbuki
+   `--danger` noir'da #ff675f, neon'da #ff635c, cold'da #ff6c7d. Ichidagi `svg` allaqachon
+   `var(--red)` edi, ya'ni ikon va fon uch temadan ikkitasida turli qizilda edi. */
+.axig .lowcred{display:none;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;background:var(--danger-soft);border:1px solid color-mix(in srgb,var(--danger) 26%,transparent);margin-bottom:10px;cursor:pointer}
 .axig .lowcred.on{display:flex}
 .axig .lowcred svg{flex:none;color:var(--red)}
-.axig .lowcred .lt{font-size:10.5px;font-weight:600;color:#FFC6BF}
-.axig .lowcred .ls{font-family:var(--font-mono);font-size:8.5px;color:#D99790;margin-top:1px}
-.axroot .ai-cred.low{background:rgba(255,107,94,.12);border-color:rgba(255,107,94,.3);color:var(--red)}
+.axig .lowcred .lt{font-size:10.5px;font-weight:600;color:color-mix(in srgb,var(--danger) 40%,var(--text))}
+.axig .lowcred .ls{font-family:var(--font-mono);font-size:8.5px;color:color-mix(in srgb,var(--danger) 55%,var(--text-2));margin-top:1px}
+.axroot .ai-cred.low{background:color-mix(in srgb,var(--danger) 12%,transparent);border-color:color-mix(in srgb,var(--danger) 30%,transparent);color:var(--red)}
 .axroot .ai-cred.low .cs{color:var(--red)}
 /* SC_41 PART B: .emptyhero (recent "No generations yet") CSS o'chirildi — endi ishlatilmaydi */
 .ai-sess-ov{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:0 34px}
@@ -3809,6 +3828,21 @@ html.cep-mode .af-topbar{height:44px}
   .fhome{padding-top:10px}
   .fhome-sechd{margin:10px 2px 6px}
 }
+
+/* ── R5-H · Kichik × tugmalar: KO'RINISH kichik, BOSISH maydoni ≥22px ── */
+/* Zichlik qatlami video tool'dagi olib-tashlash tugmalarini 18→15/16px ga kichraytiradi
+   (:3109 `.fbx`, :3123 `.rx`, :3127 `.savedcard .del`) — vizual jihatdan to'g'ri, chunki ular
+   62px/46px kartalar ustida turadi, lekin bosish nishoni sichqoncha uchun ham kichik. O'lchamni
+   kattalashtirish kartani bosib qo'yadi, shuning uchun `::after` bilan KO'RINMAS maydon
+   kengaytiriladi. `inset` qiymati -5px: tugmalar `border-box` va 1px chegaraga ega, ya'ni
+   `::after` ning o'lchov bazasi padding-box (15px → 13px). Brauzerda o'lchandi (elementFromPoint
+   bilan piksel-piksel): -5px → `.rx` 23×23, `.fbx` 24×24, `.del` 26×26 — hammasi ≥22px.
+   (-4px sinovda `.rx` uchun 21px bergan edi — chegara hisobga olinmagani uchun.)
+   Radius meros bo'ladi, ya'ni aylana shakli buzilmaydi. Sabab shu blokda: kichraytirish ham shu
+   qatlamda — ikkisi bir joyda tursin, aks holda zichlik o'zgarganda nishon esdan chiqadi. */
+.axvg .fbox .fbx::after,
+.axvg .mrt .rx::after,
+.axvg .savedcard .del::after{content:'';position:absolute;inset:-5px;border-radius:inherit}
 </style>
 </head>
 <body>
@@ -4259,7 +4293,7 @@ html.cep-mode .af-topbar{height:44px}
                             <!-- Docked composer (mockup ai-dock): refs → prompt → settings row → cost+Generate → balance -->
                             <div class="axws-dock" id="igRefSect">
                               <div class="warn" id="igRefWarn"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Reference is <b>required</b> for this model — add at least 1 image.</span></div>
-                              <div class="lowcred" id="igLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="igLowNeed"></div></div></div>
+                              <div class="lowcred" data-lowcred="ig"></div><!-- D7: ichi umumiy to'ldiruvchidan (afLowCred yonida) -->
                               <div class="axws-refs">
                                 <div class="addbtn axws-refadd" id="igRefAdd" title="Add references — images to edit or combine · type @ to mention"><span class="pl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span><span class="refct" id="igRefCt" style="display:none"></span></div>
                                 <!-- SC_43: referens sig'imi ikonka indikatori (image kind) -->
@@ -4397,7 +4431,7 @@ html.cep-mode .af-topbar{height:44px}
                             <!-- Docked composer: frames (refs) → preset chips → prompt → settings row → Generate → balance -->
                             <div class="axws-dock">
                               <div class="warn" id="vgWarn" style="display:none"><span class="wi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Start frame is required — add it with +.</span></div>
-                              <div class="lowcred" id="vgLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="vgLowNeed"></div></div></div>
+                              <div class="lowcred" data-lowcred="vg"></div><!-- D7: ichi umumiy to'ldiruvchidan (afLowCred yonida) -->
                               <!-- SC_42: UNIFIED INPUT ZONE — one [+] add-input menu + attachment strip.
                                    FRAMES box, "Frames"/"References" labels, the counter line and the limits
                                    sentence are GONE from the resting composer; their functionality lives in the
@@ -4609,7 +4643,7 @@ html.cep-mode .af-topbar{height:44px}
 
                             <!-- Docked composer: voice/sfx toggle → script → voice/duration → Generate → balance -->
                             <div class="axws-dock">
-                              <div class="lowcred" id="agLowBanner" title="Top up credits — Settings" onclick="if(window.axGo)window.axGo('settings')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg><div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="agLowNeed"></div></div></div>
+                              <div class="lowcred" data-lowcred="ag"></div><!-- D7: ichi umumiy to'ldiruvchidan (afLowCred yonida) -->
                               <div class="ai-seg" style="margin-bottom:9px">
                                 <button type="button" class="ai-seg-i is-on" id="agModeVoice">Voice over</button>
                                 <button type="button" class="ai-seg-i" id="agModeSfx">Sound FX</button>
@@ -11175,6 +11209,32 @@ async function bootPlugin(){
     var vg=document.getElementById('vgCredit'); if(vg)vg.innerHTML=t;
     var ag=document.getElementById('agCredit'); if(ag)ag.innerHTML=t; // P8: audio tool chip'i ham sinxron
   };
+  // D7 (#P1-plagin) — UMUMIY "kam kredit" banneri. Ilgari uchta tool (ig/vg/ag) markup'da ham
+  // (bir xil 14px SVG + .lt/.ls tuzilishi, faqat id prefiksi farqli), gate kodida ham
+  // (`toggle('on') + LowNeed.textContent`) mustaqil nusxaga ega edi — to'rt joyda. Endi markup
+  // `data-lowcred="<prefiks>"` bo'sh konteyneridan generatsiya qilinadi (pastdagi to'ldiruvchi),
+  // holat esa shu funksiyadan o'tadi. `need/have` matni bitta joyda formatlanadi.
+  window.afLowCred=function(prefix,low,text){
+    var b=document.getElementById(prefix+'LowBanner'); if(!b)return low;
+    b.classList.toggle('on',!!low);
+    var n=document.getElementById(prefix+'LowNeed'); if(n&&text!=null)n.textContent=text;
+    return low;
+  };
+  // `need ✦ N · you have ✦ M` — yagona format (uchta gate bir xil satrni qayta yozardi).
+  window.afLowCredNeed=function(need,avail){ return 'need ✦ '+need+' · you have ✦ '+((avail!=null)?avail:'—'); };
+  // Bannerlarni bir marta to'ldirish: `data-lowcred="ig|vg|ag"` bo'sh konteyner → bir xil ichki tuzilish.
+  // Skript parse vaqtida ishlaydi va uchta konteyner ham yuqorida (markup'da) e'lon qilingan, ya'ni
+  // birinchi gate chaqirig'idan (`igCreditGate` va h.k.) ancha oldin id'lar mavjud bo'ladi.
+  (function(){
+    var ic='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg>';
+    var ls=document.querySelectorAll('[data-lowcred]');
+    for(var i=0;i<ls.length;i++){ var el=ls[i], p=el.getAttribute('data-lowcred');
+      el.id=p+'LowBanner';
+      el.title='Top up credits — Settings';
+      el.innerHTML=ic+'<div style="flex:1"><div class="lt">Not enough credits</div><div class="ls" id="'+p+'LowNeed"></div></div>';
+      el.onclick=function(){ if(window.axGo)window.axGo('settings'); };
+    }
+  })();
   // UMUMIY video thumbnail — So'nggi grid kartasi (rasm tool + video tool BIR XIL ishlatadi).
   // CSS background-image videoni render qilmaydi (qora) → <video #t=0.1 muted> + birinchi kadrga seek.
   // poster bo'lsa u darhol ko'rinadi; preload=auto — CEP CEF preload=metadata bilan kadr chizmaydi.
@@ -12657,7 +12717,7 @@ window.afGallery=(function(){
     var committed=(activeJobs||[]).reduce(function(a,j){ return a+(j.jcost||0); },0);
     var avail=(cr!=null)?(cr-committed):null;
     var low=(avail!=null)&&(c>avail);
-    var b=$('igLowBanner'); if(b){ b.classList.toggle('on',low); var nn=$('igLowNeed'); if(nn)nn.textContent='need ✦ '+c+' · you have ✦ '+((avail!=null)?avail:'—'); }
+    window.afLowCred('ig',low,window.afLowCredNeed(c,avail)); // D7: umumiy banner helper
     var chip=$('igCredit'); if(chip)chip.classList.toggle('low',low);
     return low;
   }
@@ -13912,7 +13972,7 @@ window.afGallery=(function(){
     var committed=(activeJobs||[]).reduce(function(a,j){ return a+(j.jcost||0); },0);
     var avail=(cr!=null)?(cr-committed):null;
     var low=(avail!=null)&&(need>avail);
-    var b=$('vgLowBanner'); if(b){ b.classList.toggle('on',low); var nn=$('vgLowNeed'); if(nn)nn.textContent='need ✦ '+need+' · you have ✦ '+((avail!=null)?avail:'—'); }
+    window.afLowCred('vg',low,window.afLowCredNeed(need,avail)); // D7: umumiy banner helper
     var chip=$('vgCredit'); if(chip)chip.classList.toggle('low',low);
     return low;
   }
@@ -16003,7 +16063,7 @@ window.afGallery=(function(){
   function agCreditGate(){
     var cr=agCredits(), need=agCost();
     var low=(cr!=null)&&need>0&&(need>cr);
-    var lb=$('agLowBanner'); if(lb){ lb.classList.toggle('on',low); var ln=$('agLowNeed'); if(ln)ln.textContent='need ✦ '+need+' · you have ✦ '+((cr!=null)?cr:'—'); }
+    window.afLowCred('ag',low,window.afLowCredNeed(need,cr)); // D7: umumiy banner helper
     return low;
   }
 
@@ -16170,7 +16230,7 @@ window.afGallery=(function(){
       setAgBusy(false);
       var msg=(typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Failed to start';
       toast(msg,'error');
-      var lb=$('agLowBanner'); if(lb&&/credit/i.test(String(msg))){ lb.classList.add('on'); var ln=$('agLowNeed'); if(ln)ln.textContent='This run needs ✦'+agCost(); }
+      if(/credit/i.test(String(msg)))window.afLowCred('ag',true,'This run needs ✦'+agCost()); // D7: umumiy banner helper
     });
   });
 

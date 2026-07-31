@@ -166,6 +166,15 @@ sanalgan to'rt belgidan (`⬇↻⧉🗑`) tashqari, shu sababli tegilmadi. Ular 
 chip ikonasi sifatida ishlatiladi; `⊞`/`♪` OT'ga qarab har xil kenglikda chiqadi. **Tavsiya:** sprayt
 (`i-img`/`i-vid`/`i-wave` allaqachon bor) yoki Phosphor sinfiga o'tkazish.
 
+**N10 (P2, `plugins/after-effects-cep/AssetFlow_Plugin.html`) — `#E7ECF3` matn rangi 28 joyda xom.**
+D7 zonasi (`:1367–1530`) tokenlashtirilganda ma'lum bo'ldi: aynan shu hex butun plagin bo'ylab
+28 marta takrorlanadi (masalan `:894`, `:3120`, `:3134`, `:3428`, JS'da `:7892` — `.ck-plan.free`,
+`.fbx`, `.rx`, `.pl-free` va h.k.). U mohiyatan `--text-2`/`--text` ning qo'lda yozilgan nusxasi,
+lekin uchta tema matn tusi bir xil emas (noir kul, neon salqin-yashil, cold ko'k-kul) — natijada bu
+elementlar tema almashganda o'zgarmaydi va yonidagi tokenli matn bilan yengil farq qiladi. D7
+scope'i faqat `:1367–1530` edi, shuning uchun qolgan 27 joy tegilmadi. **Tavsiya:** alohida
+mexanik o'tish (`#E7ECF3` → `var(--text-2)`, JS `:7892` fallback ham) + uchta temada solishtirish.
+
 ---
 
 ## 7 · Qarorlar (BATCH ichida qabul qilingan, kod bilan tasdiqlangan)
@@ -220,3 +229,19 @@ paneli `↻` (`:16875`). Yarim-Phosphor ekran qoldirish findingni yopmagan bo'la
 hammasi tuzatildi. Karta panelida Phosphor EMAS, sprayt (`i-refresh` yangi simvoli) ishlatildi —
 yonidagi `i-down` ham sprayt, ikki ikon tizimi bir panelda shtrix qalinligida farq qilardi.
 Yo'l brauzerda sinaldi (bbox 16×16 yoy + 4×4 uchi). Qolgan gliflar → N9.
+
+**Q8 (D7 #P1-plagin) — kichik × tugmalar uchun `::after` bosish maydoni `inset:-5px` (−4px EMAS).**
+Birinchi urinish `-4px` edi: "15/16px + 8px = 23/24px" hisobi bilan. Brauzerda `elementFromPoint`
+bilan piksel-piksel o'lchaganda `.rx` faqat **21×21** chiqdi — tugmalar `border-box` va 1px
+chegaraga ega, ya'ni `::after` ning o'lchov bazasi border-box emas, **padding-box** (15 → 13px).
+`-5px` bilan: `.rx` 23×23, `.fbx` 24×24, `.del` 26×26 — hammasi ≥22px (uchta kenglikda ham
+tasdiqlandi, R5 o'lchamlari kenglikka bog'liq emas). Saboq: `inset` bilan nishonni kattalashtirishda
+chegara qalinligini hisobga ol — aks holda hisob-kitob 2px yolg'on chiqadi.
+
+**Q9 (D7 #P1-plagin) — `lowcred` markupi parse vaqtida to'ldiriladi, `data-lowcred` konteyneri orqali.**
+Uch nusxa (ig/vg/ag) faqat id prefiksi bilan farq qilardi. Tanlangan yo'l: bo'sh
+`<div class="lowcred" data-lowcred="ig">` + `afLowCred` yonidagi bir martalik to'ldiruvchi (sinxron,
+`<script>` blokida `:11164`, uch konteyner markupdan ancha keyin). Holat esa `afLowCred(prefix,low,text)`
++ `afLowCredNeed(need,avail)` orqali — to'rtta iste'molchi (`:12704`, `:13959`, `:16050`, `:16217`)
+bitta satrga qisqardi. `escHtml` siyosati buzilmadi: to'ldiruvchiga faqat o'zimizning statik atribut
+qiymati (`ig|vg|ag`) kiradi, foydalanuvchi matni emas — `need/have` raqamlari `textContent` bilan.
