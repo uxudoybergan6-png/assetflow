@@ -259,6 +259,21 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 
 - **D11.b** — Eski "composer Upscale tool" rejimi (`axIsUpscaleTool`, kod izohlarida "SC_17: butunlay olib tashlandi" deyilgan, `index.html:16956-16957,18292,21128`) aslida **hali ham to'liq ishlaydi** — mavjud upscale-turdagi gen'ni "Regenerate" qilganda shu rejimga qaytiladi (`index.html:21522,21637,21170` — to'liq composer: promt bar, sifat chip'lari, ref-chip'lar). Bu foydalanuvchining "ortiqcha parametr va promtlar chiqyapti" shikoyatining aynan sababi bo'lishi mumkin — "Use ▾ → Upscale" yo'li o'zi toza (`runTopazOp`, `index.html:20642-20681` — hech qanday promt/parametr so'ramaydi), lekin "Regenerate" orqali eski to'liq composer'ga qaytish mumkin. · `index.html:21522, 21637, 21170` · P2 · CC
 
+  > **✅ Tuzatildi (2026-08-02).** Aniqlik: server `GET /gen/models` `opType` modellarni composer
+  > picker'idan ALLAQACHON chiqarib tashlaydi (`studio-gen.ts:854-857`, R4_07) — demak upscale
+  > rejimiga model tanlash orqali KIRIB bo'lmaydi, yagona kirish nuqtasi "Regenerate"
+  > (`restoreGenToComposer`, `index.html:21200-21245`). Sozlama chiplari ham aslida toza edi
+  > (5002: `aspects:["Auto"]`, `count:[1]` → ⚙ chip umuman yo'q; 5001: faqat `Factor x2/x4`).
+  > Haqiqiy ortiqcha yuza — **prompt paneli va "Enhance" chipi**: ular render bo'lardi, lekin
+  > upscale provayderi promptni O'QIMAYDI (`generate()` avto-nom yozadi) — ya'ni yolg'on UI.
+  > Tuzatish: `showPromptBar = !axIsUpscaleTool` — prompt paneli + Enhance chipi render bo'lmaydi;
+  > `hasComposerContent` yashirin promptdan "Clear" chiqarmaydi; `generate()` upscale'da har doim
+  > avto-nom yozadi (boshqa asbobdan qolgan ko'rinmas matn natija nomiga sizib ketmasin).
+  > Qolgani: manba (＋) + faktor (⚙ x2/x4) + Generate. Plaginda bu yuza umuman yo'q (SC_17).
+  > **Qilinmadi (ataylab):** "Regenerate"ni to'g'ridan-to'g'ri `runTopazOp` bilan qayta ishga
+  > tushirish — gen `params`ida faqat muddati o'tuvchi imzolangan URL saqlanadi, manba `genId`
+  > emas; uni qo'shish imzolangan-quote canonical params'ini o'zgartiradi (pul zonasi).
+
 - **D11.c** — Upscale natijasi "alohida yangi karta" bo'lib chiqishi kerak degan talab — kodda `runTopazOp` haqiqatan yangi `Generation` yaratadi (`FFAPI.gen(...)`, alohida `id`), demak texnik jihatdan alohida karta sifatida saqlanadi. Lekin D7 (sessiya grid faol asbobga qarab filtrlaydi) sabab, agar joriy asbob rejimi (image/video) upscale natija turiga mos kelmasa, bu yangi karta "This session" polosasida ko'rinmasligi mumkin — D7 bilan bog'liq, alohida tuzatish emas. · bog'liq: D7 · P2
 
 - **D11.d** — Before/after taqqoslash slайder — **kodda umuman yo'q** (butun loyihada faqat `.compare-strip` klassi topildi, u esa narx sahifasidagi marketing taqqoslash jadvali, media slайder emas — `index.html:15836-15881`). Bu D12 (Q9, natija detal ko'rinishi) bilan bir xil ildiz — pastga qara, alohida ID ochilmadi. · bog'liq: D12 · P2
@@ -300,11 +315,11 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 | D7 | P2 | Web (o'lik kod) / Plagin (sessiya arxitekturasi) | CC + EGA | ⚠️ Qayta baholandi — web o'lik filtr **tuzatildi**; plaginda per-tool sessiya = EGA qarori |
 | D7.1 | P2 | Web — Upscale natija shu filtr sabab yo'qolishi mumkin | CC | ❌ Bekor — filtr o'lik edi, jonli xavf yo'q |
 | D8 | P3 | Web/Plagin — model nomi qisqargan, logotip yo'q | CC | Qisman tasdiqlandi |
-| D9 | P3 | Web — audio karta player yo'q; related sarlavha noto'g'ri | CC | Qisman — filtr to'g'ri, sarlavha+player yo'q |
+| D9 | P3 | Web — audio karta player yo'q; related sarlavha noto'g'ri | CC | ✅ **Tuzatildi** — `waveBg()` to'lqin fon (muqovasiz Music/SFX) + `relatedTitle` turga mos. Grid'da inline `<audio>` ATAYLAB yo'q (30+ karta = 30+ preload) — pleer detal/lightbox'da |
 | D10 | P3 | Web — dastur logotipi o'rniga rang+qisqartma | CC | Tasdiqlandi |
 | D11 | P0 | API — Upscale (Topaz) umuman ishlamaydi | EGA | Tasdiqlandi — TOPAZ_API_KEY yo'q |
 | D11.a | P2 | API — `/gen/ops` provayder holatini tekshirmaydi | CC | ✅ **Tuzatildi** — `isProviderConfigured()` yagona manba (`/gen` guard + `/gen/ops`) |
-| D11.b | P2 | Web — eski composer-Upscale rejimi "Regenerate" orqali qaytadi | CC | Tasdiqlandi |
+| D11.b | P2 | Web — eski composer-Upscale rejimi "Regenerate" orqali qaytadi | CC | ✅ Tuzatildi (prompt+Enhance yashirildi; qolgani manba+faktor+Generate) |
 | D11.c | P2 | Web — Upscale natija D7 filtri sabab yo'qolishi mumkin | CC | ❌ Bekor — D7 filtri o'lik edi (D7.1 bilan bir xil) |
 | D11.d | P2 | Web — before/after slайder yo'q | CC | Tasdiqlandi (yo'qligi), bog'liq D12 |
 | D12 | P2 | Web — gen detal ko'rinish Magnific-uslub emas | CC | Tasdiqlandi (gap aniq) |

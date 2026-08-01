@@ -16412,7 +16412,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </sc-if>
               <!-- FAZA D · related = boy karta (bare thumb emas); bo'sh bo'lsa butun seksiya yashirin -->
               <sc-if value="{{ detail.hasRelated }}" hint-placeholder-val="{{ true }}">
-                <div class="va-sec" style="padding:26px 0 12px"><h3>Related templates</h3><span class="cnt">SAME CATEGORY</span></div>
+                <div class="va-sec" style="padding:26px 0 12px"><h3>{{ detail.relatedTitle }}</h3><span class="cnt">SAME CATEGORY</span></div>
                 <div class="va-rel4">
                   <sc-for list="{{ detail.related }}" as="r" hint-placeholder-count="4">
                     <div data-id="{{ r.id }}" onclick="{{ openDetail }}" class="va-rc" role="button" tabindex="0">
@@ -17059,10 +17059,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </sc-if>
               <!-- BATCH5 #6: textarea → chip-editor HOST (contenteditable/listeners installChipEditor'da
                    imperativ o'rnatiladi; engine bu div BOLALARINI boshqarmaydi — pill DOM saqlanadi) -->
+              <!-- D11.b — Upscale/op rejimida prompt paneli UMUMAN render bo'lmaydi: bu asboblar
+                   promptni o'qimaydi (server avto-nom yozadi). installChipEditor host yo'qligini
+                   o'zi ko'taradi (20836) va asbob almashganda qayta mount qiladi. -->
+              <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}">
               <div class="va-promptwrap">
                 <div class="{{ promptCls }}" data-ph="{{ promptPh }}"></div>
                 <button class="{{ promptExpCls }}" onclick="{{ toggleComposerExpand }}" title="{{ promptExpTip }}"><svg class="va-ic"><use href="#i-chev"></use></svg></button>
               </div>
+              </sc-if>
               <div class="va-dockrow">
                 <div class="va-setgroup">
                 <span class="va-set mode" data-pop="mode" data-pop-root="mode" onclick="{{ toggleChip }}" role="button" tabindex="0"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
@@ -17095,7 +17100,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><div class="va-sgrow"><span class="va-sgh">Audio{{ audioLockNote }}</span><button class="{{ audioToggleCls }}" onclick="{{ toggleAudio }}" title="{{ audioLockNote }}"></button></div></sc-if>
                   </div></sc-if>
                 </span></sc-if>
-                <span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span>
+                <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}"><span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span></sc-if>
                 <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)" role="button" tabindex="0">✕ <span class="va-clr-lbl">Clear</span></span></sc-if>
                 </div>
                 <div class="va-genwrap">
@@ -19499,6 +19504,20 @@ class Component extends DCLogic {
   }
 
   grad(h) { return 'radial-gradient(120% 120% at 22% 12%,hsl(' + h + ' 46% 30%) 0%,hsl(' + ((h + 26) % 360) + ' 52% 15%) 42%,hsl(' + ((h + 44) % 360) + ' 60% 7%) 100%)'; }
+  // D9(a) — audio kartasi (Music/SFX) uchun to'lqin foni: gradient asos + `h`dan deterministik
+  //   chizilgan SVG bar'lar. Grid'da ATAYLAB <audio> elementi YO'Q — bir sahifada 30+ audio
+  //   karta bo'lishi mumkin, har biriga `preload="metadata"` qo'yilsa 30+ so'rov ketardi.
+  //   Haqiqiy `.va-aplayer` (play/seek/vaqt) detal sahifada va lightbox'da ishlaydi; karta
+  //   bosilganda o'sha yerga olib boradi (`openDetail` allaqachon ulangan).
+  waveBg(h) {
+    const N = 56, bars = [];
+    for (let i = 0; i < N; i++) {
+      const v = 10 + Math.abs(Math.sin(h * 0.11 + i * 0.63) * Math.cos(i * 0.21)) * 80;
+      bars.push('<rect x="' + (i * 8 + 2) + '" y="' + ((100 - v) / 2).toFixed(1) + '" width="4" height="' + v.toFixed(1) + '" rx="2"/>');
+    }
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + (N * 8) + '" height="100" preserveAspectRatio="none" fill="hsl(' + h + ' 72% 74%)" fill-opacity=".82">' + bars.join('') + '</svg>';
+    return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") center/86% 44% no-repeat,' + this.grad(h);
+  }
   hueOf(s) { let n = 0; const t = String(s); for (let i = 0; i < t.length; i++) n = (n * 31 + t.charCodeAt(i)) % 360; return n; }
   // SC_22 — sessiya nomi: birinchi ~4 mazmunli so'z (@mention/punktuatsiya olib tashlanadi),
   // Title Case, 28 belgida ellipsis; prompt bo'sh → "New session · <Mon D>".
@@ -20582,9 +20601,11 @@ class Component extends DCLogic {
       const cnt = kind === 'image' ? (this.state.refImages || []).length : kind === 'video' ? (this.state.refVideos || []).length : (this.state.refAudios || []).length;
       return (parseInt(d, 10) > cnt) ? '' : m;
     }).replace(/[ \t]{2,}/g, ' ').trim();
-    // BATCH4 #1/#2 — Upscale prompt ishlatmaydi: bo'sh bo'lsa avto-nom (fayl nomi ham shundan)
+    // BATCH4 #1/#2 — Upscale prompt ishlatmaydi: avto-nom (fayl nomi ham shundan)
+    // D11.b — prompt paneli bu rejimda RENDER BO'LMAYDI, shuning uchun boshqa asbobdan qolgan matn
+    //   ham EMAS: har doim avto-nom (aks holda ko'rinmas matn natija nomiga sizib ketardi).
     const isUp = model.feature === 'image-upscale' || model.feature === 'video-upscale';
-    if (isUp && prompt.length < 2) prompt = 'Upscale ' + ((this.state.aiQuality === 'x4') ? 'x4' : 'x2') + (model.feature === 'video-upscale' ? ' video' : '');
+    if (isUp) prompt = 'Upscale ' + ((this.state.aiQuality === 'x4') ? 'x4' : 'x2') + (model.feature === 'video-upscale' ? ' video' : '');
     // BATCH4 #2 — manba video majburiy
     if (model.feature === 'video-upscale' && !this.state.refVideos.length) { this.toast('Add the source video first — via ＋ or “Use ▾ → Upscale” on a video result'); return; }
     if (prompt.length < 2) { this.toast('Write a prompt'); return; }
@@ -21649,8 +21670,8 @@ class Component extends DCLogic {
     };
     const toolTitle = (toolMetaA[tool.key] || {}).title || tool.short;
     const toolIconRef = (toolMetaA[tool.key] || {}).iconRef || '#i-img';
-    const promptPh = axIsUpscaleTool ? 'Optional note — pick a source via ＋ and choose the factor (x2 / x4)…'
-      : tool.mode === 'voice' ? ('Type text — it will be read in a natural voice' + (model && model.maxChars ? ' (up to ' + model.maxChars + ' characters)' : '') + '…') : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
+    // D11.b — upscale shoxobchasi olib tashlandi: bu rejimda prompt paneli render bo'lmaydi (showPromptBar)
+    const promptPh = tool.mode === 'voice' ? ('Type text — it will be read in a natural voice' + (model && model.maxChars ? ' (up to ' + model.maxChars + ' characters)' : '') + '…') : (tool.mode === 'sfx' ? 'Describe a sound — e.g. “deep cinematic whoosh with metallic tail”…' : 'What do you want to make? Describe your idea…');
     const unitCost = (countOpts.length > 1 && nSel > 1) ? Math.round(costNow / nSel) : costNow;
     const quotePrefix = (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + unitCost + ' = ') : '= ';
     const voiceVal = ((voiceOpts.find(v => v.id === genParams.voice)) || {}).label || '—';
@@ -21670,6 +21691,11 @@ class Component extends DCLogic {
     if (showVoices && voiceVal !== '—') settingsBits.push(voiceVal);
     if (showAudio) settingsBits.push('Audio ' + (audioOn ? 'On' : 'Off'));
     const showSettings = showSize || showRes || showQuality || (durOpts.length > 1) || (countsView.length > 1) || showVoices || showAudio || showBitrate;
+    // ── D11.b — Upscale/op composer'i MINIMAL: manba (＋) + faktor (⚙ x2/x4) + Generate.
+    //   Prompt paneli va "Enhance" chipi render BO'LMAYDI — bu asboblar promptni provayderga
+    //   yubormaydi (generate() avto-nom yozadi, 20599). Ilgari to'liq matn composer'i ochiq turardi
+    //   va foydalanuvchi promptni upscale sifatiga ta'sir qiladi deb o'ylardi (yolg'on UI).
+    const showPromptBar = !axIsUpscaleTool;
     const settingsSummary = settingsBits.length ? settingsBits.join(' / ') : 'Settings';
     const audioToggleCls = 'va-swt' + (audioOn ? ' on' : '') + (audioLockedCap ? ' lock' : '');
     const audioLockNote = audioLockedCap ? ' (locked)' : '';
@@ -22048,11 +22074,13 @@ class Component extends DCLogic {
     const src = this.state.catalog;
     // ── FAZA C · boy karta (va-rc) maydonlari — FAZA D'da katalog masonry + detail related ham shu kartani ishlatadi ──
     const NEW_MS = 7 * 86400000; // "yangi" = oxirgi 7 kun
+    const AUD_TYPES = { music: 1, sfx: 1 };
     const rcOf = (t, withDate) => ({
       ...t, free: !t.pro,
-      // QA-FIX #14 — karta real <img> (thumbUrl) + hover'da previewUrl video (Artlist uslubi);
-      // thumb bor kartada fon=skeleton, chindan yo'q bo'lsagina gradient fallback.
-      g: t.thumbUrl ? '' : this.grad(t.h),
+      // D9(a) — Music/SFX: muqova rasmi bo'lmasa oddiy gradient plitka o'rniga to'lqin fon
+      //   (audio kontent grid'da boshqa turlardan ko'rinib tursin). Muqovasi bor bo'lsa rasm qoladi.
+      isAud: !!AUD_TYPES[this.typeOf(t)],
+      g: t.thumbUrl ? '' : (AUD_TYPES[this.typeOf(t)] ? this.waveBg(t.h) : this.grad(t.h)),
       medCls: 'med va-thumb' + (t.thumbUrl ? ' va-skel' : ''),
       imgSrc: t.thumbUrl || null, hasImg: !!t.thumbUrl,
       pv: t.previewUrl || null, hasPv: !!t.previewUrl,
@@ -22201,6 +22229,10 @@ class Component extends DCLogic {
       // FAZA D — related endi boy karta (rcOf), bo'sh bo'lsa seksiya yashirin
       related: colOthers.slice(0, 4).map(t => rcOf(t)),
       hasRelated: colOthers.length > 0,
+      // D9(b) — sarlavha turga mos bo'lsin. Mazmun ALLAQACHON to'g'ri filtrlangan
+      //   (colAll: `pillOf(t) === pillOf(dRaw)`), lekin sarlavha barcha turlar uchun qattiq kod
+      //   bilan "Related templates" edi — SFX/Music sahifasida noto'g'ri turga ishora qilardi.
+      relatedTitle: 'Related ' + this.pillLabel(this.pillOf(dRaw)).toLowerCase(),
       // FAZA D — stats qatori + 6 katakli spec grid (faqat real maydonlar)
       is4k: dRaw.qual === '4K',
       // BATCH6 — NEW badge (oxirgi 7 kun), muallif bosh harflari, orientatsiya to'liq (yorliq · nisbat)
@@ -23019,6 +23051,7 @@ class Component extends DCLogic {
       modelModalOpen: this.state.modelModalOpen, modelQ: this.state.modelQ,
       modelModalEmpty: modelGroupsView.length === 0,
       axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas && (rCaps.kind !== 'none' || refChipsView.length > 0),
+      showPromptBar, // D11.b — Upscale/op rejimida prompt + Enhance render bo'lmaydi
       // P22 — inline "kredit yetmaydi / shart bajarilmadi" darvoza qatori (modal EMAS)
       genGateOn, genGateMsg, genGateTopup, strictPolicyNote,
       // P8 — model-driven referens paneli (chips + add tugmalari) va audio/bitrate chip'lari
@@ -23256,7 +23289,8 @@ class Component extends DCLogic {
       // #6: setPrompt binding olib tashlandi — prompt endi chip-editor (installChipEditor input listener'i)
       improve: () => this.doEnhance(),
       // P12 — Clear: prompt + barcha referens (⌘Z bilan qaytariladi)
-      hasComposerContent: (this.state.aiPrompt || '').trim().length > 0 || this.state.refImages.length > 0 || this.state.refVideos.length > 0 || this.state.refAudios.length > 0 || !!this.state.refStartUrl || !!this.state.refEndUrl,
+      // D11.b — Upscale'da prompt ko'rinmaydi → "Clear" ham yashirin promptdan kelib chiqmasin
+      hasComposerContent: (showPromptBar && (this.state.aiPrompt || '').trim().length > 0) || this.state.refImages.length > 0 || this.state.refVideos.length > 0 || this.state.refAudios.length > 0 || !!this.state.refStartUrl || !!this.state.refEndUrl,
       clearComposer: (e) => { if (e) e.stopPropagation(); this.clearComposer(); },
       toggleModel: () => this.setState(st => ({ modelOpen: !st.modelOpen })),
       // PHASE B: full-modal ham SHU handler orqali tanlaydi (data-mode boshqa rejim
