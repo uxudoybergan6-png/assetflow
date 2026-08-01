@@ -1,19 +1,22 @@
-# Sessiya hisoboti — 2026-08-01 · Yagona vizual muharrir (Sayt + Plagin)
+# Sessiya hisoboti — 2026-08-01 · "Featured models" kartalari CMS'ga ulandi
 
-**Nima qilindi:** Admin "Website" va "Plugin CMS" bitta vizual muharrirga o'tdi (`admin-website.js`,
-`WS_SURF` = site | plugin): bosib tanlash, joyida matn tahriri, surish (drag + o'q tugmalari),
-kattalashtirish/kichraytirish, rang/oraliq/soya/radius, desktop va mobil uchun alohida qatlam,
-undo/redo. Plagin yuzasida REAL AE paneli same-origin iframe'da ochiladi — `prepare-cf-pages.mjs`
-uni `dist/admin/plugin-preview/` ga ko'chiradi (lokalda `dev-admin-server.mjs` mount qiladi).
-Bildirishnomalar (`notices[]` — banner/toast/modal, guest/user, sana oralig'i) web + plaginda.
+**Nima qilindi:** Ilova Home'dagi "Featured models" bloki (spotlight + 4 mini-karta + strip) endi
+vizual muharrirdan to'liq tahrirlanadi. Yangi CMS tugun: `appHome.featured` —
+`enabled`, `weekLabel`, `ctaLabel` (`{name}` = model nomi), `railTry`, `hero{…}`, `rail[4]`.
+Har slotda: `modelId` (katalogdan tanlash yoki bo'sh = avto evristika), `title`, `desc` va MEDIA
+sloti (rasm/GIF/MP4). Admin inspektoridagi "Model" ochiluvchi ro'yxati `/api/admin/pricing`
+dan quriladi (`wsLoadModels`, faqat NOM/ID). Fayllar: `landing-config.ts` (sxema+default+merge),
+`platform/index.html` (default/merge/hisoblash/`data-cms` belgilari/CSS), `js/admin-website.js`.
 
-**Topildi (tuzatildi):** (1) preview iframe yo'li NISBIY edi → `admin.getframeflow.app` da 404;
-root-absolut qilindi. (2) Plagindagi 5-daqiqalik `afCmsFetch` va localStorage keshi muharrirdagi
-SAQLANMAGAN draft'ni jimgina o'chirardi — `?ffcms=1` da ikkalasi ham o'chirildi; xuddi shu poyga
-platformada (`loadLandingConfig`) ham bor edi, bir xil tuzatildi. (3) Preview'da soxta AE oynasi,
-QA saxnasi va "Session expired" toast'lari chiqardi — bekor qilindi. (4) Lokalda sayt yuzasi
-ochilmasdi (`:8975` ni hech kim eshitmasdi) — `dev-studio-server.mjs` endi platformani o'sha portda beradi.
+**Topildi (tuzatildi):** (1) Kartalar 100% model katalogi + narx dvigatelidan hosil bo'lardi va
+bitta ham `data-cms` belgisi yo'q edi — shuning uchun muharrir ularni umuman ko'rmasdi (eski
+`TODO(FF)` "haftaning modeli"). (2) `.va-fmhero>*{position:relative}` qoidasi yangi media
+qatlamini kartadan tashqariga chiqarardi — `>.va-media` uchun `absolute; inset:0; z-index:0`.
 
-**Isbot:** admin'da tanlash→toolbar→`{fontSize:27,fontWeight:900,textAlign:center,scale:1.05}` jonli
-qo'llandi ✓; drag → `offsetX/Y 42/25` ✓; API build ✓ · public-copy 137/137 ✓ · panel-responsive ✓.
-**Kutilmoqda:** push + CF Pages deploy (admin `plugin-preview/` bilan), AE ichida `uiStyles` tekshiruvi.
+**Qoida (saqlangan):** kartadagi narx CMS'da EMAS — doim `modelCostBits` / ModelPricing dan.
+Sxemaga hech qanday kredit/narx maydoni qo'shilmadi.
+
+**Isbot:** admin'da spotlight bosildi → `appHome.featured.hero` (Model ro'yxatida 25 model + avto),
+mini-karta bosildi → `appHome.featured.rail.0` ✓. API build ✓ · public-copy 137/137 ✓ ·
+panel-responsive ✓ · CF Pages build ✓ · `studio:sync` ✓.
+**Kutilmoqda:** push + CF Pages/Cloud Run deploy (migratsiya shart emas — `data Json` ichida).

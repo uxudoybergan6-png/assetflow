@@ -70,6 +70,28 @@ async function wsLoadConfig(force) {
     WS_LOAD_ERR = e.message || "Failed to load";
   }
   if (CURRENT === "website") route("website");
+  wsLoadModels();
+}
+
+/* "Featured models" kuratsiyasi uchun AI model ro'yxati (faqat NOM/ID — narx EMAS).
+   Manba: /api/admin/pricing (yagona model katalogi). Karta narxi doim narx
+   dvigatelidan hisoblanadi, shuning uchun bu yerda hech qanday raqam saqlanmaydi. */
+let WS_MODELS = null;
+let WS_MODELS_INFLIGHT = false;
+async function wsLoadModels() {
+  if (WS_MODELS || WS_MODELS_INFLIGHT) return;
+  WS_MODELS_INFLIGHT = true;
+  try {
+    const d = await StudioApi.getAdminPricing();
+    const seen = {};
+    WS_MODELS = (d.models || [])
+      .filter((m) => m.enabled !== false && !seen[m.modelId] && (seen[m.modelId] = 1))
+      .map((m) => [String(m.modelId), `${m.label || m.modelId} · ${String(m.mode || "").toUpperCase()}`]);
+    if (CURRENT === "website") wsInspRender();
+  } catch (e) {
+    WS_MODELS = []; // ro'yxat kelmasa maydon oddiy matn kabi ishlaydi
+  }
+  WS_MODELS_INFLIGHT = false;
 }
 
 /* ── Umumiy yordamchilar ───────────────────────────────────── */
@@ -292,6 +314,10 @@ const WS_LABELS = {
   continueSessions: "Sessiyalar sarlavhasi", explore: "Explore sarlavhasi",
   categories: "Kategoriyalar sarlavhasi", recent: "So'nggilar sarlavhasi", shelf: "Tokcha sarlavhasi",
   browseAll: "Barchasi havolasi", ctaAction: "CTA amali",
+  /* ── Featured models (app Home) ── */
+  featured: "Tanlangan modellar bloki", modelId: "Model", weekLabel: "Hafta nishoni",
+  ctaLabel: "Spotlight tugmasi ({name} = model nomi)", railTry: "Mini-karta nishoni",
+  "appHome.featured.hero": "Spotlight (haftaning modeli)", "appHome.featured.rail": "Mini-kartalar",
 };
 
 function wsLabelFor(path) {
@@ -324,6 +350,10 @@ function wsEnumFor(path) {
   if (path === "home.hero.mediaMode") return [["auto", "Avto (oxirgi gen ustun)"], ["media-first", "Doim admin media"]];
   if (seg === "font") return WS_FONTS.map((f) => [f.key, f.label]);
   if (seg === "mediaType") return [["", "— avto —"], ["image", "Rasm / GIF"], ["video", "Video"]];
+  // Featured models — modelni katalogdan tanlash (bo'sh = avtomatik evristika)
+  if (seg === "modelId" && WS_MODELS && WS_MODELS.length) {
+    return [["", "— avto (katalogdan) —"]].concat(WS_MODELS);
+  }
   return null;
 }
 

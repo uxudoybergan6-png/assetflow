@@ -14989,6 +14989,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-fmmini .cm{display:flex;align-items:center;gap:7px;margin-top:4px}
   .ff .va-fmmini .try{position:absolute;top:10px;right:10px;z-index:1;font:700 10px var(--sans);padding:5px 12px;border-radius:100px;background:rgba(6,8,11,.6);border:1px solid rgba(255,255,255,.22);color:#fff;opacity:0;transition:opacity .2s ease}
   .ff .va-fmmini:hover .try{opacity:1}
+  /* admin CMS media (appHome.featured.*) — `>*` qoidasi position:relative qilib qo'yardi */
+  .ff .va-fmhero>.va-media,.ff .va-fmmini>.va-media{position:absolute;inset:0;z-index:0}
   /* featured models — mobile: B-style uniform cards at 172px */
   .ff .va-fmstrip{display:none}
   .ff .va-fmcard{width:172px;flex:none;border-radius:14px;background:var(--surface);border:1px solid var(--hair2);overflow:hidden;cursor:pointer}
@@ -16540,23 +16542,27 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           </sc-if>
           <sc-if value="{{ hasFeatured }}" hint-placeholder-val="{{ false }}">
             <div class="va-sec"><h3 data-cms-text="appHome.secFeatured">{{ lcSecFeatured }}</h3><span class="all" onclick="{{ goAistudio }}" role="button" tabindex="0">{{ lcSecJumpLink }} <svg class="va-ic"><use href="#i-arrow"></use></svg></span></div>
-            <div class="va-fma">
-              <div class="va-fmhero va-thumb" style="background:{{ featHero.g }}" data-mode="{{ featHero.mode }}" data-id="{{ featHero.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
-                <span class="spot">✦ MODEL OF THE WEEK</span>
+            <div class="va-fma" data-cms="appHome.featured">
+              <div class="va-fmhero va-thumb" style="background:{{ featHero.g }}" data-cms="{{ featHero.cms }}" data-mode="{{ featHero.mode }}" data-id="{{ featHero.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
+                <sc-if value="{{ featHero.fHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ featHero.fmedia }}" alt=""></sc-if>
+                <sc-if value="{{ featHero.fHasVid }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ featHero.fmedia }}" autoplay="{{ true }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                <span class="spot" data-cms-text="appHome.featured.weekLabel">{{ lcFeatWeek }}</span>
                 <sc-if value="{{ featHero.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov" style="z-index:1"><span style="width:48px;height:48px"><svg class="va-ic" style="width:19px;height:19px"><use href="#i-play"></use></svg></span></span></sc-if>
-                <h4>{{ featHero.name }}</h4>
-                <p>{{ featHero.desc }}</p>
+                <h4 data-cms-text="{{ featHero.cmsName }}">{{ featHero.name }}</h4>
+                <p data-cms-text="{{ featHero.cmsDesc }}">{{ featHero.desc }}</p>
                 <div class="row">
                   <span class="va-fmtag"><svg class="va-ic" style="margin-right:4px"><use href="{{ featHero.iconRef }}"></use></svg>{{ featHero.tag }}</span>
                   <span class="va-fmcost">{{ featHero.costPre }}<b>✦{{ featHero.costN }}</b>{{ featHero.costSuf }}</span>
-                  <a class="va-btn lime sm htry" style="margin-left:auto">Try {{ featHero.name }}</a>
+                  <a class="va-btn lime sm htry" style="margin-left:auto">{{ featHero.cta }}</a>
                 </div>
               </div>
               <div class="va-fmrail">
                 <sc-for list="{{ featRail }}" as="m" hint-placeholder-count="4">
-                  <div class="va-fmmini va-thumb" style="background:{{ m.g }}" data-mode="{{ m.mode }}" data-id="{{ m.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
-                    <span class="try">Try</span>
-                    <div class="nm">{{ m.name }}</div>
+                  <div class="va-fmmini va-thumb" style="background:{{ m.g }}" data-cms="{{ m.cms }}" data-mode="{{ m.mode }}" data-id="{{ m.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
+                    <sc-if value="{{ m.fHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ m.fmedia }}" alt=""></sc-if>
+                    <sc-if value="{{ m.fHasVid }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ m.fmedia }}" autoplay="{{ true }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                    <span class="try">{{ lcFeatTry }}</span>
+                    <div class="nm" data-cms-text="{{ m.cmsName }}">{{ m.name }}</div>
                     <div class="cm"><span class="va-fmtag">{{ m.tag }}</span><span class="va-fmcost">{{ m.costPre }}<b>✦{{ m.costN }}</b>{{ m.costSuf }}</span></div>
                   </div>
                 </sc-for>
@@ -16564,10 +16570,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
             <div class="va-fmstrip">
               <sc-for list="{{ featAll }}" as="m" hint-placeholder-count="5">
-                <div class="va-fmcard" data-mode="{{ m.mode }}" data-id="{{ m.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
-                  <div class="prev va-thumb" style="background:{{ m.g }}"><span class="va-typetag">{{ m.tag }}</span></div>
+                <div class="va-fmcard" data-cms="{{ m.cms }}" data-mode="{{ m.mode }}" data-id="{{ m.mid }}" onclick="{{ tryModel }}" role="button" tabindex="0">
+                  <div class="prev va-thumb" style="background:{{ m.g }}">
+                    <sc-if value="{{ m.fHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ m.fmedia }}" alt=""></sc-if>
+                    <sc-if value="{{ m.fHasVid }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ m.fmedia }}" autoplay="{{ true }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
+                    <span class="va-typetag">{{ m.tag }}</span></div>
                   <div class="bd"><div class="nm">{{ m.name }}</div>
-                    <div class="ft"><span class="va-fmcost">{{ m.costPre }}<b>✦{{ m.costN }}</b></span><a class="va-btn lime sm">Try</a></div></div>
+                    <div class="ft"><span class="va-fmcost">{{ m.costPre }}<b>✦{{ m.costN }}</b></span><a class="va-btn lime sm">{{ lcFeatTry }}</a></div></div>
                 </div>
               </sc-for>
             </div>
@@ -18429,6 +18438,18 @@ class Component extends DCLogic {
       secFeatured: 'Featured models', secRec: 'Recommended for you', recLink: 'Browse all templates',
       shelfFreshKick: 'FRESH PICKS', shelfFresh: 'Recently updated',
       shelfCatKick: 'CURATED · CATEGORY', shelfNewKick: 'LATEST APPROVED', shelfNew: 'New this week',
+      /* "Featured models" — admin kuratsiyasi. NARX bu yerda YO'Q: karta narxi
+         modelCostBits (ModelPricing dvigateli) dan keladi va CMS'ga ko'chirilmaydi. */
+      featured: {
+        enabled: true, weekLabel: '✦ MODEL OF THE WEEK', ctaLabel: 'Try {name}', railTry: 'Try',
+        hero: { modelId: '', title: '', desc: '', mediaUrl: '', mediaType: '' },
+        rail: [
+          { modelId: '', title: '', desc: '', mediaUrl: '', mediaType: '' },
+          { modelId: '', title: '', desc: '', mediaUrl: '', mediaType: '' },
+          { modelId: '', title: '', desc: '', mediaUrl: '', mediaType: '' },
+          { modelId: '', title: '', desc: '', mediaUrl: '', mediaType: '' },
+        ],
+      },
     },
     catalogPage: {
       kicker: 'FRAMEFLOW MARKETPLACE',
@@ -18545,6 +18566,10 @@ class Component extends DCLogic {
       megaModels: { rows: oArr(d.megaModels.rows, s.megaModels && s.megaModels.rows) },
       appHome: Object.assign(o(d.appHome, s.appHome), {
         quick: oArr(d.appHome.quick, s.appHome && s.appHome.quick),
+        featured: Object.assign(o(d.appHome.featured, s.appHome && s.appHome.featured), {
+          hero: o(d.appHome.featured.hero, s.appHome && s.appHome.featured && s.appHome.featured.hero),
+          rail: oArr(d.appHome.featured.rail, s.appHome && s.appHome.featured && s.appHome.featured.rail),
+        }),
       }),
       catalogPage: o(d.catalogPage, s.catalogPage),
       stats: oArr(d.stats, s.stats),
@@ -21734,8 +21759,8 @@ class Component extends DCLogic {
       return { c, unit };
     };
     // ── FAZA C · Featured models (Home) — FFAPI.models katalogidan, narxlar modelCostBits bilan ──
-    // TODO(FF): admin tanlaydigan "Model of the week" (isFeatured bayrog'i / config endpoint)
-    // kelganda default evristika o'rniga shu yerda o'sha model olinadi.
+    // Kuratsiya: lc.appHome.featured (admin vizual muharriri). modelId bo'sh bo'lsa evristika
+    // ishlaydi. NARX hech qachon CMS'dan olinmaydi — faqat modelCostBits (ModelPricing dvigateli).
     const featTagOf = { image: 'IMAGE', video: 'VIDEO', voice: 'VOICE', sfx: 'SFX' };
     const featIconOf = { image: '#i-img', video: '#i-vid', voice: '#i-mic', sfx: '#i-wave' };
     const featDescOf = {
@@ -21744,7 +21769,8 @@ class Component extends DCLogic {
       voice: 'Natural-sounding voiceover from text, multiple voices.',
       sfx: 'Describe a sound — get a broadcast-ready effect in seconds.',
     };
-    const featView = (m, mode) => {
+    const featCfg = lc.appHome.featured || {};
+    const featView = (m, mode, ov, cmsPath) => {
       const cb = modelCostBits(m, mode);
       let costPre = '', costN = cb.c, costSuf = '';
       if (mode === 'video' && m.pricing !== 'per-generation') {
@@ -21752,24 +21778,48 @@ class Component extends DCLogic {
         const dmin = Math.min.apply(null, durs);
         costPre = 'from '; costN = cb.c * dmin; costSuf = ' / ' + dmin + 's';
       } else if (mode === 'image') costPre = 'from ';
-      return { mid: String(m.id), mode, name: m.label, tag: featTagOf[mode], iconRef: featIconOf[mode],
+      const o = ov || {};
+      const name = o.title || m.label;
+      const url = o.mediaUrl || '';
+      const fVid = !!url && (o.mediaType === 'video' || /\.(mp4|webm|mov)(\?|$)/i.test(url));
+      return { mid: String(m.id), mode, name, tag: featTagOf[mode], iconRef: featIconOf[mode],
         isVideo: mode === 'video', g: this.grad(this.hueOf(m.label)),
-        desc: m.description || m.desc || featDescOf[mode], costPre, costN, costSuf };
+        desc: o.desc || m.description || m.desc || featDescOf[mode], costPre, costN, costSuf,
+        cta: String(featCfg.ctaLabel || 'Try {name}').replace('{name}', name),
+        // vizual muharrir uchun manzillar (data-cms / data-cms-text)
+        cms: cmsPath, cmsName: cmsPath + '.title', cmsDesc: cmsPath + '.desc',
+        fmedia: url, fHasImg: !!url && !fVid, fHasVid: fVid };
     };
     const featOf = (mode, skipId) => {
       const list = (this.state.genModels[mode] || []).filter(m => m.id !== skipId);
       return list.find(m => m.isDefault) || list[0] || null;
     };
-    // Default evristika: haftaning modeli = flagman video model (default yoki birinchisi)
-    const featHeroModel = featOf('video', null);
-    let featHero = featHeroModel ? featView(featHeroModel, 'video') : null;
+    // Admin tanlagan modelId'ni katalogdan izlash — qaysi rejimda ekani ham shu yerdan
+    const featFind = (id) => {
+      if (!id) return null;
+      const modes = ['image', 'video', 'voice', 'sfx'];
+      for (let i = 0; i < modes.length; i++) {
+        const m = (this.state.genModels[modes[i]] || []).find(x => String(x.id) === String(id));
+        if (m) return { m, mode: modes[i] };
+      }
+      return null;
+    };
+    const featHeroSlot = featCfg.hero || {};
+    const featHeroPick = featFind(featHeroSlot.modelId);
+    // Evristika (admin tanlamagan bo'lsa): haftaning modeli = flagman video model
+    const featHeroModel = featHeroPick ? featHeroPick.m : featOf('video', null);
+    let featHero = featHeroModel
+      ? featView(featHeroModel, featHeroPick ? featHeroPick.mode : 'video', featHeroSlot, 'appHome.featured.hero')
+      : null;
     const featRail = [];
-    ['image', 'video', 'voice', 'sfx'].forEach(mode => {
-      const m = featOf(mode, featHeroModel && mode === 'video' ? featHeroModel.id : null);
-      if (m) featRail.push(featView(m, mode));
+    ['image', 'video', 'voice', 'sfx'].forEach((mode, i) => {
+      const ov = (featCfg.rail && featCfg.rail[i]) || {};
+      const pick = featFind(ov.modelId);
+      const m = pick ? pick.m : featOf(mode, featHeroModel && mode === 'video' ? featHeroModel.id : null);
+      if (m) featRail.push(featView(m, pick ? pick.mode : mode, ov, 'appHome.featured.rail.' + i));
     });
     if (!featHero && featRail.length) featHero = featRail.shift();
-    const hasFeatured = !!featHero;
+    const hasFeatured = !!featHero && featCfg.enabled !== false;
     const featAll = (featHero ? [featHero] : []).concat(featRail).slice(0, 5);
     const featLoading = !hasFeatured && !this.state.genModelsLoaded && !!(window.FFAPI && FFAPI.getToken());
     // SC_19: quick-pick ham pin tartibida — pinlangan model BIRINCHI ko'rinadi
@@ -22597,6 +22647,7 @@ class Component extends DCLogic {
       lcSecJump: lc.appHome.secJump, lcSecJumpLink: lc.appHome.secJumpLink, lcSecStart: lc.appHome.secStart,
       lcEmptyTitle: lc.appHome.emptyTitle, lcEmptySub: lc.appHome.emptySub, lcEmptyBtn: lc.appHome.emptyBtn,
       lcSecFeatured: lc.appHome.secFeatured, lcSecRec: lc.appHome.secRec, lcRecLink: lc.appHome.recLink,
+      lcFeatWeek: featCfg.weekLabel || '✦ MODEL OF THE WEEK', lcFeatTry: featCfg.railTry || 'Try',
       lcShelfFreshKick: lc.appHome.shelfFreshKick, lcShelfFresh: lc.appHome.shelfFresh,
       lcShelfCatKick: lc.appHome.shelfCatKick, lcShelfNewKick: lc.appHome.shelfNewKick, lcShelfNew: lc.appHome.shelfNew,
       lcCatKicker: lc.catalogPage.kicker, lcCatTitle: lc.catalogPage.title,

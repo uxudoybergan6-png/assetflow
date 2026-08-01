@@ -55,6 +55,16 @@ export interface LandingPresetItem extends SiteMediaSlot {
   sub: string;
 }
 
+/* Home "Featured models" kartasi — admin kuratsiyasi.
+   modelId — AI model katalogidagi ID (bo'sh = avtomatik tanlov). title/desc bo'sh
+   bo'lsa katalogdagi nom/tavsif ishlatiladi. NARX bu yerda YO'Q va bo'lmaydi —
+   u ModelPricing dvigatelidan keladi (aks holda ko'rsatilgan narx real narxdan ajraydi). */
+export interface FeaturedSlot extends SiteMediaSlot {
+  modelId: string;
+  title: string;
+  desc: string;
+}
+
 export interface LandingFeedCard extends SiteMediaSlot {
   title: string; // bo'sh = shu slotda built-in demo karta qoladi
   cat: string;
@@ -230,6 +240,17 @@ export interface LandingConfigData {
     shelfCatKick: string;
     shelfNewKick: string;
     shelfNew: string;
+    /* "Featured models" bloki — admin kuratsiyasi. Kartadagi NARX shu yerdan EMAS,
+       narx dvigatelidan (ModelPricing) keladi va hech qachon CMS'ga ko'chirilmaydi.
+       modelId bo'sh bo'lsa evristika ishlaydi (flagman video model + har rejimdan bittadan). */
+    featured: {
+      enabled: boolean;
+      weekLabel: string; // spotlight nishoni ("✦ MODEL OF THE WEEK")
+      ctaLabel: string; // spotlight tugmasi; "{name}" model nomiga almashadi
+      railTry: string; // mini-kartadagi kichik nishon ("Try")
+      hero: FeaturedSlot;
+      rail: FeaturedSlot[]; // 4 ta
+    };
   };
   // v2: Stock Catalog sahifa sarlavha/qidiruv/бo'sh holat matnlari
   catalogPage: {
@@ -476,6 +497,19 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     shelfCatKick: "CURATED · CATEGORY",
     shelfNewKick: "LATEST APPROVED",
     shelfNew: "New this week",
+    featured: {
+      enabled: true,
+      weekLabel: "✦ MODEL OF THE WEEK",
+      ctaLabel: "Try {name}",
+      railTry: "Try",
+      hero: { modelId: "", title: "", desc: "", mediaUrl: "", mediaType: "" },
+      rail: [
+        { modelId: "", title: "", desc: "", mediaUrl: "", mediaType: "" },
+        { modelId: "", title: "", desc: "", mediaUrl: "", mediaType: "" },
+        { modelId: "", title: "", desc: "", mediaUrl: "", mediaType: "" },
+        { modelId: "", title: "", desc: "", mediaUrl: "", mediaType: "" },
+      ],
+    },
   },
   catalogPage: {
     kicker: "FRAMEFLOW MARKETPLACE",
@@ -598,6 +632,16 @@ const SECTION_KEYS = [
 // v2 media-slot bo'limlari uchun umumiy zod bo'laklari
 const mediaSlot = { mediaUrl: mediaUrl.optional(), mediaType: z.enum(["", "image", "video"]).optional() };
 const featsList = z.array(z.string().max(90)).min(1).max(12);
+/* Home "Featured models" kartasi. modelId — AI model katalogidagi ID (bo'sh = avtomatik).
+   NARX maydoni ATAYLAB yo'q: karta narxi ModelPricing dvigatelidan keladi. */
+const featuredSlotSchema = z
+  .object({
+    modelId: z.string().max(60).optional(),
+    title: shortText.optional(),
+    desc: longText.optional(),
+    ...mediaSlot,
+  })
+  .strict();
 const planCopySchema = z.object({
   name: shortText.optional(),
   price: z.number().min(0).max(100_000).optional(), // DISPLAY narx — billing'ga ta'sir qilmaydi
@@ -851,6 +895,18 @@ export const landingConfigSchema = z
         shelfCatKick: shortText.optional(),
         shelfNewKick: shortText.optional(),
         shelfNew: shortText.optional(),
+        // Featured models — kuratsiya. Narx maydoni ATAYLAB yo'q (ModelPricing yagona manba).
+        featured: z
+          .object({
+            enabled: z.boolean().optional(),
+            weekLabel: shortText.optional(),
+            ctaLabel: shortText.optional(),
+            railTry: z.string().max(24).optional(),
+            hero: featuredSlotSchema.optional(),
+            rail: z.array(featuredSlotSchema).max(4).optional(),
+          })
+          .strict()
+          .optional(),
       })
       .optional(),
     catalogPage: z
@@ -1043,6 +1099,19 @@ function mergeConfig(stored: unknown): LandingConfigData {
         s.appHome
       ),
       quick: objArr(d.appHome.quick, s.appHome?.quick),
+      featured: {
+        ...obj(
+          {
+            enabled: d.appHome.featured.enabled,
+            weekLabel: d.appHome.featured.weekLabel,
+            ctaLabel: d.appHome.featured.ctaLabel,
+            railTry: d.appHome.featured.railTry,
+          },
+          s.appHome?.featured
+        ),
+        hero: obj(d.appHome.featured.hero, s.appHome?.featured?.hero),
+        rail: objArr(d.appHome.featured.rail, s.appHome?.featured?.rail),
+      },
     },
     catalogPage: obj(d.catalogPage, s.catalogPage),
     footer: {
