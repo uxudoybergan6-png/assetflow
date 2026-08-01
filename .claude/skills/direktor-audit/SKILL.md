@@ -29,6 +29,31 @@ qayta so'ramay, kontekstdan (loyiha bilimi + oldingi xabarlar) to'ldir:
 Bu ichki qadam — foydalanuvchiga qayta savol sifatida ko'rsatilmaydi, faqat MD banddagi
 **"Egasi aytdi"** qatoridan keyin **"Tushunilgan sifatida"** qatorida yoziladi.
 
+## 🗂 To'plash rejimi (default)
+
+**Sabab:** har muammoni darhol to'liq audit qilish (kod o'qish + jonli tekshiruv) vaqt oladi va
+suhbatni sekinlashtiradi. Shuning uchun endi **default — avval to'plash, keyin ketma-ket
+to'liq audit**. Parallel/subagent audit ATAYLAB ishlatilmaydi — limit ko'p yeydi (har subagent
+faylni qaytadan o'qiydi); ketma-ket (bitta kontekstda) eng kam limit sarflaydi.
+
+**To'plash bosqichi** — foydalanuvchi muammo aytganda:
+- Faqat **yengil qayd** qil: Egasi aytdi (so'zma-so'z) + 0-qadam normalizatsiya (Nima/Qayerda/
+  Kutilgan-vs-haqiqiy, taxmin bilan). **Fayl o'qima, grep qilma, brauzer tekshirma.**
+- Navbatga qo'sh: `Q1`, `Q2`, ... (vaqtinchalik ID, hali `docs/DIREKTOR-AUDIT-<sana>.md`ga
+  yozilmaydi — faqat javobda qisqa tasdiqlab qo'y: "Qayd etildi — Q3. Keyingisi?").
+- Har qaydda 7a (shu sessiya ichida takror) yuzaki tekshiruvi qilinadi (so'z shaklidan emas,
+  taxminiy ildizdan) — aniq takror ko'rinsa darhol aytib qo'y, aks holda audit bosqichida
+  aniqlanadi.
+
+**Trigger — audit boshlash:** foydalanuvchi "hammasi shu", "tugadi", "boshla", "audit qil"
+kabi signal bersa (yoki mavzu butunlay o'zgarsa) — navbatdagi barcha `Q`larni **ketma-ket**
+(bitta-bittalab, parallel emas) to'liq 9-qadamli auditdan o'tkaz, har birini `D<N>` sifatida
+`docs/DIREKTOR-AUDIT-<sana>.md`ga yoz. Navbat tugagach bo'shatiladi.
+
+**Istisno:** foydalanuvchi bitta muammoni aytib darhol "tekshir"/"audit qil" desa yoki faqat
+bitta muammo bo'lsa — navbatga qo'ymay, shu zahoti to'liq audit qilinadi (to'plash uchun
+kutish shart emas).
+
 ## 9 qadam
 
 Har muammo shu tartibda o'tadi:
