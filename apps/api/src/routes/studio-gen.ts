@@ -57,6 +57,7 @@ import {
 } from "../lib/s3.js";
 import {
   GEN_MODELS,
+  type GenModel,
   getModelsByMode,
   getModelById,
   isModelEnabled,
@@ -871,12 +872,43 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
   });
 });
 
+/** Provayder sozlanganmi (API kalit / Google ADC bor). YAGONA MANBA — `/gen` guard'i va `/gen/ops`
+ *  ro'yxati ikkalasi shu funksiyaga tayanadi. Ilgari `/gen/ops` faqat katalog `enabled` bayrog'iga
+ *  qarardi: kalitsiz provayder op'i UI'da ko'rinib, bosilganda `/gen` 503 qaytarardi — foydalanuvchi
+ *  uchun "bosdim, hech narsa bo'lmadi" (audit D11/D11.a: TOPAZ_API_KEY production'da yo'q edi,
+ *  lekin Upscale tugmalari ko'rinardi). Sozlanmagan provayder endi ro'yxatga umuman tushmaydi. */
+function isProviderConfigured(provider: GenModel["provider"]): boolean {
+  switch (provider) {
+    case "elevenlabs":
+      return isElevenLabsConfigured();
+    case "fal":
+      return isFalConfigured();
+    case "byteplus":
+      return isByteplusConfigured();
+    case "kling":
+      return isKlingConfigured();
+    case "topaz": // R4_08 — Topaz enhance/upscale op'lari (TOPAZ_API_KEY)
+      return isTopazConfigured();
+    case "vertex":
+      return isVertexConfigured();
+    case "vertex-omni":
+      return isVertexOmniConfigured();
+    case "vertex-image":
+      return isVertexImageConfigured();
+    case "google-tts":
+      return isGoogleTtsConfigured();
+    default:
+      return isOpenRouterConfigured();
+  }
+}
+
 /** R4_08 — GET /gen/ops: YOQILGAN enhance/upscale OPERATSIYALARI (opType). Composer picker'idan
  *  filtrlangan (generativ model emas) — bu ro'yxat gen/library kartalaridagi "Use ▾ → Upscale /
  *  Remove BG" bir-bosishlik amallari uchun. Klient shu ro'yxatdan qaysi op mavjudligini biladi
- *  (o'chirilgan/entitlement yo'q op umuman ko'rinmaydi). Katalog-driven: enabled bayrog'i yagona manba. */
+ *  (o'chirilgan/entitlement yo'q op umuman ko'rinmaydi). Katalog `enabled` + provayder sozlamasi
+ *  IKKALASI shart (D11.a) — kalitsiz op ko'rinsa, bosilganda 503 bo'lardi. */
 studioGenRouter.get("/gen/ops", (_req: Request, res: Response) => {
-  const ops = GEN_MODELS.filter((m) => m.opType && m.enabled !== false).map((m) => ({
+  const ops = GEN_MODELS.filter((m) => m.opType && m.enabled !== false && isProviderConfigured(m.provider)).map((m) => ({
     id: m.id,
     opType: m.opType,
     mode: m.mode,
@@ -1335,26 +1367,9 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; fal → FAL_KEY; vertex* → Google ADC;
   // aks holda OpenRouter). AUDIT FIX: vertex modellari ilgari OpenRouter kalitiga bog'lanib qolardi —
   // OPENROUTER_API_KEY olib tashlansa barcha Google modellar 503 bo'lardi.
-  const configured =
-    model.provider === "elevenlabs"
-      ? isElevenLabsConfigured()
-      : model.provider === "fal"
-        ? isFalConfigured()
-        : model.provider === "byteplus"
-          ? isByteplusConfigured()
-          : model.provider === "kling"
-          ? isKlingConfigured()
-          : model.provider === "topaz" // R4_08 — Topaz enhance/upscale op'lari (TOPAZ_API_KEY)
-          ? isTopazConfigured()
-          : model.provider === "vertex"
-          ? isVertexConfigured()
-          : model.provider === "vertex-omni"
-            ? isVertexOmniConfigured()
-            : model.provider === "vertex-image"
-              ? isVertexImageConfigured()
-              : model.provider === "google-tts"
-                ? isGoogleTtsConfigured()
-                : isOpenRouterConfigured();
+  // D11.a — `/gen/ops` bilan BIR XIL funksiya (isProviderConfigured): ro'yxat va guard ajralib
+  // qolmasin, aks holda ko'rinadigan-lekin-ishlamaydigan op qaytadi.
+  const configured = isProviderConfigured(model.provider);
   if (!configured) {
     res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
     return;

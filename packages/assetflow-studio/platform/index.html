@@ -15567,10 +15567,22 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-lb-scrim{position:fixed;inset:0;z-index:95;background:rgba(5,5,9,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:grid;place-items:center;padding:3vh 3vw}
   .ff .va-lb-x{position:fixed;top:18px;right:20px;z-index:2;width:40px;height:40px;border-radius:12px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);border:1px solid var(--hair2);color:#fff;cursor:pointer;display:grid;place-items:center;font-size:18px}
   .ff .va-lb-x:hover{background:rgba(0,0,0,.72)}
-  .ff .va-lb-shell{display:flex;width:100%;max-width:min(96vw,1880px);max-height:94vh;background:var(--surface);border:1px solid var(--hair2);border-radius:20px;overflow:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.85)}
-  /* SC_44: sahna fonida karta thumbnail'i (instant, keshda) — qora void o'rniga; to'liq media ustidan chiqadi */
-  .ff .va-lb-stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;display:grid;place-items:center;padding:12px;background:var(--media) center/contain no-repeat}
-  .ff .va-lb-el{display:block;max-width:100%;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:12px;background:transparent}
+  /* D4: ekranning ~70%i — avval min(96vw,1880px)/94vh edi, ya'ni amalda to'liq ekran.
+     Tor ekranda 70% juda kichik bo'lib qolmasin — pastdagi 1200px media query kengaytiradi. */
+  .ff .va-lb-shell{display:flex;width:min(72vw,1440px);max-height:80vh;background:var(--surface);border:1px solid var(--hair2);border-radius:20px;overflow:hidden;box-shadow:0 50px 120px -30px rgba(0,0,0,.85)}
+  @media (max-width:1200px){ .ff .va-lb-shell{width:min(94vw,1080px);max-height:88vh} }
+  /* SC_44: sahna fonida karta thumbnail'i (instant, keshda) — qora void o'rniga.
+     D4: fon endi ALOHIDA `.va-lb-bg` qatlamida va `cover`+blur bilan chiziladi. Ilgari fon
+     xuddi media kabi `contain` edi: media `max-width:min(100%,<natural>px)` bilan chegaralangani
+     uchun ikki quti mos kelmasdi va thumb chekkalarda ko'rinib "ikki qavat" taassuroti berardi. */
+  .ff .va-lb-stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;display:grid;place-items:center;padding:12px;overflow:hidden;background-color:var(--th-surface-3)}
+  .ff .va-lb-bg{position:absolute;inset:0;z-index:0;pointer-events:none;background-position:center;background-size:cover;background-repeat:no-repeat;filter:blur(44px) saturate(1.15) brightness(.4);opacity:.85;transform:scale(1.12)}
+  /* `.va-lb-bg` pozitsiyalangan (z-index:0) — pozitsiyalanmagan in-flow media undan PASTDA
+     chizilardi. Shuning uchun media qatlamiga aniq z-index beriladi. Strelkalar (`.va-lb-arw`)
+     allaqachon absolute+z-index:2 — ularga TEGMA (blanket `>:not(.va-lb-bg)` qoidasi ularning
+     `position:absolute`ini bekor qilardi). */
+  .ff .va-lb-el,.ff .va-lb-aud{position:relative;z-index:1}
+  .ff .va-lb-el{display:block;max-width:100%;max-height:74vh;width:auto;height:auto;object-fit:contain;border-radius:12px;background:transparent}
   .ff .va-lb-aud{display:flex;flex-direction:column;align-items:center;gap:18px;width:min(520px,82%)}
   .ff .va-lb-aud>i{font-size:64px;color:var(--acc)}
   /* P20 — umumiy audio pleer (to'lqin + accent progress + playhead + custom play/pause + vaqt).
@@ -17582,7 +17594,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <div onclick="{{ closeLightbox }}" class="va-lb-scrim">
       <button onclick="{{ closeLightbox }}" class="va-lb-x" title="Close (Esc)"><i class="ph ph-x"></i></button>
       <div onclick="{{ stop }}" class="va-lb-shell">
-        <div class="va-lb-stage" style="background-image:{{ lb.stageBgCss }}">
+        <div class="va-lb-stage">
+          <!-- D4: xira ambient fon (cover+blur) — asl media bilan bir xil "contain" qutida EMAS,
+               shuning uchun chekkalarda ikkinchi nusxa ko'rinmaydi. -->
+          <div class="va-lb-bg" style="background-image:{{ lb.stageBgCss }}"></div>
           <sc-if value="{{ lb.hasPrev }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw prev" onclick="{{ lbPrev }}" title="Previous (←)"><i class="ph ph-caret-left"></i></button></sc-if>
           <!-- QA-FIX #3: controls/playsinline chin boolean; poster=thumb (blur-up), asl src to'liq sifat. -->
           <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></video></sc-if>
@@ -21668,11 +21683,11 @@ class Component extends DCLogic {
       bars: Array.from({ length: 9 }, (_, i) => ({ h: 4 + Math.round(Math.abs(Math.sin(this.hueOf(g.id) + i * 0.8)) * 9) })),
     }));
     const noVoiceResults = voiceResults.length === 0 && !anyActive;
-    // A3b "This session" strip — joriy rejim natijalari + sarf hisoblagichi
-    const sessGens = aiIsCanvas ? genView.filter(g => g.type === (tool.mode === 'video' ? 'video' : 'image')).slice(0, 12).map(g => ({ ...g, sessCls: (activeGenRaw && g.id === activeGenRaw.id) ? 'va-thumb st on' : 'va-thumb st' })) : [];
-    const sessSpent = sessGens.reduce((a, g) => a + (g.cost || 0), 0);
-    const sessLine = sessGens.length + ' RESULTS · SPENT ✦ ' + sessSpent;
-    const showSess = aiIsCanvas && sessGens.length > 0;
+    // D7 — eski "This session" polosasi (sessGens/sessLine/showSess) OLIB TASHLANDI.
+    //   Shablonda hech qayerda ishlatilmasdi (o'lik binding), lekin `tool.mode`ga qarab
+    //   `g.type` bo'yicha filtrlardi: video asbobiga o'tilganda rasm natijalari (va upscale
+    //   natijasi) ko'rinmay qolardi. Jonli grid — axVisGens/axAudGens (faqat Visuals/Audio
+    //   ajratadi, rasm+video birga turadi). Qayta tiklama.
     // ── PHASE B: AI Studio session workspace bindinglari (mockup frames A–F).
     //    Faqat render — gen oqimi (generate/buildParams/estCost/pollJob) O'ZGARMAGAN.
     const modelLabelById = {};
@@ -22900,7 +22915,7 @@ class Component extends DCLogic {
       promptExpCls: 'va-promptexp' + (this.state.composerExpanded ? ' on' : ''),
       toggleComposerExpand: (e) => { e.stopPropagation(); this.setState(st => ({ composerExpanded: !st.composerExpanded })); },
       // §A (P1) — Enhance narxi endi ko'rinadi (✦1) — jim kredit kuyishi yo'q
-      sessGens, sessLine, showSess, enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance · ✦1',
+      enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance · ✦1',
       aspectVal, qualityVal, countVal, resVal, durVal,
       // P16 — bitta sozlama chipi + guruhlangan popover (onSizeM/onResM/… allaqachon mavjud —
       //   qiymat o'zgarganda popover OCHIQ qoladi; onBitrateM shu maqsadda qo'shildi)
