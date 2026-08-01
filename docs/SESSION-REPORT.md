@@ -16,4 +16,13 @@ CMS'da 2 o'lik binding (shelf/browseAll) editor'dan olib tashlandi.
 
 **Isbot:** API tsc/build ✓ · verify-public-copy 137/137 ✓ · test:plugin-responsive ✓ · lokal jonli:
 admin login→Save/Restore/History ✓, plagin bootda e'lon/tayl/dismiss ✓ · CF Pages build ✓.
-**Kutilmoqda:** push (CI migrate-gate avval migratsiyani qo'llaydi), keyin prod smoke.
+
+**VIZUAL MUHARRIR (d07817a):** Website admin endi preview-birinchi — REAL sayt iframe'da
+(?ffcms=1), istalgan joy bosiladi → o'ng panel o'sha maydonlarni ochib belgilaydi, yozganda sahifa
+DARHOL yangilanadi (draft, saqlashsiz). 46 data-cms nishon; CSP frame-ancestors admin'ga ochildi.
+Plugin CMS previewda ham click-to-jump. Isbot: handshake "Live preview connected" ✓, panelga
+yozilgan matn iframe'dagi haqiqiy sahifada skrinshotda ko'rindi ✓.
+**Topildi:** jonli CDN'da landing/ prefiksi 403 — deploy qilingan cdn-proxy Worker ESKI
+(MEDIA UNREACHABLE sababi). public-keys.ts tegildi → push'da deploy-cdn-worker.yml qayta deploy
+qiladi (CLOUDFLARE_API_TOKEN/ACCOUNT_ID secretlari shart; bo'lmasa qo'lda `wrangler deploy`).
+**Kutilmoqda:** push (migrate-gate + cdn-worker redeploy) → prod smoke.
