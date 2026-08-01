@@ -46,6 +46,24 @@ app.get("/reset-password.html", send("reset-password.html"));
 // Qolgan statik fayllar (admin-login.html, index.html, design-system.html, ...)
 app.use(express.static(ROOT));
 
+/* Platforma SPA'si (platform/) — ALOHIDA port. Admin vizual muharriri sayt
+   yuzasini shu origin'dan iframe qiladi (admin-website.js → wsPlatformOrigin()
+   lokal fallback = :8975). Prefiks ostida serv qilib bo'lmaydi: index.html
+   root-absolut yo'llardan foydalanadi (/assets, /ff-api.js). */
+const PLATFORM_PORT = Number(process.env.PLATFORM_PORT || 8975);
+const plat = express();
+plat.use("/health", createProxyMiddleware({ target: API, changeOrigin: true }));
+plat.use(
+  "/api",
+  createProxyMiddleware({ target: API, changeOrigin: true, pathRewrite: (p) => `/api${p}` })
+);
+plat.use(express.static(path.join(ROOT, "platform")));
+// SPA fallback — /pricing, /stock/... kabi deep-link'lar index.html'ga tushadi
+plat.get(/^\/(?!api|health|assets|ff-api)/, send(path.join("platform", "index.html")));
+plat.listen(PLATFORM_PORT, () => {
+  console.log(`FrameFlow Platform (SPA): http://localhost:${PLATFORM_PORT}/`);
+});
+
 const server = app.listen(PORT, () => {
   console.log(`AssetFlow Studio (Contributor): http://localhost:${PORT}/studio/hub.html`);
   console.log(`  Login: http://localhost:${PORT}/studio/login.html`);

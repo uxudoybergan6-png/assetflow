@@ -10,13 +10,6 @@ let WS_CFG = null;      // joriy (merged) konfiguratsiya — forma shu ustida is
 let WS_DEFAULTS = null; // server defaultlari (reset ko'rsatkichi uchun)
 let WS_LOADED = false;
 let WS_LOAD_ERR = null;
-let WS_TAB = "visual";  // visual | hero | landing | app | pricing | plugin | footer
-// ── FFCMS vizual muharrir holati ──
-let WS_VIS_TAB = "hero";      // panelda ochiq bo'lim-tab
-let WS_VIS_PAGE = "landing";  // iframe'dagi ekran: landing | pricing | plugin | templates
-let WS_VIS_DEV = "desktop";   // desktop | mobile
-let WS_VIS_READY = false;     // iframe ffcms-ready yubordimi
-let WS_VIS_PUSH_T = null;     // draft push debounce
 
 function wsEsc(s) {
   return String(s == null ? "" : s)
@@ -96,7 +89,7 @@ function wsSetPath(obj, path, value) {
 
 /** DOM'dagi barcha data-ws maydonlarini WS_CFG ga yig'adi (faqat joriy tabda mavjudlari). */
 function wsCollect() {
-  const c = JSON.parse(JSON.stringify(WS_CFG));
+  const c = JSON.parse(JSON.stringify(wsCfg()));
   document.querySelectorAll("[data-ws]").forEach((el) => {
     let v = el.value;
     if (el.dataset.wsType === "num") v = Math.max(0, Number(v) || 0);
@@ -171,7 +164,7 @@ function wsMediaErr(el) {
 /* ── Theme ─────────────────────────────────────────────────── */
 
 function wsThemeSection() {
-  const t = WS_CFG.theme;
+  const t = wsCfg().theme;
   const swatches = WS_ACCENT_PRESETS.map((p) =>
     `<button class="ws-swatch" title="${wsEsc(p.name)}" onclick="wsSetAccent('${p.hex}')" style="width:30px;height:30px;border-radius:8px;background:${p.hex};border:2px solid ${t.accent.toUpperCase() === p.hex.toUpperCase() ? "#fff" : "transparent"};cursor:pointer"></button>`
   ).join("");
@@ -195,425 +188,442 @@ function wsThemeSection() {
     </div>`);
 }
 
-/* ── Jonli preview — hero + bo'lim tartibi ─────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   VIZUAL MUHARRIR v3 — yagona tahrir yuzasi (forma-tablar OLIB TASHLANDI).
+   Chapda REAL sayt iframe'da (?ffcms=1), o'ngda kontekst inspektor:
+     • KONTENT — tanlangan bo'limning barcha maydonlari AVTOMATIK quriladi
+       (konfiguratsiya daraxtidan reflektiv: matn / raqam / kalit / media /
+       ro'yxat) — endi yangi CMS maydoni qo'shilsa admin o'zi ko'rsatadi.
+     • DIZAYN — o'lcham/qalinlik/rang/joylashuv/masshtab/burish/yashirish
+       (desktop va mobil alohida). Sayt ichida sudrab surish ham shu yerga yozadi.
+     • SAHIFA — mavzu, bo'lim tartibi, bildirishnomalar, qatlamlar ro'yxati.
+   ══════════════════════════════════════════════════════════════════════════ */
 
-function wsPreviewHtml(c) {
-  const accent = /^#[0-9a-fA-F]{6}$/.test(c.theme.accent) ? c.theme.accent : "#d8ff3e";
-  const stack = (WS_FONTS.find((f) => f.key === c.theme.font) || WS_FONTS[0]).stack;
-  const r = parseInt(accent.slice(1, 3), 16), g = parseInt(accent.slice(3, 5), 16), b = parseInt(accent.slice(5, 7), 16);
-  const onAcc = ((0.299 * r + 0.587 * g + 0.114 * b) / 255) > 0.55 ? "#0a0d02" : "#fff";
-  const stats = c.stats.map((s) => {
-    const isWord = /[a-zA-Z]/.test(s.suffix || "");
-    const n = Number(s.value) || 0;
-    return `<div style="text-align:center"><div style="font:700 17px 'IBM Plex Mono',monospace;color:#F2F5F8">${n >= 1000 ? n.toLocaleString("en-US") : n}${isWord ? `<span style="font-size:12px"> ${wsEsc(s.suffix)}</span>` : `<span style="color:${accent}">${wsEsc(s.suffix)}</span>`}</div><div style="font-size:9.5px;color:var(--muted);margin-top:2px">${wsEsc(s.label)}</div></div>`;
-  }).join("");
-  // Bo'lim tartibi lentasi — hero doim birinchi; yashirin bo'lim o'chik chip
-  const secChips = [`<span style="padding:3px 9px;border-radius:6px;background:${accent};color:${onAcc};font:700 9px 'IBM Plex Mono',monospace">HERO</span>`]
-    .concat(c.landingSections.map((sc) =>
-      `<span style="padding:3px 9px;border-radius:6px;font:600 9px 'IBM Plex Mono',monospace;${sc.visible ? "background:rgba(255,255,255,.09);color:#D8DEE8" : "background:rgba(255,255,255,.03);color:var(--muted2);text-decoration:line-through"}">${wsEsc((WS_SECTION_LABELS[sc.key] || sc.key).toUpperCase())}</span>`))
-    .join('<i class="ph ph-caret-right" style="font-size:8px;color:var(--muted2)"></i>');
-  return `<div style="background:radial-gradient(120% 160% at 50% -20%,#12161d,#07090c 70%);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:26px 22px;text-align:center;font-family:${stack}">
-    <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:10.5px;color:var(--text2)"><b style="font:700 7.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;padding:2px 6px;border-radius:4px;background:${accent};color:${onAcc}">${wsEsc(c.hero.badgeTag)}</b>${wsEsc(c.hero.badgeText)}</span>
-    <div style="font-weight:700;font-size:25px;letter-spacing:-.03em;color:#F2F5F8;margin-top:12px;line-height:1.15">${wsEsc(c.hero.title)} <span style="background:linear-gradient(92deg,${accent} 10%,#7CC4FF 90%);-webkit-background-clip:text;background-clip:text;color:transparent">${wsEsc(c.hero.titleAccent)}</span></div>
-    <div style="font-size:11.5px;color:var(--muted);max-width:430px;margin:9px auto 0;line-height:1.55">${wsEsc(c.hero.sub)}</div>
-    <div style="display:flex;gap:9px;justify-content:center;margin-top:14px">
-      <span style="display:inline-flex;align-items:center;height:32px;padding:0 16px;border-radius:99px;background:${accent};color:${onAcc};font-weight:700;font-size:11px">${wsEsc(c.hero.ctaPrimary)}</span>
-      <span style="display:inline-flex;align-items:center;height:32px;padding:0 15px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);color:#F2F5F8;font-weight:600;font-size:11px">${wsEsc(c.hero.ctaSecondary)}</span>
-    </div>
-    <div style="font-size:9.5px;color:var(--muted);margin-top:10px">${wsEsc(c.hero.credline)}</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;border-top:1px solid rgba(255,255,255,.06);margin-top:18px;padding-top:14px">${stats}</div>
-    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:center;border-top:1px solid rgba(255,255,255,.06);margin-top:14px;padding-top:12px">${secChips}</div>
+let WS_VIS_PAGE = "landing";  // iframe ekrani: landing | pricing | plugin | templates | dashboard
+let WS_VIS_DEV = "desktop";   // desktop | mobile
+let WS_VIS_READY = false;
+let WS_VIS_PUSH_T = null;
+let WS_SEL = "";              // tanlangan element yo'li (uslub kaliti ham shu)
+let WS_SEL_TEXT = "";         // tanlangan yaproq matn yo'li (bo'lsa)
+let WS_SEL_GROUP = "";        // tanlangan elementning bo'lim yo'li
+let WS_INSP = "content";      // content | design | page
+let WS_OUTLINE = [];          // iframe'dan kelgan qatlamlar ro'yxati
+let WS_FOCUS = "";            // panelda belgilanishi kerak bo'lgan maydon yo'li
+
+/* Muharrir IKKI yuzada ishlaydi: `site` (marketing sayt + webapp) va `plugin`
+   (AE panel). Barcha inspektor/dizayn kodi shu ikki accessor orqali ishlaydi —
+   ekran o'zgarganda faqat WS_SURF almashadi. */
+let WS_SURF = "site";
+function wsCfg() { return WS_SURF === "plugin" ? PC_CFG : WS_CFG; }
+function wsSetCfg(c) { if (WS_SURF === "plugin") PC_CFG = c; else WS_CFG = c; }
+function wsSurfOrigin() { return WS_SURF === "plugin" ? location.origin : wsPlatformOrigin(); }
+/* Plagin preview manzili ROOT-ABSOLUT: admin ikki xil yo'lda ochiladi —
+   admin.getframeflow.app/ (host-router index.html'ni beradi, pathname "/")
+   va getframeflow.app/admin/. Nisbiy yo'l birinchisida 404 berardi. Lokal
+   dev'da dev-admin-server.mjs shu yo'lni CEP papkasiga mount qiladi. */
+function wsSurfSrc() {
+  return WS_SURF === "plugin"
+    ? "/admin/plugin-preview/AssetFlow_Plugin.html?ffcms=1"
+    : wsPlatformOrigin() + "/?ffcms=1";
+}
+let WS_UNDO = [];
+let WS_REDO = [];
+
+/* Yuza almashganda (Sayt ⇄ Plagin) muharrir holatini tozalaymiz — tanlov,
+   qatlamlar, undo tarixi va sahifa pili boshqa konfiguratsiyaga tegishli. */
+function wsSurfaceEnter(surf) {
+  if (WS_SURF === surf) return;
+  WS_SURF = surf;
+  WS_SEL = ""; WS_SEL_TEXT = ""; WS_SEL_GROUP = ""; WS_FOCUS = "";
+  WS_INSP = "content"; WS_OUTLINE = []; WS_UNDO = []; WS_REDO = [];
+  WS_VIS_READY = false; WS_VIS_DEV = "desktop";
+  WS_VIS_PAGE = (WS_PAGES[surf] || WS_PAGES.site)[0][0];
+}
+
+/* ── O'zbekcha yorliqlar (yo'l yoki oxirgi segment bo'yicha) ─────────────── */
+const WS_LABELS = {
+  hero: "Hero", heroMedia: "Hero bilbordi", promo: "E'lon chizig'i", nav: "Navigatsiya",
+  megaModels: "Explore menyusi", mockup: "Hero kartasi", stats: "Raqamlar qatori",
+  ticker: "Yuguruvchi satr", cinema: "Kino bilbord", showcase: "Shablonlar vitrinasi",
+  feed: "Vitrina kartalari", presetsRail: "Presetlar lentasi", aiPromo: "AI Studio promo",
+  pluginPromo: "Plagin promo", pricingTeaser: "Narx tizeri", faqSection: "Savol-javob",
+  finalCta: "Yakuniy CTA", footer: "Pastki qism", pricingPage: "Narx sahifasi",
+  plans: "Tariflar", pluginPage: "Plagin sahifasi", appHome: "Ilova bosh sahifasi",
+  catalogPage: "Katalog sahifasi", theme: "Mavzu", landingSections: "Bo'lim tartibi",
+  notices: "Bildirishnomalar", uiStyles: "Uslub qatlami",
+  title: "Sarlavha", titleAccent: "Sarlavha (rangli qism)", sub: "Tavsif", desc: "Tavsif",
+  text: "Matn", label: "Yorliq", value: "Qiymat", suffix: "Qo'shimcha", tag: "Nishon",
+  badge: "Nishon", badgeTag: "Nishon kaliti", badgeText: "Nishon matni",
+  ctaLabel: "Tugma matni", ctaPrimary: "Asosiy tugma", ctaSecondary: "Ikkinchi tugma",
+  cta: "Tugma", credline: "Ishonch satri", eyebrow: "Ustki yorliq", linkLabel: "Havola matni",
+  note: "Izoh", noteLink: "Izoh havolasi", items: "Elementlar", cards: "Kartalar",
+  rows: "Qatorlar", cols: "Ustunlar", links: "Havolalar", steps: "Qadamlar",
+  q: "Savol", a: "Javob", t: "Sarlavha", d: "Tavsif", name: "Nomi", price: "Narx ($/oy)",
+  credits: "Kreditlar satri", feats: "Xususiyatlar", teaserFeats: "Tizer xususiyatlari",
+  enabled: "Yoqilgan", visible: "Ko'rinadi", showInApp: "Ilova ichida ham",
+  mediaUrl: "Media manzili", mediaType: "Media turi", accent: "Asosiy rang", font: "Shrift",
+  word: "Katta so'z", barLeft: "Chap chiziq", barRight: "O'ng chiziq", cost: "Narx chipi",
+  footTitle: "Past sarlavha", footSub: "Past tavsif", caption: "Izoh", time: "Vaqt chipi",
+  winTitle: "Oyna sarlavhasi", winSearch: "Qidiruv placeholder", winImport: "Import tugmasi",
+  mockName: "Shablon nomi", mockImport: "Import tugmasi", guarantee: "Kafolat satri",
+  versionNote: "Versiya izohi", chips: "Chiplar", typingPrompts: "Yozuv promptlari",
+  stackLabel: "Natija yorlig'i", chipMode: "Rejim chipi", chipModel: "Model chipi",
+  chipRes: "O'lcham chipi", chipCost: "Narx chipi", chipGenerate: "Generatsiya tugmasi",
+  tagline: "Shior", email: "Aloqa email", copyright: "Mualliflik satri",
+  kicker: "Kicker", searchPlaceholder: "Qidiruv placeholder", loading: "Yuklanmoqda satri",
+  emptyTitle: "Bo'sh holat sarlavhasi", emptySub: "Bo'sh holat tavsifi", emptyBtn: "Bo'sh holat tugmasi",
+  heroSub: "Hero tavsifi", quick: "Tez amallar", secJump: "Davom etish sarlavhasi",
+  secJumpLink: "Davom etish havolasi", secStart: "Boshlash sarlavhasi",
+  secFeatured: "Tanlangan modellar", secRec: "Tavsiyalar", recLink: "Barchasi havolasi",
+  shelfFresh: "Tokcha 1", shelfFreshKick: "Tokcha 1 kicker", shelfCat: "Afzal kategoriya",
+  shelfCatKick: "Tokcha 2 kicker", shelfNew: "Tokcha 3", shelfNewKick: "Tokcha 3 kicker",
+  billingNote: "To'lov izohi", billingSub: "To'lov tavsifi", popularLabel: "Ommabop yorlig'i",
+  compareTitle: "Taqqoslash sarlavhasi", compareItems: "Taqqoslash elementlari",
+  faqTitle: "Savol-javob sarlavhasi", initials: "Bosh harflar", cat: "Kategoriya", dur: "Davomiylik",
+  placement: "Joylashuv", tone: "Ohang", audience: "Kimga", dismissable: "Yopish mumkin",
+  startAt: "Boshlanish", endAt: "Tugash", ctaTarget: "CTA ekrani", ctaUrl: "CTA havolasi",
+  pluginBadge: "Plagin pipi", signIn: "Kirish tugmasi", templates: "Shablonlar",
+  aiStudio: "AI Studio", pricing: "Narxlar", plugin: "Plagin",
+  /* ── Plagin CMS yuzasi ── */
+  home: "Home ekrani", guest: "Mehmon ekrani", aiLauncher: "AI Tools launcher",
+  announcement: "E'lon paneli", sections: "Bo'lim sarlavhalari", categoryTiles: "Kategoriya tayllari",
+  features: "Afzalliklar", rails: "Kuratsiya rellslari", promptPlaceholder: "Prompt placeholder",
+  mediaMode: "Media rejimi", peekKicker: "Peek kicker", registerNote: "Ro'yxatdan o'tish izohi",
+  continueSessions: "Sessiyalar sarlavhasi", explore: "Explore sarlavhasi",
+  categories: "Kategoriyalar sarlavhasi", recent: "So'nggilar sarlavhasi", shelf: "Tokcha sarlavhasi",
+  browseAll: "Barchasi havolasi", ctaAction: "CTA amali",
+};
+
+function wsLabelFor(path) {
+  const seg = String(path).split(".").pop();
+  if (WS_LABELS[path]) return WS_LABELS[path];
+  if (/^\d+$/.test(seg)) return "#" + (Number(seg) + 1);
+  if (WS_LABELS[seg]) return WS_LABELS[seg];
+  return seg.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+}
+
+/* ── Reflektiv maydon quruvchi ───────────────────────────────────────────── */
+
+const WS_MEDIA_GRAD = "linear-gradient(138deg,#20153A,#8F4FD1 62%,#0F0A1C)";
+/* Uzunligi serverda default bo'yicha qotirilgan massivlar — qo'shish/o'chirish yo'q.
+   Faqat `notices` uzunligi o'zgaruvchan (maks 8). */
+const WS_GROWABLE = { notices: 8 };
+
+function wsIsMediaSlot(v) {
+  return v && typeof v === "object" && !Array.isArray(v) && Object.prototype.hasOwnProperty.call(v, "mediaUrl");
+}
+
+function wsEnumFor(path) {
+  const seg = String(path).split(".").pop();
+  if (/^notices\.\d+\.placement$/.test(path)) return [["banner", "Yuqori banner"], ["toast", "Burchak toast"], ["modal", "Modal oyna"]];
+  if (/^notices\.\d+\.tone$/.test(path)) return [["info", "Ma'lumot"], ["promo", "Promo"], ["warn", "Ogohlantirish"], ["success", "Muvaffaqiyat"]];
+  if (/^notices\.\d+\.audience$/.test(path)) return [["all", "Hammaga"], ["guest", "Faqat mehmonlarga"], ["user", "Faqat foydalanuvchilarga"]];
+  if (/^notices\.\d+\.ctaTarget$/.test(path)) return [["", "— yo'q —"], ["landing", "Bosh sahifa"], ["pricing", "Narxlar"], ["plugin", "Plagin"], ["templates", "Shablonlar"], ["aistudio", "AI Studio"], ["account", "Hisob"], ["dashboard", "Boshqaruv"]];
+  if (path === "announcement.tone") return [["info", "Ma'lumot"], ["promo", "Promo"], ["warn", "Ogohlantirish"]];
+  if (path === "announcement.ctaAction") return [["", "— yo'q —"], ["home", "Home"], ["aistudio", "AI Studio"], ["catalog", "Katalog"], ["account", "Hisob"]];
+  if (path === "home.hero.mediaMode") return [["auto", "Avto (oxirgi gen ustun)"], ["media-first", "Doim admin media"]];
+  if (seg === "font") return WS_FONTS.map((f) => [f.key, f.label]);
+  if (seg === "mediaType") return [["", "— avto —"], ["image", "Rasm / GIF"], ["video", "Video"]];
+  return null;
+}
+
+function wsSelect(path, value, opts) {
+  const o = opts.map(([v, l]) => `<option value="${wsEsc(v)}"${String(value) === String(v) ? " selected" : ""}>${wsEsc(l)}</option>`).join("");
+  return `<select class="adx-input ws-inp" data-ws="${path}">${o}</select>`;
+}
+
+function wsToggleRow(path, value, label) {
+  return `<div style="display:flex;align-items:center;gap:9px;padding:7px 0">
+    <button class="adx-tog ${value ? "on" : "off"}" onclick="wsTogglePath('${path}')"><i></i></button>
+    <span style="font-size:12px;font-weight:600">${wsEsc(label)}</span>
   </div>`;
 }
 
-/* ── Tab: Hero & Theme ─────────────────────────────────────── */
+/** Konfiguratsiya daraxtining bir tugunidan tahrir maydonlarini quradi. */
+function wsAutoFields(path, val, depth) {
+  depth = depth || 0;
+  if (val === undefined || val === null) return "";
+  const label = wsLabelFor(path);
+  const t = typeof val;
 
-function wsTabHero() {
-  const c = WS_CFG;
-  const navFields = [
-    ["nav.templates", "TEMPLATES LINK", c.nav.templates], ["nav.aiStudio", "AI STUDIO LINK", c.nav.aiStudio],
-    ["nav.pricing", "PRICING LINK", c.nav.pricing], ["nav.plugin", "PLUGIN LINK", c.nav.plugin],
-    ["nav.signIn", "SIGN-IN BUTTON", c.nav.signIn], ["nav.cta", "NAV CTA BUTTON", c.nav.cta],
-    ["nav.pluginBadge", "PLUGIN LINK PIP (EMPTY = HIDDEN)", c.nav.pluginBadge],
-  ].map(([f, l, v]) => `<div>${axFlab(l)}${wsInput(f, v)}</div>`).join("");
-  const statRows = c.stats.map((s, i) => `
-    <div style="display:grid;grid-template-columns:110px 90px 1fr;gap:10px;margin-bottom:10px">
-      <div>${i === 0 ? axFlab("VALUE") : ""}${wsInput(`stats.${i}.value`, s.value, { mono: true, num: true, type: "int" })}</div>
-      <div>${i === 0 ? axFlab("SUFFIX") : ""}${wsInput(`stats.${i}.suffix`, s.suffix, { mono: true, ph: "+ / days" })}</div>
-      <div>${i === 0 ? axFlab("CAPTION") : ""}${wsInput(`stats.${i}.label`, s.label)}</div>
-    </div>`).join("");
-  return `<div class="adx-grid2" style="align-items:start">
-    <div style="display:flex;flex-direction:column;gap:16px">
-      ${wsThemeSection()}
-      ${wsCard("Hero", "", `
-        <div style="display:grid;grid-template-columns:90px 1fr;gap:12px;margin-bottom:12px">
-          <div>${axFlab("BADGE TAG")}${wsInput("hero.badgeTag", c.hero.badgeTag, { mono: true })}</div>
-          <div>${axFlab("BADGE TEXT")}${wsInput("hero.badgeText", c.hero.badgeText)}</div>
-        </div>
-        <div style="margin-bottom:12px">${axFlab("HEADLINE")}${wsInput("hero.title", c.hero.title)}</div>
-        <div style="margin-bottom:12px">${axFlab("HEADLINE ACCENT (GRADIENT PART)")}${wsInput("hero.titleAccent", c.hero.titleAccent)}</div>
-        <div style="margin-bottom:12px">${axFlab("SUBHEADLINE")}${wsArea("hero.sub", c.hero.sub, 3)}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-          <div>${axFlab("PRIMARY CTA")}${wsInput("hero.ctaPrimary", c.hero.ctaPrimary)}</div>
-          <div>${axFlab("SECONDARY CTA")}${wsInput("hero.ctaSecondary", c.hero.ctaSecondary)}</div>
-        </div>
-        <div>${axFlab("CREDIT LINE (UNDER CTAS)")}${wsInput("hero.credline", c.hero.credline)}</div>`)}
-      ${wsCard("Navigation labels", "", `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">${navFields}</div>`)}
-      ${wsCard("Stats row", `Four counters under the hero. Suffix: a symbol ("+") renders in the accent color, a word ("days") renders as a unit.`, statRows)}
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      ${wsCard("Live preview", "Updates as you type — hero, stats and the section order strip.", `<div id="wsPreview">${wsPreviewHtml(c)}</div>`)}
-      ${wsCard("Hero billboard", `The big media card next to the hero copy. Upload an image, GIF or short video — empty keeps the built-in aurora art.`, `
-        <div style="display:grid;grid-template-columns:60px 1fr;gap:12px;margin-bottom:12px">
-          <div>${axFlab("BADGE")}${wsInput("mockup.badge", c.mockup.badge, { mono: true })}</div>
-          <div>${axFlab("CAPTION TITLE")}${wsInput("mockup.title", c.mockup.title, { mono: true })}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:90px 1fr;gap:12px;margin-bottom:14px">
-          <div>${axFlab("TIME CHIP")}${wsInput("heroMedia.time", c.heroMedia.time, { mono: true, ph: "00:08" })}</div>
-          <div>${axFlab("CAPTION SUBLINE")}${wsInput("heroMedia.caption", c.heroMedia.caption)}</div>
-        </div>
-        ${axFlab("BILLBOARD MEDIA")}
-        ${wsMediaBlock("heroMedia", c.heroMedia, { grad: "linear-gradient(138deg,#2A1E49,#6C3FA8 62%,#130E24)", emptyLabel: "AURORA ART", hint: "Image, GIF or a short MP4/WebM loop — shown inside the hero billboard frame." })}`)}
-      ${wsCard("Announcement strip (promo bar)", "The thin dismissable strip above the landing nav. Visitors who dismiss it will see it again when you change the text.", `
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
-          <button class="adx-tog ${c.promo.enabled ? "on" : "off"}" onclick="wsTogglePath('promo.enabled')"><i></i></button>
-          <span style="font-size:12px;font-weight:600">${c.promo.enabled ? "Visible" : "Hidden"}</span>
-          <span style="flex:1"></span>
-          <label style="display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--muted)">
-            <button class="adx-tog ${c.promo.showInApp ? "on" : "off"}" onclick="wsTogglePath('promo.showInApp')"><i></i></button>
-            Also show inside the logged-in app
-          </label>
-        </div>
-        <div style="display:grid;grid-template-columns:80px 1fr 110px;gap:10px">
-          <div>${axFlab("TAG")}${wsInput("promo.tag", c.promo.tag, { mono: true })}</div>
-          <div>${axFlab("TEXT")}${wsInput("promo.text", c.promo.text)}</div>
-          <div>${axFlab("CTA LABEL")}${wsInput("promo.ctaLabel", c.promo.ctaLabel)}</div>
-        </div>`)}
-      ${wsCard("Explore menu — live models", "The four model rows inside the nav “Explore” mega-menu. Keep prices in sync with the real model catalog.", c.megaModels.rows.map((m, i) => `
-        <div style="display:grid;grid-template-columns:56px 1fr 1.4fr 90px 90px;gap:8px;margin-bottom:8px">
-          <div>${i === 0 ? axFlab("INITIALS") : ""}${wsInput(`megaModels.rows.${i}.initials`, m.initials, { mono: true })}</div>
-          <div>${i === 0 ? axFlab("MODEL") : ""}${wsInput(`megaModels.rows.${i}.title`, m.title)}</div>
-          <div>${i === 0 ? axFlab("SUBTITLE") : ""}${wsInput(`megaModels.rows.${i}.sub`, m.sub)}</div>
-          <div>${i === 0 ? axFlab("BADGE") : ""}${wsInput(`megaModels.rows.${i}.badge`, m.badge, { mono: true, ph: "—" })}</div>
-          <div>${i === 0 ? axFlab("PRICE") : ""}${wsInput(`megaModels.rows.${i}.price`, m.price, { mono: true })}</div>
-        </div>`).join(""))}
-    </div>
+  if (t === "boolean") return wsToggleRow(path, val, label);
+  if (t === "number") return `<div style="margin-bottom:10px">${axFlab(label.toUpperCase())}${wsInput(path, val, { mono: true, num: true, type: "num" })}</div>`;
+  if (t === "string") {
+    const en = wsEnumFor(path);
+    if (en) return `<div style="margin-bottom:10px">${axFlab(label.toUpperCase())}${wsSelect(path, val, en)}</div>`;
+    if (/^notices\.\d+\.(startAt|endAt)$/.test(path)) {
+      return `<div style="margin-bottom:10px">${axFlab(label.toUpperCase() + " (BO'SH = CHEKSIZ)")}<input class="adx-input ws-inp" type="datetime-local" data-ws="${path}" value="${wsEsc(String(val).slice(0, 16))}"></div>`;
+    }
+    const long = val.length > 64 || val.indexOf("\n") >= 0;
+    const body = long ? wsArea(path, val, Math.min(6, Math.max(2, Math.ceil(val.length / 60)))) : wsInput(path, val);
+    return `<div style="margin-bottom:10px">${axFlab(label.toUpperCase())}${body}</div>`;
+  }
+
+  if (Array.isArray(val)) {
+    if (!val.length) {
+      const cap0 = WS_GROWABLE[path.split(".").pop()] || WS_GROWABLE[path];
+      return `<div style="margin-bottom:10px">${axFlab(label.toUpperCase())}
+        <div style="font-size:11px;color:var(--muted);margin-bottom:7px">Hozircha bo'sh</div>
+        ${cap0 ? `<button class="adx-btn2 sm" onclick="wsListAdd('${path}')"><i class="ph ph-plus"></i>Qo'shish</button>` : ""}</div>`;
+    }
+    if (typeof val[0] === "string") {
+      return `<div style="margin-bottom:10px">${axFlab(label.toUpperCase() + " (HAR SATRDA BITTA)")}${wsArea(path, val, Math.min(8, val.length + 1), { type: "lines" })}</div>`;
+    }
+    const grow = WS_GROWABLE[path.split(".").pop()] || WS_GROWABLE[path];
+    const rows = val.map((item, i) => {
+      const ip = path + "." + i;
+      const head = (item && (item.title || item.name || item.t || item.q || item.label || item.text)) || (label + " " + (i + 1));
+      return `<details class="ws-item"${depth < 1 && i === 0 ? " open" : ""} style="border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:7px;background:rgba(255,255,255,.015)">
+        <summary style="cursor:pointer;padding:9px 11px;font-size:11.5px;font-weight:600;display:flex;align-items:center;gap:8px;list-style:none">
+          <span style="font:700 9px 'IBM Plex Mono',monospace;color:var(--muted)">${i + 1}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${wsEsc(String(head).slice(0, 46))}</span>
+          ${grow ? `<span class="adx-ico" title="O'chirish" onclick="event.preventDefault();event.stopPropagation();wsListRemove('${path}',${i})" style="width:22px;height:22px"><i class="ph ph-trash"></i></span>` : ""}
+          <span class="adx-ico" title="Tepaga" onclick="event.preventDefault();event.stopPropagation();wsListMove('${path}',${i},-1)" style="width:22px;height:22px"><i class="ph ph-caret-up"></i></span>
+          <span class="adx-ico" title="Pastga" onclick="event.preventDefault();event.stopPropagation();wsListMove('${path}',${i},1)" style="width:22px;height:22px"><i class="ph ph-caret-down"></i></span>
+        </summary>
+        <div style="padding:2px 11px 11px">${wsAutoFields(ip, item, depth + 1)}</div>
+      </details>`;
+    }).join("");
+    const addBtn = grow && val.length < grow
+      ? `<button class="adx-btn2 sm" style="margin-top:4px" onclick="wsListAdd('${path}')"><i class="ph ph-plus"></i>Qo'shish</button>` : "";
+    return `<div style="margin-bottom:12px">${axFlab(label.toUpperCase() + " · " + val.length + " TA")}${rows}${addBtn}</div>`;
+  }
+
+  // obyekt
+  const keys = Object.keys(val);
+  let out = "";
+  if (wsIsMediaSlot(val)) {
+    out += `<div style="margin-bottom:12px">${axFlab("MEDIA")}${wsMediaBlock(path, val, { grad: WS_MEDIA_GRAD, w: 104, h: 60 })}</div>`;
+  }
+  out += keys.filter((k) => !(wsIsMediaSlot(val) && (k === "mediaUrl" || k === "mediaType")))
+    .map((k) => wsAutoFields(path + "." + k, val[k], depth + 1)).join("");
+  if (depth === 0) return out;
+  return out;
+}
+
+/* ── Dizayn paneli (uiStyles) ────────────────────────────────────────────── */
+
+const WS_SHADOWS = ["Yo'q", "Yumshoq", "O'rta", "Kuchli", "Dramatik"];
+
+function wsStyleGet(p, prop) {
+  const e = (wsCfg().uiStyles || {})[p] || {};
+  const slot = e[WS_VIS_DEV === "mobile" ? "m" : "d"] || {};
+  return slot[prop];
+}
+
+function wsStyleRow(label, html, hint) {
+  return `<div style="display:grid;grid-template-columns:104px 1fr;gap:10px;align-items:center;margin-bottom:9px">
+    <span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.05em;color:var(--muted)">${wsEsc(label)}</span>
+    <div>${html}${hint ? `<div style="font-size:9.5px;color:var(--muted2);margin-top:3px">${wsEsc(hint)}</div>` : ""}</div>
   </div>`;
 }
 
-/* ── Tab: Landing sections ─────────────────────────────────── */
+function wsNumCtl(prop, min, max, step, unit) {
+  const v = wsStyleGet(WS_SEL, prop);
+  const has = typeof v === "number";
+  return `<div style="display:flex;gap:6px;align-items:center">
+    <input type="range" min="${min}" max="${max}" step="${step}" value="${has ? v : (prop === "scale" || prop === "opacity" ? 1 : 0)}"
+      oninput="wsStyleSet('${prop}',Number(this.value))" style="flex:1;accent-color:var(--glow,#d8ff3e)">
+    <input class="adx-input mono" style="width:66px;padding:5px 7px;font-size:11px" value="${has ? v : ""}" placeholder="auto"
+      onchange="wsStyleSet('${prop}', this.value===''?null:Number(this.value))">
+    ${unit ? `<span style="font-size:10px;color:var(--muted2)">${unit}</span>` : ""}
+    ${has ? `<button class="adx-ico" title="Tozalash" onclick="wsStyleSet('${prop}',null)" style="width:22px;height:22px"><i class="ph ph-x"></i></button>` : ""}
+  </div>`;
+}
+
+function wsSegCtl(prop, opts) {
+  const v = wsStyleGet(WS_SEL, prop);
+  return `<div class="adx-seg" style="display:inline-flex">${opts.map(([k, l]) =>
+    `<button class="${v === k ? "on" : ""}" onclick="wsStyleSet('${prop}',${v === k ? "null" : `'${k}'`})" style="padding:5px 9px;font-size:11px">${l}</button>`).join("")}</div>`;
+}
+
+function wsColorCtl(prop) {
+  const v = wsStyleGet(WS_SEL, prop);
+  return `<div style="display:flex;gap:6px;align-items:center">
+    <input type="color" value="${/^#[0-9a-fA-F]{6}$/.test(v || "") ? v : "#ffffff"}" onchange="wsStyleSet('${prop}',this.value)"
+      style="width:30px;height:28px;padding:0;border:1px solid var(--line,#2A3140);border-radius:7px;background:transparent;cursor:pointer">
+    <input class="adx-input mono" style="width:92px;padding:5px 7px;font-size:11px" value="${wsEsc(v || "")}" placeholder="auto"
+      onchange="wsStyleSet('${prop}', this.value.trim()===''?null:this.value.trim())">
+    ${v ? `<button class="adx-ico" title="Tozalash" onclick="wsStyleSet('${prop}',null)" style="width:22px;height:22px"><i class="ph ph-x"></i></button>` : ""}
+  </div>`;
+}
+
+function wsDesignPanel() {
+  if (!WS_SEL) {
+    return `<div style="padding:26px 16px;text-align:center;color:var(--muted);font-size:12px">
+      Saytdan biror elementni bosing — uning o'lchami, rangi va joylashuvi shu yerda ochiladi.</div>`;
+  }
+  const st = (wsCfg().uiStyles || {})[WS_SEL] || {};
+  const slot = st[WS_VIS_DEV === "mobile" ? "m" : "d"] || {};
+  const hidden = slot.hidden === true;
+  const dirty = Object.keys(slot).length;
+  return `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span class="adx-chip" style="font:700 9.5px 'IBM Plex Mono',monospace">${WS_VIS_DEV === "mobile" ? "MOBIL" : "DESKTOP"}</span>
+      <span style="font-size:10.5px;color:var(--muted)">${dirty ? dirty + " ta o'zgarish" : "o'zgarishsiz"}</span>
+      <span style="flex:1"></span>
+      ${dirty ? `<button class="adx-btn2 sm" onclick="wsStyleReset()"><i class="ph ph-arrow-counter-clockwise"></i>Tiklash</button>` : ""}
+    </div>
+    ${wsToggleRow2(hidden, "Elementni yashirish", "wsStyleSet('hidden'," + (hidden ? "null" : "true") + ")")}
+    ${wsCard("Matn", "", `
+      ${wsStyleRow("O'LCHAM", wsNumCtl("fontSize", 8, 120, 1, "px"))}
+      ${wsStyleRow("QALINLIK", wsNumCtl("fontWeight", 100, 900, 100))}
+      ${wsStyleRow("SATR BALANDLIGI", wsNumCtl("lineHeight", 0.7, 2.8, 0.05))}
+      ${wsStyleRow("HARF ORALIG'I", wsNumCtl("letterSpacing", -0.15, 0.5, 0.005, "em"))}
+      ${wsStyleRow("TEKISLASH", wsSegCtl("textAlign", [["left", "⇤"], ["center", "↔"], ["right", "⇥"]]))}
+      ${wsStyleRow("HARF REJIMI", wsSegCtl("textTransform", [["none", "Aa"], ["uppercase", "AA"], ["capitalize", "Aa Bb"]]))}
+      ${wsStyleRow("MATN RANGI", wsColorCtl("color"))}
+    `)}
+    ${wsCard("Joylashuv va o'lcham", "Saytda elementni sichqoncha bilan sudrab ham surish mumkin; burchak tutqichi — masshtab.", `
+      ${wsStyleRow("SURISH X", wsNumCtl("offsetX", -400, 400, 1, "px"))}
+      ${wsStyleRow("SURISH Y", wsNumCtl("offsetY", -400, 400, 1, "px"))}
+      ${wsStyleRow("MASSHTAB", wsNumCtl("scale", 0.4, 2.5, 0.01, "×"))}
+      ${wsStyleRow("BURISH", wsNumCtl("rotate", -30, 30, 0.5, "°"))}
+      ${wsStyleRow("MAKS ENI", wsNumCtl("maxWidth", 0, 1600, 10, "px"))}
+      ${wsStyleRow("TEPA BO'SHLIQ", wsNumCtl("marginTop", -200, 300, 1, "px"))}
+      ${wsStyleRow("PAST BO'SHLIQ", wsNumCtl("marginBottom", -200, 300, 1, "px"))}
+      ${wsStyleRow("ICHKI ↕", wsNumCtl("padY", 0, 160, 1, "px"))}
+      ${wsStyleRow("ICHKI ↔", wsNumCtl("padX", 0, 160, 1, "px"))}
+    `)}
+    ${wsCard("Pardoz", "", `
+      ${wsStyleRow("FON RANGI", wsColorCtl("bg"))}
+      ${wsStyleRow("BURCHAK", wsNumCtl("radius", 0, 90, 1, "px"))}
+      ${wsStyleRow("SHAFFOFLIK", wsNumCtl("opacity", 0, 1, 0.05))}
+      ${wsStyleRow("SOYA", wsSegCtl("shadow", WS_SHADOWS.map((l, i) => [i, l])))}
+      ${wsStyleRow("CHEGARA", wsNumCtl("borderWidth", 0, 8, 1, "px"))}
+      ${wsStyleRow("CHEGARA RANGI", wsColorCtl("borderColor"))}
+    `)}`;
+}
+
+function wsToggleRow2(on, label, onclick) {
+  return `<div style="display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:12px">
+    <button class="adx-tog ${on ? "on" : "off"}" onclick="${onclick}"><i></i></button>
+    <span style="font-size:12px;font-weight:600">${wsEsc(label)}</span>
+  </div>`;
+}
+
+/* ── Sahifa paneli: mavzu + bo'lim tartibi + qatlamlar ───────────────────── */
 
 function wsSectionOrderCard() {
-  const rows = WS_CFG.landingSections.map((sc, i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid rgba(255,255,255,.07);border-radius:10px;margin-bottom:6px;background:var(--surface2,rgba(255,255,255,.02))">
-      <span style="font:700 10px 'IBM Plex Mono',monospace;color:var(--muted);width:16px">${i + 2}</span>
-      <span style="font-size:12px;font-weight:600;flex:1;${sc.visible ? "" : "color:var(--muted2);text-decoration:line-through"}">${WS_SECTION_LABELS[sc.key] || sc.key}</span>
-      <button class="adx-ico" title="Move up" onclick="wsSecMove(${i},-1)" ${i === 0 ? "disabled" : ""} style="width:26px;height:26px"><i class="ph ph-caret-up"></i></button>
-      <button class="adx-ico" title="Move down" onclick="wsSecMove(${i},1)" ${i === WS_CFG.landingSections.length - 1 ? "disabled" : ""} style="width:26px;height:26px"><i class="ph ph-caret-down"></i></button>
-      <button class="adx-tog ${sc.visible ? "on" : "off"}" title="Show / hide" onclick="wsSecToggle(${i})"><i></i></button>
+  const rows = wsCfg().landingSections.map((sc, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid rgba(255,255,255,.07);border-radius:9px;margin-bottom:5px">
+      <span style="font:700 10px 'IBM Plex Mono',monospace;color:var(--muted);width:14px">${i + 2}</span>
+      <span style="font-size:11.5px;font-weight:600;flex:1;${sc.visible ? "" : "color:var(--muted2);text-decoration:line-through"}">${WS_SECTION_LABELS[sc.key] || sc.key}</span>
+      <button class="adx-ico" title="Tepaga" onclick="wsSecMove(${i},-1)" ${i === 0 ? "disabled" : ""} style="width:24px;height:24px"><i class="ph ph-caret-up"></i></button>
+      <button class="adx-ico" title="Pastga" onclick="wsSecMove(${i},1)" ${i === wsCfg().landingSections.length - 1 ? "disabled" : ""} style="width:24px;height:24px"><i class="ph ph-caret-down"></i></button>
+      <button class="adx-tog ${sc.visible ? "on" : "off"}" title="Ko'rsatish / yashirish" onclick="wsSecToggle(${i})"><i></i></button>
     </div>`).join("");
-  return wsCard("Section order & visibility", "The hero is always first. Reorder the sections below it and hide the ones you don't need — hidden sections don't render on the landing.", rows);
+  return wsCard("Bo'lim tartibi", "Hero doim birinchi. Qolganini surib joylashtiring yoki yashiring.", rows);
 }
 
-function wsTabLanding() {
-  const c = WS_CFG;
-  return `<div class="adx-grid2" style="align-items:start">
-    <div style="display:flex;flex-direction:column;gap:16px">
-      ${wsSectionOrderCard()}
-      ${wsCard("Ticker strip", "The thin scrolling text band under the hero.", `
-        <div style="margin-bottom:10px">${axFlab("LEFT LABEL")}${wsInput("ticker.label", c.ticker.label, { mono: true })}</div>
-        ${axFlab("ITEMS (ONE PER LINE, MAX 12)")}${wsArea("ticker.items", c.ticker.items, 4, { type: "lines" })}`)}
-      ${wsCard("Cinema billboard", "The full-width “Made with AI Studio” frame. Upload media to replace the sunset art.", `
-        <div style="display:grid;grid-template-columns:170px 1fr;gap:10px;margin-bottom:10px">
-          <div>${axFlab("EYEBROW")}${wsInput("cinema.eyebrow", c.cinema.eyebrow, { mono: true })}</div>
-          <div>${axFlab("TITLE")}${wsInput("cinema.title", c.cinema.title)}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
-          <div>${axFlab("LINK LABEL")}${wsInput("cinema.linkLabel", c.cinema.linkLabel)}</div>
-          <div>${axFlab("BAR LEFT")}${wsInput("cinema.barLeft", c.cinema.barLeft, { mono: true })}</div>
-          <div>${axFlab("BAR RIGHT")}${wsInput("cinema.barRight", c.cinema.barRight, { mono: true })}</div>
-        </div>
-        <div style="margin-bottom:10px">${axFlab("BIG WORD (\\n = LINE BREAK)")}${wsArea("cinema.word", c.cinema.word, 2)}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 90px;gap:10px;margin-bottom:12px">
-          <div>${axFlab("FOOT TITLE")}${wsInput("cinema.footTitle", c.cinema.footTitle)}</div>
-          <div>${axFlab("FOOT SUBLINE")}${wsInput("cinema.footSub", c.cinema.footSub)}</div>
-          <div>${axFlab("COST CHIP")}${wsInput("cinema.cost", c.cinema.cost, { mono: true })}</div>
-        </div>
-        ${axFlab("BILLBOARD MEDIA")}
-        ${wsMediaBlock("cinema", c.cinema, { grad: "linear-gradient(138deg,#3A2A12,#BE8428 62%,#171006)", emptyLabel: "SUNSET ART", w: 150, h: 64 })}`)}
-      ${wsCard("Templates showcase", "", `
-        <div style="display:grid;grid-template-columns:150px 1fr 110px;gap:12px;margin-bottom:10px">
-          <div>${axFlab("EYEBROW")}${wsInput("showcase.eyebrow", c.showcase.eyebrow, { mono: true })}</div>
-          <div>${axFlab("TITLE")}${wsInput("showcase.title", c.showcase.title)}</div>
-          <div>${axFlab("LINK LABEL")}${wsInput("showcase.linkLabel", c.showcase.linkLabel)}</div>
-        </div>
-        <div>${axFlab("DISCLAIMER LINE (UNDER THE TITLE)")}${wsInput("feed.note", c.feed.note)}</div>`)}
-      ${wsCard("Showcase feed cards (11 slots)", "The masonry cards in the showcase. Fill a slot to replace the built-in concept card — title, category, badge and media. Empty slots keep the built-in gradient cards.", c.feed.cards.map((f, i) => `
-        <div class="adx-card" style="padding:12px;margin-bottom:8px">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">SLOT ${i + 1} · ${WS_FEED_SHAPES[i] || "card"}</div>
-          <div style="display:grid;grid-template-columns:1.3fr 1fr 70px 70px;gap:8px;margin-bottom:8px">
-            <div>${wsInput(`feed.cards.${i}.title`, f.title, { ph: "empty = built-in card" })}</div>
-            <div>${wsInput(`feed.cards.${i}.cat`, f.cat, { ph: "category" })}</div>
-            <div>${wsInput(`feed.cards.${i}.dur`, f.dur, { mono: true, ph: "0:12" })}</div>
-            <div>${wsInput(`feed.cards.${i}.badge`, f.badge, { mono: true, ph: "PRO" })}</div>
-          </div>
-          ${wsMediaBlock(`feed.cards.${i}`, f, { grad: WS_FEED_GRADS[i % WS_FEED_GRADS.length], w: 92, h: 56 })}
-        </div>`).join(""))}
-      ${wsCard("AI Studio promo", "", `
-        <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;margin-bottom:12px">
-          <div>${axFlab("EYEBROW")}${wsInput("aiPromo.eyebrow", c.aiPromo.eyebrow, { mono: true })}</div>
-          <div>${axFlab("TITLE")}${wsInput("aiPromo.title", c.aiPromo.title)}</div>
-        </div>
-        <div style="margin-bottom:12px">${axFlab("DESCRIPTION")}${wsArea("aiPromo.desc", c.aiPromo.desc, 2)}</div>
-        <div style="margin-bottom:12px">${axFlab("BAND CTA BUTTON")}${wsInput("aiPromo.ctaLabel", c.aiPromo.ctaLabel)}</div>
-        ${axFlab("TOOL CARDS (TITLE · DESCRIPTION · COST LABEL)")}
-        ${c.aiPromo.cards.map((cd, i) => `
-          <div style="display:grid;grid-template-columns:1fr 1.4fr 100px;gap:8px;margin-bottom:8px">
-            ${wsInput(`aiPromo.cards.${i}.title`, cd.title)}
-            ${wsInput(`aiPromo.cards.${i}.desc`, cd.desc)}
-            ${wsInput(`aiPromo.cards.${i}.cost`, cd.cost, { mono: true })}
-          </div>`).join("")}
-        <div style="margin-top:12px">${axFlab("TYPING PROMPTS (4 LINES — THE ANIMATED PROMPT TEXTS)")}${wsArea("aiPromo.typingPrompts", c.aiPromo.typingPrompts, 4, { type: "lines" })}</div>
-        <div style="margin-top:12px">${axFlab("RESULT STACK LABEL")}${wsInput("aiPromo.stackLabel", c.aiPromo.stackLabel, { mono: true })}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 70px 70px 1fr;gap:8px;margin-top:10px">
-          <div>${axFlab("CHIP: MODE")}${wsInput("aiPromo.chipMode", c.aiPromo.chipMode, { mono: true })}</div>
-          <div>${axFlab("CHIP: MODEL")}${wsInput("aiPromo.chipModel", c.aiPromo.chipModel)}</div>
-          <div>${axFlab("RES")}${wsInput("aiPromo.chipRes", c.aiPromo.chipRes, { mono: true })}</div>
-          <div>${axFlab("COST")}${wsInput("aiPromo.chipCost", c.aiPromo.chipCost, { mono: true })}</div>
-          <div>${axFlab("GENERATE BTN")}${wsInput("aiPromo.chipGenerate", c.aiPromo.chipGenerate)}</div>
-        </div>`)}
-      ${wsCard("Plugin promo", "", `
-        <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;margin-bottom:12px">
-          <div>${axFlab("EYEBROW")}${wsInput("pluginPromo.eyebrow", c.pluginPromo.eyebrow, { mono: true })}</div>
-          <div>${axFlab("TITLE")}${wsInput("pluginPromo.title", c.pluginPromo.title)}</div>
-        </div>
-        <div style="margin-bottom:12px">${axFlab("DESCRIPTION")}${wsArea("pluginPromo.desc", c.pluginPromo.desc, 2)}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-          <div>${axFlab("CTA BUTTON")}${wsInput("pluginPromo.ctaLabel", c.pluginPromo.ctaLabel)}</div>
-          ${c.pluginPromo.chips.map((ch, i) => `<div>${axFlab("HOST CHIP " + (i + 1))}${wsInput(`pluginPromo.chips.${i}`, ch)}</div>`).join("")}
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-          <div>${axFlab("AE WINDOW TITLE")}${wsInput("pluginPromo.winTitle", c.pluginPromo.winTitle, { mono: true })}</div>
-          <div>${axFlab("SEARCH PLACEHOLDER")}${wsInput("pluginPromo.winSearch", c.pluginPromo.winSearch)}</div>
-          <div>${axFlab("IMPORT BUTTON")}${wsInput("pluginPromo.winImport", c.pluginPromo.winImport)}</div>
-        </div>`)}
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      ${wsCard("Presets rail (4 cards)", "The “One-click creative presets” row. Upload media into each card — empty keeps the gradient art.", `
-        <div style="display:grid;grid-template-columns:150px 1fr 120px;gap:10px;margin-bottom:12px">
-          <div>${axFlab("EYEBROW")}${wsInput("presetsRail.eyebrow", c.presetsRail.eyebrow, { mono: true })}</div>
-          <div>${axFlab("TITLE")}${wsInput("presetsRail.title", c.presetsRail.title)}</div>
-          <div>${axFlab("LINK LABEL")}${wsInput("presetsRail.linkLabel", c.presetsRail.linkLabel)}</div>
-        </div>
-        ${c.presetsRail.items.map((p, i) => `
-          <div class="adx-card" style="padding:12px;margin-bottom:8px">
-            <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-bottom:8px">
-              <div>${i === 0 ? axFlab("CARD TITLE") : ""}${wsInput(`presetsRail.items.${i}.title`, p.title)}</div>
-              <div>${i === 0 ? axFlab("SUBTITLE") : ""}${wsInput(`presetsRail.items.${i}.sub`, p.sub, { mono: true })}</div>
-            </div>
-            ${wsMediaBlock(`presetsRail.items.${i}`, p, { grad: WS_FEED_GRADS[(i + 2) % WS_FEED_GRADS.length], w: 92, h: 56 })}
-          </div>`).join("")}`)}
-      ${wsCard("Pricing teaser", "Plan cards themselves are edited on the “Pricing page” tab (shared copy).", `
-        <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;margin-bottom:12px">
-          <div>${axFlab("EYEBROW")}${wsInput("pricingTeaser.eyebrow", c.pricingTeaser.eyebrow, { mono: true })}</div>
-          <div>${axFlab("TITLE")}${wsInput("pricingTeaser.title", c.pricingTeaser.title)}</div>
-        </div>
-        <div style="margin-bottom:12px">${axFlab("SUBTITLE")}${wsInput("pricingTeaser.sub", c.pricingTeaser.sub)}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>${axFlab("BOTTOM NOTE")}${wsInput("pricingTeaser.note", c.pricingTeaser.note)}</div>
-          <div>${axFlab("NOTE LINK LABEL")}${wsInput("pricingTeaser.noteLink", c.pricingTeaser.noteLink)}</div>
-        </div>`)}
-      ${wsCard("FAQ", "Shown on the landing and reused on the pricing page.", `
-        <div style="margin-bottom:12px">${axFlab("SECTION TITLE")}${wsInput("faqSection.title", c.faqSection.title)}</div>
-        ${c.faqSection.items.map((f, i) => `
-          <div style="border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;margin-bottom:8px">
-            ${axFlab("QUESTION " + (i + 1))}${wsInput(`faqSection.items.${i}.q`, f.q)}
-            <div style="margin-top:8px">${axFlab("ANSWER")}${wsArea(`faqSection.items.${i}.a`, f.a, 2)}</div>
-          </div>`).join("")}`)}
-      ${wsCard("Final CTA band", "", `
-        <div style="margin-bottom:12px">${axFlab("EYEBROW")}${wsInput("finalCta.eyebrow", c.finalCta.eyebrow, { mono: true })}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-          <div>${axFlab("TITLE")}${wsInput("finalCta.title", c.finalCta.title)}</div>
-          <div>${axFlab("CTA BUTTON")}${wsInput("finalCta.ctaLabel", c.finalCta.ctaLabel)}</div>
-          <div>${axFlab("SECONDARY BUTTON")}${wsInput("finalCta.secondaryLabel", c.finalCta.secondaryLabel)}</div>
-        </div>
-        <div style="margin-bottom:12px">${axFlab("SUBTITLE")}${wsInput("finalCta.sub", c.finalCta.sub)}</div>
-        <div>${axFlab("CREDIT LINE")}${wsInput("finalCta.credline", c.finalCta.credline)}</div>`)}
-    </div>
-  </div>`;
+function wsLayersCard() {
+  if (!WS_OUTLINE.length) return wsCard("Qatlamlar", "Sahifa yuklangach ro'yxat to'ladi.", `<div style="font-size:11px;color:var(--muted)">—</div>`);
+  const rows = WS_OUTLINE.map((o) => `
+    <div onclick="wsPickPath('${wsEsc(o.path)}')" style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;cursor:pointer;${o.path === WS_SEL ? "background:rgba(216,255,62,.12)" : ""}">
+      <i class="ph ph-${o.leaf ? "text-t" : "square"}" style="font-size:11px;color:var(--muted2)"></i>
+      <span style="flex:1;min-width:0;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${wsEsc(o.text || o.path)}</span>
+      <span style="font:600 8.5px 'IBM Plex Mono',monospace;color:var(--muted2)">${wsEsc(o.path.split(".").slice(0, 2).join("."))}</span>
+    </div>`).join("");
+  return wsCard("Qatlamlar · " + WS_OUTLINE.length, "Bosilganda preview o'sha elementga suriladi va tanlanadi.", `<div style="max-height:280px;overflow-y:auto">${rows}</div>`);
 }
 
-/* ── Tab: App & Catalog (logged-in webapp Home + Stock Catalog sahifasi) ───── */
-
-function wsTabApp() {
-  const c = WS_CFG;
-  return `<div class="adx-grid2" style="align-items:start">
-    <div style="display:flex;flex-direction:column;gap:16px">
-      ${wsCard("Home — hero & quick actions", "The logged-in Home screen. Icons and targets are fixed; the copy is yours.", `
-        <div style="margin-bottom:12px">${axFlab("HERO SUBLINE (UNDER THE GREETING)")}${wsInput("appHome.heroSub", c.appHome.heroSub)}</div>
-        ${c.appHome.quick.map((q, i) => `
-          <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-bottom:8px">
-            <div>${i === 0 ? axFlab("QUICK CARD TITLE") : ""}${wsInput(`appHome.quick.${i}.title`, q.title)}</div>
-            <div>${i === 0 ? axFlab("DESCRIPTION") : ""}${wsInput(`appHome.quick.${i}.desc`, q.desc)}</div>
-          </div>`).join("")}`)}
-      ${wsCard("Home — section headings", "", `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>${axFlab("JUMP BACK IN")}${wsInput("appHome.secJump", c.appHome.secJump)}</div>
-          <div>${axFlab("SECTION LINK (OPEN AI STUDIO)")}${wsInput("appHome.secJumpLink", c.appHome.secJumpLink)}</div>
-          <div>${axFlab("START CREATING (EMPTY STATE)")}${wsInput("appHome.secStart", c.appHome.secStart)}</div>
-          <div>${axFlab("FEATURED MODELS")}${wsInput("appHome.secFeatured", c.appHome.secFeatured)}</div>
-          <div>${axFlab("RECOMMENDED FOR YOU")}${wsInput("appHome.secRec", c.appHome.secRec)}</div>
-          <div>${axFlab("BROWSE-ALL LINK")}${wsInput("appHome.recLink", c.appHome.recLink)}</div>
-        </div>`)}
-      ${wsCard("Home — shelves", `The three template shelves. "Preferred category" powers the “essentials” shelf when that category has templates.`, `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-          <div>${axFlab("SHELF 1 TITLE")}${wsInput("appHome.shelfFresh", c.appHome.shelfFresh)}</div>
-          <div>${axFlab("SHELF 1 KICKER")}${wsInput("appHome.shelfFreshKick", c.appHome.shelfFreshKick, { mono: true })}</div>
-          <div>${axFlab("SHELF 2 (CATEGORY) KICKER")}${wsInput("appHome.shelfCatKick", c.appHome.shelfCatKick, { mono: true })}</div>
-          <div>${axFlab("PREFERRED CATEGORY")}${wsInput("appHome.shelfCat", c.appHome.shelfCat, { ph: "Lower Thirds" })}</div>
-          <div>${axFlab("SHELF 3 TITLE")}${wsInput("appHome.shelfNew", c.appHome.shelfNew)}</div>
-          <div>${axFlab("SHELF 3 KICKER")}${wsInput("appHome.shelfNewKick", c.appHome.shelfNewKick, { mono: true })}</div>
-        </div>`)}
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px">
-      ${wsCard("Home — empty state", "Shown to users with no generations yet.", `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-          <div>${axFlab("TITLE")}${wsInput("appHome.emptyTitle", c.appHome.emptyTitle)}</div>
-          <div>${axFlab("BUTTON")}${wsInput("appHome.emptyBtn", c.appHome.emptyBtn)}</div>
-        </div>
-        <div>${axFlab("SUBTITLE")}${wsInput("appHome.emptySub", c.appHome.emptySub)}</div>`)}
-      ${wsCard("Stock Catalog page", "The catalog hero, search and empty-state copy.", `
-        <div style="margin-bottom:10px">${axFlab("KICKER")}${wsInput("catalogPage.kicker", c.catalogPage.kicker, { mono: true })}</div>
-        <div style="margin-bottom:10px">${axFlab("TITLE (\\n = LINE BREAK)")}${wsArea("catalogPage.title", c.catalogPage.title, 2)}</div>
-        <div style="margin-bottom:10px">${axFlab("SEARCH PLACEHOLDER")}${wsInput("catalogPage.searchPlaceholder", c.catalogPage.searchPlaceholder)}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-          <div>${axFlab("LOADING LINE")}${wsInput("catalogPage.loading", c.catalogPage.loading)}</div>
-          <div>${axFlab("EMPTY-CATALOG TITLE")}${wsInput("catalogPage.emptyTitle", c.catalogPage.emptyTitle)}</div>
-        </div>
-        <div>${axFlab("EMPTY-CATALOG SUBTITLE")}${wsInput("catalogPage.emptySub", c.catalogPage.emptySub)}</div>`)}
-    </div>
-  </div>`;
-}
-
-/* ── Tab: Pricing page ─────────────────────────────────────── */
-
-function wsPlanEditor(p, i) {
-  const names = ["FREE PLAN", "PRO PLAN (MOST POPULAR)", "STUDIO PLAN"];
-  return `<div class="adx-card" style="padding:16px 18px${i === 1 ? ";border-color:var(--glow)" : ""}">
-    <div style="font:700 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:var(--muted);margin-bottom:12px">${names[i]}</div>
-    <div style="display:grid;grid-template-columns:1fr 90px 1fr;gap:10px;margin-bottom:10px">
-      <div>${axFlab("NAME")}${wsInput(`plans.${i}.name`, p.name)}</div>
-      <div>${axFlab("PRICE $/MO")}${wsInput(`plans.${i}.price`, p.price, { mono: true, num: true, type: "num" })}</div>
-      <div>${axFlab("CREDITS LINE")}${wsInput(`plans.${i}.credits`, p.credits, { mono: true })}</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div>${axFlab("SUBTITLE")}${wsInput(`plans.${i}.sub`, p.sub)}</div>
-      <div>${axFlab("CTA BUTTON")}${wsInput(`plans.${i}.cta`, p.cta)}</div>
-    </div>
-    <div style="margin-bottom:10px">${axFlab("FEATURES — PRICING PAGE (ONE PER LINE)")}${wsArea(`plans.${i}.feats`, p.feats, 5, { type: "lines" })}</div>
-    <div>${axFlab("TEASER FEATURES — LANDING (3 LINES)")}${wsArea(`plans.${i}.teaserFeats`, p.teaserFeats, 3, { type: "lines" })}</div>
-  </div>`;
-}
-
-function wsTabPricing() {
-  const c = WS_CFG;
+function wsPagePanel() {
+  const site = WS_SURF !== "plugin";
   return `
-    ${axInfo(`These fields change DISPLAY copy only (what visitors see). Real billing, plan enforcement and checkout are configured elsewhere and are not affected. Keep displayed prices in sync with your actual Lemon Squeezy prices.`, "amber")}
-    ${wsCard("Page header", "", `
-      <div style="display:grid;grid-template-columns:130px 1fr 1fr 130px;gap:12px;margin-bottom:12px">
-        <div>${axFlab("EYEBROW")}${wsInput("pricingPage.eyebrow", c.pricingPage.eyebrow, { mono: true })}</div>
-        <div>${axFlab("TITLE")}${wsInput("pricingPage.title", c.pricingPage.title)}</div>
-        <div>${axFlab("SUBTITLE")}${wsInput("pricingPage.sub", c.pricingPage.sub)}</div>
-        <div>${axFlab("FAQ TITLE")}${wsInput("pricingPage.faqTitle", c.pricingPage.faqTitle)}</div>
-      </div>
-      <div style="display:grid;grid-template-columns:150px 1fr 130px;gap:12px;margin-bottom:12px">
-        <div>${axFlab("BILLING NOTE")}${wsInput("pricingPage.billingNote", c.pricingPage.billingNote, { mono: true })}</div>
-        <div>${axFlab("BILLING SUBLINE")}${wsInput("pricingPage.billingSub", c.pricingPage.billingSub)}</div>
-        <div>${axFlab("POPULAR LABEL")}${wsInput("pricingPage.popularLabel", c.pricingPage.popularLabel, { mono: true })}</div>
-      </div>
-      <div style="display:grid;grid-template-columns:150px 1fr;gap:12px">
-        <div>${axFlab("COMPARE STRIP TITLE")}${wsInput("pricingPage.compareTitle", c.pricingPage.compareTitle, { mono: true })}</div>
-        <div>${axFlab("COMPARE ITEMS (ONE PER LINE)")}${wsArea("pricingPage.compareItems", c.pricingPage.compareItems, 4, { type: "lines" })}</div>
-      </div>`)}
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px">
-      ${c.plans.map(wsPlanEditor).join("")}
-    </div>`;
+    ${site ? wsThemeSection() : ""}
+    ${site ? wsSectionOrderCard() : ""}
+    ${wsCard("Bildirishnomalar", site
+      ? "Foydalanuvchiga banner, burchak toast yoki modal oyna. Auditoriya va sana oralig'i bilan — maks 8 ta."
+      : "Plagin ichida banner / toast / modal ko'rinadi. Auditoriya va sana oralig'i bilan — maks 8 ta.",
+      wsAutoFields("notices", wsCfg().notices || [], 0))}
+    ${wsLayersCard()}`;
 }
 
-/* ── Tab: Plugin page ──────────────────────────────────────── */
+/* ── Kontent paneli — tanlangan bo'limning maydonlari ────────────────────── */
 
-function wsTabPlugin() {
-  const c = WS_CFG;
-  return `<div class="adx-grid2" style="align-items:start">
-    ${wsCard("Page header", "", `
-      <div style="margin-bottom:12px">${axFlab("BADGE")}${wsInput("pluginPage.badge", c.pluginPage.badge)}</div>
-      <div style="margin-bottom:12px">${axFlab("TITLE")}${wsInput("pluginPage.title", c.pluginPage.title)}</div>
-      <div style="margin-bottom:12px">${axFlab("SUBTITLE")}${wsArea("pluginPage.sub", c.pluginPage.sub, 2)}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-        <div>${axFlab("DOWNLOAD CTA")}${wsInput("pluginPage.ctaLabel", c.pluginPage.ctaLabel)}</div>
-        <div>${axFlab("VERSION NOTE")}${wsInput("pluginPage.versionNote", c.pluginPage.versionNote, { mono: true })}</div>
-      </div>
-      <div>${axFlab("GUARANTEE LINE")}${wsInput("pluginPage.guarantee", c.pluginPage.guarantee)}</div>`)}
-    <div style="display:flex;flex-direction:column;gap:16px">
-      ${wsCard("Install steps", "Three numbered steps — the numbers are automatic.", c.pluginPage.steps.map((st, i) => `
-        <div style="border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;margin-bottom:8px">
-          ${axFlab("STEP " + (i + 1) + " TITLE")}${wsInput(`pluginPage.steps.${i}.t`, st.t)}
-          <div style="margin-top:8px">${axFlab("DESCRIPTION")}${wsArea(`pluginPage.steps.${i}.d`, st.d, 2)}</div>
-        </div>`).join(""))}
-      ${wsCard("AE window mock", "The decorative After Effects window next to the hero.", `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>${axFlab("WINDOW TITLE")}${wsInput("pluginPage.winTitle", c.pluginPage.winTitle, { mono: true })}</div>
-          <div>${axFlab("SEARCH PLACEHOLDER")}${wsInput("pluginPage.winSearch", c.pluginPage.winSearch)}</div>
-          <div>${axFlab("TEMPLATE NAME")}${wsInput("pluginPage.mockName", c.pluginPage.mockName)}</div>
-          <div>${axFlab("IMPORT BUTTON")}${wsInput("pluginPage.mockImport", c.pluginPage.mockImport)}</div>
-        </div>`)}
+function wsRootOf(p) {
+  const seg = String(p || "").split(".");
+  return seg[0] || "";
+}
+
+function wsContentPanel() {
+  if (!WS_SEL) {
+    const roots = WS_SURF === "plugin"
+      ? ["home", "guest", "aiLauncher", "announcement"]
+      : ["hero", "heroMedia", "promo", "nav", "megaModels", "ticker", "cinema", "showcase", "feed",
+        "presetsRail", "aiPromo", "pluginPromo", "pricingTeaser", "faqSection", "finalCta", "footer",
+        "pricingPage", "plans", "pluginPage", "appHome", "catalogPage", "stats"];
+    const chips = roots.filter((r) => wsCfg()[r] !== undefined).map((r) =>
+      `<button class="adx-btn2 sm" style="margin:0 5px 5px 0" onclick="wsPickPath('${r}')">${wsEsc(wsLabelFor(r))}</button>`).join("");
+    return `<div style="padding:16px 4px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">${WS_SURF === "plugin" ? "Plagin" : "Sayt"}dagi istalgan matn, tugma yoki kartani bosing — maydonlari shu yerda ochiladi. Ikki marta bosilsa matn <b>to'g'ridan-to'g'ri joyida</b> tahrirlanadi.</div>
+      <div style="font:700 10px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">YOKI BO'LIMNI TANLANG</div>
+      ${chips}</div>`;
+  }
+  // Yaproq (matn) tanlansa — butun bo'lim ko'rsatiladi, tanlangan maydon belgilanadi
+  let base = WS_SEL_GROUP || WS_SEL;
+  let node = wsPathGet(wsCfg(), base);
+  let focus = "";
+  if (node === null || typeof node !== "object") {
+    focus = base;
+    base = base.split(".").slice(0, -1).join(".") || wsRootOf(base);
+    node = wsPathGet(wsCfg(), base);
+  }
+  WS_FOCUS = focus;
+  if (node === undefined || node === null) {
+    return `<div style="padding:20px 6px;font-size:12px;color:var(--muted)">Bu element uchun tahrirlanadigan matn yo'q — <b>Dizayn</b> yorlig'idan o'lcham, rang va joylashuvni o'zgartiring.</div>`;
+  }
+  return `
+    ${focus ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 11px;border-radius:9px;background:rgba(216,255,62,.09);border:1px solid rgba(216,255,62,.22)">
+      <i class="ph ph-cursor-text" style="font-size:14px;color:var(--glow,#d8ff3e)"></i>
+      <span style="font-size:11px;flex:1">Tanlangan matn: <b>${wsEsc(wsLabelFor(focus))}</b></span>
+      <button class="adx-btn2 sm" onclick="wsInlineEdit()">Sahifada yozish</button>
+    </div>` : ""}
+    ${wsCard(wsLabelFor(base), base, wsAutoFields(base, node, 0))}`;
+}
+
+/* ── Inspektor qobig'i ───────────────────────────────────────────────────── */
+
+function wsInspectorHtml() {
+  const tabs = [["content", "Kontent", "text-aa"], ["design", "Dizayn", "paint-brush-broad"], ["page", "Sahifa", "layout"]]
+    .map(([k, l, i]) => `<button class="${WS_INSP === k ? "on" : ""}" onclick="wsInspTab('${k}')" style="padding:6px 11px;font-size:11.5px"><i class="ph ph-${i}" style="font-size:12px;margin-right:5px"></i>${l}</button>`).join("");
+  const body = WS_INSP === "design" ? wsDesignPanel() : (WS_INSP === "page" ? wsPagePanel() : wsContentPanel());
+  return `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div class="adx-seg" style="display:inline-flex">${tabs}</div>
     </div>
-  </div>`;
+    ${WS_SEL ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font:600 9.5px 'IBM Plex Mono',monospace;color:var(--muted);overflow:hidden">
+      <i class="ph ph-crosshair" style="font-size:12px"></i>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${wsEsc(WS_SEL)}</span>
+      <button class="adx-ico" title="Tanlovni bekor qilish" onclick="wsPickPath('')" style="width:22px;height:22px"><i class="ph ph-x"></i></button>
+    </div>` : ""}
+    <div id="wsInspBody">${body}</div>`;
 }
 
-/* ── Tab: Footer ───────────────────────────────────────────── */
-
-function wsTabFooter() {
-  const c = WS_CFG;
-  const colHints = [
-    "Product column — links go to Templates / AI Studio / Plugin / Pricing (max 4 labels)",
-    "Categories column — every link opens the template catalog",
-    "Legal column — links go to Help / Terms / Privacy / Refund (max 4 labels)",
-  ];
-  return `<div class="adx-grid2" style="align-items:start">
-    ${wsCard("Footer", "", `
-      <div style="margin-bottom:12px">${axFlab("TAGLINE (UNDER THE LOGO)")}${wsArea("footer.tagline", c.footer.tagline, 2)}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-        <div>${axFlab("CONTACT EMAIL")}${wsInput("footer.email", c.footer.email, { mono: true })}</div>
-        <div>${axFlab("COPYRIGHT LINE")}${wsInput("footer.copyright", c.footer.copyright, { mono: true })}</div>
-      </div>
-      <div>${axFlab("GUARANTEE LINE (BOTTOM RIGHT)")}${wsInput("footer.guarantee", c.footer.guarantee)}</div>`)}
-    ${wsCard("Link columns", "Only the labels are editable — link destinations are fixed in code.", c.footer.cols.map((col, i) => `
-      <div style="border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;margin-bottom:8px">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${colHints[i]}</div>
-        ${axFlab("COLUMN TITLE")}${wsInput(`footer.cols.${i}.title`, col.title, { mono: true })}
-        <div style="margin-top:8px">${axFlab("LINK LABELS (ONE PER LINE)")}${wsArea(`footer.cols.${i}.links`, col.links, col.links.length + 1, { type: "lines" })}</div>
-      </div>`).join(""))}
-  </div>`;
+function wsInspRender() {
+  const panel = document.getElementById("wsVisPanel");
+  if (!panel) return;
+  const sc = panel.scrollTop;
+  WS_FOCUS = "";
+  panel.innerHTML = wsInspectorHtml();
+  panel.scrollTop = sc;
+  if (WS_FOCUS) {
+    const el = panel.querySelector(`[data-ws="${CSS.escape(WS_FOCUS)}"]`);
+    if (el) {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.classList.add("ws-flashfield");
+      setTimeout(() => el.classList.remove("ws-flashfield"), 2000);
+    }
+  }
 }
 
-/* ── Asosiy view ───────────────────────────────────────────── */
+function wsInspTab(k) {
+  wsSetCfg(wsCollect());
+  WS_INSP = k;
+  wsInspRender();
+}
 
-const WS_TABS = [
-  { key: "visual", label: "Visual editor", icon: "cursor-click" },
-  { key: "hero", label: "Hero & theme", icon: "sparkle" },
-  { key: "landing", label: "Landing sections", icon: "rows" },
-  { key: "app", label: "App & Catalog", icon: "layout" },
-  { key: "pricing", label: "Pricing page", icon: "tag" },
-  { key: "plugin", label: "Plugin page", icon: "puzzle-piece" },
-  { key: "footer", label: "Footer", icon: "dots-three-outline" },
-];
-
-/* ── FFCMS vizual muharrir ─────────────────────────────────────────────────
-   Chapda REAL sayt (iframe, ?ffcms=1 preview rejimi), o'ngda kontekst panel.
-   Saytda istalgan joy bosiladi → panel aynan o'sha bo'lim maydonlarini ochib,
-   maydonni belgilab beradi; yozganda draft postMessage bilan DARHOL ko'rinadi
-   (saqlanmaydi — "Save & publish" bosilguncha faqat preview). */
+/* ── Vizual muharrir qobig'i ─────────────────────────────────────────────── */
 
 function wsPlatformOrigin() {
   try {
@@ -622,111 +632,86 @@ function wsPlatformOrigin() {
   return /getframeflow\.app$/.test(location.hostname) ? "https://getframeflow.app" : "http://localhost:8975";
 }
 
-/* Bosilgan data-cms yo'li → qaysi bo'lim-tab formasi */
-function wsPathTab(p) {
-  if (!p) return "hero";
-  if (/^(hero|heroMedia|promo|nav|megaModels|mockup|theme|stats)/.test(p)) return "hero";
-  if (/^(ticker|cinema|showcase|feed|presetsRail|aiPromo|pluginPromo|pricingTeaser|faqSection|finalCta|landingSections)/.test(p)) return "landing";
-  if (/^(appHome|catalogPage)/.test(p)) return "app";
-  if (/^(pricingPage|plans)/.test(p)) return "pricing";
-  if (/^pluginPage/.test(p)) return "plugin";
-  if (/^footer/.test(p)) return "footer";
-  return "hero";
-}
-
-function wsTabBodyFor(key) {
-  return key === "landing" ? wsTabLanding()
-    : key === "app" ? wsTabApp()
-    : key === "pricing" ? wsTabPricing()
-    : key === "plugin" ? wsTabPlugin()
-    : key === "footer" ? wsTabFooter()
-    : wsTabHero();
-}
+/* Iframe ichida ko'rsatiladigan ekranlar — yuzaga qarab */
+const WS_PAGES = {
+  site: [["landing", "Bosh"], ["pricing", "Narxlar"], ["plugin", "Plagin"], ["templates", "Katalog"], ["dashboard", "Ilova"]],
+  plugin: [["home", "Home"], ["ai", "AI Tools"], ["catalog", "Katalog"], ["guest", "Mehmon"]],
+};
+/* Plagin paneli AE ichida tor bo'ladi — QA o'lchamlari (R5 zichlik qatlami bilan mos) */
+const WS_PLUGIN_W = { desktop: "820px", mobile: "500px" };
 
 function wsTabVisual() {
-  const pages = [
-    ["landing", "Landing"], ["pricing", "Pricing"], ["plugin", "Plugin"], ["templates", "Catalog"],
-  ].map(([k, l]) => `<button class="${WS_VIS_PAGE === k ? "on" : ""}" onclick="wsVisSetPage('${k}')" style="padding:6px 13px">${l}</button>`).join("");
-  const devs = [
-    ["desktop", "arrows-out-simple", "Desktop"], ["mobile", "device-mobile", "Mobile 390px"],
-  ].map(([k, ic2, t]) => `<button class="${WS_VIS_DEV === k ? "on" : ""}" title="${t}" onclick="wsVisSetDev('${k}')" style="padding:6px 10px"><i class="ph ph-${ic2}" style="font-size:14px"></i></button>`).join("");
+  const isPlug = WS_SURF === "plugin";
+  const pages = (WS_PAGES[WS_SURF] || WS_PAGES.site)
+    .map(([k, l]) => `<button class="${WS_VIS_PAGE === k ? "on" : ""}" onclick="wsVisSetPage('${k}')" style="padding:6px 12px">${l}</button>`).join("");
+  const devs = (isPlug
+    ? [["desktop", "arrows-out-simple", "Keng panel 820px"], ["mobile", "device-mobile", "Tor panel 500px"]]
+    : [["desktop", "arrows-out-simple", "Desktop"], ["mobile", "device-mobile", "Mobil 390px"]]
+  ).map(([k, ic2, t]) => `<button class="${WS_VIS_DEV === k ? "on" : ""}" title="${t}" onclick="wsVisSetDev('${k}')" style="padding:6px 10px"><i class="ph ph-${ic2}" style="font-size:14px"></i></button>`).join("");
+  const frameW = isPlug ? WS_PLUGIN_W[WS_VIS_DEV] : (WS_VIS_DEV === "mobile" ? "390px" : "100%");
   return `
   <style>
     .ws-vispanel .adx-grid2{grid-template-columns:1fr !important}
-    .ws-vispanel > div > div{max-width:100%}
-    .ws-flashfield{outline:2px solid #d8ff3e !important;outline-offset:2px;border-radius:8px;transition:outline-color .3s}
+    .ws-vispanel .adx-card{padding:13px 14px}
+    .ws-vispanel details.ws-item > summary::-webkit-details-marker{display:none}
+    .ws-flashfield{outline:2px solid #d8ff3e !important;outline-offset:2px;border-radius:8px}
     .ws-visframe-wrap{transition:width .25s ease}
   </style>
-  <div style="display:flex;gap:14px;align-items:stretch;height:calc(100vh - 236px);min-height:540px">
+  <div style="display:flex;gap:14px;align-items:stretch;height:calc(100vh - 196px);min-height:560px">
     <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
         <div class="adx-seg" style="display:inline-flex">${pages}</div>
         <div class="adx-seg" style="display:inline-flex">${devs}</div>
-        <span style="font-size:10.5px;color:var(--muted)">Click anything on the page — its fields open on the right. Typing updates the page instantly; press <b>Save & publish</b> to go live.</span>
+        <div class="adx-seg" style="display:inline-flex">
+          <button title="Bekor qilish (Undo)" onclick="wsUndo()" style="padding:6px 10px"><i class="ph ph-arrow-u-up-left" style="font-size:14px"></i></button>
+          <button title="Qaytarish (Redo)" onclick="wsRedo()" style="padding:6px 10px"><i class="ph ph-arrow-u-up-right" style="font-size:14px"></i></button>
+        </div>
+        <span style="font-size:10.5px;color:var(--muted);max-width:340px">Bosing — tanlanadi · ikki marta bosing — joyida yozing · sudrang — suriladi · burchakdan torting — kattalashadi.</span>
         <span id="wsVisStat" style="margin-left:auto;font-size:10px;color:var(--muted)"></span>
       </div>
       <div style="flex:1;border:1px solid rgba(255,255,255,.1);border-radius:13px;overflow:hidden;background:#07090c;display:flex;justify-content:center">
-        <div class="ws-visframe-wrap" style="width:${WS_VIS_DEV === "mobile" ? "390px" : "100%"};height:100%">
-          <iframe id="wsVisFrame" src="${wsEsc(wsPlatformOrigin())}/?ffcms=1" style="width:100%;height:100%;border:0;background:#07090c" title="Site preview"></iframe>
+        <div class="ws-visframe-wrap" style="width:${frameW};height:100%">
+          <iframe id="wsVisFrame" src="${wsEsc(wsSurfSrc())}" style="width:100%;height:100%;border:0;background:#07090c" title="${isPlug ? "Plagin preview" : "Sayt preview"}"></iframe>
         </div>
       </div>
     </div>
-    <aside id="wsVisPanel" class="ws-vispanel" style="width:432px;flex:none;overflow-y:auto;overflow-x:hidden;padding-right:2px">
-      ${wsTabBodyFor(WS_VIS_TAB)}
+    <aside id="wsVisPanel" class="ws-vispanel" style="width:412px;flex:none;overflow-y:auto;overflow-x:hidden;padding-right:2px">
+      ${wsInspectorHtml()}
     </aside>
   </div>`;
 }
 
-/* Panelni (faqat o'ng tomonni) qayta chizish — iframe'ga TEGILMAYDI */
-function wsVisRenderPanel(tabKey, focusPath) {
-  WS_VIS_TAB = tabKey || WS_VIS_TAB;
-  const panel = document.getElementById("wsVisPanel");
-  if (!panel) return;
-  panel.innerHTML = wsTabBodyFor(WS_VIS_TAB);
-  if (focusPath) {
-    let el = panel.querySelector(`[data-ws="${CSS.escape(focusPath)}"]`);
-    if (!el) el = panel.querySelector(`[data-ws^="${CSS.escape(focusPath)}."]`);
-    if (!el) el = panel.querySelector(`[data-ws^="${CSS.escape(focusPath)}"]`);
-    if (el) {
-      el.scrollIntoView({ block: "center", behavior: "smooth" });
-      try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
-      el.classList.add("ws-flashfield");
-      setTimeout(() => el.classList.remove("ws-flashfield"), 2200);
-    }
-  }
+/* Panel/toggle o'zgarishlaridan keyin: iframe hech qachon qayta yaratilmaydi. */
+function wsRerender() {
+  if (!wsOnEditor()) return;
+  wsMarkDirty();
+  wsInspRender();
+  wsVisPush();
 }
 
-/* Panel/toggle o'zgarishlaridan keyin qayta chizish: visual rejimda faqat panel,
-   klassik rejimda butun ekran. Iframe hech qachon qayta yaratilmaydi (flicker yo'q). */
-function wsRerender() {
-  if (CURRENT !== "website") return;
-  if (WS_TAB === "visual") { wsVisRenderPanel(WS_VIS_TAB, null); wsVisPush(); }
-  else route("website");
-}
+/* Muharrir ekranidamizmi (sayt yoki plagin yuzasi) */
+function wsOnEditor() { return CURRENT === "website" || CURRENT === "plugincms"; }
 
 function wsVisSetPage(k) {
+  wsSetCfg(wsCollect());
   WS_VIS_PAGE = k;
-  // sahifa pillari + panel bo'limi mosligi: pricing→pricing tab, plugin→plugin tab,
-  // templates→app tab (katalog matnlari o'sha yerda), landing→joriy qoladi
-  if (k === "pricing") WS_VIS_TAB = "pricing";
-  else if (k === "plugin") WS_VIS_TAB = "plugin";
-  else if (k === "templates") WS_VIS_TAB = "app";
   wsVisGoto();
-  // pill on-holatini yangilash uchun visual shell qayta chiziladi (iframe saqlanadi:
-  // faqat seg tugmalar klassi) — soddalik uchun butun tab emas, tugmalarni yangilaymiz
-  document.querySelectorAll(".adx-seg button[onclick^=\"wsVisSetPage\"]").forEach((b) => {
+  document.querySelectorAll('.adx-seg button[onclick^="wsVisSetPage"]').forEach((b) => {
     b.classList.toggle("on", b.getAttribute("onclick") === `wsVisSetPage('${k}')`);
   });
-  wsVisRenderPanel(WS_VIS_TAB, null);
 }
 
 function wsVisSetDev(k) {
+  wsSetCfg(wsCollect());
   WS_VIS_DEV = k;
   const wrap = document.querySelector(".ws-visframe-wrap");
-  if (wrap) wrap.style.width = k === "mobile" ? "390px" : "100%";
-  document.querySelectorAll(".adx-seg button[onclick^=\"wsVisSetDev\"]").forEach((b) => {
+  if (wrap) wrap.style.width = WS_SURF === "plugin" ? WS_PLUGIN_W[k] : (k === "mobile" ? "390px" : "100%");
+  document.querySelectorAll('.adx-seg button[onclick^="wsVisSetDev"]').forEach((b) => {
     b.classList.toggle("on", b.getAttribute("onclick") === `wsVisSetDev('${k}')`);
   });
+  const w = wsVisFrameWin();
+  if (w && WS_VIS_READY) w.postMessage({ type: "ffcms-device", device: k }, wsSurfOrigin());
+  wsInspRender();
 }
 
 function wsVisFrameWin() {
@@ -736,38 +721,200 @@ function wsVisFrameWin() {
 
 function wsVisGoto() {
   const w = wsVisFrameWin();
-  if (w && WS_VIS_READY) w.postMessage({ type: "ffcms-goto", screen: WS_VIS_PAGE }, wsPlatformOrigin());
+  if (w && WS_VIS_READY) w.postMessage({ type: "ffcms-goto", screen: WS_VIS_PAGE }, wsSurfOrigin());
 }
 
 /* Draft config'ni iframe'ga jonli yuborish (debounce) */
 function wsVisPush(now) {
-  if (WS_TAB !== "visual") return;
   clearTimeout(WS_VIS_PUSH_T);
   const send = () => {
     const w = wsVisFrameWin();
-    if (!w || !WS_VIS_READY || !WS_CFG) return;
-    try { w.postMessage({ type: "ffcms-draft", config: wsCollect() }, wsPlatformOrigin()); } catch (e) {}
+    if (!w || !WS_VIS_READY || !wsCfg()) return;
+    try { w.postMessage({ type: "ffcms-draft", config: wsCollect() }, wsSurfOrigin()); } catch (e) {}
   };
   if (now) send(); else WS_VIS_PUSH_T = setTimeout(send, 160);
 }
 
-/* Iframe'dan kelgan xabarlar (bir marta ulanadi) */
+/* ── Tarix (undo / redo) ─────────────────────────────────────────────────── */
+
+function wsSnapshot() {
+  wsMarkDirty();
+  try { WS_UNDO.push(JSON.stringify(wsCfg())); } catch (e) { return; }
+  if (WS_UNDO.length > 40) WS_UNDO.shift();
+  WS_REDO.length = 0;
+}
+
+/* Plagin yuzasida saqlanmagan o'zgarish ko'rsatkichi (toolbar'dagi nuqta).
+   Sayt yuzasida bunday ko'rsatkich yo'q — jim o'tadi. */
+function wsMarkDirty() {
+  if (WS_SURF !== "plugin") return;
+  if (typeof PC_DIRTY === "undefined" || PC_DIRTY) return;
+  PC_DIRTY = true;
+  if (typeof pcRenderActions === "function") pcRenderActions();
+}
+function wsUndo() {
+  if (!WS_UNDO.length) { toast("Tarix bo'sh", "Bekor qilinadigan o'zgarish yo'q", "warn"); return; }
+  try { WS_REDO.push(JSON.stringify(wsCollect())); } catch (e) {}
+  wsSetCfg(JSON.parse(WS_UNDO.pop()));
+  wsVisPush(true); wsInspRender();
+}
+function wsRedo() {
+  if (!WS_REDO.length) { toast("Tarix bo'sh", "Qaytariladigan o'zgarish yo'q", "warn"); return; }
+  try { WS_UNDO.push(JSON.stringify(wsCollect())); } catch (e) {}
+  wsSetCfg(JSON.parse(WS_REDO.pop()));
+  wsVisPush(true); wsInspRender();
+}
+
+/* ── Tanlov / ro'yxat / uslub amallari ───────────────────────────────────── */
+
+function wsPickPath(p) {
+  wsSetCfg(wsCollect());
+  WS_SEL = p || "";
+  WS_SEL_TEXT = "";
+  // yo'l konfiguratsiyada bor bo'lsa — o'shani, aks holda ildiz bo'limini ko'rsatamiz
+  WS_SEL_GROUP = p ? (wsPathGet(wsCfg(), p) != null ? p : wsRootOf(p)) : "";
+  if (p) {
+    if (WS_INSP === "page") WS_INSP = "content";
+    const w = wsVisFrameWin();
+    if (w && WS_VIS_READY) w.postMessage({ type: "ffcms-select-path", path: p }, wsSurfOrigin());
+  }
+  wsInspRender();
+}
+
+function wsInlineEdit() {
+  const w = wsVisFrameWin();
+  if (w && WS_VIS_READY && WS_SEL) w.postMessage({ type: "ffcms-select-path", path: WS_SEL, edit: true }, wsSurfOrigin());
+  toast("Sahifada tahrirlash", "Saytdagi matnni ikki marta bosing va yozing", "info");
+}
+
+function wsListAdd(path) {
+  wsSetCfg(wsCollect());
+  wsSnapshot();
+  const arr = wsPathGet(wsCfg(), path);
+  if (!Array.isArray(arr)) return;
+  const cap = WS_GROWABLE[path.split(".").pop()] || WS_GROWABLE[path] || 0;
+  if (cap && arr.length >= cap) { toast("Chegara", "Maksimum " + cap + " ta", "warn"); return; }
+  if (path === "notices") {
+    arr.push({
+      id: "n" + Date.now().toString(36), enabled: true, placement: "banner", tone: "info",
+      audience: "all", title: "Yangilik", text: "Bu yerga bildirishnoma matnini yozing.",
+      ctaLabel: "", ctaTarget: "", ctaUrl: "", dismissable: true, startAt: "", endAt: "",
+    });
+  } else if (arr.length) {
+    arr.push(JSON.parse(JSON.stringify(arr[arr.length - 1])));
+  } else return;
+  wsRerender();
+}
+
+function wsListRemove(path, i) {
+  wsSetCfg(wsCollect());
+  wsSnapshot();
+  const arr = wsPathGet(wsCfg(), path);
+  if (Array.isArray(arr) && arr[i] !== undefined) arr.splice(i, 1);
+  wsRerender();
+}
+
+function wsListMove(path, i, dir) {
+  wsSetCfg(wsCollect());
+  wsSnapshot();
+  const arr = wsPathGet(wsCfg(), path);
+  const j = i + dir;
+  if (!Array.isArray(arr) || j < 0 || j >= arr.length) return;
+  const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  wsRerender();
+}
+
+/** Dizayn qiymatini yozadi (null = tozalash). Faqat tipli qiymatlar. */
+function wsStyleSet(prop, value) {
+  if (!WS_SEL) return;
+  wsSetCfg(wsCollect());
+  wsSnapshot();
+  wsCfg().uiStyles = wsCfg().uiStyles || {};
+  const e = wsCfg().uiStyles[WS_SEL] || (wsCfg().uiStyles[WS_SEL] = {});
+  const k = WS_VIS_DEV === "mobile" ? "m" : "d";
+  const slot = e[k] || (e[k] = {});
+  if (value === null || value === "" || (typeof value === "number" && !isFinite(value))) delete slot[prop];
+  else slot[prop] = value;
+  if (!Object.keys(slot).length) delete e[k];
+  if (!Object.keys(e).length) delete wsCfg().uiStyles[WS_SEL];
+  wsVisPush(true);
+  wsInspRender();
+}
+
+function wsStyleReset() {
+  if (!WS_SEL) return;
+  wsSetCfg(wsCollect());
+  wsSnapshot();
+  const e = (wsCfg().uiStyles || {})[WS_SEL];
+  if (e) { delete e[WS_VIS_DEV === "mobile" ? "m" : "d"]; if (!Object.keys(e).length) delete wsCfg().uiStyles[WS_SEL]; }
+  wsVisPush(true);
+  wsInspRender();
+}
+
+/* ── Iframe xabarlari ────────────────────────────────────────────────────── */
+
 function wsVisBindMessages() {
   if (window.__wsVisMsgBound) return;
   window.__wsVisMsgBound = 1;
   window.addEventListener("message", (ev) => {
-    if (ev.origin !== wsPlatformOrigin()) return;
+    if (ev.origin !== wsSurfOrigin()) return;
     const d = ev.data || {};
+    if (!wsOnEditor()) return;
     if (d.type === "ffcms-ready") {
       WS_VIS_READY = true;
+      WS_OUTLINE = Array.isArray(d.outline) ? d.outline : [];
       const stat = document.getElementById("wsVisStat");
-      if (stat) stat.textContent = "Live preview connected";
+      if (stat) stat.textContent = "Jonli preview ulandi";
+      const w = wsVisFrameWin();
+      if (w) w.postMessage({ type: "ffcms-device", device: WS_VIS_DEV }, wsSurfOrigin());
       wsVisPush(true);
       wsVisGoto();
-    } else if (d.type === "ffcms-select" && typeof d.path === "string") {
-      if (CURRENT !== "website" || WS_TAB !== "visual") return;
-      wsVisRenderPanel(wsPathTab(d.path), d.path);
+      wsInspRender();
+      return;
     }
+    if (d.type === "ffcms-outline") { WS_OUTLINE = Array.isArray(d.outline) ? d.outline : []; if (WS_INSP === "page") wsInspRender(); return; }
+    if (d.type === "ffcms-select") {
+      WS_SEL = String(d.path || "");
+      WS_SEL_TEXT = String(d.textPath || "");
+      wsSetCfg(wsCollect());
+      const g = String(d.groupPath || "") || WS_SEL;
+      WS_SEL_GROUP = wsPathGet(wsCfg(), WS_SEL) != null ? WS_SEL : (wsPathGet(wsCfg(), g) != null ? g : wsRootOf(WS_SEL));
+      if (WS_INSP === "page") WS_INSP = "content";
+      wsInspRender();
+      return;
+    }
+    if (d.type === "ffcms-style" && typeof d.path === "string") {
+      wsSetCfg(wsCollect());
+      wsSnapshot();
+      wsCfg().uiStyles = wsCfg().uiStyles || {};
+      if (d.patch === null || d.patch === undefined) delete wsCfg().uiStyles[d.path];
+      else {
+        const e = wsCfg().uiStyles[d.path] || (wsCfg().uiStyles[d.path] = {});
+        const k = d.device === "mobile" ? "m" : "d";
+        const slot = Object.assign({}, e[k] || {}, d.patch);
+        Object.keys(slot).forEach((kk) => { if (slot[kk] === null) delete slot[kk]; });
+        e[k] = slot;
+      }
+      WS_SEL = d.path;
+      wsVisPush(true);
+      wsInspRender();
+      return;
+    }
+    if (d.type === "ffcms-text" && typeof d.path === "string") {
+      wsSetCfg(wsCollect());
+      wsSnapshot();
+      wsSetPath(wsCfg(), d.path, String(d.value == null ? "" : d.value));
+      wsVisPush(true);
+      wsInspRender();
+      toast("Matn yangilandi", "Saqlash uchun «Saqlash va e'lon» bosing", "success");
+      return;
+    }
+    if (d.type === "ffcms-text-live" && typeof d.path === "string") {
+      const inp = document.querySelector(`[data-ws="${CSS.escape(d.path)}"]`);
+      if (inp) inp.value = d.value == null ? "" : d.value;
+      return;
+    }
+    if (d.type === "ffcms-toast") { toast("Vizual muharrir", String(d.text || ""), "info"); return; }
   });
 }
 
@@ -778,28 +925,16 @@ VIEWS.website = function () {
   if (!WS_LOADED || !WS_CFG) {
     return `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-circle-notch"></i></span><div style="font-weight:600;font-size:13px">Loading…</div><div style="font-size:11px;color:var(--muted2)">Fetching the site configuration</div></div>`;
   }
-  const tabs = WS_TABS.map((t) =>
-    `<button class="${t.key === WS_TAB ? "on" : ""}" onclick="wsTab('${t.key}')" style="padding:7px 14px"><i class="ph ph-${t.icon}" style="font-size:13px;margin-right:6px"></i>${t.label}</button>`
-  ).join("");
-  const body = WS_TAB === "visual" ? wsTabVisual() : wsTabBodyFor(WS_TAB);
-  return `
-    ${WS_TAB === "visual" ? "" : axInfo(`This edits the PUBLIC marketing site (landing, pricing and plugin pages). Changes go live within ~1 minute of saving. "Reset to defaults" restores the original built-in content for the whole site.`, "amber")}
-    <div class="adx-seg" style="margin-bottom:${WS_TAB === "visual" ? 12 : 16}px;display:inline-flex">${tabs}</div>
-    ${body}
+  wsSurfaceEnter("site");
+  return `${wsTabVisual()}
     <input type="file" id="wsMediaFile" accept="image/*,video/mp4,video/webm" style="display:none">`;
 };
 
 /* ── Amallar ───────────────────────────────────────────────── */
 
-function wsTab(key) {
-  WS_CFG = wsCollect(); // joriy tab tahrirlarini yo'qotmaslik uchun avval yig'amiz
-  WS_TAB = key;
-  route("website");
-}
-
 function wsSecMove(i, dir) {
-  WS_CFG = wsCollect();
-  const a = WS_CFG.landingSections;
+  wsSetCfg(wsCollect());
+  const a = wsCfg().landingSections;
   const j = i + dir;
   if (j < 0 || j >= a.length) return;
   const t = a[i]; a[i] = a[j]; a[j] = t;
@@ -807,31 +942,29 @@ function wsSecMove(i, dir) {
 }
 
 function wsSecToggle(i) {
-  WS_CFG = wsCollect();
-  WS_CFG.landingSections[i].visible = !WS_CFG.landingSections[i].visible;
+  wsSetCfg(wsCollect());
+  wsCfg().landingSections[i].visible = !wsCfg().landingSections[i].visible;
   wsRerender();
 }
 
 /* v2 — bool konfiguratsiya kalitini almashtirish (promo.enabled kabi) */
 function wsTogglePath(path) {
-  WS_CFG = wsCollect();
-  wsSetPath(WS_CFG, path, !wsPathGet(WS_CFG, path));
+  wsSetCfg(wsCollect());
+  wsSetPath(wsCfg(), path, !wsPathGet(wsCfg(), path));
   wsRerender();
 }
 
+/* Shrift/aksent o'zgarganda: demo satrni yangilab, iframe'ga draft yuboramiz */
 function wsRefreshPreview() {
-  WS_CFG = wsCollect();
-  const box = document.getElementById("wsPreview");
-  if (box) {
-    box.innerHTML = wsPreviewHtml(WS_CFG);
-    const demo = document.querySelector("[data-ws-fontdemo]");
-    if (demo) demo.style.fontFamily = (WS_FONTS.find((f) => f.key === WS_CFG.theme.font) || WS_FONTS[0]).stack;
-  }
+  wsSetCfg(wsCollect());
+  const demo = document.querySelector("[data-ws-fontdemo]");
+  if (demo) demo.style.fontFamily = (WS_FONTS.find((f) => f.key === wsCfg().theme.font) || WS_FONTS[0]).stack;
+  wsVisPush(true);
 }
 
 function wsSetAccent(hex) {
-  WS_CFG = wsCollect();
-  WS_CFG.theme.accent = hex;
+  wsSetCfg(wsCollect());
+  wsCfg().theme.accent = hex;
   wsRerender();
 }
 
@@ -853,9 +986,9 @@ function wsPickMedia(path) {
 }
 
 function wsClearMedia(path) {
-  WS_CFG = wsCollect();
-  wsSetPath(WS_CFG, path + ".mediaUrl", "");
-  wsSetPath(WS_CFG, path + ".mediaType", "");
+  wsSetCfg(wsCollect());
+  wsSetPath(wsCfg(), path + ".mediaUrl", "");
+  wsSetPath(wsCfg(), path + ".mediaType", "");
   wsRerender();
 }
 
@@ -873,7 +1006,8 @@ async function wsUploadMedia(file) {
   }
   try {
     if (stat) stat.textContent = "Uploading…";
-    const u = await StudioApi.adminUploadUrl(file.name, file.type || "application/octet-stream", "landing", file.size);
+    const folder = WS_SURF === "plugin" ? "site/plugin" : "landing";
+    const u = await StudioApi.adminUploadUrl(file.name, file.type || "application/octet-stream", folder, file.size);
     if (!u.uploadUrl) {
       toast("Storage not configured", u.message || "S3/R2 is not configured on the server", "warn");
       if (stat) stat.textContent = "";
@@ -881,9 +1015,9 @@ async function wsUploadMedia(file) {
     }
     const res = await fetch(u.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type || "application/octet-stream" } });
     if (!res.ok) throw new Error("Upload failed (HTTP " + res.status + ")");
-    WS_CFG = wsCollect();
-    wsSetPath(WS_CFG, path + ".mediaUrl", u.publicUrl);
-    wsSetPath(WS_CFG, path + ".mediaType", isVideo ? "video" : "image");
+    wsSetCfg(wsCollect());
+    wsSetPath(wsCfg(), path + ".mediaUrl", u.publicUrl);
+    wsSetPath(wsCfg(), path + ".mediaType", isVideo ? "video" : "image");
     toast("Media uploaded", "Don't forget to press Save to publish it", "success");
     wsRerender();
   } catch (e) {
@@ -912,9 +1046,12 @@ async function wsSave() {
       heroMedia: WS_CFG.heroMedia, promo: WS_CFG.promo, ticker: WS_CFG.ticker, cinema: WS_CFG.cinema,
       presetsRail: WS_CFG.presetsRail, feed: WS_CFG.feed, megaModels: WS_CFG.megaModels,
       appHome: WS_CFG.appHome, catalogPage: WS_CFG.catalogPage,
+      // v3 — vizual muharrir qatlami: uslub overridelari + bildirishnomalar
+      uiStyles: WS_CFG.uiStyles || {}, notices: WS_CFG.notices || [],
     });
     WS_CFG = d.config;
-    AssetFlowLog.info("Site saved", { action: "landing_save", detail: "Website tab: " + WS_TAB });
+    WS_UNDO.length = 0; WS_REDO.length = 0;
+    AssetFlowLog.info("Site saved", { action: "landing_save", detail: "Visual editor" });
     toast("Saved", "The public site will reflect the changes within ~1 minute", "success");
     wsRerender();
   } catch (e) {
@@ -998,40 +1135,41 @@ window.afterRender.website = function () {
       `<button class="adx-btn sm" onclick="wsSave()"><i class="ph ph-check"></i>Save & publish</button>`;
   }
   if (!WS_LOADED) { wsLoadConfig(); return; }
+  wsEditorBoot();
+};
+
+/* Muharrir qobig'ini ishga tushirish — Sayt va Plagin ekranlari uchun bir xil. */
+function wsEditorBoot() {
   const view = document.getElementById("view");
   if (view && !view.__wsBound) {
     view.__wsBound = 1;
     view.addEventListener("input", (e) => {
-      if (!(e.target && e.target.matches("[data-ws]"))) return;
-      if (WS_TAB === "visual") wsVisPush();
-      else wsRefreshPreview();
+      if (e.target && e.target.matches("[data-ws]")) wsVisPush();
     });
     view.addEventListener("change", (e) => {
-      if (e.target && e.target.matches("[data-ws]") && WS_TAB === "visual") wsVisPush();
+      if (e.target && e.target.matches("[data-ws]")) wsVisPush();
     });
   }
   // FFCMS — vizual muharrir ulanishi: iframe yuklangach hello yuboramiz (ko'prik
   // parent originni shu xabardan o'rganadi), ffcms-ready kelgach draft + goto.
-  if (WS_TAB === "visual") {
-    wsVisBindMessages();
-    WS_VIS_READY = false;
-    const f = document.getElementById("wsVisFrame");
-    if (f && !f.__wsHello) {
-      f.__wsHello = 1;
-      f.addEventListener("load", () => {
-        WS_VIS_READY = false;
-        const stat = document.getElementById("wsVisStat");
-        if (stat) stat.textContent = "Connecting preview…";
-        const hello = () => { try { f.contentWindow.postMessage({ type: "ffcms-hello" }, wsPlatformOrigin()); } catch (e) {} };
-        hello();
-        // dc-runtime kompilyatsiyasi biroz kechiksa — qayta urinishlar
-        setTimeout(hello, 700); setTimeout(hello, 1800); setTimeout(hello, 3500);
-      });
-    }
+  wsVisBindMessages();
+  WS_VIS_READY = false;
+  const f = document.getElementById("wsVisFrame");
+  if (f && !f.__wsHello) {
+    f.__wsHello = 1;
+    f.addEventListener("load", () => {
+      WS_VIS_READY = false;
+      const stat = document.getElementById("wsVisStat");
+      if (stat) stat.textContent = "Preview ulanmoqda…";
+      const hello = () => { try { f.contentWindow.postMessage({ type: "ffcms-hello" }, wsSurfOrigin()); } catch (e) {} };
+      hello();
+      // dc-runtime kompilyatsiyasi biroz kechiksa — qayta urinishlar
+      setTimeout(hello, 700); setTimeout(hello, 1800); setTimeout(hello, 3500);
+    });
   }
   const file = document.getElementById("wsMediaFile");
   if (file && !file.__wsBound) {
     file.__wsBound = 1;
     file.addEventListener("change", () => wsUploadMedia(file.files && file.files[0]));
   }
-};
+}

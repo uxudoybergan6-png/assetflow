@@ -36,6 +36,14 @@ app.use("/styles", express.static(path.join(ROOT, "styles")));
 // Self-hosted fontlar (admin.css → /assets/fonts) — prod'da platform/ dist root'ga tushadi
 app.use("/assets", express.static(path.join(ROOT, "platform", "assets")));
 
+// Vizual muharrirning plagin yuzasi: REAL AE panel iframe'da (…?ffcms=1).
+// Prod'da prepare-cf-pages.mjs uni dist/admin/plugin-preview/ ga ko'chiradi;
+// lokalda to'g'ridan CEP papkasidan servlaymiz (manba = yagona haqiqat).
+app.use(
+  "/admin/plugin-preview",
+  express.static(path.resolve(ROOT, "..", "..", "plugins", "after-effects-cep"))
+);
+
 // Lokalda production API meta'sini olib tashlaymiz — studio-config origin
 // (:3001 proxy → :4000) ga qaytadi. Cloud Run CORS localhost'ga ruxsat bermaydi.
 function sendHtmlLocalApi(res, file) {

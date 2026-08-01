@@ -3866,7 +3866,11 @@ html.cep-mode .af-topbar{height:44px}
 
 <!-- CEP (AE) — demo AE scaffold birinchi PAINT'da chiqmasligi uchun cep-mode'ni ERTA o'rnatamiz
      (eski 'cep-mode' ~3271-qatorда edi — demo-stage'дан keyin, shu sabab flash bo'lardi). -->
-<script>try{if(typeof window!=='undefined'&&window.__adobe_cep__)document.documentElement.classList.add('cep-mode');}catch(e){}</script>
+<!-- `cep-mode` — SOF CSS klassi (layout: panel oynani to'ldiradi, soxta titlebar/AE
+     saxnasi yashiriladi). Mantiq `IS_CEP` orqali ketadi, shu sabab admin vizual
+     muharriri (?ffcms=1) ham shu klassni oladi: preview iframe'da panel AE ichidagi
+     bilan AYNI o'lchamda ko'rinadi, aks holda 228px'lik soxta oyna chiqardi. -->
+<script>try{if(typeof window!=='undefined'&&(window.__adobe_cep__||/[?&]ffcms/.test(location.search)))document.documentElement.classList.add('cep-mode');}catch(e){}</script>
 
 
 <div class="demo-stage" id="demoStage">
@@ -3880,6 +3884,7 @@ html.cep-mode .af-topbar{height:44px}
   (function(){
     try{
       if(typeof window==='undefined'||window.__adobe_cep__)return;   // faqat brauzer QA
+      if(/[?&]ffcms/.test(location.search))return;                   // admin muharriri — saxna kerak emas
       var x=new XMLHttpRequest(); x.open('GET','_dev-ae-stage.html',false); x.send(null);
       if(x.status&&x.status>=400)return;
       var host=document.getElementById('demoStage'); if(!host)return;
@@ -8229,6 +8234,10 @@ function fhomeFetchModels(){
    config kelsa qayta qo'llanadi. Xato/endpoint yo'q → joriy matnlar qoladi.
    Matnlar FAQAT textContent orqali (XSS gigienasi); bo'sh maydon = built-in. */
 var __afCms={cfg:null,at:0,inflight:false};
+/* Admin muharriri preview'i — FFCMS ko'prigi shu bayroqni yoqadi (?ffcms=1).
+   AE ichida hech qachon yonmaydi, shu sabab plagin xatti-harakati o'zgarmaydi. */
+var __afCmsDraftMode=false;
+try{ __afCmsDraftMode=/[?&]ffcms/.test(location.search); }catch(e){}
 var AF_CMS_LS='af.cms.config';
 function afCmsBase(){
   try{ if(typeof AssetFlowAccount!=='undefined')return AssetFlowAccount.apiBase(); }catch(e){}
@@ -8302,6 +8311,10 @@ function afCmsApply(){
     afCmsHeroMedia();
     // SC_61: e'lon paneli
     afCmsAnnounce(c.announcement||null);
+    // CMS v3 — nishonlash + uslub qatlami + bildirishnomalar
+    afCmsStamp();
+    afCmsApplyUi(c.uiStyles);
+    afCmsNotices(c.notices);
   }catch(e){ try{console.warn('[cms] apply:',e);}catch(_){} }
 }
 /* ══ SC_61: admin e'lon paneli — server content-config announcement ══
@@ -8365,6 +8378,10 @@ function afCmsHeroMedia(){
 }
 window.afCmsHeroMedia=afCmsHeroMedia;
 function afCmsFetch(){
+  // Admin vizual muharriri (?ffcms=1): konfiguratsiya DRAFT sifatida postMessage
+  // orqali keladi. Fon so'rovi serverdagi SAQLANGAN nusxani qaytarib, muharrirdagi
+  // saqlanmagan o'zgarishlarni jimgina o'chirib yuborardi — preview'da so'rov yo'q.
+  if(__afCmsDraftMode)return;
   // Throttle interval'dan KICHIK (4.5 daq < 5 daq): `at` fetch TUGAGANDA yoziladi,
   // shu sabab 300000 bo'lsa har ikkinchi 5-daq tick o'tkazib yuborilardi (~10 daq).
   if(__afCms.inflight||(Date.now()-__afCms.at<270000))return;
@@ -8387,12 +8404,271 @@ function afCmsFetch(){
     __afCms.inflight=false; __afCms.at=Date.now(); // xato → jim; joriy matnlar qoladi
   });
 }
+/* ══ CMS v3: nishonlash (data-cms) + uslub qatlami + bildirishnomalar ══
+   Admin vizual muharriri element yo'llari bilan ishlaydi: har CMS matni DOM'da
+   `data-cms-text="<yo'l>"` (yaproq) yoki `data-cms="<yo'l>"` (bo'lim) bilan
+   nishonlanadi. Shu nishonlar IKKI narsa uchun kerak:
+     1) admin panelida "bosib tanlash / joyida tahrir" (faqat preview iframe'da);
+     2) `uiStyles` — o'lcham/rang/surish/masshtab overridelari (AE ichida ham).
+   Nishonlash ishlab turgan plaginda ham bajariladi (atribut zararsiz), aks holda
+   uslub qatlami ishlamaydi. */
+var AF_CMS_TAG = [
+  ['.fhome-kick', 'home.hero.kicker'],
+  ['.fhome-hero-copy h1', 'home.hero.title'],
+  ['.fhome-sub', 'home.hero.sub'],
+  ['.fhome-btn-ai', 'home.hero.ctaPrimary'],
+  ['.fhome-btn-stock', 'home.hero.ctaSecondary'],
+  ['#homeHeroPrompt', 'home.hero.promptPlaceholder'],
+  ['#homeBArt', 'home.hero.mediaUrl'],
+  ['#fhomeRecentSec .fhome-sechd h2', 'home.sections.recent'],
+  ['#fhomeShelfSec .fhome-sechd h2', 'home.sections.shelf'],
+  ['.fhome-browse', 'home.sections.browseAll'],
+  ['#fhomeSessHd', 'home.sections.continueSessions'],
+  ['#fhomeExploreHd', 'home.sections.explore'],
+  ['#fhomeCatHd', 'home.sections.categories'],
+  ['#homeGuest .gu-h1', 'guest.title'],
+  ['#homeGuest .gu-sub', 'guest.sub'],
+  ['#homeGuest .sec .kick', 'guest.peekKicker'],
+  ['#homeGuest .gu-mk', 'guest.registerNote'],
+  ['.ai-launch-t', 'aiLauncher.title'],
+  ['#afAnnounceText', 'announcement.text'],
+  ['#afAnnounceCta', 'announcement.ctaLabel'],
+];
+/* Ro'yxatli bo'limlar: bir selektor → indeksli yo'l (0,1,2…). */
+var AF_CMS_TAG_LIST = [
+  ['#homeGuest .gu-feats .gu-f .tx b', 'guest.features.$.title'],
+  ['#homeGuest .gu-feats .gu-f .tx small', 'guest.features.$.sub'],
+  ['#homeCatTiles .fhome-cattile .ct-nm', 'home.categoryTiles.$.label'],
+];
+/* AI launcher kartalari DOM tartibi konfig indeksiga TENG EMAS (jonli tool'i
+   yo'q kategoriya chizilmaydi) — ular aiRenderCatGrid ichida nishonlanadi. */
+function afCmsMark(el, path, leaf) {
+  if (!el) return;
+  var a = leaf ? 'data-cms-text' : 'data-cms';
+  if (el.getAttribute(a) !== path) el.setAttribute(a, path);
+}
+function afCmsStamp() {
+  try {
+    AF_CMS_TAG.forEach(function (t) {
+      var el = document.querySelector(t[0]);
+      if (el) afCmsMark(el, t[1], true);
+    });
+    AF_CMS_TAG_LIST.forEach(function (t) {
+      var nodes = document.querySelectorAll(t[0]);
+      for (var i = 0; i < nodes.length; i++) afCmsMark(nodes[i], t[1].replace('$', String(i)), true);
+    });
+    // Bo'lim (guruh) nishonlari — surish/masshtab butun blok uchun
+    [['.fhome-hero', 'home.hero'], ['#homeGuest', 'guest'], ['#homeCatTiles', 'home.categoryTiles'],
+     ['#afAnnounce', 'announcement'], ['#aiCatGrid', 'aiLauncher.cards']].forEach(function (t) {
+      var el = document.querySelector(t[0]);
+      if (el) afCmsMark(el, t[1], false);
+    });
+  } catch (e) {}
+}
+
+/* uiStyles → CSS. Platformadagi `ffUiCss` bilan AYNI qoidalar: xom CSS qabul
+   qilinmaydi, har qiymat tip + chegara bo'yicha filtrlanadi (injection yuzasi
+   yo'q). Plaginda "mobil" yo'q, lekin tor panel (≤560px) mobil slotini oladi. */
+function afCmsUiCss(map) {
+  if (!map || typeof map !== 'object') return '';
+  var num = function (v, lo, hi) { return (typeof v === 'number' && isFinite(v)) ? Math.min(hi, Math.max(lo, v)) : null; };
+  var col = function (v) { return (typeof v === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v)) ? v : null; };
+  var pick = function (v, list) { return list.indexOf(v) >= 0 ? v : null; };
+  var SHADOW = ['none', '0 2px 8px rgba(0,0,0,.28)', '0 8px 24px rgba(0,0,0,.38)', '0 16px 46px rgba(0,0,0,.48)', '0 28px 80px rgba(0,0,0,.6)'];
+  var decls = function (sp) {
+    if (!sp || typeof sp !== 'object') return '';
+    var out = [];
+    var push = function (prop, val) { if (val != null && val !== '') out.push(prop + ':' + val + ' !important'); };
+    if (sp.hidden === true) return 'display:none !important';
+    push('font-size', num(sp.fontSize, 8, 200) != null ? num(sp.fontSize, 8, 200) + 'px' : null);
+    push('font-weight', num(sp.fontWeight, 100, 900));
+    push('line-height', num(sp.lineHeight, 0.7, 2.8));
+    push('letter-spacing', num(sp.letterSpacing, -0.15, 0.5) != null ? num(sp.letterSpacing, -0.15, 0.5) + 'em' : null);
+    push('text-align', pick(sp.textAlign, ['left', 'center', 'right']));
+    push('text-transform', pick(sp.textTransform, ['none', 'uppercase', 'capitalize']));
+    push('color', col(sp.color));
+    push('background', col(sp.bg));
+    var py = num(sp.padY, 0, 200), px = num(sp.padX, 0, 200);
+    if (py != null) { push('padding-top', py + 'px'); push('padding-bottom', py + 'px'); }
+    if (px != null) { push('padding-left', px + 'px'); push('padding-right', px + 'px'); }
+    push('margin-top', num(sp.marginTop, -300, 400) != null ? num(sp.marginTop, -300, 400) + 'px' : null);
+    push('margin-bottom', num(sp.marginBottom, -300, 400) != null ? num(sp.marginBottom, -300, 400) + 'px' : null);
+    push('border-radius', num(sp.radius, 0, 120) != null ? num(sp.radius, 0, 120) + 'px' : null);
+    var mw = num(sp.maxWidth, 0, 1800);
+    if (mw) push('max-width', mw + 'px');
+    push('opacity', num(sp.opacity, 0, 1));
+    var sh = num(sp.shadow, 0, 4);
+    if (sh != null && sh > 0) push('box-shadow', SHADOW[Math.round(sh)]);
+    var bw = num(sp.borderWidth, 0, 8);
+    if (bw != null && bw > 0) { push('border-style', 'solid'); push('border-width', bw + 'px'); push('border-color', col(sp.borderColor) || 'rgba(255,255,255,.35)'); }
+    var tx = num(sp.offsetX, -600, 600), ty = num(sp.offsetY, -600, 600);
+    var sc = num(sp.scale, 0.4, 2.5), rot = num(sp.rotate, -30, 30);
+    var tf = [];
+    if (tx || ty) tf.push('translate(' + (tx || 0) + 'px,' + (ty || 0) + 'px)');
+    if (sc != null && sc !== 1) tf.push('scale(' + sc + ')');
+    if (rot) tf.push('rotate(' + rot + 'deg)');
+    if (tf.length) { push('transform', tf.join(' ')); push('transform-origin', 'center center'); }
+    return out.join(';');
+  };
+  var base = '', mob = '';
+  Object.keys(map).forEach(function (path) {
+    if (!/^[A-Za-z0-9_.-]{1,90}$/.test(path)) return;
+    var st = map[path] || {};
+    var sel = '[data-cms="' + path + '"],[data-cms-text="' + path + '"]';
+    var d = decls(st.d); if (d) base += sel + '{' + d + '}';
+    var m = decls(st.m); if (m) mob += sel + '{' + m + '}';
+  });
+  return base + (mob ? '@media(max-width:560px){' + mob + '}' : '');
+}
+var __afCmsCssLast = null;
+function afCmsApplyUi(map) {
+  var css = afCmsUiCss(map);
+  if (css === __afCmsCssLast) return;
+  __afCmsCssLast = css;
+  try {
+    var el = document.getElementById('afCmsStyles');
+    if (!el) { el = document.createElement('style'); el.id = 'afCmsStyles'; document.head.appendChild(el); }
+    el.textContent = css;
+  } catch (e) {}
+}
+
+/* ══ Bildirishnomalar (notices) — banner / toast / modal ══
+   Admin panelidan yoziladi; e'lon panelidan (announcement) farqi — bir nechta,
+   auditoriya (guest/user) va sana oralig'i bilan. Matn FAQAT textContent.
+   Yopish holati localStorage'da id bo'yicha. CTA ichki ekran (allow-list) yoki
+   tashqi https havola — havola brauzerda ochiladi, panel ichida emas. */
+var AF_NOTICE_LS = 'af.cms.notices.dismissed';
+function afNoticeDismissed() {
+  try { return JSON.parse(localStorage.getItem(AF_NOTICE_LS) || '{}') || {}; } catch (e) { return {}; }
+}
+function afNoticeDismiss(id) {
+  try { var d = afNoticeDismissed(); d[id] = 1; localStorage.setItem(AF_NOTICE_LS, JSON.stringify(d)); } catch (e) {}
+}
+function afNoticeVisible(n, now, logged, dis) {
+  if (!n || !n.enabled || !(n.text || n.title)) return false;
+  if (n.audience === 'guest' && logged) return false;
+  if (n.audience === 'user' && !logged) return false;
+  if (n.startAt) { var s = Date.parse(n.startAt); if (isFinite(s) && now < s) return false; }
+  if (n.endAt) { var e = Date.parse(n.endAt); if (isFinite(e) && now > e) return false; }
+  if (n.dismissable !== false && n.id && dis[n.id]) return false;
+  return true;
+}
+function afNoticeCta(n) {
+  var NAV = { aistudio: 'ai', templates: 'catalog', plugin: 'home', dashboard: 'home', landing: 'home', account: 'home', pricing: '' };
+  var tab = NAV[n.ctaTarget || ''];
+  if (tab) { try { if (typeof afNavTab === 'function') afNavTab(tab); } catch (e) {} return; }
+  var url = String(n.ctaUrl || '');
+  if (/^https:\/\//.test(url)) {
+    try {
+      if (typeof AssetFlowAccount !== 'undefined' && AssetFlowAccount.openExternal) AssetFlowAccount.openExternal(url);
+      else window.open(url, '_blank');
+    } catch (e) {}
+  }
+}
+function afCmsNoticeStyles() {
+  if (document.getElementById('afNoticeCss')) return;
+  var s = document.createElement('style');
+  s.id = 'afNoticeCss';
+  s.textContent =
+    '#afNoticeWrap{position:fixed;left:0;right:0;bottom:0;z-index:9400;display:flex;flex-direction:column;gap:8px;padding:0 12px 12px;pointer-events:none}' +
+    '#afNoticeTop{position:fixed;left:0;right:0;top:0;z-index:9400;display:flex;flex-direction:column;pointer-events:none}' +
+    '.af-nt{pointer-events:auto;display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:11px;background:#141922;border:1px solid rgba(255,255,255,.13);box-shadow:0 14px 38px rgba(0,0,0,.5);font:500 11.5px/1.45 var(--ff-sans,ui-sans-serif,system-ui,sans-serif);color:#E7ECF3}' +
+    '.af-nt.pl-banner{border-radius:0;border-left:0;border-right:0;border-top:0;box-shadow:none}' +
+    '.af-nt .dot{width:6px;height:6px;border-radius:50%;background:currentColor;margin-top:6px;flex:none}' +
+    '.af-nt .bd{flex:1;min-width:0}' +
+    '.af-nt .ti{font-weight:700;font-size:11.5px;margin-bottom:2px}' +
+    '.af-nt .tx{color:rgba(231,236,243,.82)}' +
+    '.af-nt .cta{margin-top:6px;display:inline-block;border:1px solid currentColor;border-radius:99px;padding:2px 10px;font-size:10.5px;font-weight:700;cursor:pointer}' +
+    '.af-nt .x{cursor:pointer;opacity:.55;font-size:13px;line-height:1;padding:2px 3px;flex:none}' +
+    '.af-nt .x:hover{opacity:1}' +
+    '.af-nt.tone-info{color:#9CCBFF}.af-nt.tone-promo{color:#d8ff3e}.af-nt.tone-warn{color:#FFB27C}.af-nt.tone-success{color:#8FE3B0}' +
+    '#afNoticeModal{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(4,7,12,.72);backdrop-filter:blur(5px)}' +
+    '#afNoticeModal .bx{width:min(360px,86vw);padding:20px 20px 17px;border-radius:16px;background:#141922;border:1px solid rgba(255,255,255,.14);box-shadow:0 28px 80px rgba(0,0,0,.62);font:500 12px/1.5 var(--ff-sans,ui-sans-serif,system-ui,sans-serif);color:#E7ECF3;text-align:center}';
+  document.head.appendChild(s);
+}
+function afCmsNotices(list) {
+  var top = document.getElementById('afNoticeTop');
+  var wrap = document.getElementById('afNoticeWrap');
+  var modal = document.getElementById('afNoticeModal');
+  if (top) top.remove();
+  if (wrap) wrap.remove();
+  if (modal) modal.remove();
+  if (!Array.isArray(list) || !list.length) return;
+  afCmsNoticeStyles();
+  var now = Date.now();
+  var logged = false;
+  try { logged = (typeof AssetFlowAccount !== 'undefined') && !!AssetFlowAccount.isLoggedIn(); } catch (e) {}
+  var dis = afNoticeDismissed();
+  var shown = list.filter(function (n) { return afNoticeVisible(n, now, logged, dis); });
+  if (!shown.length) return;
+
+  var mkCard = function (n, cls) {
+    var d = document.createElement('div');
+    d.className = 'af-nt tone-' + (n.tone || 'info') + (cls ? ' ' + cls : '');
+    d.setAttribute('data-cms', 'notices.' + list.indexOf(n));
+    var dot = document.createElement('span'); dot.className = 'dot'; d.appendChild(dot);
+    var bd = document.createElement('div'); bd.className = 'bd';
+    if (n.title) {
+      var ti = document.createElement('div'); ti.className = 'ti'; ti.textContent = n.title;
+      ti.setAttribute('data-cms-text', 'notices.' + list.indexOf(n) + '.title');
+      bd.appendChild(ti);
+    }
+    if (n.text) {
+      var tx = document.createElement('div'); tx.className = 'tx'; tx.textContent = n.text;
+      tx.setAttribute('data-cms-text', 'notices.' + list.indexOf(n) + '.text');
+      bd.appendChild(tx);
+    }
+    if (n.ctaLabel) {
+      var c = document.createElement('span'); c.className = 'cta'; c.textContent = n.ctaLabel;
+      c.setAttribute('data-cms-text', 'notices.' + list.indexOf(n) + '.ctaLabel');
+      c.onclick = function () { afNoticeCta(n); };
+      bd.appendChild(c);
+    }
+    d.appendChild(bd);
+    if (n.dismissable !== false) {
+      var x = document.createElement('span'); x.className = 'x'; x.textContent = '×';
+      x.onclick = function () { if (n.id) afNoticeDismiss(n.id); d.remove(); };
+      d.appendChild(x);
+    }
+    return d;
+  };
+
+  var banners = shown.filter(function (n) { return n.placement === 'banner'; });
+  var toasts = shown.filter(function (n) { return n.placement === 'toast'; });
+  var modals = shown.filter(function (n) { return n.placement === 'modal'; });
+  if (banners.length) {
+    var t = document.createElement('div'); t.id = 'afNoticeTop';
+    banners.forEach(function (n) { t.appendChild(mkCard(n, 'pl-banner')); });
+    document.body.appendChild(t);
+  }
+  if (toasts.length) {
+    var w = document.createElement('div'); w.id = 'afNoticeWrap';
+    toasts.forEach(function (n) { w.appendChild(mkCard(n)); });
+    document.body.appendChild(w);
+  }
+  if (modals.length) {
+    var n0 = modals[0];
+    var m = document.createElement('div'); m.id = 'afNoticeModal';
+    var bx = document.createElement('div'); bx.className = 'bx';
+    bx.appendChild(mkCard(n0));
+    var close = document.createElement('div');
+    close.className = 'af-nt cta';
+    close.textContent = 'Yopish';
+    close.style.cssText = 'margin:12px auto 0;display:inline-block;padding:5px 16px;border:1px solid rgba(255,255,255,.2);border-radius:99px;cursor:pointer;font-weight:700;font-size:11px;background:transparent;box-shadow:none';
+    close.onclick = function () { if (n0.id) afNoticeDismiss(n0.id); m.remove(); };
+    bx.appendChild(close);
+    m.appendChild(bx);
+    document.body.appendChild(m);
+  }
+}
 window.afCmsTick=function(){ afCmsFetch(); };
 // Boot: kesh SINXRON qo'llanadi (instant, offline-safe) + fon fetch + 5-daq davriy yangilash
 try{
   var __cmsCached=null;
-  try{ __cmsCached=JSON.parse(localStorage.getItem(AF_CMS_LS)||'null'); }catch(e){}
+  // Muharrir preview'ida kesh o'qilmaydi — draft yagona manba (afCmsFetch bilan bir xil sabab)
+  if(!__afCmsDraftMode){ try{ __cmsCached=JSON.parse(localStorage.getItem(AF_CMS_LS)||'null'); }catch(e){} }
   if(__cmsCached){ __afCms.cfg=__cmsCached; afCmsApply(); }
+  else afCmsStamp();  // config yo'q bo'lsa ham nishonlar qo'yiladi (uslub qatlami + admin preview)
   afCmsFetch();
   setInterval(afCmsFetch,300000);
 }catch(e){}
@@ -12386,12 +12662,16 @@ async function bootPlugin(){
       }
       var el=document.createElement('div');
       el.className='cat';
+      // CMS nishonlari: DOM tartibi emas, AI_CATS indeksi (jonli tool'i yo'q karta chizilmaydi)
+      el.setAttribute('data-cms','aiLauncher.cards.'+idx);
       el.innerHTML=mediaHtml
         +'<div class="cat-glow" style="background:radial-gradient(110% 90% at 85% -10%,'+c.glow+',transparent 55%)"></div>'
         +'<div class="cat-in"><span class="cat-ic">'+c.icon+'</span>'
         +'<div class="cat-nm">'+nm+'</div>'
         +'<div class="cat-models">'+models+'</div></div>'; // SC_05: "● LIVE" qatori o'chirildi
       // SC_04: media yuklanmasa qatlam olib tashlanadi — glow/gradient fon qoladi
+      var nmEl=el.querySelector('.cat-nm'); if(nmEl)nmEl.setAttribute('data-cms-text','aiLauncher.cards.'+idx+'.title');
+      var dsEl=el.querySelector('.cat-models'); if(dsEl)dsEl.setAttribute('data-cms-text','aiLauncher.cards.'+idx+'.desc');
       var mEl=el.querySelector('.cat-media video,.cat-media img');
       if(mEl)mEl.addEventListener('error',function(){ var w=el.querySelector('.cat-media'); if(w)w.remove(); });
       el.addEventListener('click',function(){
@@ -17303,6 +17583,320 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
   function cfgByDensity(host){ for(var k in VIEWS){ if(VIEWS[k].density&&$(VIEWS[k].density)===host)return VIEWS[k]; } return null; }
 })();
 
+
+/* ═══ FFCMS v2 · Admin vizual muharrir ko'prigi (?ffcms=1) ═══
+   Plagin paneli admin ichida iframe'da ochilganda ishlaydi (platformadagi bilan
+   AYNI protokol). AE ichida ?ffcms yo'q — bu kod umuman uxlaydi va bitta ham
+   hodisa tinglovchisi qo'shilmaydi. */
+(function () {
+  var qs; try { qs = location.search || ''; } catch (e) { return; }
+  if (!/[?&]ffcms/.test(qs)) return;
+  var ALLOW = ['https://admin.getframeflow.app', 'https://getframeflow.app', 'http://localhost:3001', 'http://localhost:3000'];
+  try { if (location.origin && ALLOW.indexOf(location.origin) < 0) ALLOW.push(location.origin); } catch (e) {}
+  var parentOrigin = null, device = 'desktop', cfgStyles = {};
+  var hovered = null, selected = null, selPath = '', editing = null, dragging = null, armed = true;
+
+  /* Muharrir preview'ida panel toast'lari SHOVQIN: admin brauzerida plagin
+     sessiyasi yo'q, shu sabab "Session expired" / tarmoq xatolari ustma-ust
+     chiqib kontentni to'sardi. CMS bildirishnomalari (afCmsNotices) alohida
+     qatlamda — ular ko'rinishda qoladi. */
+  try { window.showToast = function () {}; } catch (e) {}
+
+  var st = document.createElement('style');
+  st.textContent =
+    '[data-ffcms-hover]{outline:2px dashed #d8ff3e!important;outline-offset:2px;cursor:pointer!important}' +
+    '#ffcmsChip{position:fixed;z-index:2147483647;background:#d8ff3e;color:#0a0d02;font:700 10px/1 ui-monospace,monospace;padding:5px 9px;border-radius:7px;pointer-events:none;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}' +
+    '#ffcmsBox{position:fixed;z-index:2147483644;display:none;pointer-events:none;border:2px solid #7CC4FF;border-radius:4px;box-shadow:0 0 0 1px rgba(0,0,0,.35)}' +
+    '#ffcmsBox b{position:absolute;right:-6px;bottom:-6px;width:13px;height:13px;border-radius:3px;background:#7CC4FF;border:2px solid #08131f;pointer-events:auto;cursor:nwse-resize}' +
+    '#ffcmsBar{position:fixed;z-index:2147483646;display:none;align-items:center;gap:2px;padding:4px;border-radius:10px;background:#11141a;border:1px solid rgba(255,255,255,.16);box-shadow:0 12px 32px rgba(0,0,0,.55);font:600 11px/1 ui-sans-serif,system-ui,sans-serif}' +
+    '#ffcmsBar button{all:unset;box-sizing:border-box;min-width:26px;height:24px;padding:0 6px;display:grid;place-items:center;border-radius:6px;color:#e6ebf2;cursor:pointer;font:600 11px/1 ui-sans-serif,system-ui,sans-serif}' +
+    '#ffcmsBar button:hover{background:rgba(255,255,255,.12)}' +
+    '#ffcmsBar i.sep{width:1px;height:15px;background:rgba(255,255,255,.14);margin:0 3px}' +
+    '#ffcmsBar span.lbl{color:#8c97a8;font:600 10px/1 ui-monospace,monospace;padding:0 6px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '[data-ffcms-edit]{outline:2px solid #d8ff3e!important;outline-offset:2px;cursor:text!important}';
+  document.head.appendChild(st);
+
+  var chip = document.createElement('div'); chip.id = 'ffcmsChip';
+  var box = document.createElement('div'); box.id = 'ffcmsBox';
+  var hnd = document.createElement('b'); box.appendChild(hnd);
+  var bar = document.createElement('div'); bar.id = 'ffcmsBar';
+  var BTNS = [
+    ['up', '↑', 'Ota elementni tanlash'], ['sep', '', ''],
+    ['edit', '✎', 'Joyida matnni tahrirlash'], ['sep', '', ''],
+    ['fs-', 'A−', 'Shriftni kichraytirish'], ['fs+', 'A+', 'Shriftni kattalashtirish'],
+    ['fw-', 'W−', 'Yupqaroq'], ['fw+', 'W+', 'Qalinroq'], ['sep', '', ''],
+    ['al', '⇤', 'Chapga'], ['ac', '↔', 'Markazga'], ['ar', '⇥', "O'ngga"], ['sep', '', ''],
+    ['sc-', '−', 'Kichraytirish'], ['sc+', '+', 'Kattalashtirish'], ['sep', '', ''],
+    ['hide', '👁', "Yashirish / ko'rsatish"], ['reset', '↺', 'Uslubni tiklash'],
+  ];
+  BTNS.forEach(function (b) {
+    if (b[0] === 'sep') { var i = document.createElement('i'); i.className = 'sep'; bar.appendChild(i); return; }
+    var el = document.createElement('button');
+    el.textContent = b[1]; el.title = b[2]; el.setAttribute('data-act', b[0]);
+    bar.appendChild(el);
+  });
+  var lbl = document.createElement('span'); lbl.className = 'lbl'; bar.appendChild(lbl);
+  function mount() { if (!document.body) return; [chip, box, bar].forEach(function (n) { if (!n.parentNode) document.body.appendChild(n); }); }
+  if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
+
+
+  /* ── Plagin qarshiliklari: draft qo'llash + ekran almashish ─────────────── */
+  function applyDraft(cfg) {
+    try {
+      __afCms.cfg = cfg;
+      if (typeof afCmsApply === 'function') afCmsApply();
+      if (typeof afCmsStamp === 'function') afCmsStamp();
+      if (typeof afCmsApplyUi === 'function') afCmsApplyUi(cfg.uiStyles);
+      if (typeof afCmsNotices === 'function') afCmsNotices(cfg.notices);
+    } catch (e) { try { console.warn('[ffcms] draft:', e); } catch (_) {} }
+  }
+  /* Mehmon ekrani real login holatiga bog'liq — previewda uni majburan
+     ko'rsatamiz/yashiramiz (faqat iframe ichida, AE'da bu kod ishlamaydi). */
+  function forceGuest(on) {
+    var main = document.getElementById('homeMain'), guest = document.getElementById('homeGuest');
+    if (main) main.style.display = on ? 'none' : '';
+    if (guest) guest.style.display = on ? '' : 'none';
+    if (on && typeof renderHomeGuest === 'function') { try { renderHomeGuest(); } catch (e) {} }
+  }
+  var __scr = 'home';
+  function curScreen() { return __scr; }
+  function gotoScreen(s) {
+    __scr = s;
+    try {
+      if (s === 'guest') { if (typeof afNavTab === 'function') afNavTab('home'); forceGuest(true); }
+      else { forceGuest(false); if (typeof afNavTab === 'function') afNavTab(s === 'ai' ? 'ai' : (s === 'catalog' ? 'catalog' : 'home')); }
+    } catch (e) {}
+    setTimeout(function () { if (typeof afCmsStamp === 'function') afCmsStamp(); }, 200);
+  }
+
+  function target(el) { return el && el.closest ? el.closest('[data-cms],[data-cms-text]') : null; }
+  function keyOf(el) { return el ? (el.getAttribute('data-cms-text') || el.getAttribute('data-cms') || '') : ''; }
+  function findByKey(k) { try { return document.querySelector('[data-cms-text="' + k + '"]') || document.querySelector('[data-cms="' + k + '"]'); } catch (e) { return null; } }
+  function post(msg) { if (parentOrigin) try { parent.postMessage(msg, parentOrigin); } catch (e) {} }
+  function styleOf(k) { var e = cfgStyles[k] || {}; return e[device === 'mobile' ? 'm' : 'd'] || {}; }
+  function curNum(k, prop, fb) { var v = styleOf(k)[prop]; return (typeof v === 'number' && isFinite(v)) ? v : fb; }
+  function sendPatch(patch) {
+    if (!selPath) return;
+    var e = cfgStyles[selPath] || (cfgStyles[selPath] = {});
+    var slot = device === 'mobile' ? 'm' : 'd';
+    e[slot] = Object.assign({}, e[slot] || {}, patch);
+    post({ type: 'ffcms-style', path: selPath, device: device, patch: patch });
+  }
+
+  function selectEl(t, notify) {
+    selected = t; selPath = keyOf(t);
+    lbl.textContent = selPath;
+    place();
+    if (notify !== false) post({
+      type: 'ffcms-select', path: selPath,
+      textPath: t ? (t.getAttribute('data-cms-text') || '') : '',
+      groupPath: t ? (t.getAttribute('data-cms') || '') : '',
+      text: t ? (t.textContent || '').trim().slice(0, 200) : '',
+      style: styleOf(selPath),
+    });
+  }
+  function place() {
+    if (selected && !selected.isConnected) { var re = findByKey(selPath); if (re) selected = re; }
+    if (!selected || !selected.isConnected) { box.style.display = 'none'; bar.style.display = 'none'; return; }
+    var r = selected.getBoundingClientRect();
+    if (!r.width && !r.height) { box.style.display = 'none'; bar.style.display = 'none'; return; }
+    box.style.display = 'block'; bar.style.display = 'flex';
+    box.style.left = r.left + 'px'; box.style.top = r.top + 'px';
+    box.style.width = r.width + 'px'; box.style.height = r.height + 'px';
+    var bw = bar.offsetWidth || 340;
+    var bt = r.top - 32; if (bt < 6) bt = Math.min(r.bottom + 8, innerHeight - 34);
+    bar.style.top = bt + 'px';
+    bar.style.left = Math.max(6, Math.min(r.left, innerWidth - bw - 8)) + 'px';
+  }
+  (function loop() { if (selected) place(); requestAnimationFrame(loop); })();
+
+  // ── hover ────────────────────────────────────────────────────────────────
+  document.addEventListener('mousemove', function (ev) {
+    if (!armed || dragging || editing) return;
+    var t = target(ev.target);
+    if (t !== hovered) {
+      if (hovered) hovered.removeAttribute('data-ffcms-hover');
+      hovered = t;
+      if (t) { t.setAttribute('data-ffcms-hover', ''); chip.textContent = keyOf(t); chip.style.display = 'block'; }
+      else chip.style.display = 'none';
+    }
+    if (t) { chip.style.left = (ev.clientX + 14) + 'px'; chip.style.top = (ev.clientY + 16) + 'px'; }
+  }, true);
+
+  // ── asboblar paneli ──────────────────────────────────────────────────────
+  bar.addEventListener('mousedown', function (ev) { ev.preventDefault(); ev.stopPropagation(); }, true);
+  bar.addEventListener('click', function (ev) {
+    ev.preventDefault(); ev.stopPropagation();
+    var b = ev.target.closest ? ev.target.closest('button[data-act]') : null;
+    if (!b || !selected) return;
+    var a = b.getAttribute('data-act');
+    if (a === 'up') {
+      var par = selected.parentElement && selected.parentElement.closest ? selected.parentElement.closest('[data-cms],[data-cms-text]') : null;
+      if (par) selectEl(par);
+      return;
+    }
+    if (a === 'edit') { startEdit(); return; }
+    if (a === 'reset') { cfgStyles[selPath] = {}; post({ type: 'ffcms-style', path: selPath, device: device, patch: null }); return; }
+    if (a === 'hide') { sendPatch({ hidden: !styleOf(selPath).hidden }); return; }
+    if (a === 'al' || a === 'ac' || a === 'ar') { sendPatch({ textAlign: a === 'al' ? 'left' : (a === 'ac' ? 'center' : 'right') }); return; }
+    if (a === 'fs-' || a === 'fs+') {
+      var base = curNum(selPath, 'fontSize', Math.round(parseFloat(getComputedStyle(selected).fontSize) || 16));
+      var step = base > 40 ? 3 : (base > 20 ? 2 : 1);
+      sendPatch({ fontSize: Math.max(8, Math.min(200, base + (a === 'fs+' ? step : -step))) });
+      return;
+    }
+    if (a === 'fw-' || a === 'fw+') {
+      var w = curNum(selPath, 'fontWeight', Math.round((parseFloat(getComputedStyle(selected).fontWeight) || 400) / 100) * 100);
+      sendPatch({ fontWeight: Math.max(100, Math.min(900, w + (a === 'fw+' ? 100 : -100))) });
+      return;
+    }
+    if (a === 'sc-' || a === 'sc+') {
+      var sc = curNum(selPath, 'scale', 1);
+      sendPatch({ scale: +Math.max(0.4, Math.min(2.5, sc + (a === 'sc+' ? 0.05 : -0.05))).toFixed(3) });
+      return;
+    }
+  }, true);
+
+  // ── joyida matn tahriri ──────────────────────────────────────────────────
+  function startEdit() {
+    var el = selected; if (!el) return;
+    var tp = el.getAttribute('data-cms-text');
+    if (!tp) { post({ type: 'ffcms-toast', text: "Bu element matn tuguni emas — o'ng paneldan tahrirlang" }); return; }
+    editing = { el: el, path: tp };
+    el.setAttribute('contenteditable', 'plaintext-only');
+    el.setAttribute('data-ffcms-edit', '');
+    el.focus();
+    try { var r = document.createRange(); r.selectNodeContents(el); var sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); } catch (e) {}
+    post({ type: 'ffcms-editing', on: true, path: tp });
+  }
+  function commitEdit(cancel) {
+    if (!editing) return;
+    var e = editing; editing = null;
+    var v = (e.el.textContent || '').replace(/\s+/g, ' ').trim();
+    e.el.removeAttribute('contenteditable'); e.el.removeAttribute('data-ffcms-edit');
+    post({ type: 'ffcms-editing', on: false, path: e.path });
+    if (!cancel) post({ type: 'ffcms-text', path: e.path, value: v });
+  }
+  document.addEventListener('input', function () {
+    if (!editing) return;
+    post({ type: 'ffcms-text-live', path: editing.path, value: (editing.el.textContent || '').replace(/\s+/g, ' ').trim() });
+  }, true);
+  document.addEventListener('keydown', function (ev) {
+    if (editing) {
+      if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commitEdit(false); }
+      else if (ev.key === 'Escape') { ev.preventDefault(); commitEdit(true); }
+      return;
+    }
+    if (!selected) return;
+    if (ev.key === 'Escape') { selected = null; selPath = ''; box.style.display = 'none'; bar.style.display = 'none'; post({ type: 'ffcms-select', path: '' }); return; }
+    var d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
+    if (d) {
+      ev.preventDefault();
+      var step = ev.shiftKey ? 10 : 1;
+      sendPatch({ offsetX: Math.round(curNum(selPath, 'offsetX', 0) + d[0] * step), offsetY: Math.round(curNum(selPath, 'offsetY', 0) + d[1] * step) });
+    }
+  }, true);
+
+  // ── tanlash + sudrash ────────────────────────────────────────────────────
+  document.addEventListener('mousedown', function (ev) {
+    if (!armed) return;
+    if (bar.contains(ev.target)) return;
+    if (editing) { if (editing.el.contains(ev.target)) return; commitEdit(false); }
+    var onHandle = ev.target === hnd;
+    var t = onHandle ? selected : target(ev.target);
+    if (!t) return;
+    ev.preventDefault(); ev.stopPropagation();
+    if (t !== selected) selectEl(t);
+    var k = keyOf(t);
+    dragging = {
+      el: t, mode: onHandle ? 'scale' : 'move', x0: ev.clientX, y0: ev.clientY, moved: false,
+      bx: curNum(k, 'offsetX', 0), by: curNum(k, 'offsetY', 0), bs: curNum(k, 'scale', 1),
+      inline: t.getAttribute('style'),
+    };
+  }, true);
+  document.addEventListener('mousemove', function (ev) {
+    if (!dragging) return;
+    var dx = ev.clientX - dragging.x0, dy = ev.clientY - dragging.y0;
+    if (!dragging.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+    dragging.moved = true;
+    var tf;
+    if (dragging.mode === 'move') {
+      dragging.cx = Math.round(dragging.bx + dx); dragging.cy = Math.round(dragging.by + dy);
+      tf = 'translate(' + dragging.cx + 'px,' + dragging.cy + 'px)' + (dragging.bs !== 1 ? ' scale(' + dragging.bs + ')' : '');
+    } else {
+      dragging.cs = +Math.max(0.4, Math.min(2.5, dragging.bs + (dx + dy) / 320)).toFixed(3);
+      tf = 'translate(' + dragging.bx + 'px,' + dragging.by + 'px) scale(' + dragging.cs + ')';
+    }
+    dragging.el.style.setProperty('transform', tf, 'important');
+    dragging.el.style.setProperty('transform-origin', 'center center', 'important');
+    place();
+  }, true);
+  document.addEventListener('mouseup', function () {
+    if (!dragging) return;
+    var d = dragging; dragging = null;
+    if (d.inline == null) d.el.removeAttribute('style'); else d.el.setAttribute('style', d.inline);
+    if (!d.moved) return;
+    if (d.mode === 'move') sendPatch({ offsetX: d.cx, offsetY: d.cy });
+    else sendPatch({ scale: d.cs });
+  }, true);
+  // Preview'da navigatsiya/amallar BLOKlanadi — faqat tahrir ishlaydi.
+  document.addEventListener('click', function (ev) {
+    if (!armed || editing) return;
+    if (bar.contains(ev.target)) return;
+    ev.preventDefault(); ev.stopPropagation();
+  }, true);
+  document.addEventListener('dblclick', function (ev) {
+    if (!armed || editing) return;
+    var t = target(ev.target); if (!t) return;
+    ev.preventDefault(); ev.stopPropagation();
+    if (t !== selected) selectEl(t);
+    startEdit();
+  }, true);
+
+  // ── qatlamlar ro'yxati (admin Layers paneli uchun) ───────────────────────
+  function outline() {
+    var out = [], seen = {};
+    try {
+      var all = document.querySelectorAll('[data-cms],[data-cms-text]');
+      for (var i = 0; i < all.length && out.length < 400; i++) {
+        var el = all[i], k = keyOf(el);
+        if (!k || seen[k]) continue;
+        var r = el.getBoundingClientRect();
+        if (!r.width && !r.height) continue;
+        seen[k] = 1;
+        out.push({ path: k, leaf: !!el.getAttribute('data-cms-text'), tag: el.tagName.toLowerCase(), text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60) });
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  window.addEventListener('message', function (ev) {
+    if (ALLOW.indexOf(ev.origin) < 0) return;
+    var d = ev.data || {};
+    if (d.type === 'ffcms-hello') {
+      parentOrigin = ev.origin;
+      try { if (typeof afCmsStamp === 'function') afCmsStamp(); } catch (e) {}
+      post({ type: 'ffcms-ready', outline: outline(), screen: curScreen() });
+      return;
+    }
+    if (d.type === 'ffcms-draft' && d.config) {
+      cfgStyles = (d.config.uiStyles && typeof d.config.uiStyles === 'object') ? d.config.uiStyles : {};
+      if (editing) return;                      // yozayotganda qayta chizish karetni o'ldiradi
+      applyDraft(d.config);
+      setTimeout(function () { post({ type: 'ffcms-outline', outline: outline() }); }, 120);
+      return;
+    }
+    if (d.type === 'ffcms-goto' && d.screen) { gotoScreen(String(d.screen)); setTimeout(function () { post({ type: 'ffcms-outline', outline: outline() }); }, 300); return; }
+    if (d.type === 'ffcms-device') { device = d.device === 'mobile' ? 'mobile' : 'desktop'; return; }
+    if (d.type === 'ffcms-arm') { armed = d.on !== false; if (!armed) { box.style.display = 'none'; bar.style.display = 'none'; chip.style.display = 'none'; } return; }
+    if (d.type === 'ffcms-select-path') {
+      var el = findByKey(String(d.path || ''));
+      if (el) { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {} selectEl(el, false); }
+      return;
+    }
+    if (d.type === 'ffcms-outline-req') { post({ type: 'ffcms-outline', outline: outline() }); return; }
+  });
+})();
 </script>
 </body>
 </html>

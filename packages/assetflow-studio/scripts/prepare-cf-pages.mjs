@@ -60,6 +60,28 @@ copyFile(path.join(root, "admin-login.html"), path.join(dist, "admin", "login.ht
 copyDir(SRC_JS, path.join(dist, "admin", "js"));
 copyDir(SRC_STYLES, path.join(dist, "admin", "styles"));
 
+// 2b) /admin/plugin-preview/ — AE CEP panelining BRAUZER nusxasi. Admin
+//     "Plugin CMS" ekrani uni iframe'da ochadi (…?ffcms=1) va vizual muharrir
+//     shu real panel ustida ishlaydi. Same-origin bo'lishi SHART: CSP bitta
+//     `/*` blok (`frame-src 'self'`), cross-origin iframe bloklanardi.
+//     Faqat panel ishlashi uchun kerak bo'lgani ko'chiriladi — `scripts/`
+//     (build/install asboblari), `jsx/` (ExtendScript, brauzerda ishlamaydi),
+//     `CSXS/` (manifest) va admin panel HTML'i TASHQARIDA. `_` bilan
+//     boshlanadigan mockup'larni copyDir o'zi tashlab ketadi.
+{
+  const cep = path.resolve(root, "..", "..", "plugins", "after-effects-cep");
+  const pv = path.join(dist, "admin", "plugin-preview");
+  copyFile(path.join(cep, "AssetFlow_Plugin.html"), path.join(pv, "AssetFlow_Plugin.html"));
+  for (const d of ["css", "icons", "js"]) copyDir(path.join(cep, d), path.join(pv, d));
+  if (fs.existsSync(cep)) {
+    for (const name of fs.readdirSync(cep)) {
+      if (name.startsWith("assetflow-") && name.endsWith(".js")) {
+        copyFile(path.join(cep, name), path.join(pv, name));
+      }
+    }
+  }
+}
+
 // 3) /studio/ — html'lar manbadan, js/styles root manbadan regeneratsiya
 //    (_redirects bularni baribir /js/,/styles/,/login.html,... ga yo'naltiradi)
 copyDir(SRC_JS, path.join(dist, "studio", "js"));

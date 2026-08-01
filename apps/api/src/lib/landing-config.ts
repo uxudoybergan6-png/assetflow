@@ -70,6 +70,60 @@ export interface LandingMegaModelRow {
   price: string; // ko'rsatiladigan narx yorlig'i (✦…)
 }
 
+// ── SITE CMS v3 — vizual muharrir: element uslub qatlami + bildirishnomalar ──
+/** Bitta elementga (data-cms yo'li) beriladigan uslub ustqurmasi.
+ *  DIQQAT: bu yerda XOM CSS satri YO'Q va bo'lmaydi — faqat tipli, chegaralangan
+ *  qiymatlar. Platforma shulardan CSS quradi (injection yuzasi yopiq). */
+export interface SiteStyleProps {
+  fontSize?: number; // px 8..200
+  fontWeight?: number; // 300..900
+  lineHeight?: number; // 0.8..2.6
+  letterSpacing?: number; // em -0.12..0.4
+  textAlign?: "left" | "center" | "right";
+  textTransform?: "none" | "uppercase" | "capitalize";
+  color?: string; // #RGB | #RRGGBB
+  bg?: string; // #RGB | #RRGGBB
+  padY?: number; // px 0..200
+  padX?: number; // px 0..200
+  marginTop?: number; // px -300..400
+  marginBottom?: number; // px -300..400
+  offsetX?: number; // px -600..600 (translate — "surish")
+  offsetY?: number; // px -600..600
+  scale?: number; // 0.4..2.5 ("kattalashtirish/kichiklashtirish")
+  rotate?: number; // deg -30..30
+  radius?: number; // px 0..120
+  maxWidth?: number; // px 0..1800 (0 = auto)
+  opacity?: number; // 0..1
+  shadow?: number; // 0..4 (preset darajalar)
+  borderWidth?: number; // px 0..8
+  borderColor?: string;
+  hidden?: boolean; // display:none
+}
+
+/** Element uslubi — qurilma bo'yicha: d = desktop (asos), m = mobil (≤640px). */
+export interface SiteElementStyle {
+  d?: SiteStyleProps;
+  m?: SiteStyleProps;
+}
+
+/** Foydalanuvchiga ko'rsatiladigan bildirishnoma (sayt + app ichida).
+ *  Pul/kredit mantig'iga TEGMAYDI — faqat ko'rsatish qatlami. */
+export interface SiteNotice {
+  id: string; // barqaror kalit — dismiss holati shu bo'yicha eslab qolinadi
+  enabled: boolean;
+  placement: "banner" | "toast" | "modal";
+  tone: "info" | "promo" | "warn" | "success";
+  audience: "all" | "guest" | "user"; // guest = login qilmagan, user = login qilgan
+  title: string;
+  text: string;
+  ctaLabel: string;
+  ctaTarget: "" | "landing" | "pricing" | "plugin" | "templates" | "aistudio" | "account" | "dashboard";
+  ctaUrl: string; // ctaTarget bo'sh bo'lsa — tashqi https havola
+  dismissable: boolean;
+  startAt: string; // "" yoki ISO sana — shundan oldin ko'rinmaydi
+  endAt: string; // "" yoki ISO sana — shundan keyin ko'rinmaydi
+}
+
 export interface LandingConfigData {
   theme: {
     // accent — istalgan HEX; landing CSS o'zgaruvchilari shu rangdan hisoblanadi.
@@ -219,6 +273,11 @@ export interface LandingConfigData {
     mockName: string; // mockdagi shablon nomi
     mockImport: string;
   };
+  // v3 — vizual muharrir qatlamlari
+  /** data-cms yo'li → uslub ustqurmasi (bo'sh = built-in dizayn). */
+  uiStyles: Record<string, SiteElementStyle>;
+  /** Foydalanuvchiga bildirishnomalar (banner / toast / modal). */
+  notices: SiteNotice[];
 }
 
 // DEFAULTS = landing'ning joriy ko'rinishi (platform/index.html bilan AYNI matnlar).
@@ -494,6 +553,8 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     mockName: "Football Championship",
     mockImport: "Import",
   },
+  uiStyles: {},
+  notices: [],
 };
 
 // PUT validatsiyasi — hamma maydon ixtiyoriy (qisman saqlash mumkin), lekin
@@ -546,6 +607,57 @@ const planCopySchema = z.object({
   feats: featsList.optional(),
   teaserFeats: z.array(z.string().max(90)).min(1).max(3).optional(),
 });
+
+// ── v3 — uslub qatlami va bildirishnomalar sxemasi ──
+// Faqat tipli qiymatlar: XOM CSS satri qabul qilinmaydi (injection yuzasi yopiq).
+const cssColor = z.string().regex(/^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6})?$/, "color must be #RGB/#RRGGBB or empty");
+const stylePropsSchema = z
+  .object({
+    fontSize: z.number().min(8).max(200).optional(),
+    fontWeight: z.number().int().min(100).max(900).optional(),
+    lineHeight: z.number().min(0.7).max(2.8).optional(),
+    letterSpacing: z.number().min(-0.15).max(0.5).optional(),
+    textAlign: z.enum(["left", "center", "right"]).optional(),
+    textTransform: z.enum(["none", "uppercase", "capitalize"]).optional(),
+    color: cssColor.optional(),
+    bg: cssColor.optional(),
+    padY: z.number().min(0).max(200).optional(),
+    padX: z.number().min(0).max(200).optional(),
+    marginTop: z.number().min(-300).max(400).optional(),
+    marginBottom: z.number().min(-300).max(400).optional(),
+    offsetX: z.number().min(-600).max(600).optional(),
+    offsetY: z.number().min(-600).max(600).optional(),
+    scale: z.number().min(0.4).max(2.5).optional(),
+    rotate: z.number().min(-30).max(30).optional(),
+    radius: z.number().min(0).max(120).optional(),
+    maxWidth: z.number().min(0).max(1800).optional(),
+    opacity: z.number().min(0).max(1).optional(),
+    shadow: z.number().int().min(0).max(4).optional(),
+    borderWidth: z.number().min(0).max(8).optional(),
+    borderColor: cssColor.optional(),
+    hidden: z.boolean().optional(),
+  })
+  .strict();
+export const elementStyleSchema = z.object({ d: stylePropsSchema.optional(), m: stylePropsSchema.optional() }).strict();
+
+export const MAX_NOTICES = 8;
+export const noticeSchema = z
+  .object({
+    id: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/),
+    enabled: z.boolean().optional(),
+    placement: z.enum(["banner", "toast", "modal"]).optional(),
+    tone: z.enum(["info", "promo", "warn", "success"]).optional(),
+    audience: z.enum(["all", "guest", "user"]).optional(),
+    title: shortText.optional(),
+    text: longText.optional(),
+    ctaLabel: z.string().max(40).optional(),
+    ctaTarget: z.enum(["", "landing", "pricing", "plugin", "templates", "aistudio", "account", "dashboard"]).optional(),
+    ctaUrl: z.string().max(400).regex(/^(https:\/\/.+)?$/, "ctaUrl must be https or empty").optional(),
+    dismissable: z.boolean().optional(),
+    startAt: z.string().max(40).optional(),
+    endAt: z.string().max(40).optional(),
+  })
+  .strict();
 
 export const landingConfigSchema = z
   .object({
@@ -789,6 +901,9 @@ export const landingConfigSchema = z
         mockImport: shortText.optional(),
       })
       .optional(),
+    // v3 — element uslub qatlami. Kalit = data-cms yo'li (harf/raqam/nuqta/tire).
+    uiStyles: z.record(z.string().regex(/^[A-Za-z0-9_.-]{1,90}$/), elementStyleSchema).optional(),
+    notices: z.array(noticeSchema).max(MAX_NOTICES).optional(),
   })
   .strict();
 
@@ -969,7 +1084,52 @@ function mergeConfig(stored: unknown): LandingConfigData {
       ),
       steps: objArr(d.pluginPage.steps, s.pluginPage?.steps),
     },
+    uiStyles: normalizeUiStyles(s.uiStyles),
+    notices: normalizeNotices(s.notices),
   };
+}
+
+/** Saqlangan uslub blobini xavfsiz shaklga keltiradi — zod sxemasi bilan bir xil
+ *  chegaralar (blob DB'da eski/qo'lda o'zgargan bo'lishi mumkin). */
+export function normalizeUiStyles(raw: unknown): Record<string, SiteElementStyle> {
+  const out: Record<string, SiteElementStyle> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [path, val] of Object.entries(raw as Record<string, unknown>)) {
+    if (!/^[A-Za-z0-9_.-]{1,90}$/.test(path)) continue;
+    const parsed = elementStyleSchema.safeParse(val);
+    if (!parsed.success) continue;
+    const entry: SiteElementStyle = {};
+    if (parsed.data.d && Object.keys(parsed.data.d).length) entry.d = parsed.data.d;
+    if (parsed.data.m && Object.keys(parsed.data.m).length) entry.m = parsed.data.m;
+    if (entry.d || entry.m) out[path] = entry;
+  }
+  return out;
+}
+
+export function normalizeNotices(raw: unknown): SiteNotice[] {
+  if (!Array.isArray(raw)) return [];
+  const out: SiteNotice[] = [];
+  for (const item of raw.slice(0, MAX_NOTICES)) {
+    const parsed = noticeSchema.safeParse(item);
+    if (!parsed.success) continue;
+    const n = parsed.data;
+    out.push({
+      id: n.id,
+      enabled: n.enabled !== false,
+      placement: n.placement || "banner",
+      tone: n.tone || "info",
+      audience: n.audience || "all",
+      title: n.title || "",
+      text: n.text || "",
+      ctaLabel: n.ctaLabel || "",
+      ctaTarget: n.ctaTarget || "",
+      ctaUrl: n.ctaUrl || "",
+      dismissable: n.dismissable !== false,
+      startAt: n.startAt || "",
+      endAt: n.endAt || "",
+    });
+  }
+  return out;
 }
 
 // Yengil in-memory kesh — public GET issiq yo'l (har landing ochilishi).

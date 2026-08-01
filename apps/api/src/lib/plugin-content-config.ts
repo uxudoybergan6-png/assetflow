@@ -1,6 +1,15 @@
 import { prisma, Prisma } from "@creative-tools/database";
 import { z } from "zod";
 import { recordContentRevision } from "./content-revisions.js";
+import {
+  elementStyleSchema,
+  noticeSchema,
+  normalizeNotices,
+  normalizeUiStyles,
+  MAX_NOTICES,
+  type SiteElementStyle,
+  type SiteNotice,
+} from "./landing-config.js";
 
 // ── Plugin CMS — konfiguratsiya manbai (landing-config.ts naqshi 1:1) ────────
 // Bitta PluginContentConfig qatori (id=1) JSON blob saqlaydi; bu fayl DEFAULT
@@ -96,6 +105,9 @@ export interface PluginContentConfigData {
   };
   // SC_61: e'lon paneli — Home + Katalog tepasida strip
   announcement: PluginAnnouncement;
+  // v3 — vizual muharrir: element uslub qatlami + bildirishnomalar (landing bilan AYNI shakl)
+  uiStyles: Record<string, SiteElementStyle>;
+  notices: SiteNotice[];
 }
 
 // DEFAULTS = plaginning joriy ko'rinishi (AssetFlow_Plugin.html bilan AYNI matnlar).
@@ -163,6 +175,8 @@ export const DEFAULT_PLUGIN_CONTENT_CONFIG: PluginContentConfigData = {
     ctaAction: "",
     dismissable: true,
   },
+  uiStyles: {},
+  notices: [],
 };
 
 // PUT validatsiyasi — hamma maydon ixtiyoriy (qisman saqlash), qat'iy tip/o'lcham.
@@ -265,6 +279,9 @@ export const pluginContentConfigSchema = z
         dismissable: z.boolean().optional(),
       })
       .optional(),
+    // v3 — uslub qatlami + bildirishnomalar (landing-config.ts bilan umumiy sxema)
+    uiStyles: z.record(z.string().regex(/^[A-Za-z0-9_.-]{1,90}$/), elementStyleSchema).optional(),
+    notices: z.array(noticeSchema).max(MAX_NOTICES).optional(),
   })
   .strict();
 
@@ -311,6 +328,8 @@ function mergeConfig(stored: unknown): PluginContentConfigData {
       cards: objArr(d.aiLauncher.cards, s.aiLauncher?.cards),
     },
     announcement: obj(d.announcement, s.announcement),
+    uiStyles: normalizeUiStyles(s.uiStyles),
+    notices: normalizeNotices(s.notices),
   };
 }
 
