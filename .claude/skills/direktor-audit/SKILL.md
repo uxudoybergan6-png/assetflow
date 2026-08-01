@@ -1,0 +1,117 @@
+---
+name: direktor-audit
+description: FrameFlow muammolarini direktor nazari bilan audit qilish. Foydalanuvchi muammoni birin-ketin aytganda ishlatiladi — har bandni kodda tekshirish, yashirin bog'liq muammolarni topish, mustaqil ravishda qo'shimcha muammo aniqlash va natijani `docs/DIREKTOR-AUDIT-<sana>.md` ga yozish. Trigger: "muammo", "audit qil", "buni tekshir", "yana nima bor", yoki foydalanuvchi ketma-ket muammo sanay boshlaganda. Tuzatish YOZMAYDI — faqat ro'yxat.
+---
+
+# Direktor audit
+
+Foydalanuvchi (loyiha egasi) muammolarni birin-ketin aytadi. Sen ularni audit qilasan,
+atrofidagi ko'rilmagan muammolarni topasan, direktor sifatida mustaqil topilmalar
+qo'shasan va MD faylga yozasan.
+
+## Asosiy qoida
+
+**Kod = haqiqat manbai.** Foydalanuvchi aytgan muammo tavsifi — gipoteza, tasdiq emas.
+Har bandni faylni o'qib tekshir. Grep natijasi yetarli emas — bog'liq zanjirni o'qi.
+
+## 9 qadam
+
+Har muammo shu tartibda o'tadi:
+
+### 1. Audit
+Kodda tekshir: haqiqatan bormi, qaysi fayl:qator, ildiz sabab nima.
+Foydalanuvchi ko'rgan simptom bilan ildiz sabab ko'pincha boshqa joyda bo'ladi.
+
+### 2. Yashirin atrof
+Shu **ildizdan** chiqadigan boshqa bandlar. Savol: "bu xato yana qayerda takrorlanadi?"
+Odatiy naqsh — bir xil bug web + plagin + admin uchtasida ham bor.
+
+### 3. Direktor nazari
+O'sha zonada mustaqil qidir. Doimiy tekshiriladigan o'qlar:
+- 💰 pul (kredit yechish, refund, quote imzosi, marja, hovuz)
+- 🔗 zanjir (upload → moderatsiya → katalog → plagin import)
+- 🔒 xavfsizlik (auth yo'q endpoint, IDOR, sizib chiquvchi maydon)
+- 📈 miqyos (N+1, paginatsiyasiz `findMany`, katta JSON javob, OOM)
+- 👤 UX (yolg'on muvaffaqiyat xabari, o'lik tugma, dev matni prod'da)
+
+### 4. MD faylga yozish
+`docs/DIREKTOR-AUDIT-<YYYY-MM-DD>.md`. Format pastda.
+
+### 5. Soxta topilma filtri
+Muammo tasdiqlanmasa — **ochiq yoz**: "tasdiqlanmadi; aslida sabab X".
+Ro'yxatni shishirma. Auditda eng qimmat xato — yo'q joyga band yozish.
+
+### 6. 💰 Pul bayrog'i
+Kredit/quote/refund/marjaga tegadigan har band `💰 PUL` deb belgilanadi va
+**"web + plagin ikkalasida bir vaqtda"** eslatmasi qo'shiladi.
+Bir tomonlama tuzatish = real zarar. Imzolangan-quote va atomik-guard naqshiga TEGMA.
+
+### 7. Takror tekshiruvi
+Har bandni `docs/TUZATISH-MASTER-ROYXAT.md` va
+`~/.claude/projects/-Users-usmonov-Projects-creative-tools-saas/memory/MEMORY.md` bilan solishtir:
+- `[YANGI]`
+- `[MASTER'da bor: M3]`
+- `[REGRESS — avval tuzatilgan]` ← eng muhimi; sabab boshqa, qayta tekshir
+
+### 8. Tuzatish YO'Q
+Faqat ro'yxat. Kodga tegish alohida buyruq bilan.
+Sabab: ro'yxat to'liq bo'lmaguncha tuzatish tartibi noto'g'ri chiqadi — bir band ikkinchisini bekor qiladi.
+
+### 9. "Nima buziladi"
+Har band oxirida oqibat: **pul / mijoz / ma'lumot / kosmetik**.
+Daraja shundan chiqadi, his-tuyg'udan emas.
+
+## Daraja
+
+| Daraja | Ma'no |
+|---|---|
+| **P0** | Bozorga chiqishni bloklaydi yoki hozir pul yo'qotmoqda |
+| **P1** | Mijoz ko'radi / ma'lumot xavf ostida / shu hafta |
+| **P2** | Sifat, shu oy |
+| **P3** | Kosmetik / keyinroq |
+
+## Kim tuzatadi
+
+- **CC** — kod/konfiguratsiya, repo ichida
+- **EGA** — akkaunt, sertifikat, parol, pul, tashqi xizmat, yurist
+
+## MD format
+
+```markdown
+# Direktor audit — <sana>
+
+**Manba:** foydalanuvchi hisoboti + kod tekshiruvi
+**Holat:** faqat ro'yxat, tuzatish boshlanmagan
+
+---
+
+## D1 · <qisqa sarlavha>  ·  P1 · 💰 PUL · [YANGI]
+
+**Egasi aytdi:** <foydalanuvchi so'zi bilan>
+**Kodda tasdiq:** ✅ tasdiqlandi / ❌ tasdiqlanmadi / ⚠️ qisman
+**Ildiz sabab:** <bir jumla>
+**Fayl:** `apps/api/src/routes/x.ts:120`
+**Nima buziladi:** <pul/mijoz/ma'lumot/kosmetik + aniq oqibat>
+**Kim:** CC
+
+### Yashirin atrof
+- **D1.1** — <bir ildizdan chiqqan band> · `fayl:qator` · P2
+- **D1.2** — ...
+
+### Direktor topilmasi
+- **D1.a** — <mustaqil topilgan> · `fayl:qator` · P1 · 💰 PUL
+```
+
+Oxirida yig'ma jadval: ID · daraja · zona · kim · holat.
+
+## Loyiha konteksti
+
+- Haqiqat manbai: kod + `docs/PROJECT-STATUS.md`. `docs/REJA-*` = kelajak rejasi, bajarilgan deb o'qima.
+- Studio manba fayllari: `packages/assetflow-studio/js/` va `styles/` — `studio/js/`, `admin/js/` build artefakti.
+- Pul yadrosi: `lib/plugin-profile.ts`, `lib/gen-models.ts`, `routes/studio-gen.ts`.
+- Zanjir: `routes/contributor.ts` → admin approve → `lib/catalog-map.ts` → `routes/plugin.ts` → `plugins/after-effects-cep/`.
+
+## Sessiya oxirida
+
+`docs/SESSION-REPORT.md` ni almashtir (maks 15 qator): nima auditga tushdi, nechta band,
+nechtasi tasdiqlanmadi, keyingi qadam.
