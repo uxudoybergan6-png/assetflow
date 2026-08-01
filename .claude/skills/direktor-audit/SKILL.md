@@ -14,6 +14,21 @@ qo'shasan va MD faylga yozasan.
 **Kod = haqiqat manbai.** Foydalanuvchi aytgan muammo tavsifi — gipoteza, tasdiq emas.
 Har bandni faylni o'qib tekshir. Grep natijasi yetarli emas — bog'liq zanjirni o'qi.
 
+## 0-qadam: Kirish normalizatsiyasi
+
+Foydalanuvchi muammoni ko'pincha oddiy, tartibsiz tilda aytadi ("bosilmayapti", "chiqmayapti",
+"noto'g'ri"). Auditni boshlashdan oldin buni o'zing tuzilgan shaklga o'tkaz — foydalanuvchidan
+qayta so'ramay, kontekstdan (loyiha bilimi + oldingi xabarlar) to'ldir:
+
+- **Nima:** qaysi amal/ekran/tugma
+- **Qayerda:** web / plagin / admin / contributor studio
+- **Kutilgan vs. haqiqiy:** nima bo'lishi kerak edi, nima bo'ldi
+- **Aniq bo'lmasa:** taxminni yoz va davom et — "taxmin: X ekranidagi Y tugmasi" — audit
+  natijasida taxmin noto'g'ri chiqsa, 5-qadamda tuzatiladi. Auditni ushlab turmaydi.
+
+Bu ichki qadam — foydalanuvchiga qayta savol sifatida ko'rsatilmaydi, faqat MD banddagi
+**"Egasi aytdi"** qatoridan keyin **"Tushunilgan sifatida"** qatorida yoziladi.
+
 ## 9 qadam
 
 Har muammo shu tartibda o'tadi:
@@ -47,7 +62,16 @@ Kredit/quote/refund/marjaga tegadigan har band `💰 PUL` deb belgilanadi va
 Bir tomonlama tuzatish = real zarar. Imzolangan-quote va atomik-guard naqshiga TEGMA.
 
 ### 7. Takror tekshiruvi
-Har bandni `docs/TUZATISH-MASTER-ROYXAT.md` va
+Ikki bosqichda tekshir — foydalanuvchi bir muammoni ikki marta (boshqacha so'z bilan) aytishi
+tabiiy holat, buni ushlash shart:
+
+**7a. Shu sessiya ichida** — avval joriy `docs/DIREKTOR-AUDIT-<sana>.md` faylidagi mavjud
+D-bandlar bilan solishtir (ildiz sabab va fayl:qator bo'yicha, so'z shakli emas). Bir xil bo'lsa:
+- YANGI ID ochma
+- Mavjud bandga qayt: `**Takror eslatildi:** ha — D3 bilan bir xil (foydalanuvchi 2 marta aytdi)`
+- Agar yangi tafsilot qo'shsa (masalan aniqroq qayerda), o'sha bandning "Egasi aytdi" qatoriga qo'shib qo'y, ID o'zgarmaydi
+
+**7b. Tashqi manbalar bilan** — `docs/TUZATISH-MASTER-ROYXAT.md` va
 `~/.claude/projects/-Users-usmonov-Projects-creative-tools-saas/memory/MEMORY.md` bilan solishtir:
 - `[YANGI]`
 - `[MASTER'da bor: M3]`
@@ -87,7 +111,9 @@ Daraja shundan chiqadi, his-tuyg'udan emas.
 
 ## D1 · <qisqa sarlavha>  ·  P1 · 💰 PUL · [YANGI]
 
-**Egasi aytdi:** <foydalanuvchi so'zi bilan>
+**Egasi aytdi:** <foydalanuvchi so'zi bilan, oddiy tildagicha>
+**Tushunilgan sifatida:** <normalizatsiya: nima/qayerda/kutilgan vs haqiqiy — taxmin bo'lsa "taxmin:" bilan>
+**Takror eslatildi:** yo'q / ha — D<N> bilan bir xil, shu yerga qo'shildi
 **Kodda tasdiq:** ✅ tasdiqlandi / ❌ tasdiqlanmadi / ⚠️ qisman
 **Ildiz sabab:** <bir jumla>
 **Fayl:** `apps/api/src/routes/x.ts:120`
