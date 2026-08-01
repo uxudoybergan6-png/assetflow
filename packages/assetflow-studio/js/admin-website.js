@@ -10,7 +10,13 @@ let WS_CFG = null;      // joriy (merged) konfiguratsiya — forma shu ustida is
 let WS_DEFAULTS = null; // server defaultlari (reset ko'rsatkichi uchun)
 let WS_LOADED = false;
 let WS_LOAD_ERR = null;
-let WS_TAB = "hero";    // hero | landing | pricing | plugin | footer
+let WS_TAB = "visual";  // visual | hero | landing | app | pricing | plugin | footer
+// ── FFCMS vizual muharrir holati ──
+let WS_VIS_TAB = "hero";      // panelda ochiq bo'lim-tab
+let WS_VIS_PAGE = "landing";  // iframe'dagi ekran: landing | pricing | plugin | templates
+let WS_VIS_DEV = "desktop";   // desktop | mobile
+let WS_VIS_READY = false;     // iframe ffcms-ready yubordimi
+let WS_VIS_PUSH_T = null;     // draft push debounce
 
 function wsEsc(s) {
   return String(s == null ? "" : s)
@@ -594,6 +600,7 @@ function wsTabFooter() {
 /* ── Asosiy view ───────────────────────────────────────────── */
 
 const WS_TABS = [
+  { key: "visual", label: "Visual editor", icon: "cursor-click" },
   { key: "hero", label: "Hero & theme", icon: "sparkle" },
   { key: "landing", label: "Landing sections", icon: "rows" },
   { key: "app", label: "App & Catalog", icon: "layout" },
@@ -601,6 +608,168 @@ const WS_TABS = [
   { key: "plugin", label: "Plugin page", icon: "puzzle-piece" },
   { key: "footer", label: "Footer", icon: "dots-three-outline" },
 ];
+
+/* ── FFCMS vizual muharrir ─────────────────────────────────────────────────
+   Chapda REAL sayt (iframe, ?ffcms=1 preview rejimi), o'ngda kontekst panel.
+   Saytda istalgan joy bosiladi → panel aynan o'sha bo'lim maydonlarini ochib,
+   maydonni belgilab beradi; yozganda draft postMessage bilan DARHOL ko'rinadi
+   (saqlanmaydi — "Save & publish" bosilguncha faqat preview). */
+
+function wsPlatformOrigin() {
+  try {
+    if (window.ASSETFLOW_STUDIO && ASSETFLOW_STUDIO.platformUrl) return ASSETFLOW_STUDIO.platformUrl.replace(/\/$/, "");
+  } catch (e) {}
+  return /getframeflow\.app$/.test(location.hostname) ? "https://getframeflow.app" : "http://localhost:8975";
+}
+
+/* Bosilgan data-cms yo'li → qaysi bo'lim-tab formasi */
+function wsPathTab(p) {
+  if (!p) return "hero";
+  if (/^(hero|heroMedia|promo|nav|megaModels|mockup|theme|stats)/.test(p)) return "hero";
+  if (/^(ticker|cinema|showcase|feed|presetsRail|aiPromo|pluginPromo|pricingTeaser|faqSection|finalCta|landingSections)/.test(p)) return "landing";
+  if (/^(appHome|catalogPage)/.test(p)) return "app";
+  if (/^(pricingPage|plans)/.test(p)) return "pricing";
+  if (/^pluginPage/.test(p)) return "plugin";
+  if (/^footer/.test(p)) return "footer";
+  return "hero";
+}
+
+function wsTabBodyFor(key) {
+  return key === "landing" ? wsTabLanding()
+    : key === "app" ? wsTabApp()
+    : key === "pricing" ? wsTabPricing()
+    : key === "plugin" ? wsTabPlugin()
+    : key === "footer" ? wsTabFooter()
+    : wsTabHero();
+}
+
+function wsTabVisual() {
+  const pages = [
+    ["landing", "Landing"], ["pricing", "Pricing"], ["plugin", "Plugin"], ["templates", "Catalog"],
+  ].map(([k, l]) => `<button class="${WS_VIS_PAGE === k ? "on" : ""}" onclick="wsVisSetPage('${k}')" style="padding:6px 13px">${l}</button>`).join("");
+  const devs = [
+    ["desktop", "arrows-out-simple", "Desktop"], ["mobile", "device-mobile", "Mobile 390px"],
+  ].map(([k, ic2, t]) => `<button class="${WS_VIS_DEV === k ? "on" : ""}" title="${t}" onclick="wsVisSetDev('${k}')" style="padding:6px 10px"><i class="ph ph-${ic2}" style="font-size:14px"></i></button>`).join("");
+  return `
+  <style>
+    .ws-vispanel .adx-grid2{grid-template-columns:1fr !important}
+    .ws-vispanel > div > div{max-width:100%}
+    .ws-flashfield{outline:2px solid #d8ff3e !important;outline-offset:2px;border-radius:8px;transition:outline-color .3s}
+    .ws-visframe-wrap{transition:width .25s ease}
+  </style>
+  <div style="display:flex;gap:14px;align-items:stretch;height:calc(100vh - 236px);min-height:540px">
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div class="adx-seg" style="display:inline-flex">${pages}</div>
+        <div class="adx-seg" style="display:inline-flex">${devs}</div>
+        <span style="font-size:10.5px;color:var(--muted)">Click anything on the page — its fields open on the right. Typing updates the page instantly; press <b>Save & publish</b> to go live.</span>
+        <span id="wsVisStat" style="margin-left:auto;font-size:10px;color:var(--muted)"></span>
+      </div>
+      <div style="flex:1;border:1px solid rgba(255,255,255,.1);border-radius:13px;overflow:hidden;background:#07090c;display:flex;justify-content:center">
+        <div class="ws-visframe-wrap" style="width:${WS_VIS_DEV === "mobile" ? "390px" : "100%"};height:100%">
+          <iframe id="wsVisFrame" src="${wsEsc(wsPlatformOrigin())}/?ffcms=1" style="width:100%;height:100%;border:0;background:#07090c" title="Site preview"></iframe>
+        </div>
+      </div>
+    </div>
+    <aside id="wsVisPanel" class="ws-vispanel" style="width:432px;flex:none;overflow-y:auto;overflow-x:hidden;padding-right:2px">
+      ${wsTabBodyFor(WS_VIS_TAB)}
+    </aside>
+  </div>`;
+}
+
+/* Panelni (faqat o'ng tomonni) qayta chizish — iframe'ga TEGILMAYDI */
+function wsVisRenderPanel(tabKey, focusPath) {
+  WS_VIS_TAB = tabKey || WS_VIS_TAB;
+  const panel = document.getElementById("wsVisPanel");
+  if (!panel) return;
+  panel.innerHTML = wsTabBodyFor(WS_VIS_TAB);
+  if (focusPath) {
+    let el = panel.querySelector(`[data-ws="${CSS.escape(focusPath)}"]`);
+    if (!el) el = panel.querySelector(`[data-ws^="${CSS.escape(focusPath)}."]`);
+    if (!el) el = panel.querySelector(`[data-ws^="${CSS.escape(focusPath)}"]`);
+    if (el) {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
+      el.classList.add("ws-flashfield");
+      setTimeout(() => el.classList.remove("ws-flashfield"), 2200);
+    }
+  }
+}
+
+/* Panel/toggle o'zgarishlaridan keyin qayta chizish: visual rejimda faqat panel,
+   klassik rejimda butun ekran. Iframe hech qachon qayta yaratilmaydi (flicker yo'q). */
+function wsRerender() {
+  if (CURRENT !== "website") return;
+  if (WS_TAB === "visual") { wsVisRenderPanel(WS_VIS_TAB, null); wsVisPush(); }
+  else route("website");
+}
+
+function wsVisSetPage(k) {
+  WS_VIS_PAGE = k;
+  // sahifa pillari + panel bo'limi mosligi: pricing→pricing tab, plugin→plugin tab,
+  // templates→app tab (katalog matnlari o'sha yerda), landing→joriy qoladi
+  if (k === "pricing") WS_VIS_TAB = "pricing";
+  else if (k === "plugin") WS_VIS_TAB = "plugin";
+  else if (k === "templates") WS_VIS_TAB = "app";
+  wsVisGoto();
+  // pill on-holatini yangilash uchun visual shell qayta chiziladi (iframe saqlanadi:
+  // faqat seg tugmalar klassi) — soddalik uchun butun tab emas, tugmalarni yangilaymiz
+  document.querySelectorAll(".adx-seg button[onclick^=\"wsVisSetPage\"]").forEach((b) => {
+    b.classList.toggle("on", b.getAttribute("onclick") === `wsVisSetPage('${k}')`);
+  });
+  wsVisRenderPanel(WS_VIS_TAB, null);
+}
+
+function wsVisSetDev(k) {
+  WS_VIS_DEV = k;
+  const wrap = document.querySelector(".ws-visframe-wrap");
+  if (wrap) wrap.style.width = k === "mobile" ? "390px" : "100%";
+  document.querySelectorAll(".adx-seg button[onclick^=\"wsVisSetDev\"]").forEach((b) => {
+    b.classList.toggle("on", b.getAttribute("onclick") === `wsVisSetDev('${k}')`);
+  });
+}
+
+function wsVisFrameWin() {
+  const f = document.getElementById("wsVisFrame");
+  return f && f.contentWindow ? f.contentWindow : null;
+}
+
+function wsVisGoto() {
+  const w = wsVisFrameWin();
+  if (w && WS_VIS_READY) w.postMessage({ type: "ffcms-goto", screen: WS_VIS_PAGE }, wsPlatformOrigin());
+}
+
+/* Draft config'ni iframe'ga jonli yuborish (debounce) */
+function wsVisPush(now) {
+  if (WS_TAB !== "visual") return;
+  clearTimeout(WS_VIS_PUSH_T);
+  const send = () => {
+    const w = wsVisFrameWin();
+    if (!w || !WS_VIS_READY || !WS_CFG) return;
+    try { w.postMessage({ type: "ffcms-draft", config: wsCollect() }, wsPlatformOrigin()); } catch (e) {}
+  };
+  if (now) send(); else WS_VIS_PUSH_T = setTimeout(send, 160);
+}
+
+/* Iframe'dan kelgan xabarlar (bir marta ulanadi) */
+function wsVisBindMessages() {
+  if (window.__wsVisMsgBound) return;
+  window.__wsVisMsgBound = 1;
+  window.addEventListener("message", (ev) => {
+    if (ev.origin !== wsPlatformOrigin()) return;
+    const d = ev.data || {};
+    if (d.type === "ffcms-ready") {
+      WS_VIS_READY = true;
+      const stat = document.getElementById("wsVisStat");
+      if (stat) stat.textContent = "Live preview connected";
+      wsVisPush(true);
+      wsVisGoto();
+    } else if (d.type === "ffcms-select" && typeof d.path === "string") {
+      if (CURRENT !== "website" || WS_TAB !== "visual") return;
+      wsVisRenderPanel(wsPathTab(d.path), d.path);
+    }
+  });
+}
 
 VIEWS.website = function () {
   if (WS_LOAD_ERR) {
@@ -612,16 +781,10 @@ VIEWS.website = function () {
   const tabs = WS_TABS.map((t) =>
     `<button class="${t.key === WS_TAB ? "on" : ""}" onclick="wsTab('${t.key}')" style="padding:7px 14px"><i class="ph ph-${t.icon}" style="font-size:13px;margin-right:6px"></i>${t.label}</button>`
   ).join("");
-  const body =
-    WS_TAB === "landing" ? wsTabLanding()
-    : WS_TAB === "app" ? wsTabApp()
-    : WS_TAB === "pricing" ? wsTabPricing()
-    : WS_TAB === "plugin" ? wsTabPlugin()
-    : WS_TAB === "footer" ? wsTabFooter()
-    : wsTabHero();
+  const body = WS_TAB === "visual" ? wsTabVisual() : wsTabBodyFor(WS_TAB);
   return `
-    ${axInfo(`This edits the PUBLIC marketing site (landing, pricing and plugin pages). Changes go live within ~1 minute of saving. "Reset to defaults" restores the original built-in content for the whole site.`, "amber")}
-    <div class="adx-seg" style="margin-bottom:16px;display:inline-flex">${tabs}</div>
+    ${WS_TAB === "visual" ? "" : axInfo(`This edits the PUBLIC marketing site (landing, pricing and plugin pages). Changes go live within ~1 minute of saving. "Reset to defaults" restores the original built-in content for the whole site.`, "amber")}
+    <div class="adx-seg" style="margin-bottom:${WS_TAB === "visual" ? 12 : 16}px;display:inline-flex">${tabs}</div>
     ${body}
     <input type="file" id="wsMediaFile" accept="image/*,video/mp4,video/webm" style="display:none">`;
 };
@@ -640,20 +803,20 @@ function wsSecMove(i, dir) {
   const j = i + dir;
   if (j < 0 || j >= a.length) return;
   const t = a[i]; a[i] = a[j]; a[j] = t;
-  route("website");
+  wsRerender();
 }
 
 function wsSecToggle(i) {
   WS_CFG = wsCollect();
   WS_CFG.landingSections[i].visible = !WS_CFG.landingSections[i].visible;
-  route("website");
+  wsRerender();
 }
 
 /* v2 — bool konfiguratsiya kalitini almashtirish (promo.enabled kabi) */
 function wsTogglePath(path) {
   WS_CFG = wsCollect();
   wsSetPath(WS_CFG, path, !wsPathGet(WS_CFG, path));
-  route("website");
+  wsRerender();
 }
 
 function wsRefreshPreview() {
@@ -669,7 +832,7 @@ function wsRefreshPreview() {
 function wsSetAccent(hex) {
   WS_CFG = wsCollect();
   WS_CFG.theme.accent = hex;
-  route("website");
+  wsRerender();
 }
 
 function wsAccentTyped(v) {
@@ -693,7 +856,7 @@ function wsClearMedia(path) {
   WS_CFG = wsCollect();
   wsSetPath(WS_CFG, path + ".mediaUrl", "");
   wsSetPath(WS_CFG, path + ".mediaType", "");
-  route("website");
+  wsRerender();
 }
 
 /* Media yuklash: presigned PUT (folder=landing) → publicUrl slotga yoziladi.
@@ -722,7 +885,7 @@ async function wsUploadMedia(file) {
     wsSetPath(WS_CFG, path + ".mediaUrl", u.publicUrl);
     wsSetPath(WS_CFG, path + ".mediaType", isVideo ? "video" : "image");
     toast("Media uploaded", "Don't forget to press Save to publish it", "success");
-    route("website");
+    wsRerender();
   } catch (e) {
     if (stat) stat.textContent = "";
     toast("Upload error", e.message || "Failed to upload", "warn");
@@ -753,7 +916,7 @@ async function wsSave() {
     WS_CFG = d.config;
     AssetFlowLog.info("Site saved", { action: "landing_save", detail: "Website tab: " + WS_TAB });
     toast("Saved", "The public site will reflect the changes within ~1 minute", "success");
-    if (CURRENT === "website") route("website");
+    wsRerender();
   } catch (e) {
     toast("Save failed", e.message || "Server error", "warn");
   }
@@ -838,7 +1001,33 @@ window.afterRender.website = function () {
   const view = document.getElementById("view");
   if (view && !view.__wsBound) {
     view.__wsBound = 1;
-    view.addEventListener("input", (e) => { if (e.target && e.target.matches("[data-ws]")) wsRefreshPreview(); });
+    view.addEventListener("input", (e) => {
+      if (!(e.target && e.target.matches("[data-ws]"))) return;
+      if (WS_TAB === "visual") wsVisPush();
+      else wsRefreshPreview();
+    });
+    view.addEventListener("change", (e) => {
+      if (e.target && e.target.matches("[data-ws]") && WS_TAB === "visual") wsVisPush();
+    });
+  }
+  // FFCMS — vizual muharrir ulanishi: iframe yuklangach hello yuboramiz (ko'prik
+  // parent originni shu xabardan o'rganadi), ffcms-ready kelgach draft + goto.
+  if (WS_TAB === "visual") {
+    wsVisBindMessages();
+    WS_VIS_READY = false;
+    const f = document.getElementById("wsVisFrame");
+    if (f && !f.__wsHello) {
+      f.__wsHello = 1;
+      f.addEventListener("load", () => {
+        WS_VIS_READY = false;
+        const stat = document.getElementById("wsVisStat");
+        if (stat) stat.textContent = "Connecting preview…";
+        const hello = () => { try { f.contentWindow.postMessage({ type: "ffcms-hello" }, wsPlatformOrigin()); } catch (e) {} };
+        hello();
+        // dc-runtime kompilyatsiyasi biroz kechiksa — qayta urinishlar
+        setTimeout(hello, 700); setTimeout(hello, 1800); setTimeout(hello, 3500);
+      });
+    }
   }
   const file = document.getElementById("wsMediaFile");
   if (file && !file.__wsBound) {

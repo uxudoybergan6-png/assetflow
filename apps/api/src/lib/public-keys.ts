@@ -38,6 +38,10 @@
  *   gen-refs/*  ·  gen-ref-src/*  — foydalanuvchi referenslari/manba (shaxsiy)
  *   avatars/*  ·  incoming/*  ·  templates/<id>/pack.dl.zip  ·  qolgan HAMMASI
  */
+// SC_64 (2026-08-01): jonli CDN'da landing/ 403 qaytarayotgani aniqlandi — deploy
+// qilingan Worker bu faylning ESKI versiyasida (landing/ va site/plugin/ qoidalarisiz).
+// Bu commit faylga tegib, deploy-cdn-worker.yml workflow'ini push'da qayta ishga
+// tushiradi (CLOUDFLARE_API_TOKEN/ACCOUNT_ID secretlari o'rnatilgan bo'lsa).
 export function isPublicReadKey(key: string): boolean {
   if (!key || typeof key !== "string") return false;
   // Shablon: thumb/preview ANIQ segment — pack.*/pack.dl.zip'ga TEGMAYDI.

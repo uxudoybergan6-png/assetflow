@@ -287,6 +287,16 @@ const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 // Xavf bahosi: script-src'da 'unsafe-inline' baribir bor (168+ inline handler),
 // ya'ni script-src XSS'dan deyarli himoya qilmaydi; CSP'ning asl qiymati
 // connect/img-src origin-allowlist (token-exfil to'sish) — u o'zgarmadi.
+// FFCMS — admin vizual muharriri platformani iframe'da ochadi (admin.getframeflow.app
+// → getframeflow.app/?ffcms=1). Shu bois:
+//   frame-ancestors: 'none' → 'self' + admin origin (faqat admin embed qila oladi;
+//     boshqa har qanday sayt uchun clickjacking himoyasi SAQLANADI).
+//   frame-src: + 'self' + platforma origin (admin sahifasi iframe ochishi uchun —
+//     _headers admin.* hostiga ham xizmat qiladi, funksiya-router bitta dist).
+//   X-Frame-Options olib tashlandi: DENY frame-ancestors allow-list bilan zid;
+//     zamonaviy brauzerlarda frame-ancestors yagona to'g'ri mexanizm.
+const ADMIN_ORIGIN = "https://admin.getframeflow.app";
+const PLATFORM_ORIGIN = "https://getframeflow.app";
 const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
@@ -294,20 +304,18 @@ const CSP = [
   `img-src 'self' data: blob: ${API_ORIGINS} ${GCS_ORIGIN} ${CDN_ORIGIN}`,
   `media-src 'self' blob: ${API_ORIGINS} ${GCS_ORIGIN} ${CDN_ORIGIN}`,
   `connect-src 'self' ${API_ORIGINS} ${GCS_ORIGIN} https://accounts.google.com ${TURNSTILE_ORIGIN}`,
-  `frame-src ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
+  `frame-src 'self' ${PLATFORM_ORIGIN} ${GOOGLE_GSI_ORIGINS} ${TURNSTILE_ORIGIN}`,
   "font-src 'self' https://fonts.gstatic.com",
   "object-src 'none'",
   "base-uri 'self'",
-  "frame-ancestors 'none'",
+  `frame-ancestors 'self' ${ADMIN_ORIGIN}`,
   "form-action 'self'",
 ].join("; ");
 
-// X-Frame-Options/nosniff/Referrer-Policy — ENFORCE (xavfsiz, UI buzmaydi):
-// darhol clickjacking + MIME-sniffing himoyasi (CSP Report-Only fazasida ham).
+// nosniff/Referrer-Policy — ENFORCE (xavfsiz, UI buzmaydi).
 const headers = `\
 /*
   Content-Security-Policy: ${CSP}
-  X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 

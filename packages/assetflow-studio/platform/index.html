@@ -15887,7 +15887,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <!-- v2 PROMO-STRIP — endi MAXSUS CMS kalitlari (promo.*): matn/CTA/ko'rinish admin'dan,
          yopish localStorage'da (kontent o'zgarsa qayta chiqadi) -->
     <sc-if value="{{ promoShow }}" hint-placeholder-val="{{ true }}">
-      <div class="ffl-promo">
+      <div class="ffl-promo" data-cms="promo">
         <span class="ffl-promo-tag">{{ lcPromoTag }}</span>
         <span class="ffl-promo-txt">{{ lcPromoText }}</span>
         <button class="ffl-promo-try" onclick="{{ goRegister }}">{{ lcPromoCta }}<i class="ph ph-arrow-right" style="font-size:11px"></i></button>
@@ -15899,7 +15899,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       <div class="ffm-nav">
         <span class="ffm-logo" onclick="{{ goLanding }}" role="button" tabindex="0"><span class="lb"><i class="ph-fill ph-lightning"></i></span>FrameFlow</span>
         <span style="flex:1"></span>
-        <span class="ffm-navlinks" style="display:flex;align-items:center;gap:6px">
+        <span class="ffm-navlinks" data-cms="nav" style="display:flex;align-items:center;gap:6px">
           <!-- BATCH6 MEGA-MENYU — hover (CSS) yoki klik (state); 2 ustun Features | Models -->
           <span class="ffl-megawrap">
             <button class="ffm-link ffl-megatrig" onclick="{{ toggleMega }}" aria-haspopup="true" aria-expanded="{{ megaExpanded }}">Explore<i class="ph ph-caret-down"></i></button>
@@ -15917,7 +15917,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 <div class="ffl-mega-col">
                   <div class="ffl-mega-head"><span class="ffm-eyebrow">LIVE MODELS</span><small>Production-ready engines &amp; utilities</small></div>
                   <!-- v2 Sayt CMS — megaModels.rows admin'dan (gen-models drift xavfi yopildi) -->
-                  <div class="ffl-mega-rows models">
+                  <div class="ffl-mega-rows models" data-cms="megaModels">
                     <sc-for list="{{ megaModelsView }}" as="m" hint-placeholder-count="4">
                       <button role="menuitem" onclick="{{ goAistudio }}"><i>{{ m.initials }}</i><span><b>{{ m.title }}</b><small>{{ m.sub }}</small></span><sc-if value="{{ m.hasBadge }}" hint-placeholder-val="{{ true }}"><em>{{ m.badge }}</em></sc-if><strong>{{ m.price }}</strong></button>
                     </sc-for>
@@ -15956,16 +15956,16 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       <!-- HERO — 2 ustun: sarlavha bloki + billboard media karta (mockup home) -->
       <section class="ffl-hero" style="order:0">
         <div class="ffl-hero-copy">
-          <span class="ffl-badge" data-rv=""><span class="yn">{{ lcHeroBadgeTag }}</span>{{ lcHeroBadgeText }}<i class="ph ph-arrow-right" style="font-size:11px;color:var(--th-muted)"></i></span>
-          <h1 class="ffl-hero-h1" data-rv="" data-rv-delay="80">{{ lcHeroTitle }} <span class="ffm-grad">{{ lcHeroTitleAccent }}</span></h1>
-          <p class="ffl-hero-sub" data-rv="" data-rv-delay="150">{{ lcHeroSub }}</p>
+          <span class="ffl-badge" data-rv="" data-cms="hero.badgeText"><span class="yn">{{ lcHeroBadgeTag }}</span>{{ lcHeroBadgeText }}<i class="ph ph-arrow-right" style="font-size:11px;color:var(--th-muted)"></i></span>
+          <h1 class="ffl-hero-h1" data-rv="" data-rv-delay="80" data-cms="hero.title">{{ lcHeroTitle }} <span class="ffm-grad">{{ lcHeroTitleAccent }}</span></h1>
+          <p class="ffl-hero-sub" data-rv="" data-rv-delay="150" data-cms="hero.sub">{{ lcHeroSub }}</p>
           <div class="ffl-hero-cta" data-rv="" data-rv-delay="220">
-            <button class="ffm-btn lg ffl-ctaglow" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:15px"></i>{{ lcHeroCtaPrimary }}<i class="ph ph-arrow-up-right" style="font-size:13px"></i></button>
-            <button class="ffm-btn2 lg" onclick="{{ goTemplates }}"><i class="ph-fill ph-play" style="font-size:13px"></i>{{ lcHeroCtaSecondary }}</button>
+            <button class="ffm-btn lg ffl-ctaglow" data-cms="hero.ctaPrimary" onclick="{{ goRegister }}"><i class="ph-fill ph-lightning" style="font-size:15px"></i>{{ lcHeroCtaPrimary }}<i class="ph ph-arrow-up-right" style="font-size:13px"></i></button>
+            <button class="ffm-btn2 lg" data-cms="hero.ctaSecondary" onclick="{{ goTemplates }}"><i class="ph-fill ph-play" style="font-size:13px"></i>{{ lcHeroCtaSecondary }}</button>
           </div>
-          <div class="ffl-credline ffl-credline--left" data-rv="" data-rv-delay="290"><i class="ph-fill ph-seal-check"></i>{{ lcHeroCredline }}</div>
+          <div class="ffl-credline ffl-credline--left" data-rv="" data-rv-delay="290" data-cms="hero.credline"><i class="ph-fill ph-seal-check"></i>{{ lcHeroCredline }}</div>
         </div>
-        <div class="ffl-billboard" data-rv="" data-rv-delay="200">
+        <div class="ffl-billboard" data-rv="" data-rv-delay="200" data-cms="heroMedia">
           <div class="ffl-art ffl-art-aurora"><span class="orb orb-a"></span><span class="orb orb-b"></span><span class="floor"></span></div>
           <!-- v2 — admin yuklagan billboard media (rasm/GIF/video); bo'sh = CSS-art qoladi -->
           <sc-if value="{{ hmHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ hmUrl }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if>
@@ -15976,13 +15976,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       </section>
 
       <!-- TICKER — v2 Sayt CMS (label + items admin'dan; tartib/ko'rinish landingSections'da) -->
-      <section class="ffl-ticker" style="{{ lsTicker }}" aria-label="FrameFlow selects">
+      <section class="ffl-ticker" style="{{ lsTicker }}" data-cms="ticker" aria-label="FrameFlow selects">
         <span>{{ lcTickerLabel }}</span>
         <div class="ffl-ticker-mq"><div class="ffl-ticker-track"><sc-for list="{{ tickerView }}" as="tk" hint-placeholder-count="12"><em>{{ tk.text }}</em></sc-for></div></div>
       </section>
 
       <!-- STATS — jonli count-up (real mahsulot statistikasi) -->
-      <section class="ffl-stats" data-rv="" data-stats="" style="{{ lsStats }}">
+      <section class="ffl-stats" data-rv="" data-stats="" style="{{ lsStats }}" data-cms="stats">
         <div class="ffl-statsin">
           <sc-for list="{{ landStatsView }}" as="st" hint-placeholder-count="4">
             <div class="ffl-stat"><div class="n"><b>{{ st.v }}</b><em>{{ st.plus }}</em><span class="u">{{ st.unit }}</span></div><div class="l">{{ st.label }}</div></div>
@@ -15991,7 +15991,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       </section>
 
       <!-- CINEMA — v2 Sayt CMS (barcha matnlar + media admin'dan; tartib landingSections'da) -->
-      <section class="ffl-sect" style="{{ lsCinema }}">
+      <section class="ffl-sect" style="{{ lsCinema }}" data-cms="cinema">
         <div class="ffl-shead" data-rv="">
           <div><div class="ffm-eyebrow">{{ lcCinEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcCinTitle }}</div></div>
           <span style="flex:1"></span>
@@ -16007,7 +16007,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       <!-- SHOWCASE FEED — «Made with FrameFlow» masonry (konsept namuna kartalari, real katalog EMAS) -->
       <section class="ffl-sect" style="{{ lsShowcase }}">
         <div class="ffl-shead" data-rv="">
-          <div><div class="ffm-eyebrow">{{ lcShowEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcShowTitle }}</div><div style="margin-top:6px;font-size:11px;color:var(--muted)">{{ lcFeedNote }}</div></div>
+          <div data-cms="showcase"><div class="ffm-eyebrow">{{ lcShowEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcShowTitle }}</div><div style="margin-top:6px;font-size:11px;color:var(--muted)">{{ lcFeedNote }}</div></div>
           <span style="flex:1"></span>
           <div class="ffl-cattabs">
             <sc-for list="{{ catTabs }}" as="c" hint-placeholder-count="6"><span data-cat="{{ c.label }}" onclick="{{ onCat }}" class="{{ c.clsL }}" role="button" tabindex="0">{{ c.label }}</span></sc-for>
@@ -16015,7 +16015,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </div>
         <div class="ffl-masonry" data-rv="" data-rv-delay="120">
           <sc-for list="{{ feedCards }}" as="c" hint-placeholder-count="11">
-            <article class="{{ c.sp }}" data-id="{{ c.id }}" onclick="{{ openDetail }}">
+            <article class="{{ c.sp }}" data-id="{{ c.id }}" data-cms="feed.cards.{{ c.fi }}" onclick="{{ openDetail }}">
               <div class="ffl-fart" style="background:{{ c.g }};position:relative;overflow:hidden">
                 <sc-if value="{{ c.fHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ c.fmedia }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if>
                 <sc-if value="{{ c.fIsVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ c.fmedia }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if>
@@ -16034,20 +16034,20 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       <!-- VIRAL PRESETS — v2 Sayt CMS (4 karta: matn + media admin'dan; tartib landingSections'da) -->
       <section class="ffl-sect ffl-preset-sect" style="{{ lsPresets }}">
         <div class="ffl-shead" data-rv="">
-          <div><div class="ffm-eyebrow">{{ lcPresetEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcPresetTitle }}</div></div>
+          <div data-cms="presetsRail"><div class="ffm-eyebrow">{{ lcPresetEyebrow }}</div><div class="ffm-d44" style="margin-top:10px">{{ lcPresetTitle }}</div></div>
           <span style="flex:1"></span>
           <a class="ffl-lnk" onclick="{{ goAistudio }}" role="button" tabindex="0">{{ lcPresetLink }}<i class="ph ph-arrow-right" style="font-size:13px"></i></a>
         </div>
         <div class="ffl-preset-rail" data-rv="" data-rv-delay="120">
           <sc-for list="{{ presetsView }}" as="p" hint-placeholder-count="4">
-            <article onclick="{{ goAistudio }}"><span class="ffl-preset-no">{{ p.no }}</span><div class="{{ p.artCls }}" style="position:relative;overflow:hidden"><sc-if value="{{ p.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ p.media }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if><sc-if value="{{ p.isVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ p.media }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if></div><strong>{{ p.title }}</strong><small>{{ p.sub }}</small></article>
+            <article onclick="{{ goAistudio }}" data-cms="presetsRail.items.{{ p.pi }}"><span class="ffl-preset-no">{{ p.no }}</span><div class="{{ p.artCls }}" style="position:relative;overflow:hidden"><sc-if value="{{ p.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ p.media }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if><sc-if value="{{ p.isVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ p.media }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if></div><strong>{{ p.title }}</strong><small>{{ p.sub }}</small></article>
           </sc-for>
         </div>
       </section>
 
       <!-- AI STUDIO VITRINASI — result-stack + mini-composer + tool reyka -->
       <section class="ffl-aishow" style="{{ lsAiPromo }}">
-        <div class="ffl-aishow-copy" data-rv="">
+        <div class="ffl-aishow-copy" data-rv="" data-cms="aiPromo">
           <div class="ffm-eyebrow">{{ lcAiEyebrow }}</div>
           <div class="ffm-d44" style="margin-top:12px">{{ lcAiTitle }}</div>
           <p>{{ lcAiDesc }}</p>
@@ -16057,23 +16057,23 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <div class="ffl-res-stack">
             <div class="ffl-res back ffm-g2"></div>
             <div class="ffl-res mid ffm-g7"></div>
-            <div class="ffl-res front ffm-g4"><span>{{ lcAiStackLabel }}</span></div>
+            <div class="ffl-res front ffm-g4" data-cms="aiPromo.stackLabel"><span>{{ lcAiStackLabel }}</span></div>
           </div>
-          <div class="ffl-minicomposer">
+          <div class="ffl-minicomposer" data-cms="aiPromo.chipMode">
             <p><span data-ffl-type=""></span><span class="ffl-caret"></span></p>
             <div><span>{{ lcAiChipMode }}</span><span>{{ lcAiChipModel }}</span><span>{{ lcAiChipRes }}</span><b>{{ lcAiChipCost }}</b><button onclick="{{ goAistudio }}">{{ lcAiChipGen }}</button></div>
           </div>
         </div>
         <div class="ffl-toolrail">
           <sc-for list="{{ studioCards }}" as="s" hint-placeholder-count="4">
-            <article data-tool="{{ s.tool }}" onclick="{{ onTryTool }}"><i style="background:{{ s.icbg }};color:{{ s.iccol }}"><i class="ph-fill ph-{{ s.icon }}"></i></i><b>{{ s.t }}</b><span>✦ {{ s.cost }}</span></article>
+            <article data-tool="{{ s.tool }}" data-cms="aiPromo.cards.{{ s.ci }}" onclick="{{ onTryTool }}"><i style="background:{{ s.icbg }};color:{{ s.iccol }}"><i class="ph-fill ph-{{ s.icon }}"></i></i><b>{{ s.t }}</b><span>✦ {{ s.cost }}</span></article>
           </sc-for>
         </div>
       </section>
 
       <!-- PLAGIN LENTASI — kinematik panel + AE oynasi mock -->
       <section class="ffl-plugband" style="{{ lsPluginPromo }}">
-        <div class="ffl-plugband-win" data-rv="">
+        <div class="ffl-plugband-win" data-rv="" data-cms="pluginPromo.winTitle">
           <div class="wbar"><i></i><i></i><i></i><span>{{ lcPpWinTitle }}</span></div>
           <div class="pbody">
             <aside><b><i class="ph-fill ph-lightning"></i></b><i class="ph ph-house"></i><i class="ph ph-squares-four"></i><i class="ph ph-sparkle"></i></aside>
@@ -16084,7 +16084,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
           </div>
         </div>
-        <div class="ffl-plugband-copy" data-rv="" data-rv-delay="120">
+        <div class="ffl-plugband-copy" data-rv="" data-rv-delay="120" data-cms="pluginPromo">
           <div class="ffm-eyebrow">{{ lcPpEyebrow }}</div>
           <div class="ffm-d44" style="margin-top:12px">{{ lcPpTitle }}</div>
           <p>{{ lcPpDesc }}</p>
@@ -16097,14 +16097,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 
       <!-- NARX TEASER — chap nusxa + 3 mini-plan (mockup home-plans) -->
       <section class="ffl-homeplans" style="{{ lsPricingTeaser }}">
-        <div class="ffl-homeplans-copy" data-rv="">
+        <div class="ffl-homeplans-copy" data-rv="" data-cms="pricingTeaser">
           <div class="ffm-eyebrow">{{ lcPtEyebrow }}</div>
           <div class="ffm-d44" style="margin-top:12px">{{ lcPtTitle }}</div>
           <p>{{ lcPtSub }}</p>
           <div class="ffl-ptnote">{{ lcPtNote }} <a onclick="{{ goPricing }}" role="button" tabindex="0">{{ lcPtNoteLink }}</a></div>
         </div>
         <sc-for list="{{ plansRv }}" as="p" hint-placeholder-count="3">
-          <div class="{{ p.miniPlanCls }}" data-rv="" data-rv-delay="{{ p.rd }}" data-plan="{{ p.key }}" onclick="{{ onChoosePlan }}" role="button" tabindex="0">
+          <div class="{{ p.miniPlanCls }}" data-rv="" data-rv-delay="{{ p.rd }}" data-plan="{{ p.key }}" data-cms="plans.{{ p.pli }}" onclick="{{ onChoosePlan }}" role="button" tabindex="0">
             <span class="pn">{{ p.name }}</span>
             <b class="pp">${{ p.price }}</b>
             <small class="pc">{{ p.cr }}</small>
@@ -16113,7 +16113,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       </section>
 
       <!-- FAQ — akkordeon -->
-      <section class="ffl-sect ffl-faq-sect" style="{{ lsFaq }}">
+      <section class="ffl-sect ffl-faq-sect" style="{{ lsFaq }}" data-cms="faqSection">
         <div class="ffm-d36" data-rv="" style="text-align:center">{{ lcFaqTitle }}</div>
         <div class="ffl-faq" data-rv="" data-rv-delay="80">
           <sc-for list="{{ faqsView }}" as="f" hint-placeholder-count="5">
@@ -16126,7 +16126,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       </section>
 
       <!-- YAKUNIY CTA -->
-      <section class="ffl-finalcta" data-rv="" style="{{ lsFinalCta }}">
+      <section class="ffl-finalcta" data-rv="" style="{{ lsFinalCta }}" data-cms="finalCta">
         <div class="in">
           <div class="z">
             <div class="ffm-eyebrow" style="justify-content:center">{{ lcFcEyebrow }}</div>
@@ -16146,7 +16146,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <!-- ============ PRICING PAGE ============ -->
     <sc-if value="{{ isPricing }}" hint-placeholder-val="{{ false }}">
       <main class="marketing-page pricing-page">
-        <div class="page-hero">
+        <div class="page-hero" data-cms="pricingPage">
           <div class="ffm-eyebrow" style="justify-content:center">{{ lcPrEyebrow }}</div>
           <h1>{{ lcPrTitle }}</h1>
           <p>{{ lcPrSub }}</p>
@@ -16154,7 +16154,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </div>
         <div class="pricing-grid">
           <sc-for list="{{ plansView }}" as="p" hint-placeholder-count="3">
-            <article class="{{ p.priceCardCls }}">
+            <article class="{{ p.priceCardCls }}" data-cms="plans.{{ p.pli }}">
               <sc-if value="{{ p.pop }}" hint-placeholder-val="{{ false }}"><span class="popular-label">{{ lcPrPopular }}</span></sc-if>
               <span class="pk">{{ p.name }}</span>
               <h3>{{ p.sub }}</h3>
@@ -16167,7 +16167,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </article>
           </sc-for>
         </div>
-        <div class="compare-strip">
+        <div class="compare-strip" data-cms="pricingPage.compareTitle">
           <span>{{ lcPrCompareTitle }}</span>
           <div class="ci"><sc-for list="{{ pricingCompareView }}" as="ci" hint-placeholder-count="4"><b>✓ {{ ci.t }}</b></sc-for></div>
         </div>
@@ -16189,7 +16189,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     <sc-if value="{{ isPlugin }}" hint-placeholder-val="{{ false }}">
       <main class="marketing-page plugin-page">
         <div class="plugin-hero">
-          <div class="pg-copy">
+          <div class="pg-copy" data-cms="pluginPage">
             <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:var(--limedim);border:1px solid color-mix(in srgb,var(--lime) 25%,transparent);font-size:11.5px;color:var(--lime)"><i class="ph-fill ph-puzzle-piece" style="font-size:13px"></i>{{ lcPgBadge }}</span>
             <h1>{{ lcPgTitle }}</h1>
             <p>{{ lcPgSub }}</p>
@@ -16198,7 +16198,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
             <small>{{ lcPgVersion }}</small>
           </div>
-          <div class="plugin-window" aria-hidden="true">
+          <div class="plugin-window" aria-hidden="true" data-cms="pluginPage.winTitle">
             <div class="window-bar"><i></i><i></i><i></i><span>{{ lcPgWinTitle }}</span></div>
             <div class="plugin-ui">
               <aside><b><i class="ph-fill ph-lightning"></i></b><i class="ph ph-house"></i><i class="ph ph-squares-four"></i><i class="ph ph-sparkle"></i><i class="ph ph-download-simple"></i></aside>
@@ -16212,7 +16212,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </div>
         <div class="steps">
           <sc-for list="{{ pluginStepsView }}" as="s" hint-placeholder-count="3">
-            <article><b>0{{ s.n }}</b><h3>{{ s.t }}</h3><p>{{ s.d }}</p></article>
+            <article data-cms="pluginPage.steps"><b>0{{ s.n }}</b><h3>{{ s.t }}</h3><p>{{ s.d }}</p></article>
           </sc-for>
         </div>
         <div class="pg-guarantee"><i class="ph ph-shield-check"></i>{{ lcPgGuarantee }}</div>
@@ -16220,7 +16220,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
     </sc-if>
 
     <!-- ============ FOOTER — faqat REAL havolalar ============ -->
-    <footer style="border-top:1px solid var(--border);background:var(--th-bg-deep)">
+    <footer style="border-top:1px solid var(--border);background:var(--th-bg-deep)" data-cms="footer">
       <div class="ffm-sect" style="max-width:1280px;margin:0 auto;padding:56px 80px 34px">
         <div class="ffm-foot" style="display:flex;gap:60px">
           <div style="width:260px">
@@ -16684,8 +16684,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <!-- TEMPLATES — Variant A A2 (search hero · category chips · filter chip bar) -->
         <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
           <div class="va-cathero">
-            <div class="va-kick">{{ lcCatKicker }}</div>
-            <h2 style="white-space:pre-line">{{ lcCatTitle }}</h2>
+            <div class="va-kick" data-cms="catalogPage">{{ lcCatKicker }}</div>
+            <h2 style="white-space:pre-line" data-cms="catalogPage.title">{{ lcCatTitle }}</h2>
             <div class="va-bigsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="{{ lcCatSearchPh }}" aria-label="Search templates"><kbd>⌘ K</kbd></div>
             <div class="va-catchips">
               <sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><span data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.chipCls }}" role="button" tabindex="0">{{ x.label }}</span></sc-for>
@@ -18669,6 +18669,14 @@ class Component extends DCLogic {
     // FIX A4 (P6) — warm-up: fire-and-forget /health pingi Cloud Run + Neon'ni foydalanuvchi
     // sahifani o'qiyotganda uyg'otadi (birinchi login/katalog so'rovi cold-start'ga tushmasin).
     try { if (window.FFAPI) FFAPI.req('/health', { auth: false, timeout: 8000 }).catch(() => {}); } catch (e) {}
+    // FFCMS — admin vizual muharrir preview rejimi (?ffcms=1, iframe ichida):
+    // ko'prik skripti (sahifa oxirida) shu hooklar orqali draft config qo'llaydi / ekran almashtiradi.
+    try {
+      if (/[?&]ffcms/.test(location.search)) {
+        window.__ffcmsApply = (cfg) => { try { this.setState({ landCfg: cfg }); } catch (e) {} };
+        window.__ffcmsGoto = (screen) => { try { this.go(screen); } catch (e) {} };
+      }
+    } catch (e) {}
     this._applyEntry();
     // SC_49: template favorites tiklash O'CHIRILDI
     // P12 — mahkamlangan modellar + oxirgi kompozer parametrlari (joriy modelga darhol qo'llanadi)
@@ -21266,6 +21274,7 @@ class Component extends DCLogic {
       const badge = ov.badge || t.badge || (t.pro ? 'PRO' : 'FREE');
       return {
         ...t,
+        fi: i,
         sp: 'ffl-fcard ' + FEED_SPANS[i % FEED_SPANS.length],
         n: ov.title || t.n,
         c: ov.cat || t.c,
@@ -21292,7 +21301,7 @@ class Component extends DCLogic {
       'SFX': { glow: 'radial-gradient(80% 100% at 50% -30%,rgba(240,144,127,.14),transparent 70%)', icbg: 'linear-gradient(135deg,rgba(240,144,127,.2),rgba(240,144,127,.06))', iccol: '#f0907f' },
     };
     // Sayt CMS: aicard matnlari (title/desc/cost) config'dan; tool kaliti/ikon/ranglar kodda.
-    const studioCards = this.studioCards.map((c, i) => ({ ...c, t: lc.aiPromo.cards[i].title, d: lc.aiPromo.cards[i].desc, cost: lc.aiPromo.cards[i].cost, g: this.grad(c.h), ibg: (studioIcon[c.tool] || {}).ibg || 'var(--limedim)', icol: (studioIcon[c.tool] || {}).icol || 'var(--lime)', rd: (i % 4) * 80, ...(studioGlow[c.tool] || studioGlow['Rasm yaratish']) }));
+    const studioCards = this.studioCards.map((c, i) => ({ ...c, ci: i, t: lc.aiPromo.cards[i].title, d: lc.aiPromo.cards[i].desc, cost: lc.aiPromo.cards[i].cost, g: this.grad(c.h), ibg: (studioIcon[c.tool] || {}).ibg || 'var(--limedim)', icol: (studioIcon[c.tool] || {}).icol || 'var(--lime)', rd: (i % 4) * 80, ...(studioGlow[c.tool] || studioGlow['Rasm yaratish']) }));
 
     // Sayt CMS: tarif DISPLAY nusxasi config'dan (nom/narx/kredit/CTA/ro'yxatlar);
     // key/pop va checkout oqimi (onChoosePlan) KODDA — pul mantig'iga tegilmaydi.
@@ -21301,12 +21310,12 @@ class Component extends DCLogic {
       name: lc.plans[i].name, pm: lc.plans[i].price, cr: lc.plans[i].credits,
       sub: lc.plans[i].sub, cta: lc.plans[i].cta, feats: lc.plans[i].feats, tf: lc.plans[i].teaserFeats,
     }));
-    const plansView = plansSrc.map(p => {
+    const plansView = plansSrc.map((p, pli) => {
       const price = p.pm;
       const note = 'billed monthly';
       const pBusy = this.state.payBusy === 'p' + p.key; // §H — checkout busy holati
       return {
-        ...p, price, note,
+        ...p, pli, price, note,
         cta: pBusy ? 'Processing…' : p.cta,
         cardBg: p.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card))' : 'var(--card)',
         cardBd: p.pop ? 'var(--ring)' : 'var(--bd)',
@@ -22317,6 +22326,7 @@ class Component extends DCLogic {
       const url = p.mediaUrl || '';
       const isVid = isVideoUrl(url, p.mediaType);
       return {
+        pi: i,
         no: '0' + (i + 1), title: p.title, sub: p.sub, artCls: 'ffl-preset-art ' + PRESET_ART[i % PRESET_ART.length],
         media: url, hasImg: !!url && !isVid, isVideo: isVid,
       };
@@ -22377,8 +22387,8 @@ class Component extends DCLogic {
       { n: '02', t: 'AI generates it', d: 'A 4K result in seconds \u2014 image, video, voice or SFX.', icon: 'sparkle' },
       { n: '03', t: 'Download or open in the plugin', d: 'Export from the browser or continue right inside After Effects.', icon: 'rocket-launch' },
     ];
-    const studioRv = studioCards.map((c, i) => ({ ...c, rd: (i % 4) * 90 }));
-    const plansRv = plansView.map((p, i) => ({ ...p, rd: i * 110 }));
+    const studioRv = studioCards.map((c, i) => ({ ...c, ci: i, rd: (i % 4) * 90 }));
+    const plansRv = plansView.map((p, i) => ({ ...p, pli: i, rd: i * 110 }));
     return {
       navCls, navPricingCls, navPluginCls,
       marqRow1, marqRow2, feedCards,
@@ -23220,6 +23230,53 @@ document.addEventListener('keydown', function (e) {
   function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(function(){scheduled=false;inject();});}
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',schedule);}else{schedule();}
   new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
+})();
+
+/* ═══ FFCMS · Admin vizual muharrir ko'prigi (?ffcms=1, FAQAT iframe preview) ═══
+   Admin paneli sahifani iframe'da ochadi: hover = kontur + yorliq chip, klik =
+   tanlash + postMessage(select) → admin o'sha maydonlarni ochadi; admin'dan
+   kelgan draft config __ffcmsApply orqali DARHOL qo'llanadi (saqlashsiz jonli).
+   Xavfsizlik: faqat ALLOW ro'yxatidagi originlar; oddiy tashrifda kod uxlaydi. */
+(function(){
+  var qs; try { qs = location.search || ''; } catch (e) { return; }
+  if (!/[?&]ffcms/.test(qs)) return;
+  var ALLOW = ['https://admin.getframeflow.app', 'https://getframeflow.app', 'http://localhost:3001', 'http://localhost:3000'];
+  var parentOrigin = null;
+  var st = document.createElement('style');
+  st.textContent = '[data-ffcms-hover]{outline:2px dashed #d8ff3e!important;outline-offset:3px;cursor:pointer!important}' +
+    '[data-ffcms-sel]{outline:2.5px solid #7CC4FF!important;outline-offset:3px}' +
+    '#ffcmsChip{position:fixed;z-index:2147483647;background:#d8ff3e;color:#0a0d02;font:700 10px/1 ui-monospace,monospace;padding:5px 9px;border-radius:7px;pointer-events:none;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}';
+  document.head.appendChild(st);
+  var chip = document.createElement('div'); chip.id = 'ffcmsChip';
+  function chipMount(){ if (document.body && !chip.parentNode) document.body.appendChild(chip); }
+  if (document.body) chipMount(); else document.addEventListener('DOMContentLoaded', chipMount);
+  function target(el){ return el && el.closest ? el.closest('[data-cms]') : null; }
+  var hovered = null, selected = null;
+  document.addEventListener('mousemove', function(ev){
+    var t = target(ev.target);
+    if (t !== hovered) {
+      if (hovered) hovered.removeAttribute('data-ffcms-hover');
+      hovered = t;
+      if (t) { t.setAttribute('data-ffcms-hover',''); chip.textContent = t.getAttribute('data-cms'); chip.style.display = 'block'; }
+      else chip.style.display = 'none';
+    }
+    if (t) { chip.style.left = (ev.clientX + 14) + 'px'; chip.style.top = (ev.clientY + 16) + 'px'; }
+  }, true);
+  // Klik: preview'da navigatsiya/amallar BLOKlanadi — faqat tanlash ishlaydi.
+  document.addEventListener('click', function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    var t = target(ev.target); if (!t) return;
+    if (selected) selected.removeAttribute('data-ffcms-sel');
+    selected = t; t.setAttribute('data-ffcms-sel','');
+    if (parentOrigin) parent.postMessage({ type: 'ffcms-select', path: t.getAttribute('data-cms') }, parentOrigin);
+  }, true);
+  window.addEventListener('message', function(ev){
+    if (ALLOW.indexOf(ev.origin) < 0) return;
+    var d = ev.data || {};
+    if (d.type === 'ffcms-hello') { parentOrigin = ev.origin; parent.postMessage({ type: 'ffcms-ready' }, ev.origin); }
+    else if (d.type === 'ffcms-draft' && d.config && window.__ffcmsApply) window.__ffcmsApply(d.config);
+    else if (d.type === 'ffcms-goto' && d.screen && window.__ffcmsGoto) window.__ffcmsGoto(String(d.screen));
+  });
 })();
 </script>
 </body></html>

@@ -132,7 +132,7 @@ function pcPreviewHtml(c) {
     : a.tone === "warn" ? "background:rgba(255,178,124,.12);color:#FFB27C;border-bottom:1px solid rgba(255,178,124,.28)"
     : "background:rgba(124,196,255,.10);color:#9CCBFF;border-bottom:1px solid rgba(124,196,255,.26)";
   const ann = a.enabled && a.text
-    ? `<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;font-size:9.5px;${annTone}"><span style="width:5px;height:5px;border-radius:50%;background:currentColor"></span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${pcEsc(a.text)}</span>${a.ctaLabel ? `<b style="border:1px solid currentColor;border-radius:99px;padding:1px 7px;font-weight:600">${pcEsc(a.ctaLabel)}</b>` : ""}<span style="opacity:.6">×</span></div>`
+    ? `<div data-jump="announcement.text" style="display:flex;align-items:center;gap:6px;padding:5px 10px;font-size:9.5px;cursor:pointer;${annTone}"><span style="width:5px;height:5px;border-radius:50%;background:currentColor"></span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${pcEsc(a.text)}</span>${a.ctaLabel ? `<b style="border:1px solid currentColor;border-radius:99px;padding:1px 7px;font-weight:600">${pcEsc(a.ctaLabel)}</b>` : ""}<span style="opacity:.6">×</span></div>`
     : "";
   const heroBg = h.mediaUrl
     ? (h.mediaType === "video"
@@ -146,7 +146,7 @@ function pcPreviewHtml(c) {
           ? `<video src="${pcEsc(cd.mediaUrl)}" muted loop autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55"></video>`
           : `<img src="${pcEsc(cd.mediaUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55">`)
       : "";
-    return `<div style="position:relative;overflow:hidden;flex:1;border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:10px 8px;background:rgba(255,255,255,.03)">${med}<div style="position:relative;font:650 9px/1.2 'Inter',sans-serif;color:#F2F5F8">${pcEsc(nm)}</div><div style="position:relative;font-size:7.5px;color:rgba(255,255,255,.55);margin-top:3px">${pcEsc(cd.desc || "live models")}</div></div>`;
+    return `<div data-jump="aiLauncher.cards.${i}.title" style="position:relative;overflow:hidden;flex:1;border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:10px 8px;background:rgba(255,255,255,.03);cursor:pointer">${med}<div style="position:relative;font:650 9px/1.2 'Inter',sans-serif;color:#F2F5F8">${pcEsc(nm)}</div><div style="position:relative;font-size:7.5px;color:rgba(255,255,255,.55);margin-top:3px">${pcEsc(cd.desc || "live models")}</div></div>`;
   }).join("");
   const tiles = (c.home.categoryTiles || []).map((t, i) => {
     const label = t.label || PC_CAT_BUILTIN[i];
@@ -155,11 +155,11 @@ function pcPreviewHtml(c) {
           ? `<video src="${pcEsc(t.mediaUrl)}" muted loop autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6"></video>`
           : `<img src="${pcEsc(t.mediaUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6">`)
       : "";
-    return `<div style="position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:7px 8px;background:rgba(255,255,255,.02)">${med}<span style="position:relative;font:600 8px/1 'Inter',sans-serif;color:#E7ECF3;text-shadow:0 1px 4px rgba(0,0,0,.6)">${pcEsc(label)}</span></div>`;
+    return `<div data-jump="home.categoryTiles.${i}.label" style="position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:7px 8px;background:rgba(255,255,255,.02);cursor:pointer">${med}<span style="position:relative;font:600 8px/1 'Inter',sans-serif;color:#E7ECF3;text-shadow:0 1px 4px rgba(0,0,0,.6)">${pcEsc(label)}</span></div>`;
   }).join("");
   return `<div style="background:#0B0E13;border:1px solid rgba(255,255,255,.09);border-radius:13px;overflow:hidden">
     ${ann}
-    <div style="position:relative;overflow:hidden;padding:18px 16px;background:linear-gradient(120deg,#12161F,#1A1430 80%)">
+    <div data-jump="home.hero.title" style="position:relative;overflow:hidden;padding:18px 16px;background:linear-gradient(120deg,#12161F,#1A1430 80%);cursor:pointer">
       ${heroBg}
       <div style="position:relative">
         <div style="font:700 7.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.55)">${pcEsc((h.kicker || "").toUpperCase())}</div>
@@ -169,13 +169,13 @@ function pcPreviewHtml(c) {
           <span style="padding:4px 10px;border-radius:7px;background:#d8ff3e;color:#0a0d02;font:700 8.5px 'Inter',sans-serif">${pcEsc(h.ctaPrimary)}</span>
           <span style="padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#EDF1F7;font:600 8.5px 'Inter',sans-serif">${pcEsc(h.ctaSecondary)}</span>
         </div>
-        <div style="margin-top:8px;border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:4px 10px;font-size:8px;color:rgba(255,255,255,.45);max-width:280px">${pcEsc(h.promptPlaceholder || "Describe your next shot…")}</div>
+        <div data-jump="home.hero.promptPlaceholder" style="margin-top:8px;border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:4px 10px;font-size:8px;color:rgba(255,255,255,.45);max-width:280px;cursor:pointer">${pcEsc(h.promptPlaceholder || "Describe your next shot…")}</div>
       </div>
     </div>
     <div style="padding:10px 12px">
-      <div style="font:700 8px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:6px">${pcEsc(c.aiLauncher.title || "AI Tools").toUpperCase()}</div>
+      <div data-jump="aiLauncher.title" style="font:700 8px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.5);margin-bottom:6px;cursor:pointer">${pcEsc(c.aiLauncher.title || "AI Tools").toUpperCase()}</div>
       <div style="display:flex;gap:6px">${aiCards}</div>
-      <div style="font:700 8px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.5);margin:10px 0 6px">${pcEsc(c.home.sections.categories || "Browse by category").toUpperCase()}</div>
+      <div data-jump="home.sections.categories" style="font:700 8px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.5);margin:10px 0 6px;cursor:pointer">${pcEsc(c.home.sections.categories || "Browse by category").toUpperCase()}</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${tiles}</div>
     </div>
   </div>`;
@@ -448,6 +448,25 @@ window.afterRender.plugincms = function () {
     };
     view.addEventListener("input", markDirty);
     view.addEventListener("change", markDirty);
+    // SC_64 — previewda bosish → aynan o'sha maydonga sakrash + belgilash
+    view.addEventListener("click", (e) => {
+      if (CURRENT !== "plugincms") return;
+      const j = e.target && e.target.closest ? e.target.closest("#pcPreview [data-jump]") : null;
+      if (!j) return;
+      const path = j.getAttribute("data-jump");
+      let el = document.querySelector(`[data-pc="${CSS.escape(path)}"]`);
+      if (!el) el = document.querySelector(`[data-pc^="${CSS.escape(path)}"]`);
+      if (!el) return;
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      try { el.focus({ preventScroll: true }); } catch (er) { try { el.focus(); } catch (e2) {} }
+      el.style.outline = "2px solid #d8ff3e"; el.style.outlineOffset = "2px";
+      setTimeout(() => { el.style.outline = ""; el.style.outlineOffset = ""; }, 2200);
+    });
+    view.addEventListener("mouseover", (e) => {
+      const j = e.target && e.target.closest ? e.target.closest("#pcPreview [data-jump]") : null;
+      document.querySelectorAll("#pcPreview [data-jump]").forEach((x) => { if (x !== j) x.style.outline = ""; });
+      if (j) { j.style.outline = "1.5px dashed rgba(216,255,62,.75)"; j.style.outlineOffset = "1px"; }
+    });
   }
   const file = document.getElementById("pcMediaFile");
   if (file && !file.__pcBound) {
