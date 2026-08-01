@@ -89,7 +89,11 @@ export interface SiteStyleProps {
   fontWeight?: number; // 300..900
   lineHeight?: number; // 0.8..2.6
   letterSpacing?: number; // em -0.12..0.4
-  textAlign?: "left" | "center" | "right";
+  textAlign?: "left" | "center" | "right"; // matnning QUTI ICHIDAGI joyi
+  /** Blokning O'ZINI ota konteynerda tekislash (margin-left/right auto).
+   *  textAlign faqat matnni quti ichida suradi — eni cheklangan blok (masalan
+   *  max-width'li sarlavha) chapda qolib ketaveradi; markazga qo'yish shu bilan. */
+  blockAlign?: "left" | "center" | "right";
   textTransform?: "none" | "uppercase" | "capitalize";
   color?: string; // #RGB | #RRGGBB
   bg?: string; // #RGB | #RRGGBB
@@ -102,10 +106,10 @@ export interface SiteStyleProps {
   scale?: number; // 0.4..2.5 ("kattalashtirish/kichiklashtirish")
   rotate?: number; // deg -30..30
   radius?: number; // px 0..120
-  maxWidth?: number; // px 0..1800 (0 = auto)
+  maxWidth?: number; // px 0..1800 (0 = chegarasiz — saytning o'z max-width'ini ham bekor qiladi)
   opacity?: number; // 0..1
-  shadow?: number; // 0..4 (preset darajalar)
-  borderWidth?: number; // px 0..8
+  shadow?: number; // 0..4 (preset darajalar; 0 = soyani BUTUNLAY olib tashlaydi)
+  borderWidth?: number; // px 0..8 (0 = chegarani BUTUNLAY olib tashlaydi)
   borderColor?: string;
   hidden?: boolean; // display:none
 }
@@ -662,6 +666,7 @@ const stylePropsSchema = z
     lineHeight: z.number().min(0.7).max(2.8).optional(),
     letterSpacing: z.number().min(-0.15).max(0.5).optional(),
     textAlign: z.enum(["left", "center", "right"]).optional(),
+    blockAlign: z.enum(["left", "center", "right"]).optional(),
     textTransform: z.enum(["none", "uppercase", "capitalize"]).optional(),
     color: cssColor.optional(),
     bg: cssColor.optional(),
@@ -1165,14 +1170,32 @@ export function normalizeUiStyles(raw: unknown): Record<string, SiteElementStyle
   if (!raw || typeof raw !== "object") return out;
   for (const [path, val] of Object.entries(raw as Record<string, unknown>)) {
     if (!/^[A-Za-z0-9_.-]{1,90}$/.test(path)) continue;
-    const parsed = elementStyleSchema.safeParse(val);
-    if (!parsed.success) continue;
+    if (!val || typeof val !== "object") continue;
+    const src = val as Record<string, unknown>;
     const entry: SiteElementStyle = {};
-    if (parsed.data.d && Object.keys(parsed.data.d).length) entry.d = parsed.data.d;
-    if (parsed.data.m && Object.keys(parsed.data.m).length) entry.m = parsed.data.m;
+    const d = sanitizeStyleProps(src.d);
+    const m = sanitizeStyleProps(src.m);
+    if (Object.keys(d).length) entry.d = d;
+    if (Object.keys(m).length) entry.m = m;
     if (entry.d || entry.m) out[path] = entry;
   }
   return out;
+}
+
+/** Bitta uslub slotini kalit-bo'yicha tozalaydi. MUHIM: yaroqsiz BITTA qiymat
+ *  butun elementning uslubini o'chirib yubormasligi kerak (avval shunday edi —
+ *  eski/nomos qiymat admin qo'ygan barcha uslublarni jimgina yo'q qilardi). */
+function sanitizeStyleProps(raw: unknown): SiteStyleProps {
+  const out: Record<string, unknown> = {};
+  if (!raw || typeof raw !== "object") return out as SiteStyleProps;
+  const shape = stylePropsSchema.shape as Record<string, z.ZodTypeAny>;
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    const field = shape[key];
+    if (!field) continue;
+    const parsed = field.safeParse(value);
+    if (parsed.success && parsed.data !== undefined) out[key] = parsed.data;
+  }
+  return out as SiteStyleProps;
 }
 
 export function normalizeNotices(raw: unknown): SiteNotice[] {

@@ -463,8 +463,13 @@ function wsNumCtl(prop, min, max, step, unit) {
 
 function wsSegCtl(prop, opts) {
   const v = wsStyleGet(WS_SEL, prop);
-  return `<div class="adx-seg" style="display:inline-flex">${opts.map(([k, l]) =>
-    `<button class="${v === k ? "on" : ""}" onclick="wsStyleSet('${prop}',${v === k ? "null" : `'${k}'`})" style="padding:5px 9px;font-size:11px">${l}</button>`).join("")}</div>`;
+  return `<div class="adx-seg" style="display:inline-flex">${opts.map(([k, l]) => {
+    // RAQAMLI variant (masalan `shadow` darajasi) raqam bo'lib qolishi SHART: satr
+    // sifatida yozilsa zod uni rad etadi va normalizeUiStyles butun element
+    // uslubini o'chirib yuboradi (soya qo'yish qolgan uslublarni ham yo'q qilardi).
+    const lit = typeof k === "number" ? String(k) : `'${k}'`;
+    return `<button class="${v === k ? "on" : ""}" onclick="wsStyleSet('${prop}',${v === k ? "null" : lit})" style="padding:5px 9px;font-size:11px">${l}</button>`;
+  }).join("")}</div>`;
 }
 
 function wsColorCtl(prop) {
@@ -500,16 +505,20 @@ function wsDesignPanel() {
       ${wsStyleRow("QALINLIK", wsNumCtl("fontWeight", 100, 900, 100))}
       ${wsStyleRow("SATR BALANDLIGI", wsNumCtl("lineHeight", 0.7, 2.8, 0.05))}
       ${wsStyleRow("HARF ORALIG'I", wsNumCtl("letterSpacing", -0.15, 0.5, 0.005, "em"))}
-      ${wsStyleRow("TEKISLASH", wsSegCtl("textAlign", [["left", "⇤"], ["center", "↔"], ["right", "⇥"]]))}
+      ${wsStyleRow("MATN TEKISLASH", wsSegCtl("textAlign", [["left", "⇤"], ["center", "↔"], ["right", "⇥"]]))}
       ${wsStyleRow("HARF REJIMI", wsSegCtl("textTransform", [["none", "Aa"], ["uppercase", "AA"], ["capitalize", "Aa Bb"]]))}
       ${wsStyleRow("MATN RANGI", wsColorCtl("color"))}
     `)}
     ${wsCard("Joylashuv va o'lcham", "Saytda elementni sichqoncha bilan sudrab ham surish mumkin; burchak tutqichi — masshtab.", `
+      ${wsStyleRow("BLOK TEKISLASH", wsSegCtl("blockAlign", [["left", "⇤"], ["center", "↔"], ["right", "⇥"]]))}
+      <div style="font-size:10.5px;color:var(--muted);margin:-4px 0 10px;line-height:1.45">
+        “Matn tekislash” matnni QUTI ICHIDA suradi. Eni cheklangan blok (masalan sarlavha)
+        markazga tushmasa — shu yerdagi “Blok tekislash” ni ishlating.</div>
       ${wsStyleRow("SURISH X", wsNumCtl("offsetX", -400, 400, 1, "px"))}
       ${wsStyleRow("SURISH Y", wsNumCtl("offsetY", -400, 400, 1, "px"))}
       ${wsStyleRow("MASSHTAB", wsNumCtl("scale", 0.4, 2.5, 0.01, "×"))}
       ${wsStyleRow("BURISH", wsNumCtl("rotate", -30, 30, 0.5, "°"))}
-      ${wsStyleRow("MAKS ENI", wsNumCtl("maxWidth", 0, 1600, 10, "px"))}
+      ${wsStyleRow("MAKS ENI", wsNumCtl("maxWidth", 0, 1600, 10, "px"), "0 = chegarasiz (saytning o'z cheklovi ham olib tashlanadi)")}
       ${wsStyleRow("TEPA BO'SHLIQ", wsNumCtl("marginTop", -200, 300, 1, "px"))}
       ${wsStyleRow("PAST BO'SHLIQ", wsNumCtl("marginBottom", -200, 300, 1, "px"))}
       ${wsStyleRow("ICHKI ↕", wsNumCtl("padY", 0, 160, 1, "px"))}
@@ -519,8 +528,8 @@ function wsDesignPanel() {
       ${wsStyleRow("FON RANGI", wsColorCtl("bg"))}
       ${wsStyleRow("BURCHAK", wsNumCtl("radius", 0, 90, 1, "px"))}
       ${wsStyleRow("SHAFFOFLIK", wsNumCtl("opacity", 0, 1, 0.05))}
-      ${wsStyleRow("SOYA", wsSegCtl("shadow", WS_SHADOWS.map((l, i) => [i, l])))}
-      ${wsStyleRow("CHEGARA", wsNumCtl("borderWidth", 0, 8, 1, "px"))}
+      ${wsStyleRow("SOYA", wsSegCtl("shadow", WS_SHADOWS.map((l, i) => [i, l])), "Birinchi daraja — soyani butunlay olib tashlaydi")}
+      ${wsStyleRow("CHEGARA", wsNumCtl("borderWidth", 0, 8, 1, "px"), "0 = chegarani butunlay olib tashlaydi")}
       ${wsStyleRow("CHEGARA RANGI", wsColorCtl("borderColor"))}
     `)}`;
 }

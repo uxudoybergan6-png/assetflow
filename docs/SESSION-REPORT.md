@@ -1,22 +1,26 @@
-# Sessiya hisoboti — 2026-08-01 · "Featured models" kartalari CMS'ga ulandi
+# Sessiya hisoboti — 2026-08-01 · Vizual muharrir: tekislash va "neytral qiymat" tuzatishlari
 
-**Nima qilindi:** Ilova Home'dagi "Featured models" bloki (spotlight + 4 mini-karta + strip) endi
-vizual muharrirdan to'liq tahrirlanadi. Yangi CMS tugun: `appHome.featured` —
-`enabled`, `weekLabel`, `ctaLabel` (`{name}` = model nomi), `railTry`, `hero{…}`, `rail[4]`.
-Har slotda: `modelId` (katalogdan tanlash yoki bo'sh = avto evristika), `title`, `desc` va MEDIA
-sloti (rasm/GIF/MP4). Admin inspektoridagi "Model" ochiluvchi ro'yxati `/api/admin/pricing`
-dan quriladi (`wsLoadModels`, faqat NOM/ID). Fayllar: `landing-config.ts` (sxema+default+merge),
-`platform/index.html` (default/merge/hisoblash/`data-cms` belgilari/CSS), `js/admin-website.js`.
+**Shikoyat:** Katalog sahifasidagi sarlavhani (`catalogPage.title`) markazga qo'yib bo'lmasdi.
 
-**Topildi (tuzatildi):** (1) Kartalar 100% model katalogi + narx dvigatelidan hosil bo'lardi va
-bitta ham `data-cms` belgisi yo'q edi — shuning uchun muharrir ularni umuman ko'rmasdi (eski
-`TODO(FF)` "haftaning modeli"). (2) `.va-fmhero>*{position:relative}` qoidasi yangi media
-qatlamini kartadan tashqariga chiqarardi — `>.va-media` uchun `absolute; inset:0; z-index:0`.
+**Sabab (2 ta mustaqil xato):** (1) `.ff .va-cathero h2` da `margin:14px 0 26px` QISQARTMASI bir qator
+yuqoridagi `margin-left/right:auto` ni bekor qilardi → 820px lik sarlavha bloki chapga yopishardi;
+matn quti ichida markazda edi, lekin quti markazda emas. (2) Muharrirdagi "tekislash" faqat
+`text-align` qo'yardi — u esa allaqachon `center` edi, ya'ni tugma hech narsani o'zgartirmasdi.
 
-**Qoida (saqlangan):** kartadagi narx CMS'da EMAS — doim `modelCostBits` / ModelPricing dan.
-Sxemaga hech qanday kredit/narx maydoni qo'shilmadi.
+**Tuzatildi:** `margin:14px auto 26px`. Yangi uslub xossasi **`blockAlign`** (left/center/right →
+`margin-left/right:auto`) — blokning O'ZINI tekislaydi; sxema + platforma + plagin runtime'ida.
+Suzuvchi paneldagi tekislash tugmasi endi IKKALASINI ham qo'yadi (inline elementda ogohlantiradi),
+o'ng panelda esa "Matn tekislash" va "Blok tekislash" alohida.
 
-**Isbot:** admin'da spotlight bosildi → `appHome.featured.hero` (Model ro'yxatida 25 model + avto),
-mini-karta bosildi → `appHome.featured.rail.0` ✓. API build ✓ · public-copy 137/137 ✓ ·
-panel-responsive ✓ · CF Pages build ✓ · `studio:sync` ✓.
-**Kutilmoqda:** push + CF Pages/Cloud Run deploy (migratsiya shart emas — `data Json` ichida).
+**Shu oiladagi yana 4 ta xato topildi va tuzatildi:**
+- `wsSegCtl` raqamli variantni SATR sifatida yozardi → `shadow` hech qachon qo'llanmasdi va zod uni
+  rad etib, elementning BARCHA uslublarini jimgina o'chirardi. Endi raqam.
+- `normalizeUiStyles` bitta yaroqsiz qiymatda butun element uslubini tashlab yuborardi →
+  endi kalit-bo'yicha tozalaydi (qolganlari saqlanadi).
+- `maxWidth:0` / `shadow:0` / `borderWidth:0` e'tiborsiz qolardi → endi mos ravishda
+  `max-width:none` / `box-shadow:none` / `border:0`, ya'ni saytning o'z CSS'ini bekor qiladi.
+
+**Isbot:** jonli muharrirda `blockAlign:left`+`shadow:2` qo'llandi va ko'rindi ✓; sarlavha
+markazda ✓; `normalizeUiStyles` fail-soft testi ✓; API build ✓ · public-copy 137/137 ✓ ·
+panel-responsive ✓ · CF Pages build ✓. Barcha CSS sirtlarida qisqartma-audit toza.
+**Kutilmoqda:** push + deploy (migratsiya shart emas).

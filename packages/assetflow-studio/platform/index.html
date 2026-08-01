@@ -15084,7 +15084,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-cathero::before{content:"";position:absolute;inset:0;background:radial-gradient(560px 320px at 50% 6%,var(--th-accent-soft),transparent 62%);pointer-events:none}
   .ff .va-cathero>*{position:relative}
   .ff .va-cathero .va-kick{color:var(--muted)}
-  .ff .va-cathero h2{font-family:'Space Grotesk','Inter',sans-serif;font-size:clamp(34px,4.4vw,55px);font-weight:600;line-height:1.02;letter-spacing:-.045em;margin:14px 0 26px}
+  /* margin — `auto` yon tomonlar SHART: qisqartma `0` yozilsa yuqoridagi
+     margin-left/right:auto bekor bo'ladi va 820px blok chapga yopishadi. */
+  .ff .va-cathero h2{font-family:'Space Grotesk','Inter',sans-serif;font-size:clamp(34px,4.4vw,55px);font-weight:600;line-height:1.02;letter-spacing:-.045em;margin:14px auto 26px}
   .ff .va-bigsearch{margin:0 auto;max-width:700px;height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;border-radius:14px;background:var(--surface);border:1px solid var(--border);color:var(--muted2);font-size:14px;box-shadow:0 12px 50px rgba(0,0,0,.2);transition:border-color .16s,box-shadow .16s}
   .ff .va-bigsearch:focus-within{border-color:var(--th-accent);box-shadow:0 0 0 3px var(--th-accent-soft)}
   .ff .va-bigsearch input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-family:inherit;font-size:14px}
@@ -18630,6 +18632,10 @@ class Component extends DCLogic {
       push('line-height', num(sp.lineHeight, 0.7, 2.8));
       push('letter-spacing', num(sp.letterSpacing, -0.15, 0.5) != null ? num(sp.letterSpacing, -0.15, 0.5) + 'em' : null);
       push('text-align', pick(sp.textAlign, ['left', 'center', 'right']));
+      /* blockAlign — blokning O'ZINI tekislaydi (text-align faqat matnni quti ichida
+         suradi). Eni cheklangan blok yoki flex bolasi shu bilan markazga tushadi. */
+      const ba = pick(sp.blockAlign, ['left', 'center', 'right']);
+      if (ba) { push('margin-left', ba === 'left' ? '0' : 'auto'); push('margin-right', ba === 'right' ? '0' : 'auto'); }
       push('text-transform', pick(sp.textTransform, ['none', 'uppercase', 'capitalize']));
       push('color', col(sp.color));
       push('background', col(sp.bg));
@@ -18639,13 +18645,16 @@ class Component extends DCLogic {
       push('margin-top', num(sp.marginTop, -300, 400) != null ? num(sp.marginTop, -300, 400) + 'px' : null);
       push('margin-bottom', num(sp.marginBottom, -300, 400) != null ? num(sp.marginBottom, -300, 400) + 'px' : null);
       push('border-radius', num(sp.radius, 0, 120) != null ? num(sp.radius, 0, 120) + 'px' : null);
+      /* Neytral qiymat = saytning O'Z CSS'ini bekor qilish (avval e'tiborsiz qolardi,
+         shuning uchun admin mavjud chegara/soya/max-width'ni olib tashlay olmasdi). */
       const mw = num(sp.maxWidth, 0, 1800);
-      if (mw) push('max-width', mw + 'px');
+      if (mw != null) push('max-width', mw > 0 ? mw + 'px' : 'none');
       push('opacity', num(sp.opacity, 0, 1));
       const sh = num(sp.shadow, 0, 4);
-      if (sh != null && sh > 0) push('box-shadow', SHADOW[Math.round(sh)]);
+      if (sh != null) push('box-shadow', SHADOW[Math.round(sh)]);
       const bw = num(sp.borderWidth, 0, 8);
       if (bw != null && bw > 0) { push('border-style', 'solid'); push('border-width', bw + 'px'); push('border-color', col(sp.borderColor) || 'rgba(255,255,255,.35)'); }
+      else if (bw === 0) { push('border', '0'); }
       // transform — surish (offset), kattalashtirish (scale), burish (rotate)
       const tx = num(sp.offsetX, -600, 600), ty = num(sp.offsetY, -600, 600);
       const sc = num(sp.scale, 0.4, 2.5), rot = num(sp.rotate, -30, 30);
@@ -23613,7 +23622,17 @@ document.addEventListener('keydown', function (e) {
     if (a === 'edit') { startEdit(); return; }
     if (a === 'reset') { cfgStyles[selPath] = {}; post({ type: 'ffcms-style', path: selPath, device: device, patch: null }); return; }
     if (a === 'hide') { sendPatch({ hidden: !styleOf(selPath).hidden }); return; }
-    if (a === 'al' || a === 'ac' || a === 'ar') { sendPatch({ textAlign: a === 'al' ? 'left' : (a === 'ac' ? 'center' : 'right') }); return; }
+    if (a === 'al' || a === 'ac' || a === 'ar') {
+      /* Tekislash tugmasi IKKALASINI ham qo'yadi: matn quti ichida + qutining o'zi
+         ota konteynerda. Faqat text-align qo'yilsa eni cheklangan sarlavha (masalan
+         max-width'li h2) chapda qolib ketadi va "markazga qo'yib bo'lmayapti" bo'ladi.
+         Aniq nazorat kerak bo'lsa — o'ng paneldagi alohida ikkita boshqaruv. */
+      var av = a === 'al' ? 'left' : (a === 'ac' ? 'center' : 'right');
+      sendPatch({ textAlign: av, blockAlign: av });
+      var dsp = getComputedStyle(selected).display;
+      if (dsp.indexOf('inline') === 0) post({ type: 'ffcms-toast', text: 'Bu element satr ichida (inline) — qutini surish uchun ⬆ bilan ota blokni tanlang' });
+      return;
+    }
     if (a === 'fs-' || a === 'fs+') {
       var base = curNum(selPath, 'fontSize', Math.round(parseFloat(getComputedStyle(selected).fontSize) || 16));
       var step = base > 40 ? 3 : (base > 20 ? 2 : 1);
