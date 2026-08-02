@@ -343,6 +343,50 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 
 **Takror eslatildi:** yo'q — D11.d shu bilan bog'liq (before/after), lekin D12 kengroq (butun panel redizayni), shuning uchun alohida ID.
 
+> ### ✅ Tuzatildi (2026-08-02) — D12 + D11.d birga
+>
+> **Fayl:** `packages/assetflow-studio/platform/index.html`
+>
+> **D12 — panel:**
+> - **Tab'lar** (`.va-lb-tabs`) — **Details** / **Edit**. Details: PROMPT + REFERENCES + SETTINGS.
+> - **SETTINGS chiplari** (`.va-lb-chips`) — key-value jadval o'rniga chip/tag (MODEL, QUALITY, SIZE,
+>   DURATION, RATIO, COST, CREATED). Bo'sh qiymat chip chiqarmaydi. 328px panelda uzun model nomi
+>   endi qatorni buzmaydi.
+> - **REFERENCES** (`.va-lb-refs`) — natija qaysi referens(lar) ustida qurilgani, har biri yorlig'i
+>   bilan (START / END / REF / IMG / VID / AUD / SOURCE), dublikatsiz. Manba = gen'ning XOM `params`i
+>   — `mapGen` endi uni saqlaydi (ilgari faqat `ar/q/dur` ajratib olinardi, referens URL'lar
+>   tashlanardi, shuning uchun ko'rsatib bo'lmasdi).
+> - **Edit tab'i** (`.va-lb-ops`) — ishlab chiqarish zanjiri: *Edit image*, *Generate video*,
+>   *Upscale image* (Topaz), *Upscale video 2×/4×*, *Save current frame*, *Regenerate*, *Copy prompt*.
+>   Qobiliyat shartlari grid "Use ▾" menyusi bilan **AYNI manbadan** (`axHasEditModel`,
+>   `axHasI2vModel`, `axImgUpscaleOp`, `axVidUpscaleOp`) — ikkinchi haqiqat manbai yaratilmadi.
+>   Faqat REAL bajariladigan amal ko'rinadi (o'lik band yo'q). **SC_17 ("lightbox Upscale o'chirildi")
+>   shu bilan bekor qilindi** — izchillik tiklandi.
+> - **Extract frame** — `extractVideoFrame()`: alohida offscreen `<video crossOrigin="anonymous">`
+>   ko'rinib turgan pleerning `currentTime`'iga suriladi → canvas → PNG. Ko'rinadigan pleerga
+>   TEGILMAYDI. CORS sarlavhasi yo'q media'da canvas bloklanadi → **aniq xabar** beriladi (jim
+>   muvaffaqiyat emas).
+>
+> **D11.d — before/after:** `.va-cmp` slayder + `installCompare()` (imperativ hidratsiya, idempotent
+> `host.__ffcmp` bilan). Details tab'idagi **"Before / after"** chipi orqali yoqiladi. Ko'rsatkich
+> hodisalari faqat host'da (`setPointerCapture`) — document'ga listener qo'yilmaydi, lightbox
+> yopilganda osilib qolgan listener qolmaydi. Klaviatura: ←/→ 4% qadam. `ResizeObserver` bilan
+> ikki rasm bir xil qutida `cover` qilib tekislanadi (aks holda taqqoslash yolg'on chiqardi).
+>
+> **Tekshirildi (brauzer, majburiy qayta yuklash):** struktura `[ba, af, hd, tg b, tg a]`;
+> pointerdown 25% → pointermove(capture) 85% → capture'siz move **e'tiborsiz**; ←/→ 50→46%,
+> `aria-valuenow` yangilanadi. Sintaksis: 3 inline blok, 0 xato; konsol xatosiz.
+>
+> **ATAYLAB qilinmadi (sabab bilan):**
+> - **"Comments" tab'i** — izoh (comment) tizimi na API'da, na DB'da mavjud. Bo'sh tab qo'yish
+>   auditning o'zi tanqid qilgan "o'lik UI" naqshi bo'lardi.
+> - **"Save as template"** — USER rolida shablon nashr qilish yo'li YO'Q (shablonni contributor
+>   Studio orqali yuklaydi va moderatsiyadan o'tadi). `SOON` stub = o'lik tugma.
+> - **"Share"** — gen media URL'lari imzolangan va muddati o'tadi, ochiq havola berib bo'lmaydi.
+>   Real ulashish mexanizmi allaqachon bor: **"Add to Explore"**.
+> - **Video before/after** — ikki videoni sinxron oqitish alohida ish; soxta qilib qo'yilmadi,
+>   slayder faqat manba rasmi mavjud RASM natijada yoqiladi.
+
 ---
 
 ## Yig'ma jadval
@@ -370,5 +414,5 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 | D11.a | P2 | API — `/gen/ops` provayder holatini tekshirmaydi | CC | ✅ **Tuzatildi** — `isProviderConfigured()` yagona manba (`/gen` guard + `/gen/ops`) |
 | D11.b | P2 | Web — eski composer-Upscale rejimi "Regenerate" orqali qaytadi | CC | ✅ Tuzatildi (prompt+Enhance yashirildi; qolgani manba+faktor+Generate) |
 | D11.c | P2 | Web — Upscale natija D7 filtri sabab yo'qolishi mumkin | CC | ❌ Bekor — D7 filtri o'lik edi (D7.1 bilan bir xil) |
-| D11.d | P2 | Web — before/after slайder yo'q | CC | Tasdiqlandi (yo'qligi), bog'liq D12 |
-| D12 | P2 | Web — gen detal ko'rinish Magnific-uslub emas | CC | Tasdiqlandi (gap aniq) |
+| D11.d | P2 | Web — before/after slайder yo'q | CC | ✅ Tuzatildi 2026-08-02 (`.va-cmp` + `installCompare()`, Details tab chipi) |
+| D12 | P2 | Web — gen detal ko'rinish Magnific-uslub emas | CC | ✅ Tuzatildi 2026-08-02 (Details/Edit tab, SETTINGS chip, REFERENCES, zanjir amallari, Extract frame) |

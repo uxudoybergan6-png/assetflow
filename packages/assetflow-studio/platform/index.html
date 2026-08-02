@@ -15634,6 +15634,38 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-lb-row>b{color:var(--text);font-weight:600;text-align:right;word-break:break-word}
   .ff .va-lb-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px}
   .ff .va-lb-del{width:38px;padding:0}
+  /* D12 — panel tab'lari (Details / Edit). "Comments" tab'i ATAYLAB yo'q: izoh (comment) tizimi
+     na API'da, na DB'da mavjud — bo'sh tab qo'yish o'lik UI bo'lardi. */
+  .ff .va-lb-tabs{display:flex;gap:4px;padding:3px;border-radius:11px;background:var(--f1);border:1px solid var(--hair2);flex:none}
+  .ff .va-lb-tab{flex:1;height:28px;border-radius:8px;border:none;background:none;color:var(--muted);font:600 11.5px inherit;font-family:inherit;cursor:pointer}
+  .ff .va-lb-tab.on{background:var(--pill-active);color:var(--text)}
+  /* D12 — DETAILS key-value qatorlari o'rniga sozlama chiplari (Magnific "Settings" naqshi) */
+  .ff .va-lb-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .ff .va-lb-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 10px;border-radius:999px;background:var(--surface2);border:1px solid var(--hair2);font-size:11.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ff .va-lb-chip i{font-style:normal;color:var(--muted);font:700 9px var(--mono);letter-spacing:.08em;flex:none}
+  /* taqqoslash chipi <button> — brauzer standart shriftini meros qilib olsin va yoqilgani ko'rinsin */
+  button.va-lb-chip{font-family:inherit;line-height:1.2}
+  .ff .va-lb-chip.on{background:var(--limedim);border-color:var(--lime);color:var(--lime)}
+  .ff .va-lb-chip.on i{color:var(--lime)}
+  /* D12 — REFERENCES: gen qaysi referenslar ustida qurilgani (ilgari umuman ko'rsatilmasdi) */
+  .ff .va-lb-refs{display:flex;flex-wrap:wrap;gap:8px}
+  .ff .va-lb-ref{position:relative;width:58px;height:58px;flex:none;border-radius:10px;overflow:hidden;border:1px solid var(--hair2);background:var(--surface2);display:grid;place-items:center;color:var(--muted);font-size:18px}
+  .ff .va-lb-ref img,.ff .va-lb-ref video{width:100%;height:100%;object-fit:cover;display:block}
+  .ff .va-lb-ref b{position:absolute;left:3px;bottom:3px;font:700 7.5px var(--mono);letter-spacing:.06em;padding:1.5px 4px;border-radius:4px;background:rgba(0,0,0,.66);color:#fff}
+  /* D12 — Edit tab'idagi ishlab chiqarish zanjiri amallari (Use ▾ menyusi bilan AYNI handler'lar) */
+  .ff .va-lb-ops{display:flex;flex-direction:column;gap:2px}
+  /* D11.d — before/after taqqoslash slayderi. Manba rasm (`params.sourceUrl`/`referenceUrl`) bo'lgan
+     RASM natijada ishlaydi; video uchun yoqilmagan (ikki video sinxron oqimi alohida ish). */
+  .ff .va-cmp{position:relative;z-index:1;display:block;max-width:100%;border-radius:12px;overflow:hidden;cursor:ew-resize;touch-action:none;user-select:none;-webkit-user-select:none}
+  .ff .va-cmp>img.ba{display:block;max-width:100%;max-height:74vh;width:auto;height:auto}
+  .ff .va-cmp>.af{position:absolute;left:0;top:0;bottom:0;width:50%;overflow:hidden}
+  .ff .va-cmp>.af>img{position:absolute;left:0;top:0;object-fit:cover;max-width:none}
+  .ff .va-cmp>.hd{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+  .ff .va-cmp>.hd::after{content:'';position:absolute;top:50%;left:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+  .ff .va-cmp>.tg{position:absolute;top:10px;font:700 9px var(--mono);letter-spacing:.1em;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;pointer-events:none}
+  .ff .va-cmp>.tg.b{left:10px}
+  .ff .va-cmp>.tg.a{right:10px}
+  .ff .va-cmp:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
   @media (max-width:820px){
     .ff .va-lb-shell{flex-direction:column}
     .ff .va-lb-stage{max-height:54vh}
@@ -17629,7 +17661,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           <sc-if value="{{ lb.hasPrev }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw prev" onclick="{{ lbPrev }}" title="Previous (←)"><i class="ph ph-caret-left"></i></button></sc-if>
           <!-- QA-FIX #3: controls/playsinline chin boolean; poster=thumb (blur-up), asl src to'liq sifat. -->
           <sc-if value="{{ lb.isVideo }}" hint-placeholder-val="{{ false }}"><video src="{{ lb.url }}" poster="{{ lb.poster }}" preload="metadata" controls="{{ true }}" playsinline="{{ true }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></video></sc-if>
-          <sc-if value="{{ lb.isImage }}" hint-placeholder-val="{{ true }}"><img src="{{ lb.imgSrc }}" alt="{{ lb.label }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></sc-if>
+          <sc-if value="{{ lb.imgPlain }}" hint-placeholder-val="{{ true }}"><img src="{{ lb.imgSrc }}" alt="{{ lb.label }}" class="va-lb-el" style="max-width:{{ lb.maxW }}"></sc-if>
+          <!-- D11.d — before/after slayder (installCompare() imperativ to'ldiradi; dc-runtime ichiga tegmaydi) -->
+          <sc-if value="{{ lb.cmpOn }}" hint-placeholder-val="{{ false }}"><div class="va-cmp" data-before="{{ lb.cmpBefore }}" data-after="{{ lb.cmpAfter }}" style="max-width:{{ lb.maxW }}" tabindex="0" role="slider" aria-label="Before / after"></div></sc-if>
           <sc-if value="{{ lb.isAudio }}" hint-placeholder-val="{{ false }}"><div class="va-lb-aud"><div class="va-aplayer" data-src="{{ lb.url }}"></div></div></sc-if>
           <sc-if value="{{ lb.hasNext }}" hint-placeholder-val="{{ true }}"><button class="va-lb-arw next" onclick="{{ lbNext }}" title="Next (→)"><i class="ph ph-caret-right"></i></button></sc-if>
         </div>
@@ -17638,22 +17672,61 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <span class="va-lb-avt"><i class="ph-fill ph-user"></i></span>
             <div style="min-width:0"><div class="va-lb-nm">{{ lb.author }}</div><div class="va-lb-sub">{{ lb.tool }}<sc-if value="{{ lb.posLabel }}" hint-placeholder-val="{{ false }}"> · {{ lb.posLabel }}</sc-if></div></div>
           </div>
-          <sc-if value="{{ lb.hasPrompt }}" hint-placeholder-val="{{ true }}">
+          <!-- D12 — Details / Edit tab'lari. "Comments" tab'i ATAYLAB yo'q: izoh tizimi na API'da,
+               na DB'da bor — bo'sh tab o'lik UI bo'lardi. -->
+          <div class="va-lb-tabs">
+            <button class="{{ lb.tabDetCls }}" onclick="{{ lbTabDetails }}">Details</button>
+            <button class="{{ lb.tabEdCls }}" onclick="{{ lbTabEdit }}">Edit</button>
+          </div>
+          <sc-if value="{{ lb.tabDetails }}" hint-placeholder-val="{{ true }}">
+            <sc-if value="{{ lb.hasPrompt }}" hint-placeholder-val="{{ true }}">
+              <div class="va-lb-sect">
+                <div class="va-lb-lbl">PROMPT<button class="va-lb-copy" onclick="{{ lbCopyPrompt }}"><i class="ph ph-copy"></i>Copy</button></div>
+                <div class="va-lb-prompt">{{ lb.prompt }}</div>
+              </div>
+            </sc-if>
+            <!-- D12 — REFERENCES: natija qaysi referens(lar) ustida qurilgan. Ilgari umuman ko'rsatilmasdi. -->
+            <sc-if value="{{ lb.hasRefs }}" hint-placeholder-val="{{ false }}">
+              <div class="va-lb-sect">
+                <div class="va-lb-lbl">REFERENCES</div>
+                <div class="va-lb-refs">
+                  <sc-for list="{{ lb.refs }}" as="r">
+                    <div class="va-lb-ref" title="{{ r.tag }}">
+                      <sc-if value="{{ r.isImg }}" hint-placeholder-val="{{ true }}"><img src="{{ r.u }}" alt="{{ r.tag }}"></sc-if>
+                      <sc-if value="{{ r.isVid }}" hint-placeholder-val="{{ false }}"><video src="{{ r.u }}" preload="metadata" muted="{{ true }}" playsinline="{{ true }}"></video></sc-if>
+                      <sc-if value="{{ r.isAud }}" hint-placeholder-val="{{ false }}"><i class="ph ph-waveform"></i></sc-if>
+                      <b>{{ r.tag }}</b>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
             <div class="va-lb-sect">
-              <div class="va-lb-lbl">PROMPT<button class="va-lb-copy" onclick="{{ lbCopyPrompt }}"><i class="ph ph-copy"></i>Copy</button></div>
-              <div class="va-lb-prompt">{{ lb.prompt }}</div>
+              <div class="va-lb-lbl">SETTINGS</div>
+              <!-- D12 — key-value jadval o'rniga chiplar: 328px panelda uzun model nomi qatorni buzardi -->
+              <div class="va-lb-chips">
+                <sc-for list="{{ lb.chips }}" as="c"><span class="va-lb-chip"><i>{{ c.k }}</i>{{ c.v }}</span></sc-for>
+                <!-- D11.d — before/after: faqat manba rasm mavjud RASM natijada ko'rinadi -->
+                <sc-if value="{{ lb.hasCmp }}" hint-placeholder-val="{{ false }}"><button class="{{ lb.cmpBtnCls }}" onclick="{{ lbToggleCmp }}" style="cursor:pointer"><i>◨</i>{{ lb.cmpLabel }}</button></sc-if>
+              </div>
             </div>
           </sc-if>
-          <div class="va-lb-sect">
-            <div class="va-lb-lbl">DETAILS</div>
-            <div class="va-lb-rows">
-              <div class="va-lb-row"><span>Model</span><b>{{ lb.dModel }}</b></div>
-              <div class="va-lb-row"><span>Quality</span><b>{{ lb.dQuality }}</b></div>
-              <div class="va-lb-row"><span>Size</span><b>{{ lb.dSize }}</b></div>
-              <sc-if value="{{ lb.showDur }}" hint-placeholder-val="{{ false }}"><div class="va-lb-row"><span>Duration</span><b>{{ lb.dDur }}</b></div></sc-if>
-              <div class="va-lb-row"><span>Created</span><b>{{ lb.dCreated }}</b></div>
+          <!-- D12 — Edit tab: ishlab chiqarish zanjiri. Faqat REAL bajariladigan amal ko'rinadi. -->
+          <sc-if value="{{ lb.tabEdit }}" hint-placeholder-val="{{ false }}">
+            <div class="va-lb-ops">
+              <sc-if value="{{ lb.opEdit }}" hint-placeholder-val="{{ false }}"><div class="va-axmi" onclick="{{ lbOpEdit }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-pencil-simple"></i></span><span>Edit image<span class="sub">Send to Image edit as reference</span></span></div></sc-if>
+              <sc-if value="{{ lb.opI2v }}" hint-placeholder-val="{{ false }}"><div class="va-axmi" onclick="{{ lbOpI2v }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-play"></i></span><span>Generate video<span class="sub">Use as the start frame</span></span></div></sc-if>
+              <sc-if value="{{ lb.opUpImg }}" hint-placeholder-val="{{ false }}"><div class="va-axmi" onclick="{{ lbOpUpImg }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>{{ lb.upImgLabel }}<span class="sub">Topaz Gigapixel · signed price</span></span></div></sc-if>
+              <sc-if value="{{ lb.opUpVid }}" hint-placeholder-val="{{ false }}">
+                <div class="va-axmi" onclick="{{ lbOpUpVid2 }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>Upscale video 2×<span class="sub">Topaz · signed price</span></span></div>
+                <div class="va-axmi" onclick="{{ lbOpUpVid4 }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrows-out"></i></span><span>Upscale video 4×<span class="sub">Topaz · signed price</span></span></div>
+              </sc-if>
+              <sc-if value="{{ lb.opFrame }}" hint-placeholder-val="{{ false }}"><div class="va-axmi" onclick="{{ lbOpFrame }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-camera"></i></span><span>Save current frame<span class="sub">PNG · joriy vaqt kadri</span></span></div></sc-if>
+              <div class="va-axmdiv"></div>
+              <div class="va-axmi plain" onclick="{{ lbOpRegen }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrow-clockwise"></i></span>Regenerate</div>
+              <sc-if value="{{ lb.hasPrompt }}" hint-placeholder-val="{{ true }}"><div class="va-axmi plain" onclick="{{ lbCopyPrompt }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-copy"></i></span>Copy prompt</div></sc-if>
             </div>
-          </div>
+          </sc-if>
           <div class="va-lb-acts">
             <button onclick="{{ downloadGen }}" class="ffm-btn sm"><i class="ph ph-download-simple" style="font-size:14px"></i>Download</button>
             <sc-if value="{{ lb.canProject }}" hint-placeholder-val="{{ false }}"><button onclick="{{ lbAddProj }}" class="ffm-btn2 sm"><i class="ph ph-folder-plus" style="font-size:14px"></i>Project</button></sc-if>
@@ -18070,6 +18143,8 @@ class Component extends DCLogic {
     enhBusy: false,
     showCredits: false,
     lightbox: null,
+    lbTab: 'details', // D12 — lightbox panel tab'i: 'details' | 'edit'
+    lbCmp: false,     // D11.d — sahnada before/after taqqoslash yoqilganmi
     audioPlayingId: null, // QA-FIX #3 — audio row real playback holati
     detail: null,
     // Plugin sahifa — haqiqiy PluginRelease holati: 'idle'|'loading'|'ready'|'unavailable'|'error'
@@ -19194,7 +19269,7 @@ class Component extends DCLogic {
   componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._onMediaError) window.removeEventListener('error', this._onMediaError, true); if (this._onMediaLoad) { document.removeEventListener('load', this._onMediaLoad, true); window.removeEventListener('loadedmetadata', this._onMediaLoad, true); } if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
-  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); this._syncModalFx(); }
+  componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.installCompare(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); this._syncModalFx(); }
 
   // §D (P31) — bitta kichik modal-yordamchi (credits/delete/name uchun umumiy): body scroll-lock +
   // fokus-tuzoq (Tab modal ichida aylanadi) + ochilganda birinchi elementga fokus. role/aria-modal
@@ -19295,6 +19370,116 @@ class Component extends DCLogic {
     const p = this._audioEl.play();
     if (p && p.catch) p.catch(() => this.setState({ audioPlayingId: null }));
     this.setState({ audioPlayingId: id });
+  }
+  /** D11.d — before/after taqqoslash slayderi.
+   *  dc-runtime shablon ichiga imperativ DOM qurmaydi — shuning uchun `.va-cmp` bo'sh host sifatida
+   *  render bo'ladi va shu yerda to'ldiriladi (installAudioPlayers naqshi bilan bir xil).
+   *  Idempotent: ayni (before|after) juftligida qayta qurmaydi — aks holda har render'da slayder
+   *  o'rtaga sakrab tushardi.
+   *  Ko'rsatkich hodisalari faqat HOST'da: setPointerCapture ishlatiladi, document'ga listener
+   *  qo'yilmaydi → lightbox yopilganda osilib qolgan listener qolmaydi. */
+  installCompare() {
+    try {
+      document.querySelectorAll('.ff .va-cmp').forEach(host => {
+        const a = host.getAttribute('data-before') || '';
+        const b = host.getAttribute('data-after') || '';
+        if (!a || !b) return;
+        const key = a + '|' + b;
+        if (host.__ffcmp === key) return;
+        host.__ffcmp = key;
+        host.innerHTML = '';
+        const after = document.createElement('img');   // "keyin" — to'liq ko'rinadi, o'lchamni belgilaydi
+        after.className = 'ba'; after.src = b; after.alt = 'After';
+        const clip = document.createElement('div'); clip.className = 'af';
+        const before = document.createElement('img');  // "oldin" — kesilgan qatlamda
+        before.src = a; before.alt = 'Before';
+        clip.appendChild(before);
+        const hd = document.createElement('div'); hd.className = 'hd';
+        const tgB = document.createElement('span'); tgB.className = 'tg b'; tgB.textContent = 'BEFORE';
+        const tgA = document.createElement('span'); tgA.className = 'tg a'; tgA.textContent = 'AFTER';
+        host.appendChild(after); host.appendChild(clip); host.appendChild(hd);
+        host.appendChild(tgB); host.appendChild(tgA);
+        // ichki rasm host o'lchamiga qat'iy bog'lanadi (cover) — aks holda ikki rasm turli o'lchamda
+        // bo'lsa kesilgan qatlam siljib, taqqoslash yolg'on chiqardi.
+        const sync = () => {
+          const w = host.clientWidth, h = host.clientHeight;
+          if (!w || !h) return;
+          before.style.width = w + 'px'; before.style.height = h + 'px';
+        };
+        after.addEventListener('load', sync);
+        if (after.complete) sync();
+        if (window.ResizeObserver) { const ro = new ResizeObserver(sync); ro.observe(host); host.__ffcmpRo = ro; }
+        let pos = 50;
+        const apply = () => {
+          clip.style.width = pos + '%';
+          hd.style.left = pos + '%';
+          host.setAttribute('aria-valuenow', String(Math.round(pos)));
+        };
+        const at = (clientX) => {
+          const r = host.getBoundingClientRect();
+          if (!r.width) return;
+          pos = Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100));
+          apply();
+        };
+        host.addEventListener('pointerdown', e => {
+          e.preventDefault(); e.stopPropagation();
+          try { host.setPointerCapture(e.pointerId); } catch (er) {}
+          at(e.clientX);
+        });
+        host.addEventListener('pointermove', e => {
+          if (!host.hasPointerCapture || !host.hasPointerCapture(e.pointerId)) return;
+          at(e.clientX);
+        });
+        host.addEventListener('click', e => e.stopPropagation()); // scrim yopilib ketmasin
+        host.addEventListener('keydown', e => {
+          if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+          e.preventDefault(); e.stopPropagation();
+          pos = Math.max(0, Math.min(100, pos + (e.key === 'ArrowLeft' ? -4 : 4)));
+          apply();
+        });
+        sync(); apply();
+      });
+    } catch (e) {}
+  }
+  /** D12 — video natijadan joriy kadrni PNG qilib saqlash.
+   *  KO'RINIB turgan pleerga TEGILMAYDI (canvas'ga chizish uni "tainted" qilmaydi, lekin
+   *  crossOrigin'ni keyin o'zgartirish qayta yuklashni talab qiladi va o'ynatishni uzardi) —
+   *  o'rniga alohida offscreen <video> crossOrigin bilan o'sha vaqtga surib olinadi.
+   *  Imzolangan URL'da CORS sarlavhasi bo'lmasa canvas bloklanadi → aniq xabar beramiz, jim qolmaymiz. */
+  extractVideoFrame(g) {
+    if (!g || !g.url) return;
+    const live = document.querySelector('.ff .va-lb-stage video.va-lb-el');
+    const t = live && isFinite(live.currentTime) ? live.currentTime : 0;
+    const v = document.createElement('video');
+    v.crossOrigin = 'anonymous'; v.preload = 'auto'; v.muted = true; v.playsInline = true;
+    let done = false;
+    const fail = (msg) => { if (done) return; done = true; try { v.src = ''; } catch (e) {} this.toast(msg || 'Kadrni saqlab bo\'lmadi'); };
+    const grab = () => {
+      if (done) return;
+      try {
+        const c = document.createElement('canvas');
+        c.width = v.videoWidth || 1280; c.height = v.videoHeight || 720;
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        c.toBlob(blob => {
+          if (!blob) return fail();
+          done = true;
+          const u = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = u; a.download = 'frame-' + (g.id || 'gen') + '-' + Math.round(t * 100) / 100 + 's.png';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(u), 4000);
+          this.toast('Kadr saqlandi');
+        }, 'image/png');
+      } catch (e) {
+        // SecurityError = CORS sarlavhasiz media (canvas "tainted")
+        fail('Kadrni saqlab bo\'lmadi — media CORS ruxsatisiz. Videoni yuklab olib, kadrni qo\'lda oling.');
+      }
+    };
+    v.addEventListener('seeked', grab, { once: true });
+    v.addEventListener('error', () => fail('Video yuklanmadi'), { once: true });
+    v.addEventListener('loadeddata', () => { try { v.currentTime = Math.min(t, Math.max(0, (v.duration || t) - 0.05)); } catch (e) { grab(); } }, { once: true });
+    setTimeout(() => fail('Kadr olish vaqti tugadi'), 15000);
+    v.src = g.url;
   }
   /** QA-FIX #14/#3 — karta video'lari hover'da jonli o'ynaydi (muted), chiqilganda to'xtaydi.
    *  Katalog preview'lari data-src bilan dangasa: birinchi hover'da yuklanadi (bandwidth tejash).
@@ -19903,7 +20088,9 @@ class Component extends DCLogic {
     const j = i + dir;
     if (j < 0 || j >= arr.length) return;
     const g = arr[j];
-    this.setState({ lightbox: g, activeGenId: g.id });
+    // D11.d — boshqa natijaga o'tilganda taqqoslash o'chadi (yangi natijada manba boshqa bo'lishi
+    // yoki umuman bo'lmasligi mumkin; "yopishib qolgan" slayder chalg'itardi).
+    this.setState({ lightbox: g, activeGenId: g.id, lbCmp: false });
     this.refreshLightboxUrl(g.id);
   }
   async loadModels(attempt) {
@@ -20232,6 +20419,9 @@ class Component extends DCLogic {
       // P11 — lightbox detal paneli uchun: sifat/o'lcham + davomiylik
       q: (it.params && (it.params.quality || it.params.resolution)) || '',
       dur: (it.params && it.params.duration) || '',
+      // D12 — lightbox "References" ro'yxati va D11.d before/after uchun XOM params. Ilgari faqat
+      // ar/q/dur ajratib olinardi, referens URL'lar tashlab yuborilardi → panelda ko'rsatib bo'lmasdi.
+      params: it.params || null,
     };
   }
 
@@ -22316,6 +22506,50 @@ class Component extends DCLogic {
     const lbList = (wsGens && wsGens.length) ? wsGens : this.state.gens;
     const lbIdx = lbRaw ? lbList.findIndex(x => x.id === lbRaw.id) : -1;
     const lbW = lbRaw && lbRaw.w, lbH = lbRaw && lbRaw.hgt;
+    // ── D12 — REFERENCES: natija qaysi referenslar ustida qurilgan. Manba = gen'ning XOM params'i
+    //    (mapGen endi saqlaydi). Har referens turi o'z yorlig'i bilan chiqadi, dublikat olib tashlanadi.
+    const lbP = (lbRaw && lbRaw.params) || {};
+    const lbRefsView = [];
+    const lbRefSeen = {};
+    const lbPushRef = (u, tag, kind) => {
+      if (typeof u !== 'string' || !u || lbRefSeen[u]) return;
+      lbRefSeen[u] = 1;
+      lbRefsView.push({ u, tag, isImg: kind === 'img', isVid: kind === 'vid', isAud: kind === 'aud' });
+    };
+    if (lbRaw) {
+      const isVidGen = lbRaw.type === 'video';
+      // video'da referenceUrl = BOSHLANG'ICH kadr, rasm'da oddiy referens
+      lbPushRef(lbP.referenceUrl, isVidGen ? 'START' : 'REF', 'img');
+      lbPushRef(lbP.referenceEndUrl, 'END', 'img');
+      (Array.isArray(lbP.referenceUrls) ? lbP.referenceUrls : []).forEach(u => lbPushRef(u, 'REF', 'img'));
+      (Array.isArray(lbP.imageUrls) ? lbP.imageUrls : []).forEach(u => lbPushRef(u, 'IMG', 'img'));
+      (Array.isArray(lbP.videoUrls) ? lbP.videoUrls : []).forEach(u => lbPushRef(u, 'VID', 'vid'));
+      (Array.isArray(lbP.audioUrls) ? lbP.audioUrls : []).forEach(u => lbPushRef(u, 'AUD', 'aud'));
+      lbPushRef(lbP.sourceUrl, 'SOURCE', isVidGen ? 'vid' : 'img');
+    }
+    // ── D11.d — before/after: manba RASM bo'lgan RASM natijada (upscale, image-edit, remove-bg).
+    //    Video uchun yoqilmagan — ikki videoni sinxron oqitish alohida ish, soxta qilib qo'ymaymiz.
+    const lbAfterUrl = lbRaw && lbRaw.type === 'image' ? (lbRaw.display || lbRaw.url || lbRaw.thumb) : null;
+    const lbBeforeUrl = (lbRaw && lbRaw.type === 'image')
+      ? (lbP.sourceUrl || lbP.referenceUrl
+        || (Array.isArray(lbP.referenceUrls) && lbP.referenceUrls[0])
+        || (Array.isArray(lbP.imageUrls) && lbP.imageUrls[0]) || null)
+      : null;
+    const lbHasCmp = !!(lbBeforeUrl && lbAfterUrl && lbBeforeUrl !== lbAfterUrl);
+    const lbCmpOn = lbHasCmp && !!this.state.lbCmp;
+    // ── D12 — SETTINGS chiplari (ilgari key-value qatorlari edi). Bo'sh qiymat chip chiqarmaydi.
+    const lbChips = [];
+    const lbChip = (k, v) => { if (v && v !== '—') lbChips.push({ k, v: String(v) }); };
+    const lbTabV = this.state.lbTab === 'edit' ? 'edit' : 'details';
+    // ── D12 — Edit tab amallari LIGHTBOX gen'iga bog'lanadi (grid "Use ▾" menyusi `activeGenRaw`ga
+    //    bog'langan — bu boshqa natija bo'lishi mumkin). Qobiliyat shartlari AYNI (model katalogi +
+    //    yoqilgan Topaz op) — ikkinchi haqiqat manbai yaratilmaydi.
+    const lbIsImg = !!lbRaw && lbRaw.type === 'image';
+    const lbIsVid = !!lbRaw && lbRaw.type === 'video' && !!lbRaw.url;
+    const lbEditOk = lbIsImg && axHasEditModel;
+    const lbI2vOk = lbIsImg && axHasI2vModel;
+    const lbUpImgOk = lbIsImg && !!axImgUpscaleOp;
+    const lbUpVidOk = lbIsVid && !!axVidUpscaleOp;
     const lb = lbRaw ? {
       ...lbRaw,
       isImage: lbRaw.type === 'image',
@@ -22344,7 +22578,31 @@ class Component extends DCLogic {
       canProject: true, canDelete: true, canRef: lbRaw.type === 'image',
       // P3 (step 34) — Explore holati (yuborilgan bo'lsa tugma disabled + holat matni)
       exDone: this.exploreStateOf(lbRaw.id).submitted, exLabel: this.exploreStateOf(lbRaw.id).label,
+      // D12 — tab holati + sozlama chiplari + referens ro'yxati
+      tabDetails: lbTabV === 'details', tabEdit: lbTabV === 'edit',
+      tabDetCls: 'va-lb-tab' + (lbTabV === 'details' ? ' on' : ''),
+      tabEdCls: 'va-lb-tab' + (lbTabV === 'edit' ? ' on' : ''),
+      chips: lbChips, hasRefs: lbRefsView.length > 0, refs: lbRefsView,
+      // D11.d — taqqoslash
+      hasCmp: lbHasCmp, cmpOn: lbCmpOn,
+      // taqqoslash yoqilganda oddiy <img> sahnadan chiqadi (ikki qavat bo'lib qolmasin)
+      imgPlain: lbRaw.type === 'image' && !lbCmpOn,
+      cmpBefore: lbBeforeUrl || '', cmpAfter: lbAfterUrl || '',
+      cmpBtnCls: 'va-lb-chip' + (lbCmpOn ? ' on' : ''),
+      cmpLabel: lbCmpOn ? 'Hide before / after' : 'Before / after',
+      // D12 — Edit tab qatorlari (faqat REAL bajariladigan amal ko'rinadi — o'lik band yo'q)
+      opEdit: lbEditOk, opI2v: lbI2vOk, opFrame: lbIsVid,
+      opUpImg: lbUpImgOk, opUpVid: lbUpVidOk,
+      upImgLabel: axImgUpscaleOp ? axImgUpscaleOp.label : 'Upscale image',
     } : null;
+    if (lb) {
+      // D12 — chiplar lb qurilgandan KEYIN to'ldiriladi (ayni massiv havolasi, render'dan oldin).
+      lbChip('MODEL', lb.dModel); lbChip('QUALITY', lb.dQuality); lbChip('SIZE', lb.dSize);
+      if (lb.showDur) lbChip('DURATION', lb.dDur);
+      if (lbRaw.ar) lbChip('RATIO', lbRaw.ar);
+      if (lbRaw.cost) lbChip('COST', '✦ ' + lbRaw.cost);
+      lbChip('CREATED', lb.dCreated);
+    }
     const accView = this.accountTabs.map(x => ({ v: x, cls: x === this.state.accountTab ? 'va-acctab on' : 'va-acctab' })); // BATCH6 — mockup underline tab
     // P21 (29) — HAQIQIY kredit ledger (CreditLedger endpoint): consume/refund/topup/clawback KO'RINADI.
     // Har qator: tur ikonkasi/thumb · sarlavha · sana · IMZOLI summa (yechim QIZIL, refund YASHIL) · balans.
@@ -23420,11 +23678,25 @@ class Component extends DCLogic {
       onVoiceM: (e) => { e.stopPropagation(); this.setState({ aiVoice: e.currentTarget.dataset.v }); },
       doGenerate: () => this.generate(),
       openLightbox: (e) => { const id = e.currentTarget.dataset.id; const g = wsGens.find(x => x.id === id) || this.state.gens.find(x => x.id === id); if (g) this.setState({ lightbox: g }); },
-      closeLightbox: () => this.setState({ lightbox: null }),
+      closeLightbox: () => this.setState({ lightbox: null, lbCmp: false }),
       // P11 — lightbox oldingi/keyingi generatsiya + prompt nusxa
       lbPrev: (e) => { if (e) e.stopPropagation(); this._lbGo(-1); },
       lbNext: (e) => { if (e) e.stopPropagation(); this._lbGo(1); },
       lbCopyPrompt: (e) => { if (e) e.stopPropagation(); const g = this.state.lightbox; if (g && g.prompt) { try { navigator.clipboard.writeText(g.prompt); this.toast('Prompt copied'); } catch (er) {} } },
+      // D12 — panel tab'lari
+      lbTabDetails: (e) => { if (e) e.stopPropagation(); this.setState({ lbTab: 'details' }); },
+      lbTabEdit: (e) => { if (e) e.stopPropagation(); this.setState({ lbTab: 'edit' }); },
+      // D11.d — before/after slayderini yoqish/o'chirish (faqat manba rasm bo'lsa ko'rinadi)
+      lbToggleCmp: (e) => { if (e) e.stopPropagation(); if (!lbHasCmp) return; this.setState(s => ({ lbCmp: !s.lbCmp })); },
+      // D12 — ishlab chiqarish zanjiri: AYNI handler'lar (useGenAsRef / runTopazOp / restoreGenToComposer),
+      //   faqat manba = lightbox'dagi natija. Pul oqimi (imzolangan quote → atomik yechish) TEGILMAGAN.
+      lbOpEdit: (e) => { if (e) e.stopPropagation(); if (!lbEditOk || !lbRaw) return; this.setState({ lightbox: null, lbCmp: false }); this.useGenAsRef('edit', lbRaw.id); },
+      lbOpI2v: (e) => { if (e) e.stopPropagation(); if (!lbI2vOk || !lbRaw) return; this.setState({ lightbox: null, lbCmp: false }); this.useGenAsRef('i2v', lbRaw.id); },
+      lbOpUpImg: (e) => { if (e) e.stopPropagation(); if (!lbUpImgOk || !lbRaw) return; this.setState({ lightbox: null, lbCmp: false }); this.runTopazOp(axImgUpscaleOp, lbRaw.id, null); },
+      lbOpUpVid2: (e) => { if (e) e.stopPropagation(); if (!lbUpVidOk || !lbRaw) return; this.setState({ lightbox: null, lbCmp: false }); this.runTopazOp(axVidUpscaleOp, lbRaw.id, 2); },
+      lbOpUpVid4: (e) => { if (e) e.stopPropagation(); if (!lbUpVidOk || !lbRaw) return; this.setState({ lightbox: null, lbCmp: false }); this.runTopazOp(axVidUpscaleOp, lbRaw.id, 4); },
+      lbOpRegen: (e) => { if (e) e.stopPropagation(); if (!lbRaw) return; this.setState({ lightbox: null, lbCmp: false }); this.restoreGenToComposer(lbRaw.id); },
+      lbOpFrame: (e) => { if (e) e.stopPropagation(); if (!lbIsVid || !lbRaw) return; this.extractVideoFrame(lbRaw); },
       // QA-FIX #3 — audio row play/pause (row click lightbox'ni ochishda davom etadi)
       toggleAudioRow: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); if (el) this.playAudio(el.getAttribute('data-id')); },
       deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenArmed(id); }, // §C — armed
