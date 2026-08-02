@@ -168,6 +168,36 @@ Skrinshotda ham xuddi shu ko'rinadi: 5 ustun chap tomonda, o'ng tomonda katta qo
 **Nima buziladi:** mijoz qulayligi — tez-tez ishlatiladigan natijani tepada ushlab turish imkoni yo'q, katta kutubxonada eski/kerak natijani qayta qidirish kerak bo'ladi. Pul/ma'lumot buzilmaydi.
 **Kim:** CC (yangi DB maydon + API + UI kerak — o'rtacha hajmli feature)
 
+> **✅ Tuzatildi (2026-08-02).** To'liq zanjir: DB → API → web → plagin.
+>
+> **DB:** `Generation.pinned Boolean @default(false)` + `@@index([userId, pinned, createdAt])`.
+> Migratsiya `20260802100000_generation_pinned` — additive (`NOT NULL DEFAULT false`), mavjud
+> qatorlar o'zgarmaydi, pul zonasiga tegmaydi. **Deploy'dan OLDIN yoki BILAN birga qo'llanishi shart:**
+> `npm run migrate:deploy -w @creative-tools/database`.
+>
+> **API** (`apps/api/src/routes/studio-gen.ts`): `PATCH /gen/:jobId/pin` — faqat egasi (aks holda 404,
+> IDOR emas), faqat `status: "done"` (409 `GENERATION_NOT_DONE` — hali tugamagan natijani qadash
+> ma'nosiz), `body.pinned` aniq berilsa idempotent (takror so'rov xavfsiz). `/gen/history` va
+> `/gen/sessions/:id/generations` endi `orderBy: [{pinned:"desc"},{createdAt:"desc"}]` — ya'ni
+> qadalgan eski natija `take` oynasidan tashqarida qolib ketmaydi, ro'yxatga tortiladi (kutilgan
+> xatti-harakat, kodda izohlangan).
+>
+> **Web** (`platform/index.html` + `ff-api.js`): `FFAPI.genPin(id, pinned)`; `togglePinGen()` —
+> optimistik (UI darhol qayta tartiblanadi, server rad etsa qaytariladi + toast); `sortPinned()` —
+> qadalganlar avval, keyin `createdAt desc`; yangi gen qo'shilganda ham shu tartib qo'llanadi.
+> Ko'rinish: plitkada `.va-axpinned` nishoni, amal panelida (`.va-axabar`) pin ikonasi, audio
+> qatorida `.va-axapin`, lightbox **Edit** tab'ida "Pin to top"/"Unpin" bandi (lightbox yopilmaydi —
+> natijani ko'rib turib qilinadigan amal).
+>
+> **Plagin** (`AssetFlow_Plugin.html`): afGallery `normalize()` `pinned`ni olib o'tadi, `sortPinned()`
+> keshni tartiblaydi, `galTogglePin()` AYNI endpoint'ga optimistik so'rov yuboradi (`studioPatch`).
+> Ko'rinish: kartada `.gpin` nishoni (chap yuqori — `gbadge` pastda, `gcb` o'ngda, to'qnashuv yo'q),
+> `Use ▾` menyusida band, umumiy `afRecent` lightbox'ida `ctx.onPin` ikonasi (`.lbico.on` holati).
+>
+> **Ataylab qilinmagan:** sessiya-ichi strip va tool "So'nggi" feedlari uchun alohida pin YO'Q —
+> pin global tartibga ta'sir qiladi (`/gen/history` + sessiya ro'yxati), ikkinchi "faqat shu yerda
+> qadalgan" tushunchasi ikkinchi haqiqat manbai bo'lardi.
+
 ---
 
 ## D7 · Sessiya gen ro'yxati faol asbobga qarab filtrlanadi  ·  P2 · [YANGI]
@@ -404,7 +434,7 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 | D4 | P2 | Web — lightbox ikki qavat + 96%~100% o'lcham | CC | ✅ **Tuzatildi** — fon alohida `.va-lb-bg` (cover+blur), shell 72vw×~78vh (o'lchandi: 922×559 @1280×720) |
 | D4.1 | P3 | Web — video poster/thumb/asl 3 xil kadr | CC | ✅ Yopildi — fon endi kuchli blur, "uchinchi kadr" sifatida o'qilmaydi (poster→asl = odatiy blur-up) |
 | D5 | P3 | Web/Plagin — sessiya o'chirish kirish nuqtasi yashirin | CC | ✅ Tuzatildi 2026-08-02 (qatorda 🗑 + dangling sessiya tozalash) |
-| D6 | P2 | Web/Plagin — gen kartani pin qilish yo'q | CC | Tasdiqlandi (yo'qligi) |
+| D6 | P2 | Web/Plagin — gen kartani pin qilish yo'q | CC | ✅ Tuzatildi 2026-08-02 (`Generation.pinned` + `PATCH /gen/:id/pin` + web/plagin UI; migratsiya kerak) |
 | D7 | P2 | Web (o'lik kod) / Plagin (sessiya arxitekturasi) | CC + EGA | ⚠️ Qayta baholandi — web o'lik filtr **tuzatildi**; plaginda per-tool sessiya = EGA qarori |
 | D7.1 | P2 | Web — Upscale natija shu filtr sabab yo'qolishi mumkin | CC | ❌ Bekor — filtr o'lik edi, jonli xavf yo'q |
 | D8 | P3 | Web/Plagin — model nomi qisqargan, logotip yo'q | CC | ✅ Tuzatildi 2026-08-02 (to'liq nom + kattaroq brend nishoni) |

@@ -750,7 +750,7 @@ studioGenRouter.get(
       prisma.generation.findMany({
         where,
         include: { assets: true },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ pinned: "desc" }, { createdAt: "desc" }], // D6 — qadalganlar birinchi sahifada
         skip: (page - 1) * perPage,
         take: perPage,
       }),
@@ -787,7 +787,9 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
   const items = await prisma.generation.findMany({
     where: { userId: req.user!.userId, ...statusFilter, ...(mode ? { mode } : {}) },
     include: { assets: true },
-    orderBy: { createdAt: "desc" },
+    // D6 — qadalganlar DOIM birinchi. `take` bilan birga: qadalgan natija limit oynasidan
+    // tashqarida eskirib qolsa ham ro'yxatga tortiladi (aynan shu kutilgan xatti-harakat).
+    orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
     take: limit,
   });
   // Signed URL eskiradi — har asset uchun yangidan imzolaymiz. Params ref URL'lari ham
@@ -2174,6 +2176,34 @@ studioGenRouter.post("/gen/:jobId/cancel", async (req: Request, res: Response) =
     meta: { mode: gen.mode, modelId: gen.modelId, refunded: gen.cost },
   }).catch(() => {});
   res.json({ ok: true, cancelled: true, refunded: gen.cost, creditsLeft: prof?.aiCredits ?? null });
+});
+
+/** PATCH /gen/:jobId/pin — natijani "qadash"/yechish (D6). Faqat egasi.
+ *  Ro'yxatlar `pinned desc → createdAt desc` bo'yicha saralanadi, ya'ni qadalgan natija
+ *  eskirib ketsa ham grid'ning boshida qoladi.
+ *  Pul zonasiga TEGMAYDI: kredit, quote, refund maydonlari o'zgarmaydi. */
+studioGenRouter.patch("/gen/:jobId/pin", async (req: Request, res: Response) => {
+  const gen = await prisma.generation.findUnique({
+    where: { id: String(req.params.jobId) },
+    select: { id: true, userId: true, pinned: true, status: true },
+  });
+  if (!gen || gen.userId !== req.user!.userId) {
+    res.status(404).json({ error: "Generation not found" });
+    return;
+  }
+  // Faqat tugagan natija qadaladi — uchayotgan job hali natija emas, "birinchi o'rin" ma'nosiz.
+  if (gen.status !== "done") {
+    res.status(409).json({ error: "Only finished generations can be pinned", code: "GENERATION_NOT_DONE" });
+    return;
+  }
+  // Aniq qiymat berilsa o'shani qo'llaymiz (idempotent), aks holda teskarisiga o'tkazamiz.
+  const want = typeof req.body?.pinned === "boolean" ? req.body.pinned : !gen.pinned;
+  if (want === gen.pinned) {
+    res.json({ ok: true, pinned: gen.pinned });
+    return;
+  }
+  await prisma.generation.update({ where: { id: gen.id }, data: { pinned: want } });
+  res.json({ ok: true, pinned: want });
 });
 
 /** DELETE /gen/:jobId — gen natijani o'chiradi (R2 obyektlari ham). Faqat egasi. */

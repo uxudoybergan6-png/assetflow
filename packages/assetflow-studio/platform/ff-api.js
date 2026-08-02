@@ -246,6 +246,10 @@
     },
     genExploreSubmissions: function () { return req("/api/studio/gen/explore/submissions"); },
     genDelete: function (id) { return req("/api/studio/gen/" + encodeURIComponent(id), { method: "DELETE" }); },
+    // D6 — natijani qadash/yechish. `pinned` aniq berilgani uchun so'rov idempotent (takror xavfsiz).
+    genPin: function (id, pinned) {
+      return req("/api/studio/gen/" + encodeURIComponent(id) + "/pin", { method: "PATCH", body: { pinned: !!pinned }, idempotent: true });
+    },
     history: function (limit) { return req("/api/studio/gen/history?limit=" + (limit || 30)); },
     // P21 (29) — HAQIQIY kredit ledger (refunds ko'rinadi) + agregatlar. cursor=keyset, filter=all|spent|refunded|purchased
     creditLedger: function (cursor, filter) {

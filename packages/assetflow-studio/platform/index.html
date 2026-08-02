@@ -15681,6 +15681,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-axuse{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;background:var(--spend-grad);color:var(--onlime);border:none;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer}
   .ff .va-axaico{width:32px;height:32px;border-radius:50%;background:rgba(10,12,16,.78);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;font-size:12.5px;color:#DFE5EC;cursor:pointer;flex:none}
   .ff .va-axaico:hover{border-color:rgba(255,255,255,.3)}
+  /* D6 — qadash tugmasi yoqilgan holati (hover panelida) */
+  .ff .va-axaico.on{background:var(--spend-grad);color:var(--onlime);border-color:transparent}
+  /* D6 — qadalgan nishoni: hover panelidan mustaqil, doim ko'rinadi — "nega bu birinchi?" savoliga javob */
+  .ff .va-axpinned{position:absolute;top:8px;left:8px;z-index:3;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;background:var(--spend-grad);color:var(--onlime);box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}
+  /* D6 — audio qatoridagi qadash (kartadagi doira emas — qator ichida yassi ikonka) */
+  .ff .va-axapin{width:28px;height:28px;flex:none;border-radius:8px;display:grid;place-items:center;font-size:13px;color:var(--muted);cursor:pointer}
+  .ff .va-axapin:hover{background:var(--f2);color:var(--text)}
+  .ff .va-axapin.on{color:var(--lime)}
   /* Sparky pending tile */
   .ff .va-axres.pend{border:1px solid color-mix(in srgb,var(--lime) 26%,transparent);background:#0D1119;cursor:default;animation:ffmBreathe 2.4s ease-in-out infinite;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
   .ff .va-axpct{font:700 15px var(--mono);color:var(--lime)}
@@ -16980,11 +16988,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                             <sc-if value="{{ g.hasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="{{ g.imLoad }}" fetchpriority="{{ g.imPri }}" src="{{ g.imgSrc }}" srcset="{{ g.imgSrcset }}" sizes="(max-width:640px) 48vw, 320px" alt="{{ g.label }}"></sc-if>
                             <sc-if value="{{ g.isVidMedia }}" hint-placeholder-val="{{ false }}"><video class="va-media va-hovplay" src="{{ g.vidSrc }}" poster="{{ g.vidPoster }}" preload="{{ g.vidPre }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}"></video></sc-if>
                             <span class="va-typeicon"><i class="ph-fill ph-{{ g.tIcon }}"></i></span>
+                            <!-- D6 — qadalgan nishoni: hover panelidan TASHQARIDA, doim ko'rinadi -->
+                            <sc-if value="{{ g.pinned }}" hint-placeholder-val="{{ false }}"><span class="va-axpinned" title="Pinned"><i class="ph-fill ph-push-pin"></i></span></sc-if>
                             <sc-if value="{{ g.isVideo }}" hint-placeholder-val="{{ false }}"><span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span></sc-if>
                             <sc-if value="{{ g.showBar }}" hint-placeholder-val="{{ false }}">
                               <div class="va-axabar">
                                 <button class="va-axuse" onclick="{{ toggleUseMenu }}">Use ▾</button>
                                 <span style="flex:1"></span>
+                                <span class="{{ g.pinCls }}" title="{{ g.pinTitle }}" onclick="{{ axTilePin }}" role="button" tabindex="0"><i class="ph-fill ph-push-pin"></i></span>
                                 <span class="va-axaico" title="Download" onclick="{{ axTileDownload }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-down"></use></svg></span>
                                 <span class="va-axaico" title="Regenerate" onclick="{{ axTileRegen }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-refresh"></use></svg></span>
                               </div>
@@ -17053,6 +17064,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                           </span>
                           <div class="va-axainfo"><div class="t">{{ g.title }}</div><div class="m">{{ g.metaLine }}</div></div>
                           <div class="va-axwave"><sc-for list="{{ g.bars }}" as="b" hint-placeholder-count="9"><b style="height:{{ b.h }}"></b></sc-for></div>
+                          <!-- D6 — audio natijasi ham qadaladi (rasm/video kartalari bilan bir xil) -->
+                          <span class="{{ g.pinCls }}" title="{{ g.pinTitle }}" onclick="{{ axTilePin }}" role="button" tabindex="0"><i class="ph-fill ph-push-pin"></i></span>
                           <span class="cost">✦ {{ g.cost }}</span>
                         </div>
                       </sc-for>
@@ -17723,6 +17736,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </sc-if>
               <sc-if value="{{ lb.opFrame }}" hint-placeholder-val="{{ false }}"><div class="va-axmi" onclick="{{ lbOpFrame }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-camera"></i></span><span>Save current frame<span class="sub">PNG · joriy vaqt kadri</span></span></div></sc-if>
               <div class="va-axmdiv"></div>
+              <!-- D6 — natijani qadash: ro'yxatlarda doim birinchi chiqadi -->
+              <div class="va-axmi plain" onclick="{{ lbTogglePin }}" role="button" tabindex="0"><span class="mic"><i class="ph-fill ph-push-pin"></i></span>{{ lb.pinLabel }}</div>
               <div class="va-axmi plain" onclick="{{ lbOpRegen }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-arrow-clockwise"></i></span>Regenerate</div>
               <sc-if value="{{ lb.hasPrompt }}" hint-placeholder-val="{{ true }}"><div class="va-axmi plain" onclick="{{ lbCopyPrompt }}" role="button" tabindex="0"><span class="mic"><i class="ph ph-copy"></i></span>Copy prompt</div></sc-if>
             </div>
@@ -20422,7 +20437,42 @@ class Component extends DCLogic {
       // D12 — lightbox "References" ro'yxati va D11.d before/after uchun XOM params. Ilgari faqat
       // ar/q/dur ajratib olinardi, referens URL'lar tashlab yuborilardi → panelda ko'rsatib bo'lmasdi.
       params: it.params || null,
+      // D6 — qadalgan natija ro'yxat boshida turadi (server ham shunday saralaydi)
+      pinned: !!it.pinned,
     };
+  }
+  /** D6 — qadalganlar avval, keyin yangilari. Server AYNI tartibda qaytaradi; bu funksiya
+   *  qadash bosilgan zahoti (server javobini kutmasdan) grid'ni qayta tartiblaydi.
+   *  `slice()` — kirish massivini joyida o'zgartirmaydi (state havolasi bo'lishi mumkin). */
+  sortPinned(list) {
+    return (list || []).slice().sort((a, b) => {
+      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+      return String(b.at || '').localeCompare(String(a.at || ''));
+    });
+  }
+  /** D6 — natijani qadash/yechish. Optimistik: UI darhol o'zgaradi, server rad etsa qaytariladi. */
+  async togglePinGen(id) {
+    if (!id) return;
+    const cur = (this.state.gens || []).find(g => g.id === id)
+      || (this.state.sessGens || []).find(g => g.id === id)
+      || (this.state.lightbox && this.state.lightbox.id === id ? this.state.lightbox : null);
+    const want = !(cur && cur.pinned);
+    const apply = (val) => this.setState(s => {
+      const patch = (arr) => this.sortPinned((arr || []).map(g => g.id === id ? Object.assign({}, g, { pinned: val }) : g));
+      return {
+        gens: patch(s.gens),
+        sessGens: patch(s.sessGens),
+        lightbox: s.lightbox && s.lightbox.id === id ? Object.assign({}, s.lightbox, { pinned: val }) : s.lightbox,
+      };
+    });
+    apply(want);
+    try {
+      const r = await FFAPI.genPin(id, want);
+      if (r && typeof r.pinned === 'boolean' && r.pinned !== want) apply(r.pinned);
+    } catch (e) {
+      apply(!want); // server rad etdi — optimistik o'zgarish qaytariladi
+      this.toast((e && e.message) || 'Qadab bo\'lmadi');
+    }
   }
 
   // ── AUTH ──
@@ -21010,9 +21060,11 @@ class Component extends DCLogic {
           //   sakramasin). Oxirgi/yagona ish tugaganda esa eng yangi natijani ko'rsatamiz (bir gen UX'i saqlanadi).
           return {
           activeJobs: others,
-          gens: [m].concat(s.gens.filter(x => x.id !== m.id)),
+          // D6 — yangi natija boshiga qo'shiladi, so'ng qadalganlar tepaga ko'tariladi
+          //   (server ham AYNI tartibda qaytaradi — qayta yuklashda sakrash bo'lmaydi).
+          gens: this.sortPinned([m].concat(s.gens.filter(x => x.id !== m.id))),
           // QA-FIX #12: ko'rilayotgan sessiyaga tegishli bo'lsa sessiya gridiga ham qo'shiladi
-          sessGens: s.viewSess && s.viewSess === m.sid ? [m].concat(s.sessGens.filter(x => x.id !== m.id)) : s.sessGens,
+          sessGens: s.viewSess && s.viewSess === m.sid ? this.sortPinned([m].concat(s.sessGens.filter(x => x.id !== m.id))) : s.sessGens,
           activeGenId: (inView && others.length === 0) ? m.id : s.activeGenId,
           }; });
         drop();
@@ -22004,6 +22056,10 @@ class Component extends DCLogic {
       // P10#5 — skeleton faqat media YUKLANGUNCHA; onload'da _mediaLoaded'ga qo'shiladi va klass olib tashlanadi
       //         (reconciler ham keyingi render'da qayta qo'ymaydi, chunki bu yerdan '' qaytadi).
       resCls: 'va-axres' + ((md.mcls && !loadedSet.has(g.id)) ? ' va-skel' : '') + (on ? ' sel' : ''), showBar: !!on, menuOpen: !!on && this.state.useMenuOpen,
+      // D6 — qadalgan karta nishoni HOVER'SIZ ham ko'rinadi (aks holda "nega bu birinchi?" savoli tug'ilardi)
+      pinned: !!g.pinned,
+      pinCls: 'va-axaico' + (g.pinned ? ' on' : ''),
+      pinTitle: g.pinned ? 'Unpin' : 'Pin to top',
     }; });
     const axAudGens = audGensRaw.map(g => { const on = activeGenRaw && g.id === activeGenRaw.id; const playing = this.state.audioPlayingId === g.id; return {
       id: g.id, gtype: g.type || 'audio', title: g.label || 'Audio', cost: g.cost || 0,
@@ -22011,6 +22067,8 @@ class Component extends DCLogic {
       // QA-FIX #3 — real audio playback holati (play/pause tugma + waveform animatsiya)
       playing, notPlaying: !playing,
       arowCls: 'va-axarow' + (on ? ' on' : '') + (playing ? ' playing' : ''),
+      // D6 — qadash (rasm/video kartasi bilan AYNI handler)
+      pinCls: 'va-axapin' + (g.pinned ? ' on' : ''), pinTitle: g.pinned ? 'Unpin' : 'Pin to top',
       bars: Array.from({ length: 28 }, (_, i) => ({ h: (16 + Math.round(Math.abs(Math.sin(this.hueOf(g.id) + i * 0.83)) * 76)) + '%' })),
     }; });
     const axShowHero = wsGens.length === 0 && !pendInView && !this.state.sessGensLoading;
@@ -22594,6 +22652,8 @@ class Component extends DCLogic {
       opEdit: lbEditOk, opI2v: lbI2vOk, opFrame: lbIsVid,
       opUpImg: lbUpImgOk, opUpVid: lbUpVidOk,
       upImgLabel: axImgUpscaleOp ? axImgUpscaleOp.label : 'Upscale image',
+      // D6 — qadash holati (Details tab'ida ham chip sifatida ko'rinadi)
+      pinLabel: lbRaw.pinned ? 'Unpin' : 'Pin to top',
     } : null;
     if (lb) {
       // D12 — chiplar lb qurilgandan KEYIN to'ldiriladi (ayni massiv havolasi, render'dan oldin).
@@ -23493,6 +23553,8 @@ class Component extends DCLogic {
           .catch(() => { try { const ta = document.createElement('textarea'); ta.value = p; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); this.toast('Prompt copied'); } catch (x) { this.toast('Copy failed'); } }); },
       axTileDownload: (e) => { e.stopPropagation(); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axTileRegen: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); const id = el && el.dataset.id; const g = id ? wsGens.find(x => x.id === id) : activeGenRaw; if (g) this.restoreGenToComposer(g.id); }, // P18: prefill, don't generate
+      // D6 — kartani qadash/yechish (rasm/video plitkasi + audio qatori uchun AYNI handler)
+      axTilePin: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); const id = (el && el.dataset.id) || (activeGenRaw && activeGenRaw.id); if (id) this.togglePinGen(id); },
       // SC_41 PART B: onSuggest handler O'CHIRILDI — hero suggestion chips deleted.
       openModelModal: (e) => { if (e) e.stopPropagation(); this.setState({ modelModalOpen: true, chipPop: null, modelQ: '', modelFilter: 'All' }); },
       closeModelModal: () => this.setState({ modelModalOpen: false }),
@@ -23697,6 +23759,8 @@ class Component extends DCLogic {
       lbOpUpVid4: (e) => { if (e) e.stopPropagation(); if (!lbUpVidOk || !lbRaw) return; this.setState({ lightbox: null, lbCmp: false }); this.runTopazOp(axVidUpscaleOp, lbRaw.id, 4); },
       lbOpRegen: (e) => { if (e) e.stopPropagation(); if (!lbRaw) return; this.setState({ lightbox: null, lbCmp: false }); this.restoreGenToComposer(lbRaw.id); },
       lbOpFrame: (e) => { if (e) e.stopPropagation(); if (!lbIsVid || !lbRaw) return; this.extractVideoFrame(lbRaw); },
+      // D6 — lightbox yopilmaydi: qadash natijani ko'rib turib qilinadigan amal
+      lbTogglePin: (e) => { if (e) e.stopPropagation(); if (lbRaw) this.togglePinGen(lbRaw.id); },
       // QA-FIX #3 — audio row play/pause (row click lightbox'ni ochishda davom etadi)
       toggleAudioRow: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); if (el) this.playAudio(el.getAttribute('data-id')); },
       deleteGen: () => { const id = this.state.lightbox && this.state.lightbox.id; if (id) this.deleteGenArmed(id); }, // §C — armed

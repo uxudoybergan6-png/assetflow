@@ -2509,6 +2509,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .gcard .gth-aud .gwave{flex:1;min-width:0;display:flex;align-items:center;gap:2px;height:24px}
 .axroot .gcard .gth-aud .gwave i{flex:1;border-radius:2px;background:var(--mut);opacity:.55;min-height:3px}
 .axroot .gcard .gbadge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;display:flex;align-items:center;gap:3px}
+/* D6 — qadalgan natija nishoni (gbadge pastda, gcb o'ngda — chap yuqori bo'sh) */
+.axroot .gcard .gpin{position:absolute;top:5px;left:5px;z-index:3;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--acc);color:var(--acc-ink);box-shadow:0 2px 7px rgba(0,0,0,.45);pointer-events:none}
 .axroot .gcard .gplay{position:absolute;inset:0;display:grid;place-items:center;color:#fff}
 .axroot .gcard .gcb{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:7px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:2;color:transparent}
 .axroot .gcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
@@ -2803,6 +2805,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 #afLightbox .lbimp:hover{background:var(--accent-hi)}
 #afLightbox .lbimp svg{width:14px;height:14px}
 #afLightbox .lbico{width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex:none}
+/* D6 — qadalgan holat (pin yoqilgan) */
+#afLightbox .lbico.on{background:var(--acc);border-color:transparent;color:var(--acc-ink)}
 #afLightbox .lbico:hover{border-color:rgba(255,255,255,.2)}
 #afLightbox .lbico svg{width:15px;height:15px}
 #afLightbox .lbcap{font-family:var(--font-mono);font-size:8.5px;color:var(--muted-2);text-align:center;margin-top:8px;flex:none}
@@ -12173,6 +12177,16 @@ async function bootPlugin(){
       if(ctx.refAllowed&&ctx.refAllowed(it)){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>','Reference',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); })); cap.push('Reference'); }
       // BATCH4 #1/#2 — lightbox'da Upscale (rasm: Imagen · video: Topaz)
       // SC_17: lightbox Upscale amali olib tashlandi
+      // D6 — qadash: lightbox YOPILMAYDI (natijani ko'rib turib qilinadigan amal)
+      if(ctx.onPin&&it.id){
+        var _pinEl=lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>',(it.pinned?'Unpin':'Pin to top'),function(){
+          ctx.onPin(it);
+          // holat darhol ko'rinadi: `it` optimistik yangilanadi (galTogglePin), shu yerda aks etadi
+          setTimeout(function(){ _pinEl.title=(it.pinned?'Unpin':'Pin to top'); _pinEl.classList.toggle('on',!!it.pinned); },0);
+        });
+        _pinEl.classList.toggle('on',!!it.pinned);
+        acts.appendChild(_pinEl); cap.push('Pin');
+      }
       if(ctx.onRestore&&it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>','Regenerate',function(){ closeLb(); ctx.onRestore(it); })); cap.push('Regenerate'); }
       if(it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(){ window.afCopyText(it.prompt); })); cap.push('Copy prompt'); } // P2/P7: afCopyText o'zi toast qiladi
       if(!ctx.isCEP){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>','Download',function(){ ctx.onDownload&&ctx.onDownload(it); })); cap.push('Download'); }
@@ -12274,6 +12288,8 @@ async function bootPlugin(){
             items.push({ic:_tzIco,label:'Upscale image',fn:function(){ window.afRunTopazOp(_tzOp,it,null); }});
           }
         }
+        // D6 — qadash (ctx bergan ro'yxatlarda)
+        if(ctx.onPin&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>',label:(it.pinned?'Unpin':'Pin to top'),fn:function(){ ctx.onPin(it); }});
         if(ctx.onRestore&&it.prompt)items.push({ic:IC.rst,label:'Regenerate',fn:function(){ ctx.onRestore(it); }});
         if(it.prompt)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
         if(!ctx.isCEP)items.push({ic:IC.dl,label:'Download',fn:function(){ ctx.onDownload&&ctx.onDownload(it); }});
@@ -12818,8 +12834,19 @@ window.afGallery=(function(){
     play:'<svg width="26" height="26" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>',
     img:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
     vid:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M22 8l-6 4 6 4z"/></svg>',
-    aud:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>'
+    aud:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>',
+    // D6 — qadash (pin)
+    pin:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>',
+    pinF:'<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 22a.9.9 0 0 1-.9-.9V17h1.8v4.1a.9.9 0 0 1-.9.9z"/><path d="M15 3H9a1 1 0 0 0-1 1.16L9 9.4 6.4 12a1.4 1.4 0 0 0-.4 1v1.6a.9.9 0 0 0 .9.9h10.2a.9.9 0 0 0 .9-.9V13a1.4 1.4 0 0 0-.4-1L15 9.4l1-5.24A1 1 0 0 0 15 3z"/></svg>'
   };
+  /** D6 — qadalganlar avval, keyin yangilari. Server AYNI tartibda qaytaradi (pinned desc,
+   *  createdAt desc); bu funksiya pin bosilgan zahoti javobni kutmasdan qayta tartiblaydi. */
+  function sortPinned(list){
+    return (list||[]).slice().sort(function(a,b){
+      if(!!a.pinned!==!!b.pinned)return a.pinned?-1:1;
+      return String(b.createdAt||'').localeCompare(String(a.createdAt||''));
+    });
+  }
   function isCEP(){ return typeof window.__adobe_cep__!=='undefined'; }
   function esc(s){ return String(s==null?'':s).replace(/[<>&"]/g,function(c){return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];}); }
   function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
@@ -12832,7 +12859,8 @@ window.afGallery=(function(){
         display:a.displayUrl||null, preview:a.previewUrl||null, width:a.width||null, height:a.height||null, // P9
         title:((g.prompt||'').trim()||'Result'), sub:sub, createdAt:g.createdAt,
         prompt:(g.prompt||'').trim(), params:p,
-        cost:(typeof g.cost==='number'?g.cost:null), size:(a&&a.sizeBytes)||0 };
+        cost:(typeof g.cost==='number'?g.cost:null), size:(a&&a.sizeBytes)||0,
+        pinned:!!g.pinned }; // D6 — qadalgan natija ro'yxat boshida (server ham shunday saralaydi)
     }).filter(function(x){ return x.id && x.url; });
   }
   // b8: footer hajm formati — "2.1 GB" / "340 MB"
@@ -12847,7 +12875,7 @@ window.afGallery=(function(){
     if(LOADING) return LOADING;
     LOADING=studioGet('/api/studio/gen/history?limit=60').then(function(d){
       try{ console.log('[gal] /gen/history →',((d&&d.items)||[]).length,'gen'); }catch(_){}
-      CACHE=normalize((d&&d.items)||[]); LOADED=true; LOADED_AT=Date.now(); LOADING=null; return CACHE;
+      CACHE=sortPinned(normalize((d&&d.items)||[])); LOADED=true; LOADED_AT=Date.now(); LOADING=null; return CACHE;
     }).catch(function(e){ LOADING=null; throw e; });
     return LOADING;
   }
@@ -12940,7 +12968,8 @@ window.afGallery=(function(){
       isCEP:isCEP(),
       list:function(){ return visible(); },
       onImport:function(x){ importMedia(x); },
-      onDownload:function(x){ download(x); }
+      onDownload:function(x){ download(x); },
+      onPin:function(x){ galTogglePin(x); } // D6
     }; }
 
     function draw(){
@@ -12973,12 +13002,12 @@ window.afGallery=(function(){
           // SC_16: audio — maqsadli ixcham karta (waveform + tur chipi + play)
           var wseed=0; var wsid=String(it.id||''); for(var wsi=0;wsi<wsid.length;wsi++)wseed=(wseed*31+wsid.charCodeAt(wsi))%997;
           var bars=''; for(var wb=0;wb<24;wb++)bars+='<i style="height:'+(20+((wseed+wb*37)%67))+'%"></i>';
-          th='<div class="gth gth-aud"><span class="gk">'+(it.cat==='sfx'?'SFX':'VOICE')+'</span><button type="button" class="gaplay" title="Play / pause"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg></button><span class="gwave">'+bars+'</span><div class="gcb">'+IC.check+'</div></div>';
+          th='<div class="gth gth-aud">'+(it.pinned?('<span class="gpin" title="Pinned">'+IC.pinF+'</span>'):'')+'<span class="gk">'+(it.cat==='sfx'?'SFX':'VOICE')+'</span><button type="button" class="gaplay" title="Play / pause"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg></button><span class="gwave">'+bars+'</span><div class="gcb">'+IC.check+'</div></div>';
         }else{
           var gthStyle='';
           if(!vNoPoster&&it.thumb)gthStyle+='background-image:url(\''+it.thumb+'\');';
           if(arCss)gthStyle+='aspect-ratio:'+arCss+';';
-          th='<div class="gth"'+(gthStyle?(' style="'+gthStyle+'"'):'')+'><div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
+          th='<div class="gth"'+(gthStyle?(' style="'+gthStyle+'"'):'')+'>'+(it.pinned?('<span class="gpin" title="Pinned">'+IC.pinF+'</span>'):'')+'<div class="gbadge">'+badge+'</div>'+(it.cat==='video'?('<div class="gplay">'+IC.play+'</div>'):'')+'<div class="gcb">'+IC.check+'</div></div>';
         }
         card.innerHTML=th;
         if(vNoPoster&&typeof window.afVideoThumb==='function'){
@@ -13023,6 +13052,8 @@ window.afGallery=(function(){
               items.push({ic:_tzI,label:'Upscale image',fn:function(){ window.afRunTopazOp(_tzOp2,it,null); }});
             }
           }
+          // D6 — natijani qadash: ro'yxatlarda DOIM birinchi chiqadi (web bilan AYNI endpoint)
+          if(it.id)items.push({ic:IC.pin,label:(it.pinned?'Unpin':'Pin to top'),fn:function(){ galTogglePin(it); }});
           if(it.prompt&&(it.cat==='image'||it.cat==='video'))items.push({ic:IC.rst,label:'Regenerate',fn:function(){ galRestore(it); }});
           if(it.prompt)items.push({ic:IC.copy,label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
           if(!isCEP())items.push({ic:IC.dl,label:'Download',fn:function(){ download(it); }});
@@ -13058,6 +13089,25 @@ window.afGallery=(function(){
             if(done+fail===total){ st.select=(Object.keys(st.sel).length>0); selBtn.classList.toggle('on',st.select); draw(); toast(done+' deleted'+(fail?(' · '+fail+' failed'):''), fail?'warning':'success'); }
           });
         });
+      });
+    }
+
+    // D6 — natijani qadash/yechish. Optimistik: UI darhol qayta tartiblanadi, server rad etsa qaytariladi.
+    // Web bilan AYNI endpoint (PATCH /gen/:id/pin) — ikkala tomon bir xil tartibni ko'radi.
+    function galTogglePin(it){
+      if(!it||!it.id){ toast('This result is still being saved','info'); return; }
+      var want=!it.pinned;
+      var apply=function(val){
+        it.pinned=val;
+        if(CACHE){ CACHE.forEach(function(x){ if(x.id===it.id)x.pinned=val; }); CACHE=sortPinned(CACHE); }
+        draw();
+      };
+      apply(want);
+      studioPatch('/api/studio/gen/'+encodeURIComponent(it.id)+'/pin',{pinned:want}).then(function(r){
+        if(r&&typeof r.pinned==='boolean'&&r.pinned!==want)apply(r.pinned);
+      }).catch(function(e){
+        apply(!want); // server rad etdi — optimistik o'zgarish qaytariladi
+        toast((e&&e.message)||'Pin failed','error');
       });
     }
 
