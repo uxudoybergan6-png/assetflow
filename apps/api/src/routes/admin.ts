@@ -985,24 +985,37 @@ adminRouter.post("/pricing/preview", async (req, res) => {
     listPricingView(),
   ]);
   const currentById = new Map(current.map((m) => [m.modelId, m]));
+  const stableMap = (value: Record<string, number> | null | undefined) =>
+    value
+      ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+      : null;
   res.json({
     ...preview,
-    models: preview.models.map((m) => ({
-      ...m,
-      current: currentById.get(m.modelId)?.price ?? null,
-      changed:
-        m.patch != null &&
-        JSON.stringify({
-          cost: m.patch.cost,
-          qualityCost: m.patch.qualityCost ?? null,
-          videoPerSec: m.patch.videoPerSec ?? null,
-        }) !==
-          JSON.stringify({
-            cost: currentById.get(m.modelId)?.price.cost,
-            qualityCost: currentById.get(m.modelId)?.price.qualityCost ?? null,
-            videoPerSec: currentById.get(m.modelId)?.price.videoPerSec ?? null,
-          }),
-    })),
+    models: preview.models.map((m) => {
+      const currentPrice = currentById.get(m.modelId)?.price ?? null;
+      const proposedMap =
+        m.mode === "image"
+          ? stableMap(m.patch?.qualityCost)
+          : m.mode === "video" && m.providerUnit !== "generation"
+            ? stableMap(m.patch?.videoPerSec)
+            : null;
+      const currentMap =
+        m.mode === "image"
+          ? stableMap(currentPrice?.qualityCost)
+          : m.mode === "video" && m.providerUnit !== "generation"
+            ? stableMap(currentPrice?.videoPerSec)
+            : null;
+      return {
+        ...m,
+        current: currentPrice,
+        // JSONB object key order is not meaningful. Compare sorted tier maps and ignore stale
+        // videoPerSec metadata on per-generation models so preview reports real changes only.
+        changed:
+          m.patch != null &&
+          (m.patch.cost !== currentPrice?.cost ||
+            JSON.stringify(proposedMap) !== JSON.stringify(currentMap)),
+      };
+    }),
   });
 });
 

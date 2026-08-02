@@ -8,7 +8,7 @@
 - Read-only preview + faqat tanlangan modelni apply qilish oqimi qo'shildi.
 - Manual narx provider cost'dan past bo'lsa API 409 bilan bloklaydi.
 - Studio UI: Cost coverage, Target gross margin, Measure, Review & apply, Pricing policy.
-- Lokal DB migration muvaffaqiyatli qo'llandi; production migration/deploy qilinmadi.
-- Lokal Admin browser QA: jadval, preview va gross-margin policy ishladi; console xatosi yo'q.
-- Test: Prisma validate, monorepo/API build, pricing normalization va JS syntax — PASS.
-- Real BytePlus probe pul sarflashi sabab avtomatik bajarilmadi.
+- Production Cloud SQL migration + Cloud Run API + Cloudflare Studio deploy muvaffaqiyatli.
+- Seedream Lite/4.5 4 tadan real probe bilan verified: `$0.0705` / `$0.0669` per 2K image.
+- 13 review qilingan model 2× target bo'yicha apply qilindi; 24/24 healthy, 0 unknown/review.
+- Lokal+production browser QA va CI/build/pricing testlari PASS; console xatosi yo'q.
