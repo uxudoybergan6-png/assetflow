@@ -3169,13 +3169,17 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axig .sheeth b{font-size:14.5px;font-weight:700}
 .axig .sheeth .shnote{margin-left:auto;font-family:var(--font-mono);font-size:9px;color:var(--muted-2)}
 .axig .sheetsub{font-size:10.5px;color:var(--muted);padding:0 4px 12px}
-.axig .mrowb{height:52px;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:12px;cursor:pointer}
+/* D8 — model nomi KESILMASIN: qat'iy height o'rniga min-height (uzun nom 2 qatorga o'raladi).
+   `.axig` skopi ATAYLAB: video paneli ham `.axig .axvg` — ikkalasiga birdan tegadi. */
+.axig .mrowb{min-height:52px;display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:12px;cursor:pointer}
 .axig .mrowb:hover{background:rgba(255,255,255,.04)}
 .axig .mrowb.cur{background:rgba(255,255,255,.08)}
 .axig .mrowb .mdot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;visibility:hidden}
 .axig .mrowb.cur .mdot{visibility:visible}
 .axig .mrowb .mtx{flex:1;min-width:0}
-.axig .mrowb .mtx b{display:block;font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* D8 — nomdan ellipsis OLIB TASHLANDI: "Seedance 1.0 Pro…" kabi kesilgan nom bilan modelni
+   ajratib bo'lmasdi. Endi o'raladi (qator balandligi min-height bilan o'sadi). */
+.axig .mrowb .mtx b{display:block;font-weight:600;font-size:12.5px;color:var(--text);line-height:1.3}
 .axig .mrowb .mtx small{display:block;font-size:10px;color:var(--muted-2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axig .mrowb .mprice{font-family:var(--font-mono);font-size:11px;color:var(--accent);white-space:nowrap}
 /* P12 — pin tugmasi: .mrowb ATAYLAB skoplanmagan (.axig VA .axvg ikkalasi ham shu klassni ishlatadi) */
@@ -3184,7 +3188,8 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .mrowb .mpin.on{color:var(--accent)}
 /* Section F (P13) — brand nishoni: .mrowb bilan bir xil sabab bilan skoplanmagan */
 .mrowb .mtx b .mbrand{display:inline-flex;vertical-align:middle;margin-left:6px}
-.mrowb .mtx b .mbrand svg{width:14px;height:14px;display:block}
+/* D8 — 14px'da nishon tanib bo'lmasdi (BFL/11L matnli glyphlar o'qilmasdi) → 19px */
+.mrowb .mtx b .mbrand svg{width:19px;height:19px;display:block}
 .axig .minfobox{display:flex;align-items:center;gap:8px;margin-top:10px;padding:9px 12px;border-radius:10px;background:rgba(124,196,255,.06);border:1px solid var(--select-dim);font-size:10px;color:#9FC9EC;line-height:1.5;text-align:left}
 .axig .minfobox svg{flex:none;color:var(--select)}
 .axig .opt{min-height:58px;display:flex;align-items:center;gap:12px;padding:0 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);margin-bottom:7px;cursor:pointer}

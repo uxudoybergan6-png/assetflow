@@ -217,6 +217,30 @@ Skrinshotda ham xuddi shu ko'rinadi: 5 ustun chap tomonda, o'ng tomonda katta qo
 **Nima buziladi:** kosmetik/qulaylik — model nomini adashtirish xavfi (masalan ikki o'xshash nomli model orasida). Pul/ma'lumot buzilmaydi.
 **Kim:** CC (dizayn+port ishi — Phase B rejasining davomi)
 
+> ### ✅ Tuzatildi (2026-08-02)
+>
+> **Web** (`packages/assetflow-studio/platform/index.html`):
+> - Popover `.ffa-pop.mdl` 264px → **300px**; `.va-axpm .nm` dagi `white-space:nowrap` olib tashlandi
+>   (nom endi o'raladi, kesilmaydi); tavsif `.ds` bir qatorlik ellipsis o'rniga **2 qator** clamp.
+> - Brend nishoni `.va-axbrand` 17px/7.5px → **21px/9px** (avval "11L", "BF" gliflari o'qilmasdi).
+> - Model **modalida** 38px qator ikonkasi endi rejim ikonkasi emas, **brend plitasi** (`.va-axbig`) —
+>   brendsiz modelda eski rejim ikonkasi qoladi (`brandBadge()` → `noBrand`/`brandBigCls`).
+>   Ranglar ikkilanmasligi uchun `.va-axbig-*` mavjud `.va-axbrand-*` selektorlariga qo'shildi.
+>
+> **Plagin** (`plugins/after-effects-cep/AssetFlow_Plugin.html`):
+> - `.axig .mrowb` `height:52px` → **`min-height:52px` + `padding:7px 12px`**; `.mtx b` dan
+>   `nowrap/overflow/ellipsis` olib tashlandi — uzun nom 2 qatorga o'raladi.
+>   `.axig` skopi ataylab saqlandi: video paneli ham `.axig .axvg`, ikkalasiga birdan tegadi.
+> - `.mbrand svg` 14px → **19px**.
+>
+> **Ataylab qilinmagan:** rasmiy brend logotiplari (OpenAI/Google/ByteDance…) qo'yilmadi — brend
+> qo'llanmalari egasi tasdig'ini talab qiladi (D10 bilan bir sabab). Joriy glif+rang nishoni
+> tanib olish uchun yetarli; keyinchalik ayni `<span>`/`<svg>` ichiga rasmiy ikonka tushirilishi mumkin.
+>
+> **Tegilmagan:** composer chipidagi `.va-setgroup .va-set>b` ellipsis (SC_55) — u ATAYLAB, chip
+> dokda torayganda yorliq chip **ichida** qolishi uchun; olib tashlansa border'dan chiqib ketadi.
+> `.va-set`ga `overflow:hidden` ham qo'yilmadi — popover uning absolyut bolasi, kesilib qolardi.
+
 ---
 
 ## D9 · Stock Catalog audio karta player + turga mos "Related"  ·  P3 · ⚠️ qisman [YANGI]
@@ -339,7 +363,7 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 | D6 | P2 | Web/Plagin — gen kartani pin qilish yo'q | CC | Tasdiqlandi (yo'qligi) |
 | D7 | P2 | Web (o'lik kod) / Plagin (sessiya arxitekturasi) | CC + EGA | ⚠️ Qayta baholandi — web o'lik filtr **tuzatildi**; plaginda per-tool sessiya = EGA qarori |
 | D7.1 | P2 | Web — Upscale natija shu filtr sabab yo'qolishi mumkin | CC | ❌ Bekor — filtr o'lik edi, jonli xavf yo'q |
-| D8 | P3 | Web/Plagin — model nomi qisqargan, logotip yo'q | CC | Qisman tasdiqlandi |
+| D8 | P3 | Web/Plagin — model nomi qisqargan, logotip yo'q | CC | ✅ Tuzatildi 2026-08-02 (to'liq nom + kattaroq brend nishoni) |
 | D9 | P3 | Web — audio karta player yo'q; related sarlavha noto'g'ri | CC | ✅ **Tuzatildi** — `waveBg()` to'lqin fon (muqovasiz Music/SFX) + `relatedTitle` turga mos. Grid'da inline `<audio>` ATAYLAB yo'q (30+ karta = 30+ preload) — pleer detal/lightbox'da |
 | D10 | P3 | Web+Plagin — dastur belgisi: rang+qisqartma | CC | ✅ Tuzatildi 2026-08-02 (plita + to'liq nom; rasmiy logotip shart emas) |
 | D11 | P0 | API — Upscale (Topaz) umuman ishlamaydi | EGA | ✅ Hal qilindi 2026-08-02 (kalit prod'ga chiqarildi, `/gen/ops` 5001+5002 qaytaradi) |
