@@ -131,6 +131,22 @@ hozir **0 element** qaytaradi. Bu FAZA 2 emas, kontent/moderatsiya vazifasi.
     (b) EG papkasiga o'rnatib doimiy qilish. **Ikkalasi ham FAZA 3 da beriladi.**
 11. **Dev tsikl:** har o'zgarishdan keyin `install-uxp-dev.mjs` + **Premiere to'liq restart**.
 
+## 9. FAZA 1 da qo'shimcha o'lchangan tuzoqlar (Premiere 26.2.2, jonli panel)
+
+| Band | Natija | Tafsilot |
+|------|--------|---------|
+| `<button>` ranglari | **ISHLAMAYDI** | UXP `<button>` ni native widget qilib chizadi: `border`/`border-radius` qo'llanadi, lekin `background-color` va `color` **e'tiborsiz** — primary tugma lime emas, kulrang chiqadi. → **barcha tugmalar `<div role="button" tabindex="0">`**, Enter/Space qo'lda ulanadi (`FFUI.button`) |
+| Bo'sh absolyut overlay | **TUZOQ** | `position:absolute; bottom:0; padding:12px` bo'lgan **bo'sh** toast host footer'ni yopib, bosishlarni yutgan. → overlay bo'sh holatda **0px** bo'lishi shart (padding faqat gorizontal), va u footer **ustida** joylashsin (`bottom:34px`) |
+| Ildiz balandligi | **TUZOQ** | `html, body { height:100% }` bo'lmasa `.ff-root{height:100%}` zanjiri uzilib, footer panel o'rtasida osilib qoladi |
+| `shell.openExternal` | **ISHLADI** | Har URL uchun UXP **"Request For Permission"** dialogi chiqadi (Allow / Block / Remember my choice). Foydalanuvchi rad etsa `openExternal` xatosi → device-code ekrani havolani qo'lda ko'rsatadi (`browser_failed`) |
+| Tema qiymatlari | **ISHLADI** | Premiere 26.2 da faqat 3 ta: `darkest` · `dark` · `light`. `onUpdated` jonli ishlaydi (bitta o'zgarishda 2 marta chaqirilishi mumkin — idempotent qiling) |
+| Diagnostika | **QAROR** | UDT'siz DevTools yo'q → FFLog halqa buferi panel ichidagi **"Loglar"** ekranida ko'rsatiladi (token/parol yozilmaydi) |
+
+**FAZA 1 jonli tasdiqlangan oqim:** panel ochilishi → tema (darkest ⇄ light) → parol bilan kirish
+(`user@assetflow.uz`, Enter bilan yuborish) → hisob ekrani (tarif nishoni, loyiha `FF-UXP-Spike.prproj`,
+ketma-ketlik `FF Spike Seq`, 3 video trek, `Premiere Pro 26.2.2`) → Chiqish → Google device-code
+(kod ko'rsatildi, brauzer ochildi, polling ketdi, Bekor qilish ishladi). Token `secureStorage`da.
+
 ## Ochiq (texnik bo'lmagan) risk
 
 `GET /api/plugin/catalog?app=pr` production'da **0 element**. Plagin texnik jihatdan tayyor bo'lsa ham,

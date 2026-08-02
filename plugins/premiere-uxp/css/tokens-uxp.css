@@ -1,0 +1,69 @@
+/*
+ * FrameFlow — UXP dizayn tokenlari (noir + acid-lime).
+ *
+ * MUHIM — FAZA 0 spike natijasi (docs/PREMIERE-UXP-SPIKE-NATIJA.md §3):
+ *   display:grid ISHLAMAYDI · gap TA'SIR QILMAYDI · offsetLeft/offsetTop = 0.
+ * Shu sabab bu yerda faqat flexbox + margin ishlatiladi. Komponent ichida
+ * rang/radius/o'lcham hardcode qilinmaydi — faqat shu o'zgaruvchilar.
+ */
+:root {
+  /* Noir yuzalar */
+  --ff-bg: #0d0f0c;
+  --ff-surface: #14170f;
+  --ff-surface-2: #1b1f16;
+  --ff-surface-3: #242a1e;
+  --ff-border: #2c3325;
+  --ff-border-strong: #3d4633;
+
+  /* Brend */
+  --ff-lime: #c8f24c;
+  --ff-lime-dim: #a3c93c;
+  --ff-ink: #11130f;
+
+  /* Matn */
+  --ff-text: #e8ece2;
+  --ff-text-muted: #98a08c;
+  --ff-text-faint: #6b7360;
+
+  /* Holat */
+  --ff-danger: #f2705c;
+  --ff-warn: #f2c14c;
+  --ff-ok: #7fd18a;
+
+  /* O'lchov */
+  --ff-r-sm: 4px;
+  --ff-r: 8px;
+  --ff-r-lg: 12px;
+  --ff-sp-1: 4px;
+  --ff-sp-2: 8px;
+  --ff-sp-3: 12px;
+  --ff-sp-4: 16px;
+  --ff-sp-5: 24px;
+
+  /* Tipografiya — @font-face spike'da ishladi, lekin reliz og'irligini oshirmaslik
+     uchun tizim stack ishlatamiz (system prompt §4.2). */
+  --ff-font: -apple-system, "Segoe UI", system-ui, sans-serif;
+  --ff-fs-xs: 10px;
+  --ff-fs-sm: 11px;
+  --ff-fs: 12px;
+  --ff-fs-md: 13px;
+  --ff-fs-lg: 16px;
+  --ff-fs-xl: 20px;
+}
+
+/* Light/Lightest tema — halol o'qiladigan fallback (brend rangi saqlanadi,
+   kontrast almashtiriladi). Premiere tema klassini <body>ga main.js qo'yadi. */
+body.ff-theme-light {
+  --ff-bg: #f2f3ef;
+  --ff-surface: #ffffff;
+  --ff-surface-2: #eceee7;
+  --ff-surface-3: #e0e3d9;
+  --ff-border: #d2d6ca;
+  --ff-border-strong: #b7bdab;
+  --ff-lime: #5f7d13;
+  --ff-lime-dim: #79971f;
+  --ff-ink: #ffffff;
+  --ff-text: #1a1d16;
+  --ff-text-muted: #5a6150;
+  --ff-text-faint: #858c79;
+}

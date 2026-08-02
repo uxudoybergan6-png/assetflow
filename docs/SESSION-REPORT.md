@@ -1,14 +1,16 @@
-# Session report — 2026-08-02 (Admin Pricing management)
-- Pricing engine va admin jadvali birlik xatosi bo'yicha auditlandi.
-- BytePlus video measured total endi duration'ga bo'linib `$/second` sifatida saqlanadi.
-- ProviderSpend'ga normalized unit/tier/quantity/meta maydonlari va migration qo'shildi.
-- Eski total-only o'lchovlar ataylab auto-pricing'da ishlatilmaydi.
-- Google image/Veo hamda ElevenLabs SFX provider jadvallari yangilandi.
-- Admin GET: unit cost, default total, gross margin, source/date, confidence va health qaytaradi.
-- Read-only preview + faqat tanlangan modelni apply qilish oqimi qo'shildi.
-- Manual narx provider cost'dan past bo'lsa API 409 bilan bloklaydi.
-- Studio UI: Cost coverage, Target gross margin, Measure, Review & apply, Pricing policy.
-- Production Cloud SQL migration + Cloud Run API + Cloudflare Studio deploy muvaffaqiyatli.
-- Seedream Lite/4.5 4 tadan real probe bilan verified: `$0.0705` / `$0.0669` per 2K image.
-- 13 review qilingan model 2× target bo'yicha apply qilindi; 24/24 healthy, 0 unknown/review.
-- Lokal+production browser QA va CI/build/pricing testlari PASS; console xatosi yo'q.
+# Session report — 2026-08-02 (Premiere Pro UXP plagin: FAZA 0 + FAZA 1)
+- FAZA 0 yopildi: 43/43 probe OK → `docs/PREMIERE-UXP-SPIKE-NATIJA.md`; spike plagini o'chirildi.
+- FAZA 1 yozildi: `plugins/premiere-uxp/` (manifest v5, qobiq+tema, secureStorage token, API klient, host adapter).
+- Ekranlar: yuklanish · login (parol + Google device-code) · hisob · diagnostika ("Loglar").
+- Premiere 26.2.2 ichida JONLI tasdiqlandi: tema darkest⇄light jonli almashadi.
+- Parol bilan kirish ishladi (`user@assetflow.uz`, Enter bilan yuborish) → hisob ekrani.
+- Hisob ekrani: tarif nishoni, loyiha `FF-UXP-Spike.prproj`, `FF Spike Seq`, 3 video trek, `Premiere Pro 26.2.2`.
+- Google device-code: kod ko'rsatildi, brauzer ochildi, polling ketdi, "Bekor qilish" ishladi.
+- TOPILDI: UXP `<button>` `background-color`/`color` ni e'tiborsiz qoldiradi → `div role="button"`.
+- TOPILDI: bo'sh absolyut toast overlay footer bosishlarini yutgan → bo'sh holatda 0px, `bottom:34px`.
+- TOPILDI: `html, body { height:100% }` bo'lmasa footer panel o'rtasida osiladi.
+- TOPILDI: `shell.openExternal` har URL uchun UXP "Request For Permission" dialogini chiqaradi.
+- Yangi tuzoqlar hujjatga yozildi (SPIKE-NATIJA §9); dev tsikl = install skript + to'liq restart.
+- KUTILMOQDA (launch to'sig'i): `GET /api/plugin/catalog?app=pr` production'da 0 element — kontent vazifasi.
+- KUTILMOQDA: `/api/plugin/version?app=pr` → `latest:null`, `installerStatus:"unsupported_platform"` (backend #10).
+- Keyingi: FAZA 2 Browse (`?app=pr`) → FAZA 3 import → backend `pr` kanali → `.ccx` paketlash.

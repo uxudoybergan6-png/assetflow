@@ -1,0 +1,298 @@
+/*
+ * FrameFlow panel — UXP CSS subset'iga qat'iy mos.
+ * TAQIQ (spike §3 + system prompt §4.2): display:grid, gap, transform, transition,
+ * animation, box-shadow, z-index, object-fit, aspect-ratio, position:fixed/sticky,
+ * ::before/::after. Bularning o'rniga flexbox + margin + border ishlatiladi.
+ */
+
+/* UXP root'da balandlik meros bo'lmaydi — zanjir uzilsa .ff-root cho'zilmaydi
+   va footer panel o'rtasida osilib qoladi. */
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--ff-bg);
+  color: var(--ff-text);
+  font-family: var(--ff-font);
+  font-size: var(--ff-fs);
+}
+
+.ff-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.ff-boot {
+  padding: var(--ff-sp-5);
+  color: var(--ff-text-muted);
+  text-align: center;
+}
+
+/* ── Umumiy qobiq ─────────────────────────────────────────────────────── */
+
+.ff-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: var(--ff-sp-3);
+  border-bottom: 1px solid var(--ff-border);
+  background-color: var(--ff-surface);
+}
+
+.ff-brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.ff-brand-mark {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--ff-r-sm);
+  background-color: var(--ff-lime);
+  margin-right: var(--ff-sp-2);
+}
+
+.ff-brand-name {
+  font-size: var(--ff-fs-md);
+  font-weight: 600;
+  color: var(--ff-text);
+}
+
+.ff-brand-sub {
+  font-size: var(--ff-fs-xs);
+  color: var(--ff-text-faint);
+  margin-left: var(--ff-sp-2);
+}
+
+.ff-body {
+  flex-grow: 1;
+  overflow: auto;
+  padding: var(--ff-sp-4);
+}
+
+.ff-footer {
+  padding: var(--ff-sp-2) var(--ff-sp-3);
+  border-top: 1px solid var(--ff-border);
+  background-color: var(--ff-surface);
+  color: var(--ff-text-faint);
+  font-size: var(--ff-fs-xs);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.ff-footer-spacer { flex-grow: 1; }
+.ff-footer-note { margin-right: var(--ff-sp-2); }
+.ff-footer .ff-btn { padding: 0 var(--ff-sp-2); font-size: var(--ff-fs-xs); }
+
+/* ── Diagnostika ──────────────────────────────────────────────────────── */
+
+.ff-log {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface);
+  padding: var(--ff-sp-2);
+}
+
+.ff-log-line {
+  font-family: monospace;
+  font-size: var(--ff-fs-xs);
+  color: var(--ff-text-muted);
+  padding: 1px 0;
+}
+.ff-log-warn { color: var(--ff-warn); }
+.ff-log-error { color: var(--ff-danger); }
+
+/* ── Matn ─────────────────────────────────────────────────────────────── */
+
+.ff-h1 {
+  font-size: var(--ff-fs-xl);
+  font-weight: 700;
+  margin: 0 0 var(--ff-sp-2) 0;
+}
+
+.ff-h2 {
+  font-size: var(--ff-fs-lg);
+  font-weight: 600;
+  margin: 0 0 var(--ff-sp-2) 0;
+}
+
+.ff-muted { color: var(--ff-text-muted); }
+.ff-faint { color: var(--ff-text-faint); font-size: var(--ff-fs-sm); }
+.ff-danger-text { color: var(--ff-danger); }
+.ff-mono { font-family: monospace; letter-spacing: 2px; }
+
+/* ── Tugmalar ─────────────────────────────────────────────────────────── */
+
+.ff-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ff-sp-2) var(--ff-sp-3);
+  border: 1px solid var(--ff-border-strong);
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface-2);
+  color: var(--ff-text);
+  font-size: var(--ff-fs);
+  font-family: var(--ff-font);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+
+.ff-btn:hover { background-color: var(--ff-surface-3); }
+.ff-btn:focus { border-color: var(--ff-lime); outline: 1px solid var(--ff-lime); }
+
+.ff-btn-primary {
+  background-color: var(--ff-lime);
+  border-color: var(--ff-lime);
+  color: var(--ff-ink);
+  font-weight: 600;
+}
+.ff-btn-primary:hover { background-color: var(--ff-lime-dim); border-color: var(--ff-lime-dim); }
+
+.ff-btn-ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--ff-text-muted);
+  width: auto;
+}
+.ff-btn-ghost:hover { color: var(--ff-text); background-color: var(--ff-surface-2); }
+
+/* div-tugma uchun `disabled` atributi yo'q — holat klass bilan beriladi. */
+.ff-btn-disabled,
+.ff-btn-disabled:hover {
+  color: var(--ff-text-faint);
+  background-color: var(--ff-surface);
+  border-color: var(--ff-border);
+  cursor: default;
+}
+
+.ff-btn-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.ff-btn-row > .ff-btn { margin-right: var(--ff-sp-2); }
+
+/* ── Forma ────────────────────────────────────────────────────────────── */
+
+.ff-field { margin-bottom: var(--ff-sp-3); }
+
+.ff-label {
+  display: block;
+  font-size: var(--ff-fs-sm);
+  color: var(--ff-text-muted);
+  margin-bottom: var(--ff-sp-1);
+}
+
+.ff-input {
+  width: 100%;
+  padding: var(--ff-sp-2);
+  border: 1px solid var(--ff-border-strong);
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface);
+  color: var(--ff-text);
+  font-size: var(--ff-fs);
+  font-family: var(--ff-font);
+}
+.ff-input:focus { border-color: var(--ff-lime); }
+
+/* ── Kartalar / holatlar ──────────────────────────────────────────────── */
+
+.ff-card {
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-r-lg);
+  background-color: var(--ff-surface);
+  padding: var(--ff-sp-4);
+  margin-bottom: var(--ff-sp-3);
+}
+
+.ff-note {
+  border: 1px solid var(--ff-border);
+  border-left: 3px solid var(--ff-lime);
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface-2);
+  padding: var(--ff-sp-3);
+  margin-bottom: var(--ff-sp-3);
+  font-size: var(--ff-fs-sm);
+  color: var(--ff-text-muted);
+}
+.ff-note-danger { border-left-color: var(--ff-danger); }
+.ff-note-warn { border-left-color: var(--ff-warn); }
+
+.ff-divider {
+  border-top: 1px solid var(--ff-border);
+  margin: var(--ff-sp-4) 0;
+}
+
+.ff-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: var(--ff-sp-2);
+}
+.ff-row-grow { flex-grow: 1; }
+
+.ff-badge {
+  display: inline-block;
+  padding: 2px var(--ff-sp-2);
+  border-radius: var(--ff-r-sm);
+  background-color: var(--ff-surface-3);
+  color: var(--ff-text-muted);
+  font-size: var(--ff-fs-xs);
+  margin-left: var(--ff-sp-2);
+}
+.ff-badge-pro { background-color: var(--ff-lime); color: var(--ff-ink); font-weight: 600; }
+
+/* Device-code katta ko'rsatkichi */
+.ff-code {
+  padding: var(--ff-sp-3);
+  border: 1px dashed var(--ff-border-strong);
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface-2);
+  color: var(--ff-lime);
+  font-size: var(--ff-fs-xl);
+  font-family: monospace;
+  letter-spacing: 4px;
+  text-align: center;
+  margin-bottom: var(--ff-sp-3);
+}
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+
+/* Toast qatlami footer USTIDA turadi va bo'sh bo'lganda 0px bo'lishi SHART —
+   aks holda absolyut div footer tugmalarining bosilishini yutib yuboradi
+   (Premiere 26.2 da o'lchandi: padding'li bo'sh host "Loglar"ni bloklagan). */
+.ff-toasts {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  bottom: 34px;
+  left: 0;
+  right: 0;
+  padding: 0 var(--ff-sp-3);
+}
+
+.ff-toast {
+  border: 1px solid var(--ff-border-strong);
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface-3);
+  color: var(--ff-text);
+  padding: var(--ff-sp-2) var(--ff-sp-3);
+  margin-top: var(--ff-sp-2);
+  font-size: var(--ff-fs-sm);
+}
+.ff-toast-error { border-color: var(--ff-danger); color: var(--ff-danger); }
+.ff-toast-ok { border-color: var(--ff-ok); }
