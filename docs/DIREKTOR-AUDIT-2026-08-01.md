@@ -249,6 +249,17 @@ Skrinshotda ham xuddi shu ko'rinadi: 5 ustun chap tomonda, o'ng tomonda katta qo
 
 Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models.ts:1450-1530`, id 5001 video/Proteus va 5002 rasm/Gigapixel, ikkalasi ham `enabled:true`) **2026-07-20'da bir martalik probe skript orqali E2E tekshirilgan va ishlagan** (izoh: "to'liq lifecycle E2E PASS") — ya'ni o'sha paytda mahalliy/vaqtinchalik kalit bilan sinalgan, lekin bu kalit hech qachon production deploy sekret fayliga (`cloudrun-env.yaml`) yozilmagan. Bu holat `docs/FIX-PROMPTS-R4-2026-07-20.md`da ham oldindan qayd etilgan ("TOPAZ_API_KEY is missing") — ya'ni bilinar edi, lekin yopilmagan.
 
+> **✅ HAL QILINDI (2026-08-02).** Aniqlik: kalit **yo'q emas** edi — lokal `.env`da bor va
+> yaroqli (36 belgi; Topaz auth sinovi: haqiqiy kalit `404 process ID does not exist`,
+> yaroqsiz kalit `401 Invalid authentication token`; `prob-4`/Proteus hisobda mavjud). Muammo:
+> `.env` (lokal dev) va `cloudrun-env.yaml` (prod, gitignore'da → `gh secret set
+> CLOUDRUN_ENV_YAML`) **ikki mustaqil manba** — kalit ikkinchisiga hech qachon yozilmagan.
+> Bajarildi: yaml'ga `TOPAZ_API_KEY` qo'shildi (48 kalit, dublikat yo'q) → sekret yangilandi →
+> "Deploy API to Cloud Run" qayta ishga tushirildi (migratsiya + deploy ✅). **Prod tasdiq:**
+> `GET /api/studio/gen/ops` endi `5001 Upscale Video (Proteus)` + `5002 Upscale Image
+> (Gigapixel)` qaytaradi. D11.a darvozasi (provayder-configured tekshiruvi) ishlayotgani ham
+> shu bilan tasdiqlandi — kalit qo'shilishi bilan tugmalar o'zi qaytdi, kod o'zgarmadi.
+
 **Fayl:** `apps/api/src/lib/ai/topaz.ts` (`isTopazConfigured`), `apps/api/src/routes/studio-gen.ts:1320-1361` (guard), `cloudrun-env.yaml` (EGA'ning lokal fayli — kalit yo'q), `apps/api/src/lib/gen-models.ts:1450-1530`
 **Nima buziladi:** mijoz + pul (bilvosita) — Upscale funksiyasi reklama qilingan/UI'da ko'rinadi, lekin ishlamaydi; foydalanuvchi vaqtini yo'qotadi, ishonchni yo'qotadi. To'g'ridan-to'g'ri kredit zarari yo'q (guard kredit yechishdan oldin ishlaydi).
 **Kim:** EGA (Topaz akkauntida yangi/amaldagi API kalitni olish + `cloudrun-env.yaml`ga qo'shish + `gh secret set CLOUDRUN_ENV_YAML` bilan qayta yuborish + Cloud Run qayta deploy) — CC EMAS, chunki bu tashqi xizmat kalit/hisob masalasi.
@@ -317,7 +328,7 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 | D8 | P3 | Web/Plagin — model nomi qisqargan, logotip yo'q | CC | Qisman tasdiqlandi |
 | D9 | P3 | Web — audio karta player yo'q; related sarlavha noto'g'ri | CC | ✅ **Tuzatildi** — `waveBg()` to'lqin fon (muqovasiz Music/SFX) + `relatedTitle` turga mos. Grid'da inline `<audio>` ATAYLAB yo'q (30+ karta = 30+ preload) — pleer detal/lightbox'da |
 | D10 | P3 | Web — dastur logotipi o'rniga rang+qisqartma | CC | Tasdiqlandi |
-| D11 | P0 | API — Upscale (Topaz) umuman ishlamaydi | EGA | Tasdiqlandi — TOPAZ_API_KEY yo'q |
+| D11 | P0 | API — Upscale (Topaz) umuman ishlamaydi | EGA | ✅ Hal qilindi 2026-08-02 (kalit prod'ga chiqarildi, `/gen/ops` 5001+5002 qaytaradi) |
 | D11.a | P2 | API — `/gen/ops` provayder holatini tekshirmaydi | CC | ✅ **Tuzatildi** — `isProviderConfigured()` yagona manba (`/gen` guard + `/gen/ops`) |
 | D11.b | P2 | Web — eski composer-Upscale rejimi "Regenerate" orqali qaytadi | CC | ✅ Tuzatildi (prompt+Enhance yashirildi; qolgani manba+faktor+Generate) |
 | D11.c | P2 | Web — Upscale natija D7 filtri sabab yo'qolishi mumkin | CC | ❌ Bekor — D7 filtri o'lik edi (D7.1 bilan bir xil) |
