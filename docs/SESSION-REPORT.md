@@ -1,13 +1,12 @@
-# Sessiya hisoboti — 2026-08-02 · UX/UI qoidalari CLAUDE.md ga singdirildi
-
-- Manba: `docs/FRAMEFLOW-CODEX-UX-UI-SYSTEM-PROMPT.md` (Codex uchun, ~500 qator) + competitor audit.
-- Tahlil: promptning ~40% `CLAUDE.md` bilan, ~40% competitor audit bilan takrorlanadi; ~20% yangi.
-- Shu 20% `CLAUDE.md` → yangi "UX/UI qoidalari" bo'limiga ko'chirildi (har sessiyada avtomatik amal qiladi).
-- Kiritilgan majburiy qoidalar: availability formulasi, CSS columns taqiqi, bosiladigan empty-state preset,
-  kontekst saqlash, type-aware Use, a11y/perf, raw `{{ }}` binding taqiqi, narx/quote guardi, brend, DoD.
-- To'liq prompt fayli o'z holicha qoldi — Codex uchun ishlatiladi, har Claude sessiyasiga yuklanmaydi.
-- Kod bo'yicha topilgan bo'shliqlar (grep): `CreationDetail`, `lineage`/`parentJobId`, `budget` — kodda **0 marta**.
-- Ya'ni competitor audit P1'dagi 4 katta blok (Create launcher, Model picker, CreationDetail, Lineage+Budget)
-  hali boshlanmagan; qolgan UX talablarining ~60% allaqachon bajarilgan.
-- Mahsulot kodi o'zgarmadi — faqat `CLAUDE.md` + session report.
-- Commit qilindi (main). Push va deploy qilinmadi.
+# Session report — 2026-08-02 (Premiere UXP direktor auditi)
+- Premiere Pro UXP plagin yo'li to'liq auditlandi: kod + Adobe rasmiy docs (jonli tekshiruv).
+- Verdikt: YASHIL — barcha kritik API bor (insertMogrtFromPath, importFiles, exportSequenceFrame, video element).
+- Backend ~80% tayyor: apps.ts `pr`, katalog `?app=pr` filtri, ingest .mogrt→pr avto, mogrt-extract selective saqlash.
+- Klient zip ochish KERAK EMAS — server pack'dan har .mogrt'ni alohida saqlaydi (eng katta soddalik).
+- UXP versiyalar: 25.2 beta → 25.6 rasmiy → 26.x standart; 26.2 Hybrid C++; 26.3 breaking (lockedAccess majburiy).
+- UI cheklovi: CSS Grid/transform/animation/box-shadow/gap YO'Q — 18k-satr AE panel 1:1 ko'chmaydi, UI qayta yoziladi.
+- Distributsiya: .ccx (imzosiz), CCD o'rnatadi; Marketplace va mustaqil kanal uchun IKKITA alohida plugin ID shart.
+- Eng katta risk texnik emas: production katalogda `app=pr` = 0 shablon (jonli tasdiqlandi) — kontent-sprint launch gate.
+- Yozildi: docs/PREMIERE-UXP-AUDIT-2026-08-02.md (audit+risklar+hisob-kitob+go/no-go) va
+  docs/PREMIERE-UXP-SYSTEM-PROMPT.md (implementatsiya uchun to'liq system prompt, FAZA 0–5 DoD bilan).
+- Kod o'zgartirilmadi; keyingi qadam: FAZA 0 spike (3–5 kun) + egadan Q1–Q6 qarorlar (audit §10).
