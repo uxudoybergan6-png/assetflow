@@ -818,6 +818,10 @@ const StudioApi = (() => {
   async function applyAdminPricingMargin(body) {
     return request(`/api/admin/pricing/apply-margin`, { method: "POST", body: body || {} });
   }
+  /** Pricing preview — read-only; returns proposed tier prices before admin applies selected rows. */
+  async function previewAdminPricing(body) {
+    return request(`/api/admin/pricing/preview`, { method: "POST", body: body || {} });
+  }
   /** BATCH4 #3 — bitta model uchun auto-marja (per-row "auto" tugmasi). */
   async function autoAdminPricingModel(modelId) {
     return request(`/api/admin/pricing/${encodeURIComponent(modelId)}/auto`, { method: "POST", body: {} });
@@ -1054,6 +1058,7 @@ const StudioApi = (() => {
     patchAdminPricing,
     patchAdminPricingConfig,
     applyAdminPricingMargin,
+    previewAdminPricing,
     autoAdminPricingModel,
     measureAdminPricingCost,
     getAdminFinance,

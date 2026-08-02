@@ -896,7 +896,24 @@ async function runByteplusVideo(
           console.log(
             `[byteplus] task=${taskId} usage total_tokens=${usage.total_tokens ?? "?"} → measured $${usd.toFixed(4)}`
           );
-          if (usd > 0) await recordMeasuredProviderCost(genId, usd);
+          if (usd > 0) {
+            await recordMeasuredProviderCost(genId, usd, "measured", {
+              unitCostUsd: usd / Math.max(1, v.duration),
+              unit: "second",
+              quantity: v.duration,
+              tier: v.resolution,
+              meta: {
+                tokens: Number(usage.total_tokens) || 0,
+                duration: v.duration,
+                audio: Boolean(body.generate_audio),
+                hasStartFrame: !!startUrl,
+                hasEndFrame: !!endUrl,
+                imageRefs: imageUrls.length,
+                videoRefs: videoUrls.length,
+                audioRefs: audioUrls.length,
+              },
+            });
+          }
         }
         const dl = await byteplusVideoUrlToBuffer(videoUrl);
         if (!dl.ok) return { ok: false, error: dl.error };
@@ -1688,7 +1705,24 @@ export async function processGeneration(genId: string): Promise<void> {
         console.log(
           `[byteplus] image job=${genId} total_tokens=${byteplusImageTokens} → measured $${usd.toFixed(4)}`
         );
-        if (usd > 0) await recordMeasuredProviderCost(genId, usd);
+        if (usd > 0) {
+          await recordMeasuredProviderCost(genId, usd, "measured", {
+            unitCostUsd: usd / Math.max(1, count),
+            unit: "image",
+            quantity: count,
+            tier:
+              imageConfig.image_size ??
+              model.imgSettings?.quality?.def ??
+              model.resolutions?.[0] ??
+              null,
+            meta: {
+              tokens: byteplusImageTokens,
+              outputCount: count,
+              references: falImageUrls.length,
+              aspectRatio,
+            },
+          });
+        }
       }
       // P19.1 — muvaffaqiyatli tugadi: saqlangan fal-image job'ni tozalaymiz (no-op agar yo'q) →
       // reconcile/resume endi bu (done) gen'ga tegmaydi.

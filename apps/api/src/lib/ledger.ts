@@ -1,4 +1,4 @@
-import { prisma } from "@creative-tools/database";
+import { prisma, Prisma } from "@creative-tools/database";
 
 /**
  * CreditLedger — kredit consume/refund harakatining moliyaviy izi (Faza 2 #2.6).
@@ -105,13 +105,36 @@ export function byteplusTokensToUsd(tokens: number | null | undefined): number {
 export async function recordMeasuredProviderCost(
   generationId: string,
   measuredUsd: number,
-  confidence: "measured" | "official" = "measured"
+  confidence: "measured" | "official" = "measured",
+  normalized?: {
+    unitCostUsd: number;
+    unit: "image" | "second" | "generation" | "character";
+    quantity: number;
+    tier?: string | null;
+    meta?: Record<string, unknown>;
+  }
 ): Promise<void> {
   if (!generationId || !(measuredUsd > 0)) return;
   try {
     await prisma.providerSpend.updateMany({
       where: { generationId },
-      data: { measuredCostUsd: measuredUsd, confidence },
+      data: {
+        measuredCostUsd: measuredUsd,
+        measuredUnitCostUsd:
+          normalized && Number.isFinite(normalized.unitCostUsd) && normalized.unitCostUsd > 0
+            ? normalized.unitCostUsd
+            : null,
+        measuredUnit: normalized?.unit ?? null,
+        measuredQuantity:
+          normalized && Number.isFinite(normalized.quantity) && normalized.quantity > 0
+            ? normalized.quantity
+            : null,
+        measurementTier: normalized?.tier ?? null,
+        measurementMetaJson: normalized?.meta
+          ? (normalized.meta as Prisma.InputJsonValue)
+          : undefined,
+        confidence,
+      },
     });
   } catch (e) {
     console.error("recordMeasuredProviderCost", e);

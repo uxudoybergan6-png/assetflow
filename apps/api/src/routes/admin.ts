@@ -44,10 +44,12 @@ import {
 import {
   applyAutoMarginAll,
   deriveAutoPricingResolved,
+  previewAutoMarginAll,
   PINNED_MODEL_IDS,
 } from "../lib/pricing-automargin.js";
 import { getMeasuredProviderUsdMap, computeResolvedProviderCost } from "../lib/measured-cost.js";
 import { probeModelCost } from "../lib/measure-probe.js";
+import { providerCostReference } from "../lib/provider-cost.js";
 import { computeMargins, spendByProvider } from "../lib/model-margin.js";
 import {
   payoutPerDownloadCents,
@@ -818,25 +820,64 @@ adminRouter.get("/pricing", async (req, res) => {
     const resolved = model
       ? computeResolvedProviderCost(model, {}, measuredMap.get(v.modelId) ?? null)
       : null;
+    const providerCostUsd = resolved ? resolved.usd : v.estCostUsd;
+    const subscriberUsd = v.price.representative * config.creditUsdValue;
+    const currentMultiplier =
+      providerCostUsd != null && providerCostUsd > 0 ? subscriberUsd / providerCostUsd : null;
+    const currentGrossMarginPct =
+      currentMultiplier != null ? ((subscriberUsd - providerCostUsd!) / subscriberUsd) * 100 : null;
+    const belowTargetCurrent = currentMultiplier != null && currentMultiplier < config.marginTarget;
+    const source = resolved?.source ?? "estimate";
+    const samples = resolved?.samples ?? 0;
+    const healthStatus =
+      source === "estimate"
+        ? "unknown"
+        : resolved?.needsConfirm
+          ? "review"
+          : belowTargetCurrent
+            ? "below-target"
+            : source === "measured" && samples < 3
+              ? "low-confidence"
+              : "healthy";
     return {
       ...v,
       pinned: PINNED_MODEL_IDS.has(v.modelId), // BATCH4 #3 — mahsulot-narxi (auto-apply tegmaydi)
       margin: marginById.get(v.modelId) ?? null,
-      belowTarget: marginById.get(v.modelId)?.belowTarget ?? false,
+      belowTarget: belowTargetCurrent,
       missingCost: marginById.get(v.modelId)?.missingCost ?? true,
       // R4_05 additive fields (javob shakli buzilmaydi — mavjud estCostUsd o'z joyida qoladi):
-      providerCostUsd: resolved ? resolved.usd : v.estCostUsd,
-      providerCostSource: resolved ? resolved.source : "estimate",
+      providerCostUsd,
+      providerUnitCostUsd: resolved?.unitUsd ?? providerCostUsd,
+      providerCostUnit: resolved?.unit ?? v.price.unit,
+      providerCostTier: resolved?.tier ?? v.price.defaultTier,
+      providerCostSource: source,
       measuredUsd: resolved ? resolved.measuredUsd : null,
-      measuredSamples: resolved ? resolved.samples : 0,
+      measuredUnitUsd: resolved ? resolved.measuredUsd : null,
+      measuredSamples: samples,
       needsConfirm: resolved ? resolved.needsConfirm : false,
+      subscriberUsd,
+      currentMultiplier,
+      currentGrossMarginPct,
+      healthStatus,
+      historicalMargin: marginById.get(v.modelId) ?? null,
+      costReference: model ? providerCostReference(model) : null,
     };
   });
+  const enabledModels = models.filter((m) => m.catalogEnabled !== false);
+  const health = {
+    total: enabledModels.length,
+    verified: enabledModels.filter((m) => m.providerCostSource === "measured" && m.measuredSamples >= 3).length,
+    tableBacked: enabledModels.filter((m) => m.providerCostSource === "table").length,
+    needsMeasurement: enabledModels.filter((m) => m.providerCostSource === "estimate" && m.provider === "byteplus").length,
+    review: enabledModels.filter((m) => m.healthStatus === "review" || m.healthStatus === "below-target").length,
+    unknown: enabledModels.filter((m) => m.healthStatus === "unknown").length,
+  };
   res.json({
     creditUsdValue: config.creditUsdValue,
     marginTarget: config.marginTarget,
     aggregate: margins.aggregate,
     flaggedCount: margins.flagged.length,
+    health,
     models,
   });
 });
@@ -859,7 +900,7 @@ const pricingConfigSchema = z
   .object({
     // creditUsdValue: 1 kredit necha $ (0 dan katta, aqlli chegara).
     creditUsdValue: z.number().gt(0).max(100).optional(),
-    marginTarget: z.number().gt(0).max(1000).optional(),
+    marginTarget: z.number().min(1).max(1000).optional(),
   })
   .refine((o) => Object.keys(o).length > 0, "At least one field is required");
 
@@ -890,9 +931,10 @@ adminRouter.patch("/pricing/config", async (req, res) => {
 adminRouter.post("/pricing/apply-margin", async (req, res) => {
   const parsed = z
     .object({
-      marginTarget: z.number().gt(0).max(1000).optional(),
+      marginTarget: z.number().min(1).max(1000).optional(),
       // R4_05 — o'lchangan xarajat OSHGAN (needsConfirm) modellar ID'lari; faqat shular narx ko'tarilishini qabul qiladi.
       confirmModelIds: z.array(z.number().int()).max(500).optional(),
+      modelIds: z.array(z.number().int()).max(500).optional(),
     })
     .safeParse(req.body ?? {});
   if (!parsed.success) {
@@ -904,6 +946,7 @@ adminRouter.post("/pricing/apply-margin", async (req, res) => {
   }
   const report = await applyAutoMarginAll(req.user?.userId ?? null, {
     confirmModelIds: parsed.data.confirmModelIds,
+    modelIds: parsed.data.modelIds,
   });
   await writeAuditLog({
     actorId: req.user?.userId ?? null,
@@ -917,12 +960,53 @@ adminRouter.post("/pricing/apply-margin", async (req, res) => {
       skippedNoCost: report.skippedNoCost,
       skippedNeedsConfirm: report.skippedNeedsConfirm.map((a) => a.modelId),
       confirmModelIds: parsed.data.confirmModelIds ?? [],
+      modelIds: parsed.data.modelIds ?? null,
     },
   });
   res.json({ report });
 });
 
-/** R4_06 — POST /api/admin/pricing/measure-cost {modelId}: bitta modelni eng arzon tier'da BIR
+/** POST /api/admin/pricing/preview — hech nima yozmasdan tavsiya etilgan tier narxlarini qaytaradi. */
+adminRouter.post("/pricing/preview", async (req, res) => {
+  const parsed = z
+    .object({
+      marginTarget: z.number().min(1).max(1000).optional(),
+      creditUsdValue: z.number().gt(0).max(100).optional(),
+      modelIds: z.array(z.number().int()).max(500).optional(),
+      confirmModelIds: z.array(z.number().int()).max(500).optional(),
+    })
+    .safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
+    return;
+  }
+  const [preview, current] = await Promise.all([
+    previewAutoMarginAll(parsed.data),
+    listPricingView(),
+  ]);
+  const currentById = new Map(current.map((m) => [m.modelId, m]));
+  res.json({
+    ...preview,
+    models: preview.models.map((m) => ({
+      ...m,
+      current: currentById.get(m.modelId)?.price ?? null,
+      changed:
+        m.patch != null &&
+        JSON.stringify({
+          cost: m.patch.cost,
+          qualityCost: m.patch.qualityCost ?? null,
+          videoPerSec: m.patch.videoPerSec ?? null,
+        }) !==
+          JSON.stringify({
+            cost: currentById.get(m.modelId)?.price.cost,
+            qualityCost: currentById.get(m.modelId)?.price.qualityCost ?? null,
+            videoPerSec: currentById.get(m.modelId)?.price.videoPerSec ?? null,
+          }),
+    })),
+  });
+});
+
+/** R4_06 — POST /api/admin/pricing/measure-cost {modelId}: bitta modelni default tier'da BIR
  *  MARTA real generatsiya qilib, provayder token usage'idan real xarajatni o'lchaydi va measured
  *  ProviderSpend qatori yozadi (R4_05 resolveProviderUsd shundan kalibrlaydi). Admin-guarded +
  *  audited. Kredit YECHILMAYDI (subscriber oqimi emas). MUHIM: /pricing/:modelId dan OLDIN. */
@@ -938,7 +1022,15 @@ adminRouter.post("/pricing/measure-cost", async (req, res) => {
     action: "pricing.cost.measure",
     targetType: "modelPricing",
     targetId: String(parsed.data.modelId),
-    meta: { ok: result.ok, code: result.code ?? null, usd: result.usd ?? null, tier: result.tier ?? null, tokens: result.tokens ?? null },
+    meta: {
+      ok: result.ok,
+      code: result.code ?? null,
+      usd: result.usd ?? null,
+      unitUsd: result.unitUsd ?? null,
+      unit: result.unit ?? null,
+      tier: result.tier ?? null,
+      tokens: result.tokens ?? null,
+    },
   });
   if (!result.ok) {
     const status = result.code === "UNSUPPORTED" ? 400 : result.code === "NOT_CONFIGURED" ? 503 : 502;
@@ -986,7 +1078,8 @@ adminRouter.patch("/pricing/:modelId", async (req, res) => {
     res.status(400).json({ error: "Invalid modelId" });
     return;
   }
-  if (!getModelById(modelId)) {
+  const model = getModelById(modelId);
+  if (!model) {
     res.status(404).json({ error: "Unknown model" });
     return;
   }
@@ -994,6 +1087,36 @@ adminRouter.patch("/pricing/:modelId", async (req, res) => {
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid request" });
     return;
+  }
+  // Server-side never-below-cost guard. UI warning alone is not a financial control.
+  if (
+    parsed.data.cost != null ||
+    parsed.data.qualityCost != null ||
+    parsed.data.videoPerSec != null
+  ) {
+    const cfg = await getPricingConfig();
+    const floor = await deriveAutoPricingResolved(model, 1, cfg.creditUsdValue, { confirm: true });
+    const failures: Array<{ tier: string; entered: number; minimum: number }> = [];
+    if (parsed.data.cost != null && floor.patch?.cost != null && parsed.data.cost < floor.patch.cost) {
+      failures.push({ tier: "default", entered: parsed.data.cost, minimum: floor.patch.cost });
+    }
+    for (const field of ["qualityCost", "videoPerSec"] as const) {
+      const entered = parsed.data[field];
+      const minimum = floor.patch?.[field];
+      if (!entered || !minimum) continue;
+      for (const [tier, value] of Object.entries(entered)) {
+        const min = minimum[tier];
+        if (min != null && value < min) failures.push({ tier, entered: value, minimum: min });
+      }
+    }
+    if (failures.length) {
+      res.status(409).json({
+        error: "Price is below measured/provider cost",
+        code: "BELOW_PROVIDER_COST",
+        failures,
+      });
+      return;
+    }
   }
   const row = await upsertModelPricing(modelId, parsed.data, req.user?.userId ?? null);
   await writeAuditLog({

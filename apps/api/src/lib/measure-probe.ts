@@ -1,5 +1,5 @@
 /**
- * R4_06 — Admin "Measure cost" probasi. Model'ni ENG ARZON tier'da BIR MARTA real generatsiya
+ * R4_06 — Admin "Measure cost" probasi. Model'ni DEFAULT tier'da BIR MARTA real generatsiya
  * qilib, provayder qaytargan usage (token)dan real USD xarajatini o'lchaydi va uni measured
  * ProviderSpend qatori sifatida yozadi (R4_05 resolveProviderUsd shundan o'qiydi → panel + apply-margin
  * o'z-o'zidan kalibrlaydi). Admin aniq bosadi (tasdiq dialogi bilan) — kredit YECHILMAYDI (bu
@@ -30,6 +30,8 @@ export type MeasureProbeResult = {
   label: string;
   provider: string;
   usd?: number; // shu probaning o'lchangan xarajati
+  unitUsd?: number; // normalizatsiya qilingan $/image yoki $/second
+  unit?: "image" | "second" | "generation";
   tokens?: number;
   tier?: string;
   samples?: number; // yozgandan keyingi jami measured namunalar (median panel uchun)
@@ -41,11 +43,12 @@ const PROBE_PROMPT = "a small red apple on a plain white background, product pho
 
 function lowestImageTier(model: GenModel): string | undefined {
   const opts = model.imgSettings?.quality?.options ?? model.resolutions ?? [];
-  return opts.length ? opts[0] : undefined; // katalog tartibi: eng past tier birinchi
+  // Auto-pricing default tier'ga langarlanadi; probe aynan shu tier'da bo'lishi shart.
+  return model.imgSettings?.quality?.def ?? (opts.length ? opts[0] : undefined);
 }
 function lowestVideoRes(model: GenModel): string | undefined {
   const opts = model.videoSettings?.resolution?.options ?? model.resolutions ?? [];
-  return opts.length ? opts[0] : undefined;
+  return model.videoSettings?.resolution?.def ?? (opts.length ? opts[0] : undefined);
 }
 function shortestDuration(model: GenModel): number {
   const ds = (model.durations ?? []).filter((n) => Number.isFinite(n) && n > 0);
@@ -53,7 +56,17 @@ function shortestDuration(model: GenModel): number {
 }
 
 /** Measured ProviderSpend qatorini to'g'ridan yozadi (proba — generationId yo'q). */
-async function writeProbeMeasured(model: GenModel, usd: number): Promise<void> {
+async function writeProbeMeasured(
+  model: GenModel,
+  usd: number,
+  normalized: {
+    unitUsd: number;
+    unit: "image" | "second" | "generation";
+    quantity: number;
+    tier?: string;
+    meta?: Record<string, unknown>;
+  }
+): Promise<void> {
   await prisma.providerSpend.create({
     data: {
       generationId: null,
@@ -63,13 +76,18 @@ async function writeProbeMeasured(model: GenModel, usd: number): Promise<void> {
       credits: null,
       estimatedCostUsd: usd,
       measuredCostUsd: usd,
+      measuredUnitCostUsd: normalized.unitUsd,
+      measuredUnit: normalized.unit,
+      measuredQuantity: normalized.quantity,
+      measurementTier: normalized.tier,
+      measurementMetaJson: { probe: true, ...(normalized.meta ?? {}) },
       confidence: "measured",
     },
   });
 }
 
 /**
- * Bitta model uchun cost proba. BytePlus rasm/video'ni eng past tier'da chaqiradi, usage'dan
+ * Bitta model uchun cost proba. BytePlus rasm/video'ni default tier'da chaqiradi, usage'dan
  * USD o'lchaydi va measured qator yozadi. Xato bo'lsa hech nima yozmaydi (best-effort).
  */
 export async function probeModelCost(modelId: number): Promise<MeasureProbeResult> {
@@ -97,9 +115,15 @@ export async function probeModelCost(modelId: number): Promise<MeasureProbeResul
       const tokens = Number(r.usage?.total_tokens) || 0;
       const usd = byteplusTokensToUsd(tokens);
       if (!(usd > 0)) return { ok: false, code: "NO_USAGE", ...base, tier, error: "Provider returned no usable token usage" };
-      await writeProbeMeasured(model, usd);
+      await writeProbeMeasured(model, usd, {
+        unitUsd: usd,
+        unit: "image",
+        quantity: 1,
+        tier,
+        meta: { tokens },
+      });
       const agg = await getMeasuredProviderUsd(model.id);
-      return { ok: true, ...base, usd, tokens, tier, samples: agg?.samples ?? 1, measuredUsd: agg?.usd ?? usd };
+      return { ok: true, ...base, usd, unitUsd: usd, unit: "image", tokens, tier, samples: agg?.samples ?? 1, measuredUsd: agg?.usd ?? usd };
     }
 
     if (model.mode === "video") {
@@ -119,9 +143,16 @@ export async function probeModelCost(modelId: number): Promise<MeasureProbeResul
           const tokens = Number(step.data.data.usage?.total_tokens) || 0;
           const usd = byteplusTokensToUsd(tokens);
           if (!(usd > 0)) return { ok: false, code: "NO_USAGE", ...base, tier: resolution, error: "Provider returned no usable token usage" };
-          await writeProbeMeasured(model, usd);
+          const unitUsd = usd / duration;
+          await writeProbeMeasured(model, usd, {
+            unitUsd,
+            unit: "second",
+            quantity: duration,
+            tier: resolution,
+            meta: { tokens, duration, audio: false },
+          });
           const agg = await getMeasuredProviderUsd(model.id);
-          return { ok: true, ...base, usd, tokens, tier: resolution, samples: agg?.samples ?? 1, measuredUsd: agg?.usd ?? usd };
+          return { ok: true, ...base, usd, unitUsd, unit: "second", tokens, tier: resolution, samples: agg?.samples ?? 1, measuredUsd: agg?.usd ?? unitUsd };
         }
       }
       return { ok: false, code: "PROVIDER_ERROR", ...base, tier: resolution, error: "Probe timed out waiting for the video job" };

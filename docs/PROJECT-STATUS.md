@@ -333,6 +333,14 @@ Ikki kod bazasida ikki xil tema tizimi bor — aralashtirmang:
 - Schema modellari: `GenSession`, `Generation`, `GenAsset`. Muvaffaqiyatsizlikda kredit qaytariladi (`refundAiCredits`).
 - DB jadvallari, route'lar, kredit hisobi, R2 saqlash — **kod sifatida tayyor**. Lekin: 4-bo'limdagi ogohlantirishni o'qing.
 
+### 3.12 Admin Pricing management — normalized cost + review/apply
+- Provider xarajati bir xil birlikda saqlanadi/ko'rsatiladi: `$/image`, `$/second` yoki `$/generation`; default request jami alohida ko'rsatiladi.
+- BytePlus real usage o'lchovi `ProviderSpend.measuredUnitCostUsd` + unit/tier/quantity metadata bilan yoziladi; video total xarajati endi xato qilib `$/second` sifatida ishlatilmaydi.
+- `POST /api/admin/pricing/preview` hech narsa yozmasdan current → recommended farqni beradi; apply faqat admin belgilagan `modelIds` ni o'zgartiradi.
+- Manual PATCH provider xarajatidan past kredit narxini serverda `409 BELOW_PROVIDER_COST` bilan bloklaydi.
+- Panelda source/effective date, confidence, gross margin %, default tier misoli va health holati bir jadvalda ko'rinadi.
+- Google image/Veo va ElevenLabs SFX jadvallari 2026-08-02 tekshiruv qiymatlariga yangilangan; boshqa provayderlar table/estimate sifatida ochiq belgilangan.
+
 ---
 
 ## 4. NIMA QISMAN / TEST QILINMAGAN (halol)

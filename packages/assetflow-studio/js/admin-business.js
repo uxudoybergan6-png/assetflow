@@ -27,6 +27,7 @@ function bizModeBadge(mode){
    b2 · PRICING MANAGEMENT — per-model credit price + margin (real PATCH)
    ============================================================ */
 let PRICING_DATA = null;
+let PRICING_PREVIEW = null;
 let PRICING_FILTER = "all";
 let PRICING_SHOW_ALL = false; // BATCH4 #3 — default: faqat enabled (o'chirilgan zaxiralar yashirin)
 // R4_06 — hozir o'lchanayotgan model ID'lar (proba davomida qatorni bloklash uchun).
@@ -36,17 +37,20 @@ VIEWS.pricing = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
 window.afterRender.pricing = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='pricing') tba.innerHTML =
-    `<button class="adx-btn sm" onclick="applyMarginAll()" title="Every enabled model: credits = ceil(provider cost × target margin ÷ credit value)"><i class="ph ph-magic-wand"></i>Apply target margin</button>`+
+    `<button class="adx-btn2 sm" onclick="loadPricing()" title="Reload pricing data without changing prices"><i class="ph ph-arrows-clockwise"></i>Refresh data</button>`+
     `<button class="adx-btn2 sm" onclick="measureAllMissing()" title="Measure real provider cost for every enabled BytePlus model that has no measured data yet — one cheap gen each"><i class="ph ph-gauge"></i>Measure all missing</button>`+
-    `<button class="adx-btn2 sm" onclick="openPricingConfig()"><i class="ph ph-currency-circle-dollar"></i>Credit &amp; margin</button>`;
+    `<button class="adx-btn sm" onclick="reviewPricingChanges()" title="Preview every change before applying selected rows"><i class="ph ph-check-square-offset"></i>Review &amp; apply</button>`+
+    `<button class="adx-btn2 sm" onclick="openPricingConfig()"><i class="ph ph-sliders-horizontal"></i>Pricing policy</button>`;
   await loadPricing();
 };
 
 /** R4_06 — provider xarajat manbai badge'i: measured (yashil) / table / estimate (amber, ma'lumot yo'q). */
 function providerCostBadge(m){
   const src = m.providerCostSource || 'estimate';
-  if(src==='measured') return `<span class="adx-bdg" style="color:var(--lime);background:var(--limedim)" title="Measured from ${m.measuredSamples||1} real generation(s)">measured (${m.measuredSamples||1})</span>`;
-  if(src==='table') return `<span class="adx-bdg adx-bdg-soft" title="From the provider-cost.ts price table">table</span>`;
+  const ref=m.costReference||{};
+  const refTitle=esc(`${ref.label||'Provider price table'}${ref.checkedAt?' · checked '+ref.checkedAt:''}${ref.note?' · '+ref.note:''}`);
+  if(src==='measured') return `<span class="adx-bdg" style="color:var(--lime);background:var(--limedim)" title="Measured normalized unit cost from ${m.measuredSamples||1} real generation(s)">measured (${m.measuredSamples||1})</span>`;
+  if(src==='table') return `${ref.url?`<a href="${esc(ref.url)}" target="_blank" rel="noopener" style="text-decoration:none">`:''}<span class="adx-bdg adx-bdg-soft" title="${refTitle}">price table${ref.checkedAt?' · '+esc(ref.checkedAt.slice(0,7)):''}</span>${ref.url?'</a>':''}`;
   return `<span class="adx-bdg" style="color:#FFB27C;background:rgba(255,178,124,.14)" title="No cost data yet — $0.50 fail-safe. Click Measure cost to calibrate.">estimate</span>`;
 }
 /** BytePlus modellar per-gen token usage qaytaradi → "Measure cost" faqat shular uchun ma'noli. */
@@ -110,7 +114,7 @@ async function autoPriceRow(modelId){
   } catch(e){ toast('Error',(e&&e.message)||'No provider cost table — set the price manually','danger'); }
 }
 
-/** R4_06 — bitta model "Measure cost": eng arzon tier'da BIR MARTA real gen → measured xarajat.
+/** R4_06 — bitta model "Measure cost": default tier'da BIR MARTA real gen → measured xarajat.
  *  Kredit yechilmaydi; kichik provider puli sarflanadi (tasdiq dialogi bilan). */
 async function measureRowCost(modelId){
   const m = PRICING_DATA && PRICING_DATA.models.find(x=>x.modelId===modelId);
@@ -118,7 +122,7 @@ async function measureRowCost(modelId){
   const est = m.mode==='video' ? '~$0.03–0.20 and up to a minute to finish' : '~$0.02–0.09';
   if(!(await afConfirm({
     title: `Measure "${m.label}"?`,
-    sub: `Generates ONE ${m.mode} at this model's lowest tier.`,
+    sub: `Generates ONE ${m.mode} at this model's default pricing tier.`,
     tone: 'warn',
     warn: `This spends a small REAL provider cost (${est}). No subscriber credits are used.`,
     body: "The result calibrates this model's cost and margin.",
@@ -142,13 +146,13 @@ async function measureRowCost(modelId){
  *  o'lchaydi (rate-limit'ga xush, har birini kutib). Butun jadval bir bosishda kalibrlaydi. */
 async function measureAllMissing(){
   if(!PRICING_DATA) return;
-  const targets = pricingRows().filter(m=> isMeasurable(m) && m.providerCostSource!=='measured' && !MEASURING.has(m.modelId));
+  const targets = PRICING_DATA.models.filter(m=> isMeasurable(m) && Number(m.measuredSamples||0)===0 && !MEASURING.has(m.modelId));
   if(!targets.length){ toast('Nothing to measure','Every visible BytePlus model already has a measured cost','info'); return; }
   if(!(await afConfirm({
     title: `Measure ${targets.length} model(s)?`,
     sub: 'Every enabled model that has no measured cost yet.',
     tone: 'warn',
-    warn: 'Each one runs ONE real low-tier generation (small provider cost, no subscriber credits).',
+    warn: 'Each one runs ONE real generation at its default pricing tier (small provider cost, no subscriber credits).',
     body: 'Video models take up to a minute each. They run one at a time.',
     okLabel: `Measure ${targets.length} model(s)`,
   }))) return;
@@ -181,6 +185,66 @@ async function loadPricing(){
   }
 }
 
+function pricingGrossTarget(){
+  const mult = Number(PRICING_DATA&&PRICING_DATA.marginTarget)||2;
+  return Math.round((1-1/mult)*1000)/10;
+}
+function pricingUnitLabel(unit){
+  return ({image:'image',second:'second',generation:'generation',character:'character'}[unit]||unit||'unit');
+}
+function pricingHealthBadge(m){
+  const h=m.healthStatus||'unknown';
+  if(h==='healthy') return `<span class="adx-bdg adx-bdg-approved">Healthy</span>`;
+  if(h==='below-target') return `<span class="adx-bdg" style="color:#FF6B5E;background:rgba(255,107,94,.14)">Below target</span>`;
+  if(h==='review') return `<span class="adx-bdg" style="color:#FFB27C;background:rgba(255,178,124,.14)">Review</span>`;
+  if(h==='low-confidence') return `<span class="adx-bdg adx-bdg-pending">Low confidence</span>`;
+  return `<span class="adx-bdg adx-bdg-draft">Unknown</span>`;
+}
+
+async function reviewPricingChanges(){
+  if(!PRICING_DATA) return;
+  try{
+    const riskIds=PRICING_DATA.models.filter(m=>m.needsConfirm).map(m=>m.modelId);
+    PRICING_PREVIEW=await StudioApi.previewAdminPricing({marginTarget:PRICING_DATA.marginTarget,confirmModelIds:riskIds});
+    (PRICING_PREVIEW.models||[]).forEach(x=>{ if(riskIds.includes(x.modelId))x.needsConfirm=true; });
+    renderPricingPreview();
+  }catch(e){ toast('Preview failed',(e&&e.message)||'Could not calculate recommended prices','danger'); }
+}
+function renderPricingPreview(){
+  const host=document.getElementById('bizEditPanel');
+  if(!host||!PRICING_PREVIEW)return;
+  const rows=(PRICING_PREVIEW.models||[]).filter(x=>x.patch&&!x.pinned&&x.changed);
+  const tierText=(x,which)=>{
+    const p=which==='new'?x.patch:x.current;
+    const isFlat=x.providerUnit==='generation'||(x.tiers||[]).some(t=>t.key==='per-gen');
+    const map=isFlat?null:((p&&p.videoPerSec)||(p&&p.qualityCost));
+    return map?Object.entries(map).map(([k,v])=>`${k} ✦${v}`).join(' · '):`✦${p&&p.cost!=null?p.cost:'—'}`;
+  };
+  host.innerHTML=`<div class="adx-editpanel" style="max-width:820px"><div style="padding:16px 18px">
+    <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-check-square-offset" style="color:var(--lime)"></i><span style="font-weight:700;font-size:13.5px">Review recommended prices</span><span class="adx-bdg adx-bdg-info">${pricingGrossTarget()}% gross margin</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
+    <div style="font-size:10.5px;color:var(--muted);line-height:1.55;margin:8px 0 12px">Nothing changes until you apply selected rows. Models whose measured cost rose stay unchecked and require explicit review.</div>
+    ${rows.length?`<div style="max-height:430px;overflow:auto;border:1px solid var(--hair2);border-radius:10px"><table class="adx-tbl"><thead><tr><th></th><th>Model</th><th>Current</th><th>Recommended</th><th>Source</th></tr></thead><tbody>${rows.map(x=>`<tr>
+      <td><input type="checkbox" class="pricing-preview-check" value="${x.modelId}" ${x.needsConfirm?'':'checked'}></td>
+      <td style="color:var(--text);font-weight:600">${esc(x.label)}${x.needsConfirm?' <span class="adx-bdg adx-bdg-pending">cost rose</span>':''}</td>
+      <td class="adx-num" style="font-size:10.5px">${esc(tierText(x,'old'))}</td>
+      <td class="adx-num" style="font-size:10.5px;color:var(--lime)">${esc(tierText(x,'new'))}</td>
+      <td>${x.providerCostSource==='measured'?`measured (${x.samples})`:x.providerCostSource}</td></tr>`).join('')}</tbody></table></div>`:`<div class="adx-empty"><span class="ei"><i class="ph ph-check-circle"></i></span><div>No price changes recommended</div></div>`}
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="adx-btn2" style="flex:1" onclick="document.getElementById('bizEditPanel').innerHTML=''">Cancel</button><button class="adx-btn" style="flex:1" onclick="applySelectedPricing()" ${rows.length?'':'disabled'}>Apply selected changes</button></div>
+  </div></div>`;
+}
+async function applySelectedPricing(){
+  const ids=Array.from(document.querySelectorAll('.pricing-preview-check:checked')).map(x=>Number(x.value)).filter(Number.isInteger);
+  if(!ids.length){ toast('Nothing selected','Select at least one model','info'); return; }
+  const confirmIds=(PRICING_PREVIEW.models||[]).filter(x=>ids.includes(x.modelId)&&x.needsConfirm).map(x=>x.modelId);
+  if(!(await afConfirm({title:`Apply ${ids.length} price change(s)?`,tone:'warn',warn:'Subscriber credit prices will change immediately after the API cache refreshes.',body:'Only the checked models will be updated. The action is written to Audit log.',okLabel:'Apply selected'})))return;
+  try{
+    const res=await StudioApi.applyAdminPricingMargin({marginTarget:PRICING_DATA.marginTarget,modelIds:ids,confirmModelIds:confirmIds});
+    document.getElementById('bizEditPanel').innerHTML='';
+    toast('Prices applied',`${res&&res.report?res.report.applied.length:ids.length} selected model(s) updated`,'success');
+    await loadPricing();
+  }catch(e){toast('Apply failed',(e&&e.message)||'Could not apply selected prices','danger');}
+}
+
 function pricingRows(){
   if(!PRICING_DATA) return [];
   let rows = PRICING_DATA.models.slice();
@@ -195,35 +259,43 @@ function renderPricing(){
   if(!root || !PRICING_DATA) return;
   const creditUsd = PRICING_DATA.creditUsdValue;
   const marginT = PRICING_DATA.marginTarget;
+  const grossTarget = pricingGrossTarget();
+  const health = PRICING_DATA.health||{};
   const pool = PRICING_DATA.models.filter(m=>PRICING_SHOW_ALL || m.catalogEnabled!==false);
   const modeCount = (mode)=> pool.filter(m=>m.mode===mode).length;
   const disabledCount = PRICING_DATA.models.filter(m=>m.catalogEnabled===false).length;
   const tags = [['all','All',pool.length],['image','Image',modeCount('image')],['video','Video',modeCount('video')],['voice','Voice',modeCount('voice')],['sfx','SFX',modeCount('sfx')],['music','Music',modeCount('music')]].filter(t=>t[0]==='all'||t[2]>0);
   const rows = pricingRows();
   root.innerHTML = `
-    ${axInfo(`Every AI tool shows the subscriber a credit (✦) price. <b style="color:var(--text)">Apply target margin</b> derives every enabled model's price as ceil(provider cost × margin ÷ credit value) — no hand math, no silent losses. Current: <b style="color:var(--text)">1 ✦ = ${bizUsd(creditUsd)}</b> · target margin <b style="color:var(--text)">${marginT}×</b>.`,'info')}
+    <div class="adx-grid4" style="margin-bottom:14px">
+      ${axStat({label:'Cost coverage',val:`${(health.verified||0)+(health.tableBacked||0)}/${health.total||pool.length}`,ic:'shield-check',icColor:(health.review||health.unknown)?'#FFB27C':'var(--lime)',foot:`${health.review||0} review · ${health.unknown||0} unknown`})}
+      ${axStat({label:'Target gross margin',val:grossTarget+'%',ic:'chart-donut',icColor:'var(--lime)',foot:`${marginT}× revenue / cost`})}
+      ${axStat({label:'Effective credit value',val:bizUsd(creditUsd),ic:'currency-circle-dollar',icColor:'#7CC4FF',foot:'accounting value of 1 ✦'})}
+      ${axStat({label:'Measured models',val:health.verified||0,ic:'gauge',icColor:'#b794f6',foot:`${health.needsMeasurement||0} still need measurement`})}
+    </div>
+    ${axInfo(`Prices are compared in the same unit: <b style="color:var(--text)">$/image</b>, <b style="color:var(--text)">$/second</b> or <b style="color:var(--text)">$/generation</b>. “Default example” shows the complete default request. Review shows every change before anything is applied.`,'info')}
     <div class="adx-tagrow">${tags.map(([k,l,n])=>`<button class="adx-tag ${PRICING_FILTER===k?'on':''}" onclick="PRICING_FILTER='${k}';renderPricing()">${l} <span class="n">${n}</span></button>`).join('')}
       <span style="flex:1"></span>
       <button class="adx-tag ${PRICING_SHOW_ALL?'on':''}" onclick="PRICING_SHOW_ALL=!PRICING_SHOW_ALL;renderPricing()" title="Disabled openrouter/fal backups are hidden by default — they are never charged"><i class="ph ph-eye${PRICING_SHOW_ALL?'':'-slash'}" style="font-size:11px"></i>${PRICING_SHOW_ALL?'Enabled only':'Show all'} <span class="n">${disabledCount}</span></button>
     </div>
     <div class="adx-card" style="overflow:hidden">
-      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1120px">
-        <thead><tr><th>Model</th><th>Type</th><th>Provider</th><th class="r">Provider cost</th><th class="r">Credit price (✦)</th><th class="r">Subscriber price</th><th class="r">Margin</th><th class="r">Action</th></tr></thead>
+      <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1000px">
+        <thead><tr><th>Model</th><th>Provider</th><th>Unit</th><th class="r">Provider cost</th><th class="r">Customer price</th><th class="r">Default example</th><th class="r">Gross margin</th><th>Confidence</th><th class="r">Action</th></tr></thead>
         <tbody>${rows.length ? rows.map(m=>{
           const off = m.catalogEnabled===false; // BATCH4 #3 — o'chirilgan zaxira: xira + marja "—"
           const rep = m.price.representative;
-          const perSec = m.mode==='video' && (m.price.pricing==='per-second' || m.price.pricing==null);
-          // R4_05 — YECHILGAN provider xarajati (measured→table→estimate); eski estCostUsd fallback.
-          const cost = (m.providerCostUsd!=null) ? m.providerCostUsd : m.estCostUsd;
-          // representative = TOTAL credit for default params (computeGenCost) → we compare totals.
-          const subUsd = rep!=null ? rep*creditUsd : null;
-          const marginPct = (subUsd!=null && cost!=null && subUsd>0) ? Math.round((subUsd - cost)/subUsd*100) : null;
-          const costStr = cost!=null ? bizUsd(cost) : '—';
-          const credStr = rep!=null ? '✦ '+rep : '—';
-          const subStr = subUsd!=null ? bizUsd(subUsd) : '—';
-          const perSecHint = perSec ? '<div style="font-size:9px;color:var(--muted2)">per second</div>' : '';
+          const unit=m.price.unit||m.providerCostUnit||'generation';
+          const unitLabel=pricingUnitLabel(unit);
+          const unitCost=m.providerUnitCostUsd!=null?m.providerUnitCostUsd:m.providerCostUsd;
+          const unitCredits=m.price.unitCredits!=null?m.price.unitCredits:rep;
+          const unitSub=unitCredits!=null?unitCredits*creditUsd:null;
+          const totalCost=m.providerCostUsd!=null?m.providerCostUsd:m.estCostUsd;
+          const totalSub=rep!=null?rep*creditUsd:null;
+          const marginPct=m.currentGrossMarginPct!=null?Math.round(m.currentGrossMarginPct):null;
+          const qty=m.price.defaultQuantity||1;
+          const tier=m.price.defaultTier?` · ${m.price.defaultTier}`:'';
           const measuring = MEASURING.has(m.modelId);
-          const riseChip = (!off && m.needsConfirm) ? ` <span class="adx-bdg" style="color:#FFB27C;background:rgba(255,178,124,.14);margin-left:5px" title="Measured cost ($${(m.measuredUsd||0).toFixed(3)}) is HIGHER than the table cost — review before it raises subscriber prices">cost rose — review</span>` : '';
+          const riseChip = (!off && m.needsConfirm) ? ` <span class="adx-bdg" style="color:#FFB27C;background:rgba(255,178,124,.14);margin-left:5px" title="Measured unit cost ($${(m.measuredUnitUsd||0).toFixed(4)}) is higher than the table cost">cost rose</span>` : '';
           const badges = (off?' <span class="adx-bdg adx-bdg-draft" style="margin-left:5px">Disabled</span>':'')
             + (m.pinned?' <span class="adx-bdg adx-bdg-info" style="margin-left:5px" title="Product-priced — Apply target margin skips this row">Pinned</span>':'');
           const measureBtn = (!off && isMeasurable(m))
@@ -233,15 +305,16 @@ function renderPricing(){
             : '';
           return `<tr ${off?'style="opacity:.45"':(m.belowTarget?'style="background:rgba(255,107,94,.05)"':'')}>
             <td style="color:var(--text);font-weight:600">${esc(m.label)}${!off&&m.belowTarget?' <i class="ph ph-warning" style="color:#FF6B5E;font-size:12px" title="Margin below target"></i>':''}${badges}${riseChip}</td>
-            <td>${bizModeBadge(m.mode)}</td>
             <td style="font-size:11.5px;color:var(--text2)">${esc(m.provider)}</td>
-            <td class="r adx-num" style="color:#7CC4FF">${off?'—':`${costStr}<div style="margin-top:2px">${providerCostBadge(m)}</div>`}</td>
-            <td class="r adx-num" style="color:var(--text)">${credStr}${perSecHint}</td>
-            <td class="r adx-num">${off?'—':subStr}</td>
+            <td><span class="adx-bdg adx-bdg-soft">per ${unitLabel}</span>${tier?`<div style="font-size:9px;color:var(--muted2);margin-top:3px">${esc(m.price.defaultTier)}</div>`:''}</td>
+            <td class="r adx-num" style="color:#7CC4FF">${off?'—':(unitCost!=null?bizUsd(unitCost):'—')}</td>
+            <td class="r adx-num" style="color:var(--text)">${unitCredits!=null?'✦'+unitCredits:'—'}<div style="font-size:9px;color:var(--muted2)">${unitSub!=null?bizUsd(unitSub):'—'} / ${unitLabel}</div></td>
+            <td class="r adx-num">${off?'—':`${totalCost!=null?bizUsd(totalCost):'—'} → ${rep!=null?'✦'+rep:'—'}<div style="font-size:9px;color:var(--muted2)">${qty} ${unitLabel}${tier} · customer ${totalSub!=null?bizUsd(totalSub):'—'}</div>`}</td>
             <td class="r adx-num" style="color:${off?'var(--muted2)':bizMarginColor(marginPct)}">${off?'not charged':(marginPct!=null?marginPct+'%':'—')}</td>
-            <td class="r" style="white-space:nowrap">${off?'':measureBtn+`<button class="adx-iact" title="Auto — set to target margin (${marginT}×)" onclick="autoPriceRow(${m.modelId})"><i class="ph ph-magic-wand"></i></button> `}<button class="adx-iact" title="Edit price" onclick="openPriceEdit(${m.modelId})"><i class="ph ph-pencil-simple"></i></button></td>
+            <td>${pricingHealthBadge(m)}<div style="margin-top:3px">${providerCostBadge(m)}</div></td>
+            <td class="r" style="white-space:nowrap">${off?'':measureBtn}<button class="adx-iact" title="Edit price" onclick="openPriceEdit(${m.modelId})"><i class="ph ph-pencil-simple"></i></button></td>
           </tr>`;
-        }).join('') : `<tr><td colspan="8"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-currency-circle-dollar"></i></span><div style="font-size:12px;color:var(--muted2)">No models of this type</div></div></td></tr>`}</tbody>
+        }).join('') : `<tr><td colspan="9"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-currency-circle-dollar"></i></span><div style="font-size:12px;color:var(--muted2)">No models of this type</div></div></td></tr>`}</tbody>
       </table></div>
     </div>
     <div id="bizEditPanel"></div>`;
@@ -253,10 +326,10 @@ function openPriceEdit(modelId){
   const creditUsd = PRICING_DATA.creditUsdValue;
   const perSec = m.mode==='video' && (m.price.pricing==='per-second' || m.price.pricing==null);
   const host = document.getElementById('bizEditPanel');
-  const cur = m.price.representative ?? m.price.cost ?? 0;
+  const cur = m.price.unitCredits ?? m.price.cost ?? 0;
   host.innerHTML = `<div class="adx-editpanel"><div style="padding:16px 18px">
     <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-pencil-simple" style="color:var(--lime)"></i><span style="font-weight:700;font-size:13.5px">${esc(m.label)} — price</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
-    <div class="adx-flab" style="margin-top:14px">CREDIT PRICE (✦)${perSec?' / SECOND':''}</div>
+    <div class="adx-flab" style="margin-top:14px">CREDIT PRICE (✦) / ${pricingUnitLabel(m.price.unit).toUpperCase()}${m.price.defaultTier?' · '+esc(m.price.defaultTier):''}</div>
     <input class="adx-input mono" id="priceEditVal" type="number" min="1" step="1" value="${cur}" oninput="updatePriceMarginPreview(${modelId})">
     <div id="priceEditPreview" style="margin-top:10px"></div>
     <div style="display:flex;gap:8px;margin-top:12px"><button class="adx-btn2" style="flex:1;height:34px" onclick="document.getElementById('bizEditPanel').innerHTML=''">Cancel</button><button class="adx-btn" style="flex:1;height:34px" onclick="savePriceEdit(${modelId})">Save</button></div>
@@ -268,7 +341,7 @@ function updatePriceMarginPreview(modelId){
   const m = PRICING_DATA.models.find(x=>x.modelId===modelId);
   const creditUsd = PRICING_DATA.creditUsdValue;
   const val = Number(document.getElementById('priceEditVal')?.value)||0;
-  const cost = (m.providerCostUsd!=null) ? m.providerCostUsd : m.estCostUsd; // R4_05 yechilgan xarajat
+  const cost = (m.providerUnitCostUsd!=null) ? m.providerUnitCostUsd : m.providerCostUsd;
   const subUsd = val*creditUsd;
   const marginPct = (cost!=null && subUsd>0) ? Math.round((subUsd-cost)/subUsd*100) : null;
   const col = bizMarginColor(marginPct);
@@ -284,7 +357,14 @@ async function savePriceEdit(modelId){
   const val = parseInt(document.getElementById('priceEditVal')?.value,10);
   if(!Number.isInteger(val) || val<1){ toast('Error','Credit price must be a whole number ≥1','danger'); return; }
   try {
-    await StudioApi.patchAdminPricing(modelId, { cost: val });
+    const m=PRICING_DATA.models.find(x=>x.modelId===modelId);
+    const patch={cost:val};
+    if(m&&m.price.unit==='second'&&m.price.videoPerSec&&m.price.defaultTier){
+      patch.videoPerSec={...m.price.videoPerSec,[m.price.defaultTier]:val};
+    }else if(m&&m.price.unit==='image'&&m.price.qualityCost&&m.price.defaultTier){
+      patch.qualityCost={...m.price.qualityCost,[m.price.defaultTier]:val};
+    }
+    await StudioApi.patchAdminPricing(modelId, patch);
     document.getElementById('bizEditPanel').innerHTML='';
     toast('Saved','Model credit price updated','success');
     if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Model price changed',{action:'pricing',detail:`${modelId}:${val}`});
@@ -297,23 +377,26 @@ async function savePriceEdit(modelId){
 function openPricingConfig(){
   const cur = PRICING_DATA ? PRICING_DATA.creditUsdValue : 0.019;
   const curM = PRICING_DATA ? PRICING_DATA.marginTarget : 2;
+  const curGross = Math.round((1-1/curM)*1000)/10;
   const host = document.getElementById('bizEditPanel');
   host.innerHTML = `<div class="adx-editpanel"><div style="padding:16px 18px">
     <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-currency-circle-dollar" style="color:var(--lime)"></i><span style="font-weight:700;font-size:13.5px">Credit value &amp; target margin</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
-    <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5">Credit value = how many $ one credit (✦) is worth. Target margin drives "Apply target margin" and the below-target warnings.</div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5">Credit value is the conservative net value of one ✦. Gross margin is shown in the familiar percentage form; Review converts it to the internal revenue/cost multiplier.</div>
     <div class="adx-flab" style="margin-top:12px">1 ✦ = $</div>
     <input class="adx-input mono" id="creditUsdVal" type="number" min="0.001" step="0.001" value="${cur}">
-    <div class="adx-flab" style="margin-top:10px">TARGET MARGIN (×)</div>
-    <input class="adx-input mono" id="marginTargetVal" type="number" min="1" step="0.1" value="${curM}">
+    <div class="adx-flab" style="margin-top:10px">TARGET GROSS MARGIN (%)</div>
+    <input class="adx-input mono" id="marginGrossVal" type="number" min="1" max="95" step="0.5" value="${curGross}">
+    <div style="font-size:9.5px;color:var(--muted2);margin-top:5px">Example: 50% gross margin = 2× revenue/cost.</div>
     <div style="display:flex;gap:8px;margin-top:12px"><button class="adx-btn2" style="flex:1;height:34px" onclick="document.getElementById('bizEditPanel').innerHTML=''">Cancel</button><button class="adx-btn" style="flex:1;height:34px" onclick="savePricingConfig()">Save</button></div>
   </div></div>`;
 }
 
 async function savePricingConfig(){
   const val = Number(document.getElementById('creditUsdVal')?.value);
-  const mv = Number(document.getElementById('marginTargetVal')?.value);
+  const gross = Number(document.getElementById('marginGrossVal')?.value);
+  const mv = gross>0&&gross<100 ? 1/(1-gross/100) : 0;
   if(!(val>0)){ toast('Error','Enter a positive credit value','danger'); return; }
-  if(!(mv>0)){ toast('Error','Enter a positive target margin','danger'); return; }
+  if(!(gross>0&&gross<100)){ toast('Error','Gross margin must be between 0% and 100%','danger'); return; }
   try {
     await StudioApi.patchAdminPricingConfig({ creditUsdValue: val, marginTarget: mv });
     document.getElementById('bizEditPanel').innerHTML='';

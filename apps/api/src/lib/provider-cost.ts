@@ -25,6 +25,63 @@ import { GEN_MODELS, resolveVideoParams, resolveImageCount } from "./gen-models.
  */
 export const DEFAULT_PROVIDER_USD = 0.5;
 
+export type ProviderCostReference = {
+  label: string;
+  url: string | null;
+  checkedAt: string;
+  note?: string;
+};
+
+/** Admin display/audit metadata. This does not fetch or mutate prices. */
+export function providerCostReference(model: GenModel): ProviderCostReference {
+  if (model.provider === "vertex" || model.provider === "vertex-image" || model.provider === "vertex-omni") {
+    return {
+      label: "Google Cloud official pricing",
+      url: "https://cloud.google.com/vertex-ai/generative-ai/pricing",
+      checkedAt: "2026-08-02",
+    };
+  }
+  if (model.provider === "google-tts") {
+    return {
+      label: "Google Cloud Text-to-Speech pricing",
+      url: "https://cloud.google.com/text-to-speech/pricing",
+      checkedAt: "2026-08-02",
+    };
+  }
+  if (model.provider === "elevenlabs") {
+    return {
+      label: "ElevenLabs API pricing",
+      url: "https://elevenlabs.io/pricing/api?price.platform=api",
+      checkedAt: "2026-08-02",
+    };
+  }
+  if (model.provider === "byteplus") {
+    return {
+      label: "BytePlus ModelArk console / measured usage",
+      url: null,
+      checkedAt: "2026-07-20",
+      note: "Effective resource-pack rate; verify against the next invoice.",
+    };
+  }
+  if (model.provider === "kling") {
+    return {
+      label: "Kling AI official pricing table",
+      url: "https://kling.ai/",
+      checkedAt: "2026-07-20",
+      note: "Worst-case audio/reference tier is used.",
+    };
+  }
+  if (model.provider === "topaz") {
+    return {
+      label: "Topaz account tier estimate",
+      url: "https://www.topazlabs.com/pricing",
+      checkedAt: "2026-07-20",
+      note: `TOPAZ_USD_PER_CREDIT=$${TOPAZ_USD_PER_CREDIT}`,
+    };
+  }
+  return { label: "Internal provider table", url: null, checkedAt: "2026-07-20" };
+}
+
 /**
  * R4_07 — Topaz-credit → USD stavkasi (owner obuna tier'i). ENV bilan sozlanadi (kod o'zgarmaydi):
  * PAYG $0.195 · obuna 400/$39.99=$0.10 · 1400/$99.99=$0.071 · 3000/$199.99=$0.067 · 20000=$0.05.
@@ -38,14 +95,14 @@ export const TOPAZ_USD_PER_CREDIT = (() => {
 })();
 
 /** Rasm: model id → sifat(1K/2K/4K...) bo'yicha bir-dona provider USD.
- *  BATCH4 #3 — bazaviy tier'lar RASMIY sahifadan USER-tasdiqlangan (2026-07); yuqori
- *  tier'lar (2K/4K) hali TAXMINIY (rasmiy per-tier narx e'lon qilinmagan) — konservativ. */
+ *  Google qiymatlari 2026-08-02 rasmiy Vertex pricing footnote'lari bilan yangilangan.
+ *  Gemini image input/text tokenlari alohida va odatda kichik; bu jadval output bazasidir. */
 export const IMAGE_USD_PER_UNIT: Record<number, Record<string, number>> = {
-  1010: { "1K": 0.04, "2K": 0.06, "4K": 0.12 }, // Nano Banana 2 — 1K $0.040 ✅; 2K/4K taxminiy
-  1013: { "1K": 0.02 }, // Nano Banana 2 Lite — $0.020 ✅
-  1014: { "1K": 0.1, "2K": 0.15, "4K": 0.24 }, // Nano Banana Pro — 1K $0.100 ✅; 2K/4K taxminiy
-  1011: { "1K": 0.04, "2K": 0.06 }, // Imagen 4 — 1K $0.040 ✅; 2K taxminiy
-  1012: { "1K": 0.06, "2K": 0.08 }, // Imagen 4 Ultra — 1K $0.060 ✅; 2K taxminiy
+  1010: { "1K": 0.067, "2K": 0.101, "4K": 0.15 }, // Gemini 3.1 Flash Image (Nano Banana 2)
+  1013: { "1K": 0.034 }, // Gemini 3.1 Flash-Lite Image (Nano Banana 2 Lite)
+  1014: { "1K": 0.134, "2K": 0.134, "4K": 0.24 }, // Gemini 3 Pro Image (Nano Banana Pro)
+  1011: { "1K": 0.04, "2K": 0.04 }, // Imagen 4 — rasmiy $0.04/image
+  1012: { "1K": 0.06, "2K": 0.06 }, // Imagen 4 Ultra — rasmiy $0.06/image
   1015: { x2: 0.003, x4: 0.003 }, // Imagen Upscale (imagegeneration@002) — $0.003/rasm ✅
   // Seedream (BytePlus ModelArk, per-rasm postpaid) — Pro narxi KONSOLDA TASDIQLANGAN (2026-07-11):
   // output 1K $0.045 · 2K $0.090; input ref $0.003/dona (birinchisi bepul) — ref narxi jadvalga
@@ -100,9 +157,8 @@ export const VIDEO_USD_FLAT: Record<number, number> = {
 export const FLAT_USD: Record<number, number> = {
   2001: 0.005, // Kokoro TTS (OpenRouter, arzon OSS) — o'chirilgan (BATCH4 #4)
   2002: 0.03, // Chirp 3 HD ✅ — worst-case maxChars=1000 × $0.00003/belgi
-  // ElevenLabs SFX — rasmiy docs ✅: 40 EL-kredit/soniya; bizning max 10s = 400 EL-kredit
-  // ≈ $0.088 (Creator $22/100k). Flat kredit worst-case'ga langarlangan (Chirp naqshi).
-  4001: 0.088,
+  // ElevenLabs API retail 2026-08-02: $0.12/min. Bizning max 10s → $0.020 worst-case.
+  4001: 0.02,
 };
 
 /** imageUnitCost'dagi kabi tanlangan sifat kalitini aniqlaydi (1K/2K/4K...). */

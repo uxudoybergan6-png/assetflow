@@ -125,6 +125,10 @@ export type AutoDerivedResolved = AutoDerived & {
   measuredUsd: number | null;
   samples: number;
   needsConfirm: boolean; // measured baza YUQORI + tasdiq yo'q → bulk apply chetlab o'tadi
+  providerUnitUsd: number;
+  providerUnit: string;
+  providerTier: string | null;
+  staticUnitUsd: number;
 };
 
 /** Model tier tuzilishi + nisbat manbai (statik USD jadvali > katalog kredit nisbati > yagona tier). */
@@ -175,16 +179,20 @@ export async function deriveAutoPricingResolved(
     measuredUsd: resolved.measuredUsd,
     samples: resolved.samples,
     needsConfirm: resolved.needsConfirm,
+    providerUnitUsd: resolved.unitUsd,
+    providerUnit: resolved.unit,
+    providerTier: resolved.tier,
+    staticUnitUsd: resolved.staticUnitUsd,
   };
   if (resolved.source !== "measured") return { ...base, ...meta };
 
   // Measured qabul qilindi → per-tier qayta qurish (measured'ga langar).
   const tiers = tierRatios(model);
   if (!tiers) {
-    const credits = ceilCredits(resolved.usd, marginTarget, creditUsd);
+    const credits = ceilCredits(resolved.unitUsd, marginTarget, creditUsd);
     return {
       ...base,
-      tiers: [{ key: "per-gen", providerUsd: resolved.usd, credits }],
+      tiers: [{ key: "per-gen", providerUsd: resolved.unitUsd, credits }],
       patch: { cost: credits, estCostUsd: resolved.usd },
       ...meta,
     };
@@ -193,7 +201,7 @@ export async function deriveAutoPricingResolved(
   const outTiers: AutoDerived["tiers"] = [];
   const costMap: Record<string, number> = {};
   for (const k of tiers.keys) {
-    const usd = round4((resolved.usd * (tiers.ratio[k] || defRatio)) / defRatio);
+    const usd = round4((resolved.unitUsd * (tiers.ratio[k] || defRatio)) / defRatio);
     const credits = ceilCredits(usd, marginTarget, creditUsd);
     costMap[k] = credits;
     outTiers.push({ key: k, providerUsd: usd, credits });
@@ -220,16 +228,44 @@ export type AutoApplyReport = {
   skippedNeedsConfirm: Array<{ modelId: number; label: string; measuredUsd: number | null; staticUsd: number }>;
 };
 
+export async function previewAutoMarginAll(opts?: {
+  marginTarget?: number;
+  creditUsdValue?: number;
+  modelIds?: number[];
+  confirmModelIds?: number[];
+}): Promise<{
+  marginTarget: number;
+  creditUsdValue: number;
+  models: AutoDerivedResolved[];
+}> {
+  const cfg = await getPricingConfig();
+  const marginTarget = opts?.marginTarget ?? cfg.marginTarget;
+  const creditUsdValue = opts?.creditUsdValue ?? cfg.creditUsdValue;
+  const modelSet = opts?.modelIds ? new Set(opts.modelIds) : null;
+  const confirmSet = new Set(opts?.confirmModelIds ?? []);
+  const models: AutoDerivedResolved[] = [];
+  for (const model of GEN_MODELS) {
+    if (model.enabled === false || (modelSet && !modelSet.has(model.id))) continue;
+    models.push(
+      await deriveAutoPricingResolved(model, marginTarget, creditUsdValue, {
+        confirm: confirmSet.has(model.id),
+      })
+    );
+  }
+  return { marginTarget, creditUsdValue, models };
+}
+
 /**
  * "Apply target margin" — BARCHA katalog-enabled modellar bo'yicha derivatsiya + yozish.
  * Pinned modellar chetlab o'tiladi (ro'yxatda ko'rsatiladi); narx jadvali yo'q model flag'lanadi.
  */
 export async function applyAutoMarginAll(
   updatedBy?: string | null,
-  opts?: { confirmModelIds?: number[] }
+  opts?: { confirmModelIds?: number[]; modelIds?: number[] }
 ): Promise<AutoApplyReport> {
   const { creditUsdValue, marginTarget } = await getPricingConfig();
   const confirmSet = new Set(opts?.confirmModelIds ?? []);
+  const modelSet = opts?.modelIds ? new Set(opts.modelIds) : null;
   const report: AutoApplyReport = {
     marginTarget,
     creditUsdValue,
@@ -240,6 +276,7 @@ export async function applyAutoMarginAll(
   };
   for (const model of GEN_MODELS) {
     if (model.enabled === false) continue; // faqat katalog-enabled (o'chirilganlar zaxira)
+    if (modelSet && !modelSet.has(model.id)) continue;
     // R4_05 — measured-aware (safety qoidasi bilan). Confirm ro'yxatidagi model xarajat ko'tarilishini qabul qiladi.
     const d = await deriveAutoPricingResolved(model, marginTarget, creditUsdValue, {
       confirm: confirmSet.has(model.id),
@@ -254,7 +291,7 @@ export async function applyAutoMarginAll(
         modelId: model.id,
         label: model.label,
         measuredUsd: d.measuredUsd,
-        staticUsd: estimateProviderUsd(model, {}) ?? 0,
+        staticUsd: d.staticUnitUsd,
       });
       continue;
     }

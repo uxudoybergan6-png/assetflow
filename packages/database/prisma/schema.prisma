@@ -667,12 +667,21 @@ model ProviderSpend {
   // dan yoziladi. null = faqat estimate. confidence: "measured" | "estimated" | "official".
   // ANALITIKA — kredit matematikasiga TEGMAYDI (money zone emas).
   measuredCostUsd  Decimal? @db.Decimal(10, 4)
+  // Pricing calibration: measuredCostUsd = job total; unitCost = normalized $/image, $/second
+  // or $/generation. Old rows remain valid audit history but are not used for auto-pricing
+  // until these fields are present (prevents total-video-cost being treated as $/second).
+  measuredUnitCostUsd Decimal? @db.Decimal(12, 6)
+  measuredUnit        String?  // "image" | "second" | "generation" | "character"
+  measuredQuantity    Decimal? @db.Decimal(12, 4)
+  measurementTier     String?  // image quality / video resolution used by this sample
+  measurementMetaJson Json?    // audio, references, probe flag, token usage, etc.
   confidence       String?
   createdAt        DateTime @default(now())
 
   @@index([generationId])
   @@index([provider])
   @@index([createdAt])
+  @@index([modelId, measuredUnit, measurementTier])
 }
 
 // ── Bosqich 3.4 — NARX DVIGATELI (admin-managed pricing, DB-backed) ──────────

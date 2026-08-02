@@ -16,7 +16,13 @@
  */
 import { prisma, Prisma } from "@creative-tools/database";
 import type { GenModel } from "./gen-models.js";
-import { GEN_MODELS, getModelById, computeGenCost } from "./gen-models.js";
+import {
+  GEN_MODELS,
+  getModelById,
+  computeGenCost,
+  resolveImageCount,
+  resolveVideoParams,
+} from "./gen-models.js";
 import { estimateProviderUsd } from "./provider-cost.js";
 import {
   resolveProviderUsd,
@@ -387,6 +393,10 @@ export type PricingViewRow = {
     qualityCost: Record<string, number> | null;
     videoPerSec: Record<string, number> | null;
     representative: number; // default param bilan namunaviy narx
+    unit: "image" | "second" | "generation";
+    unitCredits: number;
+    defaultQuantity: number;
+    defaultTier: string | null;
   };
   estCostUsd: number | null;
   enabled: boolean;
@@ -401,6 +411,25 @@ export async function listPricingView(): Promise<PricingViewRow[]> {
   return GEN_MODELS.map((m) => {
     const row = map.get(m.id);
     const priced = applyRow(m, row);
+    const representative = computeGenCost(priced, {});
+    let unit: PricingViewRow["price"]["unit"] = "generation";
+    let unitCredits = representative;
+    let defaultQuantity = 1;
+    let defaultTier: string | null = null;
+    if (m.mode === "image") {
+      unit = "image";
+      defaultQuantity = resolveImageCount(priced, {});
+      defaultTier = priced.imgSettings?.quality?.def ?? priced.resolutions?.[0] ?? null;
+      unitCredits = Math.max(1, Math.round(representative / Math.max(1, defaultQuantity)));
+    } else if (m.mode === "video" && priced.pricing !== "per-generation") {
+      unit = "second";
+      const vp = resolveVideoParams(priced, {});
+      defaultQuantity = vp.duration;
+      defaultTier = vp.resolution;
+      unitCredits =
+        priced.videoSettings?.resolution?.perSec?.[vp.resolution] ??
+        Math.max(1, Math.round(representative / Math.max(1, vp.duration)));
+    }
     return {
       modelId: m.id,
       mode: m.mode,
@@ -414,7 +443,11 @@ export async function listPricingView(): Promise<PricingViewRow[]> {
         pricing: priced.pricing ?? (m.mode === "video" ? "per-second" : null),
         qualityCost: priced.imgSettings?.quality?.cost ?? priced.qualityCost ?? null,
         videoPerSec: priced.videoSettings?.resolution?.perSec ?? null,
-        representative: computeGenCost(priced, {}),
+        representative,
+        unit,
+        unitCredits,
+        defaultQuantity,
+        defaultTier,
       },
       estCostUsd: row?.estCostUsd ?? estimateProviderUsd(m, {}),
       enabled: row?.enabled ?? m.enabled !== false,

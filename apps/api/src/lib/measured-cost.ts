@@ -19,6 +19,7 @@
  */
 import { prisma } from "@creative-tools/database";
 import type { GenModel } from "./gen-models.js";
+import { getModelById, resolveImageCount, resolveVideoParams } from "./gen-models.js";
 import {
   estimateProviderUsd,
   hasProviderCostEntry,
@@ -34,7 +35,70 @@ export const MEASURED_SAMPLE_MIN = 1;
 export const MEASURED_CONFIDENT = 3;
 const EPS = 1e-6;
 
-export type MeasuredCost = { usd: number; samples: number };
+export type MeasuredCost = {
+  /** Normalized cost: $/image, $/second or $/generation. */
+  usd: number;
+  samples: number;
+  unit: "image" | "second" | "generation" | "character";
+  tier: string | null;
+};
+
+function measurementSpec(model: GenModel): { unit: MeasuredCost["unit"]; tier: string | null } {
+  if (model.mode === "image") {
+    return {
+      unit: "image",
+      tier: model.imgSettings?.quality?.def ?? model.resolutions?.[0] ?? null,
+    };
+  }
+  if (model.mode === "video" && model.pricing !== "per-generation") {
+    return {
+      unit: "second",
+      tier: model.videoSettings?.resolution?.def ?? model.resolutions?.[0] ?? null,
+    };
+  }
+  return { unit: "generation", tier: null };
+}
+
+function measuredUnitForParams(
+  model: GenModel,
+  params: Record<string, unknown>,
+  measured: MeasuredCost,
+  currentStaticUnitUsd: number
+): number {
+  if (!measured.tier) return measured.usd;
+  const measuredTierParams =
+    model.mode === "image"
+      ? { ...params, quality: measured.tier, count: 1, num_images: 1 }
+      : { ...params, resolution: measured.tier };
+  const measuredTierTotal = estimateProviderUsd(model, measuredTierParams) ?? 0;
+  const measuredTierStaticUnit = staticUnitForParams(model, measuredTierParams, measuredTierTotal);
+  if (!(measuredTierStaticUnit > 0) || !(currentStaticUnitUsd > 0)) return measured.usd;
+  return round4(measured.usd * (currentStaticUnitUsd / measuredTierStaticUnit));
+}
+
+function measuredTotalForParams(
+  model: GenModel,
+  params: Record<string, unknown>,
+  unitUsd: number
+): number {
+  if (model.mode === "image") return round4(unitUsd * resolveImageCount(model, params));
+  if (model.mode === "video" && model.pricing !== "per-generation") {
+    return round4(unitUsd * resolveVideoParams(model, params).duration);
+  }
+  return round4(unitUsd);
+}
+
+function staticUnitForParams(
+  model: GenModel,
+  params: Record<string, unknown>,
+  totalUsd: number
+): number {
+  if (model.mode === "image") return round4(totalUsd / Math.max(1, resolveImageCount(model, params)));
+  if (model.mode === "video" && model.pricing !== "per-generation") {
+    return round4(totalUsd / Math.max(1, resolveVideoParams(model, params).duration));
+  }
+  return round4(totalUsd);
+}
 
 function round4(n: number): number {
   return Math.round(n * 10000) / 10000;
@@ -48,28 +112,35 @@ function median(sortedAsc: number[]): number {
 }
 
 /**
- * Bitta model uchun o'lchangan xarajat: confidence="measured" ProviderSpend qatorlarining
- * so'nggi N tasining medianasi (musbat qiymatlar). Ma'lumot yo'q → null.
- * IZOH: ProviderSpend tier/resolution saqlamaydi → per-MODEL agregat (per-tier emas); shuning
- * uchun ko'p-tier modelда bu o'rtacha vakil qiymat (default tier atrofida) sifatida ishlatiladi.
+ * Bitta model uchun NORMALIZED o'lchangan xarajat: default tier + pricing unit bir xil bo'lgan
+ * so'nggi N namunaning medianasi. Eski total-only yozuvlar ataylab olinmaydi.
  */
 export async function getMeasuredProviderUsd(
   modelId: number,
   limit = RECENT_SAMPLES
 ): Promise<MeasuredCost | null> {
+  const model = getModelById(modelId);
+  if (!model) return null;
+  const spec = measurementSpec(model);
   try {
     const rows = await prisma.providerSpend.findMany({
-      where: { modelId, confidence: "measured", measuredCostUsd: { gt: 0 } },
-      select: { measuredCostUsd: true },
+      where: {
+        modelId,
+        confidence: "measured",
+        measuredUnitCostUsd: { gt: 0 },
+        measuredUnit: spec.unit,
+        measurementTier: spec.tier,
+      },
+      select: { measuredUnitCostUsd: true },
       orderBy: { createdAt: "desc" },
       take: limit,
     });
     const vals = rows
-      .map((r) => Number(r.measuredCostUsd))
+      .map((r) => Number(r.measuredUnitCostUsd))
       .filter((v) => Number.isFinite(v) && v > 0)
       .sort((a, b) => a - b);
     if (!vals.length) return null;
-    return { usd: round4(median(vals)), samples: vals.length };
+    return { usd: round4(median(vals)), samples: vals.length, unit: spec.unit, tier: spec.tier };
   } catch (e) {
     console.error("getMeasuredProviderUsd", e);
     return null;
@@ -86,23 +157,32 @@ export async function getMeasuredProviderUsdMap(
   const out = new Map<number, MeasuredCost>();
   try {
     const rows = await prisma.providerSpend.findMany({
-      where: { confidence: "measured", measuredCostUsd: { gt: 0 }, modelId: { not: null } },
-      select: { modelId: true, measuredCostUsd: true },
+      where: { confidence: "measured", measuredUnitCostUsd: { gt: 0 }, modelId: { not: null } },
+      select: { modelId: true, measuredUnitCostUsd: true, measuredUnit: true, measurementTier: true },
       orderBy: { createdAt: "desc" },
     });
     const byModel = new Map<number, number[]>();
     for (const r of rows) {
       const id = r.modelId as number;
+      const model = getModelById(id);
+      if (!model) continue;
+      const spec = measurementSpec(model);
+      if (r.measuredUnit !== spec.unit || (r.measurementTier ?? null) !== spec.tier) continue;
       const arr = byModel.get(id) ?? [];
       if (arr.length < limit) {
-        const v = Number(r.measuredCostUsd);
+        const v = Number(r.measuredUnitCostUsd);
         if (Number.isFinite(v) && v > 0) arr.push(v);
         byModel.set(id, arr);
       }
     }
     for (const [id, vals] of byModel) {
       const sorted = vals.slice().sort((a, b) => a - b);
-      if (sorted.length) out.set(id, { usd: round4(median(sorted)), samples: sorted.length });
+      if (sorted.length) {
+        const model = getModelById(id);
+        if (!model) continue;
+        const spec = measurementSpec(model);
+        out.set(id, { usd: round4(median(sorted)), samples: sorted.length, unit: spec.unit, tier: spec.tier });
+      }
     }
   } catch (e) {
     console.error("getMeasuredProviderUsdMap", e);
@@ -115,8 +195,13 @@ export type ProviderCostSource = "measured" | "table" | "estimate";
 export type ResolvedProviderCost = {
   /** Yechilgan (ishlatiladigan) provider USD — safety qoidasidan keyingi baza. */
   usd: number;
+  /** Same cost normalized to the model's pricing unit. */
+  unitUsd: number;
+  unit: MeasuredCost["unit"];
+  tier: string | null;
   /** estimateProviderUsd (statik jadval yoki DEFAULT fail-safe) — (b)/(c) fallback. */
   staticUsd: number;
+  staticUnitUsd: number;
   /** So'nggi o'lchangan median (yo'q → null) — display/ogohlantirish uchun har doim beriladi. */
   measuredUsd: number | null;
   samples: number;
@@ -138,6 +223,8 @@ export function computeResolvedProviderCost(
   opts?: { allowRaise?: boolean }
 ): ResolvedProviderCost {
   const staticUsd = estimateProviderUsd(model, params) ?? DEFAULT_PROVIDER_USD;
+  const spec = measurementSpec(model);
+  const staticUnitUsd = staticUnitForParams(model, params, staticUsd);
   const hasTable = hasProviderCostEntry(model);
   const fallbackSource: ProviderCostSource = hasTable ? "table" : "estimate";
 
@@ -150,12 +237,18 @@ export function computeResolvedProviderCost(
   const trustMeasured = model.mode !== "image" || !hasTable;
 
   if (trustMeasured && measured && measured.samples >= MEASURED_SAMPLE_MIN && measured.usd > 0) {
-    const rose = measured.usd > staticUsd + EPS;
+    const measuredUnitUsd = measuredUnitForParams(model, params, measured, staticUnitUsd);
+    const measuredTotalUsd = measuredTotalForParams(model, params, measuredUnitUsd);
+    const rose = measuredUnitUsd > staticUnitUsd + EPS;
     if (!rose || opts?.allowRaise) {
       // Pasaytiradi (yoki teng) → ERKIN qabul; yoki admin ko'tarishni tasdiqlagan.
       return {
-        usd: measured.usd,
+        usd: measuredTotalUsd,
+        unitUsd: measuredUnitUsd,
+        unit: measured.unit,
+        tier: spec.tier,
         staticUsd,
+        staticUnitUsd,
         measuredUsd: measured.usd,
         samples: measured.samples,
         source: "measured",
@@ -165,7 +258,11 @@ export function computeResolvedProviderCost(
     // O'lchangan YUQORI + tasdiq yo'q → baza statik qoladi, lekin ogohlantirish uchun measured beriladi.
     return {
       usd: staticUsd,
+      unitUsd: staticUnitUsd,
+      unit: spec.unit,
+      tier: spec.tier,
       staticUsd,
+      staticUnitUsd,
       measuredUsd: measured.usd,
       samples: measured.samples,
       source: fallbackSource,
@@ -175,7 +272,11 @@ export function computeResolvedProviderCost(
 
   return {
     usd: staticUsd,
+    unitUsd: staticUnitUsd,
+    unit: spec.unit,
+    tier: spec.tier,
     staticUsd,
+    staticUnitUsd,
     measuredUsd: measured?.usd ?? null,
     samples: measured?.samples ?? 0,
     source: fallbackSource,
