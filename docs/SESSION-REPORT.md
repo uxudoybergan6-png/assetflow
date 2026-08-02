@@ -1,18 +1,21 @@
-# Session report — 2026-08-03 (Premiere UXP: 1:1 parity + paketlash + `pr` reliz kanali)
-- **1:1 parity YOPILDI**: `QASweep` 19/19 ekran, tor (440×900) va keng (900×1000) rejimda
-  `QABad()` bo'sh. Oxirgi farq — `::after` psevdosi zichlik (kc6) gap'ini olmasdi;
-  `ae-port.mjs` da `setSelfGap()` bilan UMUMIY tuzatildi (per-ekran hack yo'q).
-- TUZOQ (harness): `__QAPFX` iframe reload'da yo'qolardi → tor o'lchov keng imzo bilan
-  solishtirilib o'nlab soxta farq berardi. `QAPfx()` endi `sessionStorage` da saqlaydi.
-  Iframe o'lchami imzo olingandagi bilan AYNAN bir xil bo'lishi shart (keng = 900×1000).
-- `build-ccx.mjs`: fayl ro'yxati `manifest.main` dan REKURSIV hisoblanadi (qo'l allowlist yo'q),
-  ZIP xom baytdan yoziladi. 52 fayl · 738.4 KB. Marketplace flavor faqat `FF_PR_MARKETPLACE_ID` bilan.
-- `verify-ccx.mjs`: paket BAYTLARINI tekshiradi (secret, dev qoldiq, sourcemap, symlink,
-  havola yaxlitligi, `network.domains`). `localhost` uchrashlari `LOCAL_OK` da SANOQ bilan
-  qulflangan — manba o'zgarsa tekshiruv yiqiladi. Natija: toza.
-- `plugins/premiere-uxp/README.md` — port / dev-install / build / QA oqimi.
-- Backend `pr` kanali: migratsiya `20260803090000_plugin_release_host` LOKAL DB ga qo'llandi,
-  `apps/api` tsc toza; admin **Releases** ga host tanlagich (AE `.pkg`/`.exe`, PR bitta `.ccx`
-  ikkala platformaga), tarix host bo'yicha filtrlanadi, `host` yo'q eski yozuv = `ae`.
-- KUTILMOQDA: Premiere'da jonli tekshiruv (panel + `.mogrt` import, FAZA 3) ·
-  migratsiya PROD ga (deploy'dan OLDIN) · `catalog?app=pr` production'da 0 element (launch to'sig'i).
+# Session report — 2026-08-03 (Premiere UXP: panel Premiere'da JONLI ishladi)
+
+- **Panel butunlay stilsiz chiqardi** (xom matn, "No connection" strip'i, `__AF_BUILD__`).
+  Sabab: **UXP nisbiy yo'lni plagin ILDIZIDAN yechadi**, hujjat papkasidan emas.
+  `ported/index.html` da `href="ae.css"` → `/ae.css` (yo'q), `../js/…` esa ildizdan
+  tashqariga chiqardi → CSS ham, 31 ta skript ham 404. Brauzerda hammasi to'g'ri edi.
+  **Tuzatildi:** kirish nuqtasi ildizga — `panel.html`, barcha yo'l ildizdan
+  (`js/…`, `ported/…`). `manifest.main` yangilandi, `ported/index.html` o'chiriladi.
+- **UXP `border-radius` ni KLAMPLAMAYDI** (spec §5.5 talab qiladi). `999px`/`var(--r-full)`
+  bergan 161 klass Premiere'da "linza" bo'lib chiqardi — kirish ekranidagi Sign in /
+  Continue with Google tugmalari panel bo'ylab oq yoy edi. To'g'ri qiymat `min(w,h)/2`
+  faqat ish vaqtida ma'lum → port `__AF_PILLC` yig'adi, `js/ae-shim/pill-radius.js`
+  klamplaydi. CSS qiymati TEGILMADI (brauzer QA etaloni buzilmasin).
+- `__AF_BUILD__` shtampi: `install-uxp-dev.mjs` (dev-<ver>-<sana>) va `build-ccx.mjs`
+  (`<ver>-<flavor>` — determinizm saqlanadi) uradi. AE `install-cep.sh` bilan bir xil.
+- **Jonli tasdiqlandi** (Premiere Pro 2026, FF-UXP-Spike): panel to'liq stilli,
+  shriftlar, kartalar, pill tugmalar AE bilan bir xil. `.ccx` 53 fayl · 740.9 KB · toza.
+- SABOQ: QA imzosi faqat GEOMETRIYA (x,y,w,h) — radius/rang/soya farqini KO'RMAYDI.
+  README §5 ga yozildi: reliz oldidan panel jonli ko'zdan kechiriladi.
+- KUTILMOQDA: `.mogrt` import end-to-end — kirish (parol) + `catalog?app=pr` prod'da
+  0 element kerak · migratsiya `20260803090000_plugin_release_host` PROD ga (deploy'dan OLDIN).

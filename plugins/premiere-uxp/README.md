@@ -8,7 +8,7 @@ Interfeys After Effects CEP plaginidan **1:1 ko'chirilgan** — ikkalasi ham
 |---|---|
 | Plagin ID | `com.frameflow.premiere` |
 | Minimal Premiere | 25.6.0 |
-| Kirish nuqtasi | `ported/index.html` |
+| Kirish nuqtasi | `panel.html` (plagin ILDIZIDA — pastdagi tuzoqqa qara) |
 | Panel o'lchami | dok 420×760, suzuvchi 560×820, min 320×400 |
 
 ---
@@ -17,8 +17,8 @@ Interfeys After Effects CEP plaginidan **1:1 ko'chirilgan** — ikkalasi ham
 
 ```
 manifest.json        UXP manifesti (ID, host, ruxsatlar, panel o'lchami)
+panel.html           ← GENERATSIYA. Kirish nuqtasi, plagin ILDIZIDA.
 ported/              ← GENERATSIYA QILINADI. Qo'lda TEGMA.
-  index.html         AE panelidan ko'chirilgan panel
   ae.css             AE CSS'ining UXP'ga moslashtirilgan varianti
   ae-inline-0N.js    AE HTML ichidagi inline skriptlar (ajratilgan)
   ae-src/            AE `assetflow-*.js` modullari
@@ -54,6 +54,23 @@ qaytadan yozadi. Asosiy transformlar:
   shim ulash.
 
 Oxirida statistika bosiladi (qoidalar soni, gap→margin, psevdo gap …).
+
+### UXP'ning ikki qimmat tuzog'i
+
+> **1. Nisbiy yo'l plagin ILDIZIDAN yechiladi, hujjat papkasidan emas.**
+> Kirish nuqtasi `ported/index.html` bo'lganda `href="ae.css"` → `/ae.css`
+> (yo'q) bo'lib ketardi, `../js/…` esa ildizdan tashqariga chiqardi: Premiere
+> panelni BUTUNLAY stilsiz va skriptsiz ko'rsatardi (brauzerda esa hammasi
+> to'g'ri edi — brauzer hujjat papkasidan yechadi). Shu sabab hujjat ildizga
+> ko'chirildi: `panel.html`. Endi ikkala yechim qoidasi bir xil natija beradi.
+> Yangi fayl qo'shsangiz yo'l ILDIZDAN yozilsin (`js/…`, `ported/…`).
+>
+> **2. `border-radius` KLAMPLANMAYDI.** Spetsifikatsiya radius quti yarmidan
+> oshsa qisqartirishni talab qiladi; UXP qilmaydi va `999px` (`var(--r-full)`,
+> AE'da 160+ qoida) bergan har bir pill "linza" bo'lib qo'shni elementga chiqib
+> ketadi. To'g'ri qiymat `min(w,h)/2` — faqat ish vaqtida ma'lum, shuning uchun
+> port `__AF_PILLC` ro'yxatini yig'adi va `js/ae-shim/pill-radius.js` klamplaydi.
+> CSS qiymati O'ZGARTIRILMAYDI, brauzerdagi QA etaloni buzilmasin.
 
 ---
 
@@ -135,6 +152,11 @@ Farq `[dx, dy, dw, dh] = port − AE`.
 
 **Joriy holat:** 19/19 ekran, tor va keng rejimda 0 farq.
 
+> **Harness nimani KO'RMAYDI:** imzo — geometriya (x, y, w, h). Faqat chizishga
+> ta'sir qiladigan farq (rang, radius, soya, shrift render) o'lchovda 0 chiqadi.
+> `border-radius` klampi shu sababdan brauzer QA'sidan o'tib ketgan va faqat
+> Premiere skrinshotida ko'ringan. Reliz oldidan panelni JONLI ko'zdan kechir.
+
 ---
 
 ## 6. QA ro'yxati (reliz oldidan)
@@ -143,7 +165,8 @@ Farq `[dx, dy, dw, dh] = port − AE`.
 - [ ] `QASweep` tor + keng: `QABad()` bo'sh
 - [ ] `node scripts/build-ccx.mjs` — yig'ildi
 - [ ] `node scripts/verify-ccx.mjs` — toza
-- [ ] Premiere'da: panel ochiladi, login ishlaydi, tema (dark/light) mos
+- [ ] Premiere'da: panel STILLI ochiladi (kirish ekrani pill tugmalari yumaloq),
+      login ishlaydi, tema (dark/light) mos
 - [ ] Katalog `?app=pr` bilan to'ladi, `hasPack` to'g'ri
 - [ ] `.mogrt` import → Essential Graphics'da paydo bo'ladi
 - [ ] Konsolda yangi xato yo'q

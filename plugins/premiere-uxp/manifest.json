@@ -3,7 +3,7 @@
   "id": "com.frameflow.premiere",
   "name": "FrameFlow",
   "version": "0.1.0",
-  "main": "ported/index.html",
+  "main": "panel.html",
   "host": {
     "app": "premierepro",
     "minVersion": "25.6.0"

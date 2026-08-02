@@ -24,7 +24,9 @@
  *     inline on*=""           → SAQLANADI; `ae-inline-events.js` delegatsiya bilan bajaradi
  *                               (UXP atributni o'qiydi, lekin o'zi CHAQIRMAYDI)
  *
- * Chiqish: `plugins/premiere-uxp/ported/` (generatsiya — qo'lda TAHRIRLAMA).
+ * Chiqish: `plugins/premiere-uxp/panel.html` (kirish nuqtasi, plagin ILDIZIDA —
+ * UXP nisbiy yo'lni ildizdan yechadi) + `plugins/premiere-uxp/ported/`.
+ * Ikkalasi ham GENERATSIYA — qo'lda TAHRIRLAMA.
  */
 
 import fs from "node:fs";
@@ -575,6 +577,15 @@ function gapPropsForOverride(sel) {
 const gapTextCls = new Set();
 
 /**
+ * `border-radius` quti yarmidan katta bo'lgan klasslar (`999px`, `var(--r-full)`…).
+ * UXP radiusni spetsifikatsiya talab qilganidek KLAMPLAMAYDI — natijada pill
+ * tugma "linza" bo'lib qo'shni elementlarga chiqib ketadi. To'g'ri qiymat
+ * `min(w,h)/2`, ya'ni faqat ish vaqtida ma'lum → `js/ae-shim/pill-radius.js`.
+ */
+const pillCls = new Set();
+const PILL_MIN_PX = 90;   // bundan katta radius hech qanday real qutiga sig'maydi
+
+/**
  * Xuddi shu ro'yxat, LEKIN oxirgi kompaundi klasssiz selektorlar uchun
  * (`.axroot .set-ltot span`, `.foo > b` …).
  *
@@ -804,6 +815,20 @@ function transformRule(node, emit, media = "") {
   const get = (p) => { const d = decls.find((x) => x.prop === p); return d ? d.value : null; };
   const drop = (p) => { for (let i = decls.length - 1; i >= 0; i--) if (decls[i].prop === p) decls.splice(i, 1); };
   const set = (p, v) => { const d = decls.find((x) => x.prop === p); if (d) d.value = v; else decls.push({ prop: p, value: v }); };
+
+  // ── UXP: klamplanmagan `border-radius` ─────────────────────────────────
+  // Qiymatni O'ZGARTIRMAYMIZ (brauzerdagi QA etaloni buzilmasin) — faqat
+  // qaysi klasslarga shim tegishini yig'amiz.
+  {
+    const rad = ["border-radius", "border-top-left-radius", "border-top-right-radius",
+      "border-bottom-left-radius", "border-bottom-right-radius"].map(get).filter(Boolean).join(" ");
+    if (rad && (/var\(\s*--r-full\s*\)/.test(rad)
+      || (rad.match(/(\d+(?:\.\d+)?)px/g) || []).some((v) => parseFloat(v) >= PILL_MIN_PX))) {
+      for (const one of selKey(node.selector).split(",")) {
+        for (const c of classesOf(splitCompound(one.trim()).last)) pillCls.add(c.slice(1));
+      }
+    }
+  }
 
   const display = (get("display") || "").trim().toLowerCase();
   const isGrid = display === "grid" || display === "inline-grid";
@@ -1634,7 +1659,8 @@ function main() {
     // variantlari gap'ni qayta e'lon qilib padding'ni tilga olmaydi va o'sha
     // qoidalar `.grid`ni xato ravishda "padding'siz" deb belgilardi.
     `window.__AF_NOPADC=${JSON.stringify([...noPadCompCls].filter((c) => !padCompCls.has(c)).sort())};\n` +
-    `window.__AF_TRACKC=${JSON.stringify([...trackCls].sort())};\n`);
+    `window.__AF_TRACKC=${JSON.stringify([...trackCls].sort())};\n` +
+    `window.__AF_PILLC=${JSON.stringify([...pillCls].sort())};\n`);
 
   const SHIMS = [
     "js/log.js",                     // FFLog — shim'lar diagnostikasi
@@ -1648,6 +1674,7 @@ function main() {
     "js/ae-shim/csinterface-shim.js", // evalScript → premierepro API
     "js/ae-shim/inline-events.js",   // onclick="…" delegatsiyasi
     "js/ae-shim/media-fix.js",       // <img>/<video> aniq o'lchami
+    "js/ae-shim/pill-radius.js",     // border-radius klampi (UXP o'zi klamplamaydi)
     "js/ae-shim/strip-settle.js",    // pill lentalari: layout tinchigach qayta hisob
     "js/ae-shim/wrap-gap.js",        // o'ralishda qator oxiridagi ortiqcha margin
   ];
@@ -1655,16 +1682,21 @@ function main() {
   write(path.join(OUT, "host-copy.js"), hostCopyShim());
   SHIMS.push("ported/host-copy.js");
 
+  // Hujjat plagin ILDIZIDA (`panel.html`), `ported/` ichida EMAS.
+  // SABAB: UXP nisbiy yo'lni hujjat papkasiga emas, plagin ildiziga nisbatan
+  // yechadi. `ported/index.html` da `href="ae.css"` → `/ae.css` (yo'q) bo'lib
+  // ketardi va panel Premiere'da BUTUNLAY stilsiz, skriptsiz chiqardi
+  // (`../js/…` esa ildizdan tashqariga chiqib yana yiqilardi). Hujjat ildizda
+  // bo'lsa ikkala yechim qoidasi ham BIR XIL natija beradi — taxminga bog'liq
+  // emasmiz. Shu sabab barcha yo'l ildizdan boshlanadi: `js/…`, `ported/…`.
   const tags = [...SHIMS, ...order.filter((p) => p !== "js/ae-shim/csinterface-shim.js")]
-    // Hujjat `ported/` ichida: `ported/…` va `ae-src/…` nisbiy qoladi,
-    // plagin ildizidagi shim'lar esa `../` bilan.
-    .map((p) => {
-      const rel = p.startsWith("ported/") ? p.slice("ported/".length) : p.startsWith("ae-src/") ? p : "../" + p;
-      return `    <script src="${rel}"></script>`;
-    })
+    .map((p) => `    <script src="${p.startsWith("ae-src/") ? "ported/" + p : p}"></script>`)
     .join("\n");
 
-  write(path.join(OUT, "index.html"),
+  // Eski (stilsiz) kirish nuqtasi qolib ketmasin — `manifest.main` endi ildizda.
+  fs.rmSync(path.join(OUT, "index.html"), { force: true });
+
+  write(path.join(UXP, "panel.html"),
     // DOCTYPE SHART: usiz brauzer QUIRKS rejimida yuradi va u yerda "faqat inline
     // element bo'lgan" qator qutisi strut'siz o'lchanadi — `.ct-tx` AE'dagi
     // 15.5px o'rniga 13.2px bo'lib qolgandi (o'lchovda 6 ta karta bo'yicha).
@@ -1674,7 +1706,11 @@ function main() {
     // `cep-mode` — AE'da "panel butun oynani to'ldiradi, soxta AE saxnasi yashirin"
     // rejimi. UXP paneli aynan shunday; AE'ning IS_CEP aniqlovchisiga tayanmaymiz.
     `<html data-theme="noir" class="cep-mode">\n  <head>\n    <meta charset="utf-8" />\n` +
-    `    <title>FrameFlow</title>\n    <link rel="stylesheet" href="ae.css" />\n  </head>\n` +
+    `    <title>FrameFlow</title>\n` +
+    // Boot fon: `ae.css` yuklanguncha oq yaltirash bo'lmasin. Ayni paytda bu —
+    // diagnostika: panel qora, lekin tartibsiz chiqsa, tashqi CSS yiqilgan.
+    `    <style>html,body{margin:0;background:#0b0b0c;color:#e8e8ea}</style>\n` +
+    `    <link rel="stylesheet" href="ported/ae.css" />\n  </head>\n` +
     `  <body>\n${body}\n${tags}\n  </body>\n</html>\n`);
 
   write(path.join(OUT, "script-order.json"), JSON.stringify({

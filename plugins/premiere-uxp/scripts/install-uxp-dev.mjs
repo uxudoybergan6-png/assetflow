@@ -97,6 +97,22 @@ fs.cpSync(src, dest, {
   },
 });
 
+// Build shtampi — AE'dagi `install-cep.sh` bilan bir xil mantiq. Shtamp urilmasa
+// panel pastida xom `__AF_BUILD__` matni ko'rinib qoladi.
+stampBuild(path.join(dest, manifest.main || "panel.html"), `dev-${version}-${stampDate()}`);
+
+function stampDate() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.${p(d.getHours())}${p(d.getMinutes())}`;
+}
+function stampBuild(file, stamp) {
+  if (!fs.existsSync(file)) return;
+  const s = fs.readFileSync(file, "utf8");
+  if (!s.includes("__AF_BUILD__")) return;
+  fs.writeFileSync(file, s.split("__AF_BUILD__").join(stamp), "utf8");
+}
+
 const reg = readRegistry();
 reg.plugins = reg.plugins.filter((p) => p.pluginId !== pluginId);
 reg.plugins.push({

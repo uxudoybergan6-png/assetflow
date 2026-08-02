@@ -12,6 +12,7 @@
     "js/ae-shim/csinterface-shim.js",
     "js/ae-shim/inline-events.js",
     "js/ae-shim/media-fix.js",
+    "js/ae-shim/pill-radius.js",
     "js/ae-shim/strip-settle.js",
     "js/ae-shim/wrap-gap.js",
     "ported/host-copy.js"

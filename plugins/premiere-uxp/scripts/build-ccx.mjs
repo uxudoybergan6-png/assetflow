@@ -267,7 +267,15 @@ for (const fl of flavors(manifest)) {
       const m = { ...manifest, id: fl.id, name: fl.name };
       return { name: rel, data: Buffer.from(`${JSON.stringify(m, null, 2)}\n`, "utf8") };
     }
-    return { name: rel, data: fs.readFileSync(path.join(ROOT, rel)) };
+    const data = fs.readFileSync(path.join(ROOT, rel));
+    // `__AF_BUILD__` shtampi (AE'da `install-cep.sh` uradi). Urilmasa panel
+    // pastida xom placeholder ko'rinadi. Qiymat DETERMINISTIK — sana emas,
+    // versiya+flavor, aks holda takrorlanuvchi build buzilardi.
+    if (rel === manifest.main) {
+      return { name: rel, data: Buffer.from(
+        data.toString("utf8").split("__AF_BUILD__").join(`${manifest.version}-${fl.key}`), "utf8") };
+    }
+    return { name: rel, data };
   });
   const buf = zipBytes(entries);
   const out = path.join(DIST, `frameflow-premiere-${manifest.version}-${fl.key}.ccx`);
