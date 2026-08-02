@@ -2891,8 +2891,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axsp .sp-act:hover{background:rgba(255,255,255,.08);color:var(--txt)}
 .axsp .sp-act.del:hover{color:#ff7a7a}
 /* SC_40: ✎ faqat hover/focus'da (constitution) + qatordagi inline rename input */
+/* D5: qatordagi 🗑 ham AYNI shu hover-yuzada (`.ren` bilan bir xil klass) */
 .axsp .sp-row .sp-act.ren{opacity:0;transition:opacity .12s ease}
 .axsp .sp-row:hover .sp-act.ren,.axsp .sp-row:focus-within .sp-act.ren{opacity:1}
+.axsp .sp-row .sp-act.del:hover{background:rgba(255,122,122,.14)}
 .axsp .sp-tx input.sp-renin{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid var(--acc);border-radius:7px;color:var(--txt);font-size:12px;font-family:inherit;padding:3px 7px;outline:none}
 /* P11: multi-select + bulk delete (Sessions/Projects) */
 .axsp .sp-selbtn{display:inline-flex;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--mut);border-radius:999px;padding:6px 12px;font-weight:700;font-size:11px;cursor:pointer}
@@ -16849,6 +16851,39 @@ window.afGallery=(function(){
     rn.addEventListener('click',function(e){ e.stopPropagation(); startRowRename(tx,s,rerender); });
     row.appendChild(rn);
   }
+  // D5: o'chirilgan sessiya asbobda OCHIQ qolmasin. Aks holda keyingi Generate o'chirilgan
+  //   id bilan ketadi va server 404 "Session not found" beradi (kredit yechilmaydi, lekin
+  //   foydalanuvchi sababini tushunmaydi). Mavjud "New session" yo'llarini ishlatamiz.
+  function forgetDeletedSessions(ids){
+    var m={imggen:'axIGNewSession',vidgen:'axVGNewSession',audgen:'axAGNewSession'}, cur=window.__axwsSess||{};
+    Object.keys(m).forEach(function(k){
+      var s=cur[k]; if(!s||ids.indexOf(s.id)<0)return;
+      if(typeof window[m[k]]==='function')window[m[k]](); else cur[k]=null;
+    });
+  }
+  // D5: bitta sessiyani to'g'ridan-to'g'ri o'chirish — avval "Select" rejimiga kirish shart emas.
+  //   Tasdiq AYNI bulk naqshi (afConfirm, danger) — faqat matn bitta sessiya nomi + gen soni bilan.
+  //   Server cascade qiladi (gen'lar + assetlar): DELETE /gen/sessions/:id.
+  function rowDeleteBtn(row,s,rerender){
+    var dl=document.createElement('span'); dl.className='sp-act ren del'; dl.title='Delete session';
+    dl.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
+    dl.addEventListener('click',function(e){
+      e.stopPropagation();
+      var nm=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'this session');
+      var n=s.count||0;
+      window.afConfirm('Delete “'+nm+'”'+(n?(' and its '+n+' generation'+(n>1?'s':'')):'')+'? This can’t be undone.',{ok:'Delete',danger:true}).then(function(ok){
+        if(!ok)return;
+        api.sessionDelete(s.id).then(function(){
+          delete sp.sSel[s.id]; sp.sLoaded=false; forgetDeletedSessions([s.id]);
+          if(window.afRefreshAll)window.afRefreshAll(); else loadSessions(true);
+          if(window.afGallery)window.afGallery.invalidate();
+          if(rerender)rerender(); updSessBulk();
+          toast('“'+nm+'” deleted','success');
+        }).catch(function(){ toast('Delete failed','error'); });
+      });
+    });
+    row.appendChild(dl);
+  }
   function renderSessions(){
     var l=$('spSessList'); if(!l)return; l.innerHTML='';
     var meta=$('spSessMeta'); if(meta)meta.textContent=sp.sessions.length?(sp.sessions.length+' sessions'):'';
@@ -16870,7 +16905,8 @@ window.afGallery=(function(){
       if(s.title)row.title=s.title;
       tx.querySelector('small').textContent=(s.count||0)+' generations · '+(s.mode||'')+(s.lastAt?(' · '+fmtAgo(s.lastAt)):'');
       row.appendChild(tx);
-      if(!sel)rowRenameBtn(row,tx,s,renderSessions); // SC_40: inline rename (modal emas)
+      if(!sel){ rowRenameBtn(row,tx,s,renderSessions); // SC_40: inline rename (modal emas)
+                rowDeleteBtn(row,s,renderSessions); }  // D5: bitta sessiya 🗑 (select rejimisiz)
       row.addEventListener('click',function(){
         if(sp.sSelect){ if(sp.sSel[s.id])delete sp.sSel[s.id]; else sp.sSel[s.id]=1; renderSessions(); updSessBulk(); }
         else openSession(s);
@@ -16892,10 +16928,10 @@ window.afGallery=(function(){
     var ids=Object.keys(sp.sSel); if(!ids.length)return;
     window.afConfirm('Delete '+ids.length+' session'+(ids.length>1?'s':'')+'? Their generations are permanently deleted (this can’t be undone).',{ok:'Delete',danger:true}).then(function(ok){
       if(!ok)return;
-      var done=0,fail=0;
-      ids.forEach(function(id){ api.sessionDelete(id).then(function(){ done++; }).catch(function(){ fail++; }).then(function(){
+      var done=0,fail=0,okIds=[];
+      ids.forEach(function(id){ api.sessionDelete(id).then(function(){ done++; okIds.push(id); }).catch(function(){ fail++; }).then(function(){
         if(done+fail===ids.length){
-          sp.sSelect=false; sp.sSel={}; sp.sLoaded=false;
+          sp.sSelect=false; sp.sSel={}; sp.sLoaded=false; forgetDeletedSessions(okIds); // D5: ochiq sessiya dangling qolmasin
           if(window.afRefreshAll)window.afRefreshAll(); else loadSessions(true);
           if(window.afGallery)window.afGallery.invalidate();
           renderSessions(); updSessBulk();

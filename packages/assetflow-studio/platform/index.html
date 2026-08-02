@@ -15508,6 +15508,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-sessrow .ren{width:24px;height:24px;flex:none;border-radius:7px;display:grid;place-items:center;color:var(--muted2);font-size:12px;opacity:0;transition:opacity .12s ease}
   /* SC_40 — ✎ faqat hover/focus'da (constitution) + qatordagi inline rename input */
   .ff .va-sessrow:hover .ren,.ff .va-sessrow:focus-within .ren{opacity:1}
+  /* D5 — qatordagi 🗑: ✎ bilan bir xil hover-yuza. "Armed" (1-klik) holatda DOIM ko'rinadi va
+     qizaradi — sichqoncha chetga chiqsa ham foydalanuvchi qaysi qator qurollanganini ko'rsin. */
+  .ff .va-sessrow .ren.del:hover{background:color-mix(in srgb,#ff8484 16%,transparent);color:#ff8484}
+  .ff .va-sessrow .ren.del.armed{opacity:1;background:color-mix(in srgb,#ff8484 22%,transparent);color:#ff8484}
   .ff .va-sessrow .renin{flex:1;min-width:0;background:var(--f1);border:1px solid color-mix(in srgb,var(--lime) 45%,transparent);border-radius:8px;color:var(--text);font-size:12px;font-weight:600;font-family:inherit;padding:5px 8px;outline:none}
   /* P6 — sessiya multi-select */
   .ff .va-sessselbtn{margin-left:auto;font:600 10px var(--mono);color:var(--muted);cursor:pointer;padding:2px 7px;border:1px solid var(--hair2);border-radius:999px}
@@ -16846,6 +16850,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       <!-- SC_40 — inline rename: Enter/blur saqlaydi, Esc bekor, bo'sh = avto-nom -->
                       <sc-if value="{{ s.editing }}" hint-placeholder-val="{{ false }}"><input class="renin" maxlength="28" value="{{ sessRenVal }}" oninput="{{ onSessRenVal }}" onkeydown="{{ onSessRenKey }}" onblur="{{ onSessRenBlur }}" onclick="{{ onSessRenClick }}" aria-label="Session name"></sc-if>
                       <sc-if value="{{ s.showRen }}" hint-placeholder-val="{{ false }}"><span data-id="{{ s.id }}" class="ren" onclick="{{ axRenameSession }}" title="Rename session" role="button" tabindex="0"><i class="ph ph-pencil-simple"></i></span></sc-if>
+                      <!-- D5 — bitta sessiyani o'chirish: bulk-select'ga kirmasdan. Bulk bilan
+                           AYNI tasdiq naqshi (2-klik + 3.5s disarm), server esa cascade qiladi. -->
+                      <sc-if value="{{ s.showRen }}" hint-placeholder-val="{{ false }}"><span data-id="{{ s.id }}" class="{{ s.delCls }}" onclick="{{ axDeleteSession }}" title="{{ s.delTitle }}" role="button" tabindex="0"><i class="ph ph-trash"></i></span></sc-if>
                     </div>
                   </sc-for>
                   <sc-if value="{{ sessBulkOn }}" hint-placeholder-val="{{ false }}">
@@ -21735,6 +21742,11 @@ class Component extends DCLogic {
         id: s.id, on, name, editing,
         notEditing: !editing,
         showRen: !editing && !this.state.sessSelect, // SC_40: ✎ hover/focus'da (CSS), select/tahrirda yo'q
+        // D5 — bitta sessiya 🗑: "armed" holat AYNI shu qatorga bog'langan (id), boshqa qatorga o'tsa bekor
+        delCls: 'ren del' + (this.state.sessDelArm === s.id ? ' armed' : ''),
+        delTitle: this.state.sessDelArm === s.id
+          ? 'Click again to delete “' + name + '” and all its generations'
+          : 'Delete session and all its generations',
         shortName: name.length > 14 ? name.slice(0, 14) + '…' : name,
         ckCls: 'va-sesscheck' + (this.state.sessSel[s.id] ? ' on' : ''), // P6
         cls: 'va-sessrow' + (on ? ' on' : ''),
@@ -23018,6 +23030,30 @@ class Component extends DCLogic {
       // SC_40 — inline rename handlerlari (Enter/blur saqlaydi, Esc bekor)
       sessRenVal: this.state.sessRenVal,
       axRenameSession: (e) => { e.stopPropagation(); this.startSessRename(e.currentTarget.dataset.id); },
+      // D5 — bitta sessiyani o'chirish (bulk-select'siz). Tasdiq AYNI §D naqshi: 1-klik qurollantiradi
+      //   (qator qizaradi + toast nomni aytadi), 2-klik o'chiradi, 3.5s ichida bosilmasa bekor.
+      //   Server cascade qiladi (gen'lar + GenAsset + bog'langan SavedReference fayllari) —
+      //   `DELETE /gen/sessions/:id`, studio-gen.ts:689-732. Kredit tarixi ataylab saqlanadi.
+      axDeleteSession: async (e) => { e.stopPropagation();
+        const id = e.currentTarget.dataset.id; if (!id) return;
+        const sObj = this.state.sessions.find(x => x.id === id);
+        const nm = sObj ? this.sessDisplayName(sObj) : 'this session';
+        if (this.state.sessDelArm !== id) {
+          clearTimeout(this._sessDelT); this.setState({ sessDelArm: id });
+          const n = (sObj && sObj.count) || 0;
+          this.toast('Click 🗑 again to delete “' + nm + '”' + (n ? ' and its ' + n + ' generation' + (n > 1 ? 's' : '') : '') + ' — this cannot be undone', 'warning');
+          this._sessDelT = setTimeout(() => this.setState({ sessDelArm: null }), 3500);
+          return;
+        }
+        clearTimeout(this._sessDelT); this.setState({ sessDelArm: null });
+        try { await FFAPI.sessionDelete(id); } catch (x) { this.toast(this.errMsg(x)); return; }
+        this.setState(st => ({
+          viewSess: st.viewSess === id ? 'new' : st.viewSess,
+          curSessId: st.curSessId === id ? null : st.curSessId,
+          sessSel: (() => { const c = { ...st.sessSel }; delete c[id]; return c; })(),
+        }));
+        this.loadSessions(); this.loadHistory(); this.refreshCredits();
+        this.toast('“' + nm + '” deleted'); },
       onSessRenVal: (e) => this.setState({ sessRenVal: e.target.value }),
       onSessRenKey: (e) => {
         if (e.key === 'Enter') { e.preventDefault(); this.commitSessRename(); }

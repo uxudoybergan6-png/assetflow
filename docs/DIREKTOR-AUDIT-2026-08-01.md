@@ -150,6 +150,12 @@ Skrinshotda ham xuddi shu ko'rinadi: 5 ustun chap tomonda, o'ng tomonda katta qo
 **Nima buziladi:** kosmetik/topilish qiyinligi — real funksionallik yo'qolmaydi, faqat kirish nuqtasi (UX discoverability) yashirin. Pul/ma'lumot xavfsiz.
 **Kim:** CC (agar EGA bitta-sessiya tezkor o'chirish tugmasini xohlasa)
 
+> **✅ Tuzatildi (2026-08-02).** Sessiya qatoriga to'g'ridan-to'g'ri 🗑 qo'shildi — "Select" rejimiga kirish endi shart emas. Ikkala tomonda ham ✎ bilan **ayni hover-yuza** (hover/focus'da chiqadi, qizil hover).
+> - **Web** (`platform/index.html`): `axDeleteSession` — bulk bilan **ayni §D "armed" naqshi** (1-klik qurollantiradi + qator qizaradi + toast sessiya nomi va gen sonini aytadi, 3.5s ichida 2-klik bo'lmasa bekor). O'chirilgan sessiya ochiq bo'lsa `viewSess`/`curSessId` tozalanadi.
+> - **Plagin** (`AssetFlow_Plugin.html`): `rowDeleteBtn` — bulk bilan **ayni `afConfirm` naqshi** (`{ok:'Delete', danger:true}`), matn bitta sessiya nomi + gen soni bilan.
+> - **Yashirin atrof (§2), tuzatildi:** o'chirilgan sessiya asbobda (`__axwsSess.imggen/.vidgen/.audgen`) ochiq qolar edi → keyingi Generate 404 `Session not found` berardi (kredit yechilmaydi — `studio-gen.ts:1356`, lekin sabab tushunarsiz). Yangi `forgetDeletedSessions(ids)` mavjud `axIG/VG/AGNewSession` yo'llari bilan tozalaydi; **bulk o'chirishga ham** ulandi (faqat muvaffaqiyatli o'chgan id'lar).
+> - Serverga TEGILMADI — cascade + bunker tozalash allaqachon to'g'ri edi.
+
 ---
 
 ## D6 · Gen kartani "pin" qilish + doim birinchi o'rinda  ·  P2 · [YANGI]
@@ -321,7 +327,7 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 | D3.2 | P3 | Web — o'qish tartibi ustun-bo'ylab | CC | Tasdiqlandi (ataylab, lekin oqibat hisobga olinmagan) |
 | D4 | P2 | Web — lightbox ikki qavat + 96%~100% o'lcham | CC | ✅ **Tuzatildi** — fon alohida `.va-lb-bg` (cover+blur), shell 72vw×~78vh (o'lchandi: 922×559 @1280×720) |
 | D4.1 | P3 | Web — video poster/thumb/asl 3 xil kadr | CC | ✅ Yopildi — fon endi kuchli blur, "uchinchi kadr" sifatida o'qilmaydi (poster→asl = odatiy blur-up) |
-| D5 | P3 | Web/Plagin — sessiya o'chirish kirish nuqtasi yashirin | CC | Qisman — asosiy funksiya to'g'ri ishlaydi |
+| D5 | P3 | Web/Plagin — sessiya o'chirish kirish nuqtasi yashirin | CC | ✅ Tuzatildi 2026-08-02 (qatorda 🗑 + dangling sessiya tozalash) |
 | D6 | P2 | Web/Plagin — gen kartani pin qilish yo'q | CC | Tasdiqlandi (yo'qligi) |
 | D7 | P2 | Web (o'lik kod) / Plagin (sessiya arxitekturasi) | CC + EGA | ⚠️ Qayta baholandi — web o'lik filtr **tuzatildi**; plaginda per-tool sessiya = EGA qarori |
 | D7.1 | P2 | Web — Upscale natija shu filtr sabab yo'qolishi mumkin | CC | ❌ Bekor — filtr o'lik edi, jonli xavf yo'q |
