@@ -1,0 +1,1 @@
+try{if(typeof window!=='undefined'&&(window.__adobe_cep__||/[?&]ffcms/.test(location.search)))document.documentElement.classList.add('cep-mode');}catch(e){}

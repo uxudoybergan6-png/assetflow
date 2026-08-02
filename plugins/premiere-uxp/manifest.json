@@ -3,7 +3,7 @@
   "id": "com.frameflow.premiere",
   "name": "FrameFlow",
   "version": "0.1.0",
-  "main": "index.html",
+  "main": "ported/index.html",
   "host": {
     "app": "premierepro",
     "minVersion": "25.6.0"
@@ -28,7 +28,9 @@
       "domains": [
         "https://api.getframeflow.app",
         "https://cdn.getframeflow.app",
-        "https://getframeflow.app"
+        "https://getframeflow.app",
+        "https://admin.getframeflow.app",
+        "https://storage.googleapis.com"
       ]
     }
   },

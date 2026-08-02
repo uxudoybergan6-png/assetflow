@@ -1,0 +1,39 @@
+{
+  "generated": "scripts/ae-port.mjs",
+  "shims": [
+    "js/log.js",
+    "js/bytes.js",
+    "ported/gap-text-classes.js",
+    "js/ae-shim/gap-text.js",
+    "js/ae-shim/autofill.js",
+    "js/ae-shim/require-shim.js",
+    "js/ae-shim/element-fix.js",
+    "js/ae-shim/button-box.js",
+    "js/ae-shim/csinterface-shim.js",
+    "js/ae-shim/inline-events.js",
+    "js/ae-shim/media-fix.js",
+    "js/ae-shim/strip-settle.js",
+    "js/ae-shim/wrap-gap.js",
+    "ported/host-copy.js"
+  ],
+  "order": [
+    "ported/ae-inline-01.js",
+    "ported/ae-inline-02.js",
+    "js/ae-shim/csinterface-shim.js",
+    "ae-src/assetflow-env.js",
+    "ae-src/assetflow-secret-store.js",
+    "ae-src/assetflow-log.js",
+    "ae-src/assetflow-zip.js",
+    "ae-src/assetflow-local-store.js",
+    "ae-src/assetflow-client.js",
+    "ae-src/assetflow-account.js",
+    "ae-src/assetflow-init.js",
+    "ported/ae-inline-03.js",
+    "ae-src/assetflow-catalog.js",
+    "ported/ae-inline-04.js",
+    "ported/ae-inline-05.js",
+    "ported/ae-inline-06.js",
+    "ported/ae-inline-07.js",
+    "ported/ae-inline-08.js"
+  ]
+}

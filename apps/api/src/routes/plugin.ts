@@ -43,7 +43,7 @@ import {
   mapCatalogItem,
   mapCatalogCard,
 } from "../lib/catalog-map.js";
-import { recordTemplateDownloadEvent, downloadAuditFromReq } from "../lib/download-events.js";
+import { recordTemplateDownloadEvent, downloadAuditFromReq, hostAppFromReq } from "../lib/download-events.js";
 import {
   type TemplateAssetKind,
   findAssetPath,
@@ -53,6 +53,7 @@ import {
   sceneFileIsVideo,
 } from "../lib/template-files.js";
 import { serveTemplateAsset } from "../lib/serve-asset.js";
+import { APP_NEUTRAL_TYPES } from "../lib/apps.js";
 import {
   computePluginVersionResponse,
   resolveInstallerPlatform,
@@ -62,6 +63,7 @@ import {
   installerFileName,
   isManualDownloadRequest,
   resolveLegacyDownloadUrl,
+  normalizePluginHost,
   type InstallerContext,
 } from "../lib/plugin-release-contract.js";
 
@@ -192,7 +194,17 @@ const CATALOG_CARD_SELECT = (() => {
 function catalogWhere(appParam: unknown) {
   const code = typeof appParam === "string" ? appParam.trim().toLowerCase() : "";
   if (!code) return approvedCatalogWhere;
-  return { ...approvedCatalogWhere, templateApp: code };
+  // AND ichida — `appPredicate` OR qaytaradi, uni yoyib yuborsak boshqa OR'ni bosib ketardi.
+  return { ...approvedCatalogWhere, AND: [appPredicate([code])] };
+}
+
+/** `?app=` predikati: SHU dastur YOKI dasturdan mustaqil tur (LUT/musiqa/SFX).
+ *  Bo'sh ro'yxat = filtr yo'q. Batafsil sabab: lib/apps.ts `APP_NEUTRAL_TYPES`. */
+function appPredicate(apps: string[]): Prisma.ContributorTemplateWhereInput {
+  if (!apps.length) return {};
+  const own: Prisma.ContributorTemplateWhereInput =
+    apps.length === 1 ? { templateApp: apps[0] } : { templateApp: { in: apps } };
+  return { OR: [own, { templateType: { in: [...APP_NEUTRAL_TYPES] } }] };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -248,10 +260,10 @@ function resWhere(v: unknown): Prisma.ContributorTemplateWhereInput | null {
 function buildCatalogWhere(query: Request["query"]): Prisma.ContributorTemplateWhereInput {
   const and: Prisma.ContributorTemplateWhereInput[] = [];
 
-  // app (single yoki csv) — templateApp. AE plagin `?app=ae` yuboradi.
+  // app (single yoki csv) — templateApp + dasturdan mustaqil turlar.
+  // AE plagin `?app=ae`, Premiere UXP paneli `?app=pr` yuboradi.
   const apps = csvParam(query.app);
-  if (apps.length === 1) and.push({ templateApp: apps[0] });
-  else if (apps.length > 1) and.push({ templateApp: { in: apps } });
+  if (apps.length) and.push(appPredicate(apps));
 
   // templateType — BIRLASHGAN pill kaliti (video-templates | luts | graphics |
   // motion-graphics | music | sfx). Har asset O'Z pillida (P1 step 30/32).
@@ -351,7 +363,11 @@ const INSTALLER_URL_TTL_SEC = 3600;
 pluginRouter.get("/version", async (req: Request, res: Response) => {
   const current = typeof req.query.current === "string" ? req.query.current : "";
   const { platform } = resolveInstallerPlatform(req.query.platform, req.headers["user-agent"]);
+  // Host kanali: `?app=pr` — Premiere UXP paneli. Param yo'q/noma'lum bo'lsa `ae`
+  // (host yubormaydigan mavjud AE paneli bugungidek AE relizlarini oladi).
+  const host = normalizePluginHost(req.query.app);
   const latest = await prisma.pluginRelease.findFirst({
+    where: { host },
     orderBy: { publishedAt: "desc" },
     include: { installers: true },
   });
@@ -373,7 +389,7 @@ pluginRouter.get("/version", async (req: Request, res: Response) => {
   if (!platform) {
     installerCtx = { platform: null, installer: null, status: "unsupported_platform" };
   } else if (latest) {
-    const row = selectInstallerRow(latest.installers, platform);
+    const row = selectInstallerRow(latest.installers, platform, host);
     if (!row) {
       installerCtx = { platform, installer: null, status: "not_published" };
     } else if (!isS3Configured()) {
@@ -385,9 +401,9 @@ pluginRouter.get("/version", async (req: Request, res: Response) => {
         const url = await getSignedDownloadUrl(
           row.storageKey,
           INSTALLER_URL_TTL_SEC,
-          installerFileName(latest.version, platform, ext)
+          installerFileName(latest.version, platform, ext, host)
         );
-        payload = buildInstallerPayload(latest.version, row, url);
+        payload = buildInstallerPayload(latest.version, row, url, host);
       } catch {
         payload = null;
       }
@@ -755,7 +771,7 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", downloadLimiter, requireAuth
   if (!(await guardDownloadable(req, res, templateId, mogrtExists))) return;
   // Bosqich 4 #1: yakka MOGRT ham yuklab olish hodisasi (#14: await — Cloud Run javobdan keyin CPU'ni throttle qiladi).
   // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
-  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req) });
+  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
 
   if (isS3Configured()) {
     const s3Key = `templates/${templateId}/mogrt/${slug}.mogrt`;
@@ -793,7 +809,7 @@ pluginRouter.get("/assets/:templateId/pack", downloadLimiter, requireAuth, async
   if (!(await guardDownloadable(req, res, templateId, packExists))) return;
   // Bosqich 4 #1: REAL yuklab olish hodisasi (#14: await — fire-and-forget Cloud Run'da yo'qoladi).
   // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
-  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req) });
+  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
   await serveTemplateAsset(req, res, templateId, "pack");
 });
 
@@ -1326,7 +1342,7 @@ pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Reques
   }
   await bumpTemplateCounter(templateId, "importsCount");
   // Bosqich 4 #1: REAL import hodisasi (#14: await — Cloud Run javobdan keyin CPU'ni throttle qiladi).
-  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "import", source: "plugin", audit: downloadAuditFromReq(req) });
+  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "import", source: "plugin", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ user: serializePluginUser(profile) });
 });

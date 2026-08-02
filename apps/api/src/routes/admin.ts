@@ -86,6 +86,9 @@ import {
   isZxpReleaseKey,
   validateInstallerInput,
   installerExtension,
+  isKnownPluginHost,
+  normalizePluginHost,
+  HOST_INSTALLER_EXTENSIONS,
   INSTALLER_PLATFORMS,
 } from "../lib/plugin-release-contract.js";
 
@@ -1732,6 +1735,12 @@ adminRouter.get("/metrics", async (req, res) => {
 // so'nggisini qaytaradi — plagin banneri shu bilan ishlaydi.
 const releaseSchema = z.object({
   version: z.string().regex(/^\d+\.\d+\.\d+$/, "Version must be semver: 1.2.3"),
+  // FAZA 5 — qaysi host paneli: "ae" (CEP) | "pr" (Premiere UXP). Berilmasa "ae"
+  // (mavjud admin UI o'zgarishsiz ishlaydi). Versiya HOST ICHIDA unikal.
+  host: z
+    .string()
+    .refine(isKnownPluginHost, "Host must be ae or pr")
+    .optional(),
   // LEGACY .zxp — endi IXTIYORIY (qo'lda yuklab olish sahifasi uchun). Panel uni
   // hech qachon avtomatik o'rnatmaydi; avtomatik yangilanish faqat `installers` bilan.
   key: z
@@ -1771,6 +1780,7 @@ adminRouter.get("/plugin-releases", async (_req, res) => {
   // storageKey admin javobida ham ochilmaydi (kalitlar UI'ga tushmasin).
   const items = rows.map((r) => ({
     id: r.id,
+    host: r.host,
     version: r.version,
     releaseNotes: r.releaseNotes,
     mandatory: r.mandatory,
@@ -1793,16 +1803,19 @@ adminRouter.post("/plugin-releases", async (req, res) => {
     res.status(400).json({ error: p.error.issues[0]?.message || "Invalid release" });
     return;
   }
+  const host = normalizePluginHost(p.data.host);
   const rawInstallers = p.data.installers ?? [];
   if (!p.data.key && rawInstallers.length === 0) {
-    res.status(400).json({ error: "Upload at least one platform installer (.pkg / .exe / .msi)" });
+    const exts = HOST_INSTALLER_EXTENSIONS[host];
+    const list = Array.from(new Set([...exts.mac, ...exts.win])).map((e) => "." + e).join(" / ");
+    res.status(400).json({ error: `Upload at least one platform installer (${list})` });
     return;
   }
   // 1) Installer kontrakti — platforma allowlist, kengaytma, SHA-256 shakli (fail-closed).
   const validated: { platform: string; key: string; sha256: string }[] = [];
   const seenPlatforms = new Set<string>();
   for (const raw of rawInstallers) {
-    const v = validateInstallerInput(raw);
+    const v = validateInstallerInput({ ...raw, host });
     if (!v.ok) {
       res.status(400).json({ error: v.error });
       return;
@@ -1849,13 +1862,16 @@ adminRouter.post("/plugin-releases", async (req, res) => {
     }
     installerRows.push({ platform: inst.platform, storageKey: inst.key, sha256: actual.toLowerCase(), sizeBytes: meta.sizeBytes });
   }
-  const exists = await prisma.pluginRelease.findUnique({ where: { version: p.data.version } });
+  const exists = await prisma.pluginRelease.findUnique({
+    where: { host_version: { host, version: p.data.version } },
+  });
   if (exists) {
     res.status(409).json({ error: "This version is already published" });
     return;
   }
   const row = await prisma.pluginRelease.create({
     data: {
+      host,
       version: p.data.version,
       downloadKey: p.data.key ?? null,
       releaseNotes: p.data.releaseNotes ?? null,
@@ -1873,6 +1889,7 @@ adminRouter.post("/plugin-releases", async (req, res) => {
     targetType: "pluginRelease",
     targetId: row.version,
     meta: {
+      host: row.host,
       sizeBytes: legacySize,
       mandatory: row.mandatory,
       installers: row.installers.map((i) => ({ platform: i.platform, sizeBytes: i.sizeBytes, sha256: i.sha256 })),

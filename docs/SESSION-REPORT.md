@@ -1,16 +1,18 @@
-# Session report — 2026-08-02 (Premiere UXP: FAZA 2 + AE parity o'lchovi)
-- FAZA 2 yopildi: karta/detal media **ko'rinmasligi** tuzatildi — UXP `<img>`/`<video>` intrinsic
-  o'lchamni o'lchamaydi, `object-fit` yo'q → `sizeMedia()` ikkala o'lchovni `orient` dan beradi.
-- Jonli tasdiq (Premiere 26.2.2): Motion tab 5 natija — rasm/preview ko'rinadi, detal video o'ynaydi.
-- `js/diag-layout.js` qo'shildi: panel ichida **18 ta UXP probe** ("Diagnostika → UXP tekshiruvi").
-- Ishlatilmagan spike plagini registrdan olib tashlandi (menyuda faqat bitta dev plagin chiqardi).
-- PARITY ✅ ko'chadi: inline `<svg>` (285 ikona), `>` `+` `[attr]` `:not()` `:first-child`,
-  `ellipsis`, `position`, scroll, `::before`, `@media`, runtime CSS var, gradient/soya;
-  1200 tugun = `innerHTML` 45 ms · layout 0 ms → AE hajmi to'siq emas.
-- PARITY ❌ transform shart: inline `onclick` bajarilmaydi (`new Function` shim mumkin),
-  `transition` va `Element.animate` yo'q, `filter`/`backdrop-filter` yo'q,
-  `-webkit-line-clamp` kesmaydi, `DOMParser`/`<template>` yo'q, `grid`/`gap` yo'q.
-- TUZOQ: `getComputedStyle` native widget uchun dalil emas (bg qaytaradi, lekin chizmaydi).
-- Hujjat: SPIKE-NATIJA §10 (FAZA 2 tuzoqlari) + §11 (AE→UXP parity jadvali).
-- KUTILMOQDA: FAZA 3 import · 1:1 AE port transformi + host adapter · backend `app=pr` kanali.
-- KUTILMOQDA (launch to'sig'i): `GET /api/plugin/catalog?app=pr` production'da 0 element.
+# Session report — 2026-08-03 (Premiere UXP: 1:1 parity + paketlash + `pr` reliz kanali)
+- **1:1 parity YOPILDI**: `QASweep` 19/19 ekran, tor (440×900) va keng (900×1000) rejimda
+  `QABad()` bo'sh. Oxirgi farq — `::after` psevdosi zichlik (kc6) gap'ini olmasdi;
+  `ae-port.mjs` da `setSelfGap()` bilan UMUMIY tuzatildi (per-ekran hack yo'q).
+- TUZOQ (harness): `__QAPFX` iframe reload'da yo'qolardi → tor o'lchov keng imzo bilan
+  solishtirilib o'nlab soxta farq berardi. `QAPfx()` endi `sessionStorage` da saqlaydi.
+  Iframe o'lchami imzo olingandagi bilan AYNAN bir xil bo'lishi shart (keng = 900×1000).
+- `build-ccx.mjs`: fayl ro'yxati `manifest.main` dan REKURSIV hisoblanadi (qo'l allowlist yo'q),
+  ZIP xom baytdan yoziladi. 52 fayl · 738.4 KB. Marketplace flavor faqat `FF_PR_MARKETPLACE_ID` bilan.
+- `verify-ccx.mjs`: paket BAYTLARINI tekshiradi (secret, dev qoldiq, sourcemap, symlink,
+  havola yaxlitligi, `network.domains`). `localhost` uchrashlari `LOCAL_OK` da SANOQ bilan
+  qulflangan — manba o'zgarsa tekshiruv yiqiladi. Natija: toza.
+- `plugins/premiere-uxp/README.md` — port / dev-install / build / QA oqimi.
+- Backend `pr` kanali: migratsiya `20260803090000_plugin_release_host` LOKAL DB ga qo'llandi,
+  `apps/api` tsc toza; admin **Releases** ga host tanlagich (AE `.pkg`/`.exe`, PR bitta `.ccx`
+  ikkala platformaga), tarix host bo'yicha filtrlanadi, `host` yo'q eski yozuv = `ae`.
+- KUTILMOQDA: Premiere'da jonli tekshiruv (panel + `.mogrt` import, FAZA 3) ·
+  migratsiya PROD ga (deploy'dan OLDIN) · `catalog?app=pr` production'da 0 element (launch to'sig'i).

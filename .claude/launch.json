@@ -2,51 +2,109 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "uxp-qa-proxy",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "plugins/premiere-uxp/scripts/qa-proxy.mjs"
+      ],
+      "port": 4000
+    },
+    {
       "name": "batch6-mockup",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["http-server", "docs/mockups/batch6", "-p", "8978", "-c-1"],
+      "runtimeArgs": [
+        "http-server",
+        "docs/mockups/batch6",
+        "-p",
+        "8978",
+        "-c-1"
+      ],
       "port": 8978
     },
     {
       "name": "batch8-plugin",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["http-server", "docs/mockups/batch8-plugin", "-p", "8979", "-c-1"],
+      "runtimeArgs": [
+        "http-server",
+        "docs/mockups/batch8-plugin",
+        "-p",
+        "8979",
+        "-c-1"
+      ],
       "port": 8979
     },
     {
       "name": "platform-preview",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["http-server", "packages/assetflow-studio/platform", "-p", "8975", "-c-1"],
+      "runtimeArgs": [
+        "http-server",
+        "packages/assetflow-studio/platform",
+        "-p",
+        "8975",
+        "-c-1"
+      ],
       "port": 8975
     },
     {
       "name": "admin-dev",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["packages/assetflow-studio/scripts/dev-admin-server.mjs"],
+      "runtimeArgs": [
+        "packages/assetflow-studio/scripts/dev-admin-server.mjs"
+      ],
       "port": 3001
     },
     {
       "name": "studio-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "studio"],
+      "runtimeArgs": [
+        "run",
+        "studio"
+      ],
       "port": 3000
     },
     {
       "name": "studio-ui-only",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["packages/assetflow-studio/scripts/dev-studio-server.mjs"],
+      "runtimeArgs": [
+        "packages/assetflow-studio/scripts/dev-studio-server.mjs"
+      ],
       "port": 3000
     },
     {
       "name": "dist-preview",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["http-server", "packages/assetflow-studio/dist", "-p", "8977", "-c-1"],
+      "runtimeArgs": [
+        "http-server",
+        "packages/assetflow-studio/dist",
+        "-p",
+        "8977",
+        "-c-1"
+      ],
       "port": 8977
+    },
+    {
+      "name": "uxp-ported-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "http-server",
+        "plugins/premiere-uxp",
+        "-p",
+        "8974",
+        "-c-1"
+      ],
+      "port": 8974,
+      "url": "http://localhost:8974"
     },
     {
       "name": "cep-plugin-preview",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["http-server", "plugins/after-effects-cep", "-p", "8976", "-c-1"],
+      "runtimeArgs": [
+        "http-server",
+        "plugins/after-effects-cep",
+        "-p",
+        "8976",
+        "-c-1"
+      ],
       "port": 8976
     }
   ]

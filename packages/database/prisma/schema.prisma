@@ -823,6 +823,9 @@ model TemplateDownloadEvent {
   contributorId String
   kind          String   @default("download") // "download" | "import"
   source        String   @default("plugin")   // "plugin" | "web"
+  /// Qaysi host dasturidan: "ae" | "pr" | … (lib/apps.ts kodlari). null = eski yozuv
+  /// yoki klient yubormagan. ADDITIVE analitika maydoni — dedup/earning'ga TEGMAYDI.
+  app           String?
   // ── Step 20 (P26.4 sybil) — ADDITIVE audit izi (clustering uchun). Faqat admin
   // fraud-tahlili o'qiydi; earning/pool matematikasiga TEGMAYDI. null = eski yozuvlar
   // (backfill yo'q) yoki header yetib kelmagan. ipPrefix = tarmoq klasteri kaliti
@@ -1009,7 +1012,10 @@ model ContentConfigRevision {
 // ixtiyoriy — panel .zxp'ni HECH QACHON avtomatik o'rnatmaydi).
 model PluginRelease {
   id                  String   @id @default(cuid())
-  version             String   @unique // semver: "1.2.0"
+  version             String   // semver: "1.2.0" (host ichida unikal — @@unique([host, version]))
+  /// Qaysi host dasturi uchun reliz: "ae" (CEP) | "pr" (Premiere UXP). Eski qatorlar AE.
+  /// AE va Pr paneli MUSTAQIL versiyalanadi — shu sabab unikallik host bilan juftlikda.
+  host                String   @default("ae")
   downloadKey         String?  // LEGACY .zxp storage kaliti (releases/...) — ixtiyoriy
   releaseNotes        String?  @db.Text
   mandatory           Boolean  @default(false)
@@ -1020,7 +1026,9 @@ model PluginRelease {
 
   installers PluginInstaller[]
 
+  @@unique([host, version])
   @@index([publishedAt])
+  @@index([host, publishedAt])
 }
 
 // ── Task 2 (2026-07-22) — PLATFORMAGA XOS INSTALLER artefakti.

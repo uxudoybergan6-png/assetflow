@@ -47,6 +47,44 @@ export const INSTALLER_EXTENSIONS: Record<InstallerPlatform, readonly string[]> 
   win: ["exe", "msi"],
 };
 
+// ── Host kanali (AE CEP · Premiere UXP) ────────────────────────────────────
+// Premiere paneli UXP: artefakt — bitta PLATFORMADAN MUSTAQIL `.ccx` (Adobe UPIA
+// / Creative Cloud o'rnatadi). Jadval sxemasi har qator uchun platforma talab
+// qiladi, shuning uchun `pr` relizida bitta `.ccx` IKKALA platforma qatoriga
+// yoziladi (bir xil storageKey) — kontrakt va fail-closed allowlist o'zgarmaydi.
+
+export type PluginHost = "ae" | "pr";
+
+export const PLUGIN_HOSTS: readonly PluginHost[] = ["ae", "pr"];
+
+/** schema.prisma `PluginRelease.host` default'i bilan mos. */
+export const DEFAULT_PLUGIN_HOST: PluginHost = "ae";
+
+export const HOST_INSTALLER_EXTENSIONS: Record<PluginHost, Record<InstallerPlatform, readonly string[]>> = {
+  ae: INSTALLER_EXTENSIONS,
+  pr: { mac: ["ccx"], win: ["ccx"] },
+};
+
+/** Artefakt nomidagi host bo'lagi (`frameflow-plugin-…` / `frameflow-premiere-…`). */
+const HOST_FILE_SLUG: Record<PluginHost, string> = { ae: "plugin", pr: "premiere" };
+
+/** Klient `?app=` qiymatini host kanaliga keltiradi. Noma'lum/bo'sh → default (`ae`),
+ *  ya'ni host yubormaydigan ESKI AE paneli bugungidek ishlaydi (back-compat). */
+export function normalizePluginHost(raw: unknown): PluginHost {
+  const v = String(raw ?? "").trim().toLowerCase();
+  return v === "pr" || v === "premiere" || v === "premierepro" ? "pr" : DEFAULT_PLUGIN_HOST;
+}
+
+/** Aniq host berilgan va u allowlist'damimi (admin publish uchun — jimgina `ae` ga tushmasin). */
+export function isKnownPluginHost(raw: unknown): boolean {
+  const v = String(raw ?? "").trim().toLowerCase();
+  return (PLUGIN_HOSTS as readonly string[]).indexOf(v) >= 0;
+}
+
+function extsFor(host: PluginHost, platform: InstallerPlatform): readonly string[] {
+  return HOST_INSTALLER_EXTENSIONS[host][platform];
+}
+
 export const INSTALLER_LABEL: Record<InstallerPlatform, string> = {
   mac: "macOS",
   win: "Windows",
@@ -107,7 +145,7 @@ export function installerExtension(key: unknown): string | null {
 
 /** Storage kaliti installer sifatida qabul qilinishi mumkinmi:
  *  `releases/` ostida · traversal/absolut yo'q · kengaytma SHU platforma allowlist'ida. */
-export function isAllowedInstallerKey(platform: unknown, key: unknown): boolean {
+export function isAllowedInstallerKey(platform: unknown, key: unknown, host?: unknown): boolean {
   const p = normalizeInstallerPlatform(platform);
   if (!p) return false;
   const s = String(key ?? "").trim();
@@ -116,16 +154,20 @@ export function isAllowedInstallerKey(platform: unknown, key: unknown): boolean 
   if (s.includes("..") || s.includes("\\") || s.includes("//")) return false;
   if (/[\x00-\x1f]/.test(s)) return false;
   const ext = installerExtension(s);
-  return !!ext && INSTALLER_EXTENSIONS[p].indexOf(ext) >= 0;
+  return !!ext && extsFor(normalizePluginHost(host), p).indexOf(ext) >= 0;
 }
 
 /** Foydalanuvchiga ko'rinadigan (va diskka yoziladigan) XAVFSIZ fayl nomi —
  *  serverdagi kalitdan EMAS, versiya+kengaytmadan quriladi (traversal imkonsiz). */
-export function installerFileName(version: unknown, platform: unknown, ext: unknown): string {
+export function installerFileName(version: unknown, platform: unknown, ext: unknown, host?: unknown): string {
   const v = String(version ?? "").replace(/[^0-9A-Za-z.\-]/g, "");
   const p = normalizeInstallerPlatform(platform);
   const e = String(ext ?? "").replace(/[^A-Za-z0-9]/g, "").toLowerCase();
-  return `frameflow-plugin-${v || "update"}-${p || "unknown"}.${e || "bin"}`;
+  const h = HOST_FILE_SLUG[normalizePluginHost(host)];
+  // `.ccx` platformadan mustaqil — nomga platforma qo'shilmaydi (foydalanuvchi
+  // "mac" yozuvli faylni Windows'da ko'rib chalkashmasin).
+  if (e === "ccx") return `frameflow-${h}-${v || "update"}.ccx`;
+  return `frameflow-${h}-${v || "update"}-${p || "unknown"}.${e || "bin"}`;
 }
 
 /** Admin publish uchun bitta installer yozuvining to'liq tekshiruvi (fail-closed).
@@ -134,13 +176,15 @@ export function validateInstallerInput(input: {
   platform?: unknown;
   key?: unknown;
   sha256?: unknown;
+  host?: unknown;
 }): { ok: true; platform: InstallerPlatform; key: string; sha256: string; ext: string } | { ok: false; error: string } {
   const platform = normalizeInstallerPlatform(input.platform);
   if (!platform) return { ok: false, error: "Installer platform must be mac or win" };
-  if (!isAllowedInstallerKey(platform, input.key)) {
+  const host = normalizePluginHost(input.host);
+  if (!isAllowedInstallerKey(platform, input.key, host)) {
     return {
       ok: false,
-      error: `Installer for ${INSTALLER_LABEL[platform]} must be a key under releases/ ending in ${INSTALLER_EXTENSIONS[platform]
+      error: `Installer for ${INSTALLER_LABEL[platform]} must be a key under releases/ ending in ${extsFor(host, platform)
         .map((e) => "." + e)
         .join(" or ")}`,
     };
@@ -201,13 +245,14 @@ export interface InstallerPayload {
  *  umuman chiqmaydi). Yaroqsiz/nomuvofiq qator — yo'q deb hisoblanadi (fail-closed). */
 export function selectInstallerRow(
   rows: PluginInstallerRow[] | null | undefined,
-  platform: InstallerPlatform | null
+  platform: InstallerPlatform | null,
+  host?: unknown
 ): PluginInstallerRow | null {
   if (!platform || !Array.isArray(rows)) return null;
   for (const r of rows) {
     if (!r) continue;
     if (normalizeInstallerPlatform(r.platform) !== platform) continue;
-    if (!isAllowedInstallerKey(platform, r.storageKey)) continue;
+    if (!isAllowedInstallerKey(platform, r.storageKey, host)) continue;
     if (!isSha256Hex(r.sha256)) continue;
     if (!(Number(r.sizeBytes) > 0)) continue;
     return r;
@@ -220,7 +265,8 @@ export function selectInstallerRow(
 export function buildInstallerPayload(
   version: string,
   row: PluginInstallerRow | null,
-  url: string | null
+  url: string | null,
+  host?: unknown
 ): InstallerPayload | null {
   if (!row || !url || !isHttpsUrl(url)) return null;
   const platform = normalizeInstallerPlatform(row.platform);
@@ -229,7 +275,7 @@ export function buildInstallerPayload(
   return {
     platform,
     ext,
-    fileName: installerFileName(version, platform, ext),
+    fileName: installerFileName(version, platform, ext, host),
     sizeBytes: Number(row.sizeBytes),
     sha256: String(row.sha256).toLowerCase(),
     url,

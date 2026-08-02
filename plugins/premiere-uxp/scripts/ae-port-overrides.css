@@ -1,0 +1,58 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   AE → UXP port: transformdan KEYIN qo'yiladigan tuzatishlar.
+   Bu fayl `ae-port.mjs` tomonidan `ported/ae.css` oxiriga qo'shiladi, ya'ni
+   kaskadda AE qoidalaridan ustun turadi. Har biri jonli o'lchovga asoslangan
+   (docs/PREMIERE-UXP-SPIKE-NATIJA.md §3, §9, §10, §11).
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Ildiz balandligi zanjiri — bo'lmasa panel qobig'i o'rtada osilib qoladi (§9). */
+html, body { height: 100%; }
+
+/* AE `body` markazlashtirilgan "demo saxna" uchun yozilgan; UXP'da panel
+   butun oynani egallaydi. */
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.demo-stage, .plugin-wrap, .container, .panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  border-radius: 0;
+  border: 0;
+}
+
+/* Soxta oyna sarlavhasi — UXP panelining o'z sarlavhasi bor. */
+.ptitlebar { display: none !important; }
+
+/* UXP `<button>` ni native widget qilib chizadi; port ularni
+   `<div role="button">` ga aylantirdi, lekin AE CSS'i hamon `button`
+   selektoriga tayanadi — ikkalasini teng qilamiz. */
+[role="button"] {
+  cursor: pointer;
+  user-select: none;
+}
+[role="button"][disabled] {
+  pointer-events: none;
+  opacity: .45;
+}
+
+/* `<img>` intrinsic o'lchamga ega emas: bitta o'lcham `auto` qolsa quti 0
+   bo'ladi (§10). Portlangan markupdagi rasmlar hech bo'lmaganda yiqilmasin —
+   aniq o'lchamni `ae-media-fix.js` ish vaqtida beradi. */
+img, video { flex: none; }
+
+/* UXP'da animatsiya yo'q (§11): aylanuvchi spinnerlar qotib qoladi.
+   Ularni statik nuqta ko'rinishida qoldiramiz, "muzlagan" ko'rinmasin. */
+.anim-bar, .anim-pulse { opacity: .55; }
+
+/* `backdrop-filter` qo'llanmaydi — shisha panellar shaffof bo'lib o'qilmay
+   qolardi; port uni olib tashladi, o'rniga qattiq fon beramiz. */
+.af-modal, .af-sheet, .af-popover, .glass {
+  background-color: var(--surface, #131316);
+}

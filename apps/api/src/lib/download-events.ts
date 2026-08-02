@@ -1,6 +1,7 @@
 import { prisma } from "@creative-tools/database";
 import { grantContributorEarning } from "./earnings.js";
 import { isEmailConfigured } from "./email.js";
+import { isKnownApp } from "./apps.js";
 
 /**
  * Step 20 (P26.4 sybil) — download hodisasi audit metadatasi. Faqat admin
@@ -57,6 +58,22 @@ export function downloadAuditFromReq(req: {
 }
 
 /**
+ * FAZA 5 (ko'p-host) — hodisa qaysi HOST plaginidan kelganini aniqlaydi:
+ * `?app=` param yoki `X-FF-App` sarlavhasi. Faqat `lib/apps.ts` allowlist'idagi
+ * kodlar qabul qilinadi (klient matni to'g'ridan-to'g'ri DB'ga tushmasin);
+ * noma'lum/bo'sh → null (eski AE bildlari hech narsa yubormaydi).
+ * Bu SOF analitika maydoni — earning/dedup/limit mantig'iga ta'sir qilmaydi.
+ */
+export function hostAppFromReq(req: {
+  query?: Record<string, unknown>;
+  headers?: Record<string, unknown>;
+}): string | null {
+  const raw = req.query?.app ?? req.headers?.["x-ff-app"];
+  const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  return isKnownApp(v) ? v : null;
+}
+
+/**
  * FAZA 2 (H1 sybil) — earning uchun email-verify gate (plugin-profile.ts AI gate'i naqshi):
  *   • dev → faqat email sozlangan bo'lsa majburlanadi (fail-open);
  *   • production → sozlanmagan bo'lsa ham majburlanadi (fail-closed).
@@ -98,6 +115,8 @@ export async function recordTemplateDownloadEvent(input: {
   earn?: boolean;
   /** Step 20 — sybil clustering audit (best-effort; xato oqimni bloklamaydi). */
   audit?: DownloadAudit;
+  /** FAZA 5 — host dasturi kodi ("ae" | "pr"). `hostAppFromReq` bergan qiymat. */
+  app?: string | null;
 }): Promise<{ id: string; contributorId: string } | null> {
   if (!input.templateId) return null;
   try {
@@ -119,6 +138,7 @@ export async function recordTemplateDownloadEvent(input: {
           contributorId: tpl.contributorId,
           kind: input.kind,
           source: input.source ?? "plugin",
+          app: isKnownApp(input.app) ? String(input.app).toLowerCase() : null,
           // Step 20 — audit izi (nullable; PII faqat admin fraud-tahlilida ishlatiladi).
           ip: a.ip ?? null,
           ipPrefix: a.ipPrefix ?? ipToPrefix(a.ip) ?? null,

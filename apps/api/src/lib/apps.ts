@@ -50,3 +50,16 @@ export function appForPackExt(ext: string | null | undefined): string | null {
 export function isKnownApp(code: string | null | undefined): boolean {
   return !!code && Object.prototype.hasOwnProperty.call(APP_CONFIG, String(code).toLowerCase());
 }
+
+/**
+ * DASTURDAN MUSTAQIL kontent turlari — LUT (.cube), musiqa va SFX (audio) hech
+ * qanday host loyihasiga bog'lanmagan xom fayllar: After Effects'da ham,
+ * Premiere'da ham, Resolve'da ham bir xil ishlaydi.
+ *
+ * `templateApp` ustuni ularda baribir to'ldirilgan (ko'pincha `ae` — ingest
+ * default'i). `?app=pr` filtri buni hisobga olmasa, Premiere paneli LUT/musiqa/
+ * SFX'ni umuman ko'rmaydi — bu esa katalogni sun'iy kambag'allashtiradi.
+ * Shuning uchun app filtri "SHU dastur YOKI dasturdan mustaqil tur" deb
+ * qo'llanadi. AE uchun natija o'zgarmaydi (o'sha assetlar allaqachon `ae`).
+ */
+export const APP_NEUTRAL_TYPES = ["luts", "music", "sfx"] as const;
