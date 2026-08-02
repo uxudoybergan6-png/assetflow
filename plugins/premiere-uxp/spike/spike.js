@@ -339,6 +339,417 @@ async function probeCss() {
   });
 }
 
+/* ---------- PARITY: AE CEP panelini UXP'ga 1:1 ko'chirish mumkinmi ---------- */
+/*
+ * AE plagini (AssetFlow_Plugin.html) = 18k qator HTML + 3.8k qator inline CSS +
+ * 285 inline <svg> + 64 `display:grid` + 406 `gap:` + butunlay inline `onclick`.
+ * "1:1 bir xil" talabi shu bloklarning UXP'da HAQIQATAN chizilishiga bog'liq.
+ * Quyidagi probe'lar har birini alohida o'lchaydi — taxmin qilinmaydi.
+ */
+
+function nextFrame2() {
+  return new Promise(function (res) {
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(function () { res(); });
+    else setTimeout(res, 32);
+  });
+}
+
+/** Elementni body'ga qo'yib, 2×rAF dan keyin o'lchaydi va olib tashlaydi. */
+async function withMounted(html, fn) {
+  var host = document.createElement("div");
+  host.setAttribute("style", "position:relative;width:300px;height:200px;");
+  host.innerHTML = html;
+  document.body.appendChild(host);
+  await nextFrame2();
+  await nextFrame2();
+  var out;
+  try { out = await fn(host); } finally { document.body.removeChild(host); }
+  return out;
+}
+
+function rectOf(el) {
+  if (!el || !el.getBoundingClientRect) return null;
+  var r = el.getBoundingClientRect();
+  return { w: Math.round(r.width), h: Math.round(r.height), l: Math.round(r.left), t: Math.round(r.top) };
+}
+
+function rectStr(el) {
+  var r = rectOf(el);
+  return r ? r.w + "x" + r.h : "rect yo'q";
+}
+
+async function probeParity() {
+  // ── P1. Inline SVG — AE ikonalarining 100% i shu ── */
+  await probe("parity", "Inline <svg> (innerHTML) chiziladimi", async function () {
+    var svg = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#c8f24c" ' +
+      'stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/><line x1="10" y1="5" x2="10" y2="19"/></svg>';
+    return await withMounted('<div id="p1a">' + svg + '</div>', async function (host) {
+      var s = host.querySelector("svg");
+      var kids = s ? s.children.length : -1;
+      var tag = s ? String(s.tagName) : "yo'q";
+      var ns = s ? String(s.namespaceURI || "—") : "—";
+      return {
+        detail: "querySelector('svg') → " + tag + " · bolalar=" + kids + " · ns=" + ns +
+          " · rect=" + (s ? rectStr(s) : "—") +
+          "\n→ SVG " + (s && rectOf(s) && rectOf(s).w > 0 ? "O'LCHAMLI (chizilgan bo'lishi mumkin)" : "0 o'lchamli — IKONALAR KO'RINMAYDI"),
+      };
+    });
+  });
+
+  // createElementNS bilan qurilgan SVG innerHTML'dan farq qilishi mumkin.
+  await probe("parity", "createElementNS bilan SVG", async function () {
+    var el = null, err = "";
+    try {
+      el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      el.setAttribute("width", "24"); el.setAttribute("height", "24");
+      var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      p.setAttribute("d", "M4 4 L20 20"); p.setAttribute("stroke", "#fff");
+      el.appendChild(p);
+      document.body.appendChild(el);
+      await nextFrame2(); await nextFrame2();
+    } catch (e) { err = String(e && e.message || e); }
+    var r = el ? rectStr(el) : "—";
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    return { detail: "createElementNS " + (err ? "XATO: " + err : "OK") + " · rect=" + r };
+  });
+
+  // ── P2. Inline onclick — AE'da barcha tugmalar shunday ── */
+  await probe("parity", "Inline onclick=\"…\" atributi ishlaydimi", async function () {
+    window.__ffP2 = 0;
+    return await withMounted('<div id="p2" onclick="window.__ffP2=1">bos</div>', async function (host) {
+      var el = host.querySelector("#p2");
+      var attr = el ? el.getAttribute("onclick") : null;
+      var propType = el ? typeof el.onclick : "—";
+      var fired = false;
+      try {
+        if (el && el.click) el.click();
+        else if (el) el.dispatchEvent(new Event("click", { bubbles: true }));
+        fired = window.__ffP2 === 1;
+      } catch (e) { /* dispatch qo'llab-quvvatlanmasligi mumkin */ }
+      return {
+        detail: "atribut=" + short(attr) + " · el.onclick turi=" + propType + " · click() dan keyin bajarildi=" + fired +
+          "\n→ " + (fired ? "inline onclick ISHLAYDI" : "inline onclick ISHLAMAYDI — shim kerak (attr → addEventListener)"),
+      };
+    });
+  });
+
+  // Shim'ning o'zi mumkinmi: onclick matnini funksiyaga aylantirish.
+  await probe("parity", "new Function / eval (onclick shim uchun)", async function () {
+    var nf = "yo'q", ev = "yo'q";
+    try { nf = new Function("return 1+1")() === 2 ? "ISHLAYDI" : "g'alati natija"; }
+    catch (e) { nf = "XATO: " + String(e && e.message || e); }
+    try { ev = eval("1+1") === 2 ? "ISHLAYDI" : "g'alati natija"; }
+    catch (e) { ev = "XATO: " + String(e && e.message || e); }
+    return { detail: "new Function → " + nf + " · eval → " + ev };
+  });
+
+  // ── P3. Murakkab innerHTML parse fidelity ── */
+  await probe("parity", "innerHTML murakkab markup parse qiladimi", async function () {
+    var html = '<div class="a" data-x="1"><span class="b">t</span>' +
+      '<button type="button" class="c" title="x">B</button>' +
+      '<input type="text" value="v"/><select><option>1</option></select>' +
+      '<input type="checkbox"/><input type="range" min="0" max="10"/>' +
+      '<a href="#">l</a><img src="" alt=""/><video></video></div>';
+    return await withMounted(html, async function (host) {
+      var got = [];
+      ["div.a", "span.b", "button.c", "input[type=text]", "select", "input[type=checkbox]",
+        "input[type=range]", "a", "img", "video"].forEach(function (sel) {
+        var e = null;
+        try { e = host.querySelector(sel); } catch (er) { got.push(sel + "=SELEKTOR XATO"); return; }
+        got.push(sel + "=" + (e ? "bor(" + rectStr(e) + ")" : "YO'Q"));
+      });
+      var dx = host.querySelector(".a") ? host.querySelector(".a").getAttribute("data-x") : null;
+      return { detail: got.join(" · ") + "\ndata-x=" + short(dx) };
+    });
+  });
+
+  // ── P4. Murakkab CSS selektorlar (AE varag'i ularga to'la) ── */
+  await probe("parity", "Selektorlar: > + ~ [attr] :not() :first-child", async function () {
+    var st = document.createElement("style");
+    st.textContent =
+      ".pz > .k { width: 11px; }" +
+      ".pz .k + .k { width: 22px; }" +
+      '.pz [data-q="1"] { height: 33px; }' +
+      ".pz .k:not(.skip) { border-left-width: 4px; }" +
+      ".pz .k:first-child { border-top-width: 5px; }" +
+      ".pz .k:last-child { border-bottom-width: 6px; }";
+    document.head.appendChild(st);
+    var out = await withMounted(
+      '<div class="pz"><div class="k">1</div><div class="k" data-q="1">2</div><div class="k skip">3</div></div>',
+      async function (host) {
+        var ks = host.querySelectorAll(".k");
+        var res = [];
+        for (var i = 0; i < ks.length; i++) {
+          var cs = window.getComputedStyle(ks[i]);
+          res.push("#" + (i + 1) + " w=" + cs.width + " h=" + cs.height +
+            " bl=" + cs.borderLeftWidth + " bt=" + cs.borderTopWidth + " bb=" + cs.borderBottomWidth);
+        }
+        return { detail: res.join("\n") };
+      }
+    );
+    document.head.removeChild(st);
+    return out;
+  });
+
+  // ── P5. Matn kesish: ellipsis va line-clamp ── */
+  await probe("parity", "text-overflow:ellipsis va -webkit-line-clamp", async function () {
+    var long = "Juda uzun sarlavha matni bu yerda davom etadi va albatta sig'maydi";
+    return await withMounted(
+      '<div style="width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="e1">' + long + '</div>' +
+      '<div style="width:120px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;" id="e2">' + long + '</div>',
+      async function (host) {
+        var e1 = host.querySelector("#e1"), e2 = host.querySelector("#e2");
+        var r1 = rectOf(e1), r2 = rectOf(e2);
+        return {
+          detail: "ellipsis: rect=" + (r1 ? r1.w + "x" + r1.h : "?") + " scrollW=" + (e1 && e1.scrollWidth) +
+            " (h ≈ 1 qator bo'lsa kesildi)\nline-clamp: rect=" + (r2 ? r2.w + "x" + r2.h : "?") +
+            " (h ≈ 2 qator bo'lsa ishladi)",
+        };
+      }
+    );
+  });
+
+  // ── P6. Joylashuv: absolute / fixed / sticky HAQIQATAN qo'llanadimi ── */
+  await probe("parity", "position absolute / fixed / sticky (o'lchangan)", async function () {
+    return await withMounted(
+      '<div id="pa" style="position:absolute;left:40px;top:24px;width:20px;height:20px;"></div>' +
+      '<div id="pf" style="position:fixed;left:8px;top:8px;width:20px;height:20px;"></div>' +
+      '<div id="pr" style="position:relative;left:12px;width:20px;height:20px;"></div>',
+      async function (host) {
+        var base = host.getBoundingClientRect();
+        function rel(id) {
+          var e = host.querySelector(id);
+          var r = e && e.getBoundingClientRect ? e.getBoundingClientRect() : null;
+          return r ? Math.round(r.left - base.left) + "," + Math.round(r.top - base.top) : "?";
+        }
+        var f = host.querySelector("#pf").getBoundingClientRect();
+        return {
+          detail: "absolute(40,24) → " + rel("#pa") +
+            " · relative(left12) → " + rel("#pr") +
+            " · fixed viewport(8,8) → " + Math.round(f.left) + "," + Math.round(f.top),
+        };
+      }
+    );
+  });
+
+  // ── P7. Scroll konteyner ── */
+  await probe("parity", "overflow-y:auto scroll (scrollTop/scrollHeight)", async function () {
+    var kids = "";
+    for (var i = 0; i < 30; i++) kids += '<div style="height:20px;">' + i + "</div>";
+    return await withMounted('<div id="sc" style="height:100px;overflow-y:auto;">' + kids + "</div>",
+      async function (host) {
+        var sc = host.querySelector("#sc");
+        var before = sc.scrollHeight;
+        sc.scrollTop = 200;
+        await nextFrame2();
+        return {
+          detail: "clientH=" + sc.clientHeight + " scrollH=" + before +
+            " · scrollTop=200 yozgandan keyin → " + sc.scrollTop +
+            "\n→ " + (sc.scrollTop > 0 ? "scroll ISHLAYDI" : "scrollTop qo'llanmadi"),
+        };
+      });
+  });
+
+  // ── P8. ::before/::after quti egallaydimi (AE'da nishon/nuqtalar shunday) ── */
+  await probe("parity", "::before content quti egallaydimi", async function () {
+    var st = document.createElement("style");
+    st.textContent = '.pb2::before{content:"";display:block;width:30px;height:12px;background:#c8f24c;}';
+    document.head.appendChild(st);
+    var out = await withMounted('<div class="pb2" style="width:100px;"></div>', async function (host) {
+      var e = host.querySelector(".pb2");
+      return { detail: "ota rect=" + rectStr(e) + " (h≈12 bo'lsa ::before quti bor)" };
+    });
+    document.head.removeChild(st);
+    return out;
+  });
+
+  // ── P9. flex:1 taqsimoti va min-width:0 ── */
+  await probe("parity", "flex:1 taqsimot + min-width:0", async function () {
+    return await withMounted(
+      '<div style="display:flex;flex-direction:row;width:300px;">' +
+      '<div id="f1" style="flex:1;height:10px;"></div>' +
+      '<div id="f2" style="flex:2;height:10px;"></div>' +
+      '<div id="f3" style="width:60px;height:10px;flex-shrink:0;"></div></div>',
+      async function (host) {
+        return {
+          detail: "flex1=" + rectStr(host.querySelector("#f1")) +
+            " flex2=" + rectStr(host.querySelector("#f2")) +
+            " fixed60=" + rectStr(host.querySelector("#f3")) +
+            "\n→ kutilgan 80 / 160 / 60",
+        };
+      });
+  });
+
+  // ── P10. Tema: ish vaqtida :root o'zgaruvchini almashtirish ── */
+  await probe("parity", "runtime CSS var almashtirish (tema)", async function () {
+    var st = document.createElement("style");
+    st.textContent = ":root{--ff-t:#111111}.pt1{color:var(--ff-t)}";
+    document.head.appendChild(st);
+    var out = await withMounted('<div class="pt1"></div>', async function (host) {
+      var e = host.querySelector(".pt1");
+      var a = window.getComputedStyle(e).color;
+      document.documentElement.style.setProperty("--ff-t", "#c8f24c");
+      await nextFrame2();
+      var b = window.getComputedStyle(e).color;
+      document.documentElement.style.removeProperty("--ff-t");
+      return { detail: "avval=" + a + " → keyin=" + b + " · " + (a !== b ? "ALMASHDI" : "o'zgarmadi") };
+    });
+    document.head.removeChild(st);
+    return out;
+  });
+
+  // ── P11. @media so'rovlari (AE tor panel uchun ishlatadi) ── */
+  await probe("parity", "@media (max-width) qo'llanadimi", async function () {
+    var st = document.createElement("style");
+    st.textContent = ".pm1{height:10px}@media (max-width:5000px){.pm1{height:44px}}";
+    document.head.appendChild(st);
+    var out = await withMounted('<div class="pm1" style="width:50px;"></div>', async function (host) {
+      var h = window.getComputedStyle(host.querySelector(".pm1")).height;
+      return { detail: "height=" + h + " (44px bo'lsa @media ISHLAYDI, 10px bo'lsa yo'q)" };
+    });
+    document.head.removeChild(st);
+    return out;
+  });
+
+  // ── P12. Native widget'lar ko'rinishi (AE'da custom stil beriladi) ── */
+  await probe("parity", "Native widget stillari (button/input/select/range)", async function () {
+    var st = document.createElement("style");
+    st.textContent = ".pw button,.pw input,.pw select{background-color:#c8f24c;color:#101010;border:1px solid #f00;border-radius:9px;}";
+    document.head.appendChild(st);
+    var out = await withMounted(
+      '<div class="pw"><button type="button">b</button><input type="text" value="i"/>' +
+      '<select><option>o</option></select><input type="range"/><input type="checkbox"/></div>',
+      async function (host) {
+        var res = [];
+        ["button", "input[type=text]", "select", "input[type=range]", "input[type=checkbox]"].forEach(function (sel) {
+          var e = host.querySelector(sel);
+          if (!e) { res.push(sel + "=YO'Q"); return; }
+          var cs = window.getComputedStyle(e);
+          res.push(sel + " bg=" + cs.backgroundColor + " color=" + cs.color + " r=" + cs.borderRadius + " " + rectStr(e));
+        });
+        return { detail: res.join("\n") };
+      }
+    );
+    document.head.removeChild(st);
+    return out;
+  });
+
+  // ── P13. Animatsiya/o'tish haqiqatan bajariladimi ── */
+  await probe("parity", "transition / Element.animate() bajariladimi", async function () {
+    var waapi = typeof document.createElement("div").animate === "function";
+    return await withMounted('<div id="tr" style="opacity:1;transition:opacity 300ms linear;width:10px;height:10px;"></div>',
+      async function (host) {
+        var e = host.querySelector("#tr");
+        e.style.opacity = "0";
+        await new Promise(function (r) { setTimeout(r, 120); });
+        var mid = window.getComputedStyle(e).opacity;
+        await new Promise(function (r) { setTimeout(r, 350); });
+        var end = window.getComputedStyle(e).opacity;
+        return {
+          detail: "opacity o'rtada=" + mid + " oxirida=" + end +
+            " · Element.animate=" + waapi +
+            "\n→ o'tish " + (mid !== "0" && mid !== end ? "ANIMATSIYA QILINDI" : "sakrab o'tdi (transition yo'q)"),
+        };
+      });
+  });
+
+  // ── P14. Gradient / soya / filter computed qiymati ── */
+  await probe("parity", "gradient / box-shadow / filter / backdrop-filter", async function () {
+    var st = document.createElement("style");
+    st.textContent = ".pg1{background-image:linear-gradient(135deg,#fff,#a6a6ae);box-shadow:0 28px 80px rgba(0,0,0,.45);" +
+      "filter:blur(1px);backdrop-filter:blur(8px);}";
+    document.head.appendChild(st);
+    var out = await withMounted('<div class="pg1" style="width:40px;height:40px;"></div>', async function (host) {
+      var cs = window.getComputedStyle(host.querySelector(".pg1"));
+      return {
+        detail: "background-image=" + String(cs.backgroundImage).slice(0, 70) +
+          "\nbox-shadow=" + String(cs.boxShadow).slice(0, 60) +
+          "\nfilter=" + cs.filter + " · backdrop-filter=" + (cs.backdropFilter || cs.webkitBackdropFilter || "—"),
+      };
+    });
+    document.head.removeChild(st);
+    return out;
+  });
+
+  // ── P15. Mahalliy @font-face (AE shriftlari plagin ichida keladi) ── */
+  await probe("parity", "@font-face — mahalliy fayl (plugin papkasidan)", async function () {
+    var st = document.createElement("style");
+    st.textContent = "@font-face{font-family:'FFLocal';src:url('fonts/probe.woff2') format('woff2');}";
+    document.head.appendChild(st);
+    var el = document.createElement("span");
+    el.setAttribute("style", "font-family:'FFLocal',monospace;font-size:20px;");
+    el.textContent = "iiiii";
+    document.body.appendChild(el);
+    await new Promise(function (r) { setTimeout(r, 800); });
+    var fam = "";
+    try { fam = window.getComputedStyle(el).fontFamily; } catch (e) { fam = "?"; }
+    var w = rectStr(el);
+    document.body.removeChild(el);
+    document.head.removeChild(st);
+    return {
+      detail: "computed family=" + short(fam) + " rect=" + w +
+        "\n(fayl yo'q — bu probe faqat @font-face url() SINTAKSISI xato bermasligini tekshiradi)",
+    };
+  });
+
+  // ── P16. Fokus / klaviatura ── */
+  await probe("parity", "tabindex fokus + keydown", async function () {
+    return await withMounted('<div id="fk" tabindex="0" style="width:40px;height:20px;"></div>', async function (host) {
+      var e = host.querySelector("#fk");
+      var got = "";
+      e.addEventListener("keydown", function (ev) { got = ev.key || "(key yo'q)"; });
+      try { e.focus(); } catch (er) { /* ignore */ }
+      var active = document.activeElement === e;
+      try { e.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); }
+      catch (er) { try { var ev2 = document.createEvent("Event"); ev2.initEvent("keydown", true, true); ev2.key = "Enter"; e.dispatchEvent(ev2); } catch (e3) { /* ignore */ } }
+      return { detail: "focus() → activeElement mos=" + active + " · keydown qabul qilindi=" + short(got) };
+    });
+  });
+
+  // ── P17. DOM API'lari (AE kodi ularga tayanadi) ── */
+  await probe("parity", "DOM API yuzasi (closest/matches/dataset/cloneNode/…)", async function () {
+    var d = document.createElement("div");
+    var has = [], no = [];
+    [["closest", d.closest], ["matches", d.matches], ["cloneNode", d.cloneNode],
+    ["insertAdjacentHTML", d.insertAdjacentHTML], ["scrollIntoView", d.scrollIntoView],
+    ["animate", d.animate], ["append", d.append], ["remove", d.remove],
+    ["replaceChildren", d.replaceChildren], ["getAnimations", d.getAnimations]].forEach(function (p) {
+      (typeof p[1] === "function" ? has : no).push(p[0]);
+    });
+    var extras = [];
+    [["dataset", !!d.dataset], ["classList", !!d.classList], ["template", !!document.createElement("template").content],
+    ["DOMParser", typeof DOMParser !== "undefined"], ["MutationObserver", typeof MutationObserver !== "undefined"],
+    ["ResizeObserver", typeof ResizeObserver !== "undefined"], ["CustomEvent", typeof CustomEvent !== "undefined"],
+    ["KeyboardEvent", typeof KeyboardEvent !== "undefined"], ["clipboard", !!(navigator && navigator.clipboard)]]
+      .forEach(function (p) { extras.push(p[0] + "=" + p[1]); });
+    return { detail: "BOR: " + has.join(", ") + "\nYO'Q: " + (no.join(", ") || "—") + "\n" + extras.join(" · ") };
+  });
+
+  // ── P18. Katta DOM yuki (AE sahifasi ~ mingdan ortiq tugun) ── */
+  await probe("parity", "Katta DOM: 1200 tugun qo'yish + o'lchash vaqti", async function () {
+    var host = document.createElement("div");
+    host.setAttribute("style", "display:flex;flex-direction:row;flex-wrap:wrap;width:320px;");
+    var t0 = Date.now();
+    var html = "";
+    for (var i = 0; i < 400; i++) {
+      html += '<div style="width:100px;height:60px;margin:0 4px 4px 0;"><span>a</span><span>b</span></div>';
+    }
+    host.innerHTML = html;
+    document.body.appendChild(host);
+    var tParse = Date.now() - t0;
+    await nextFrame2(); await nextFrame2();
+    var t1 = Date.now();
+    var last = host.children[host.children.length - 1];
+    var r = rectOf(last);
+    var tMeasure = Date.now() - t1;
+    document.body.removeChild(host);
+    return {
+      detail: "400 karta (1200 tugun): innerHTML " + tParse + "ms · layout+o'lchash " + tMeasure +
+        "ms · oxirgi karta " + (r ? r.l + "," + r.t : "?"),
+    };
+  });
+}
+
 async function probeStorageAndNet() {
   await probe("storage", "localStorage yozish/o'qish", async function () {
     localStorage.setItem("ff.spike", "v1");
@@ -764,6 +1175,7 @@ async function runAll() {
   statusEl.textContent = "Ishlamoqda…";
   await probeEnvironment();
   await probeCss();
+  await probeParity();
   await probeStorageAndNet();
   await probeVideo();
   await probeHostApi();

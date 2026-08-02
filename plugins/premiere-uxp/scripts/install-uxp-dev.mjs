@@ -84,8 +84,9 @@ if (fs.existsSync(pluginsDir)) {
   }
 }
 // Runtime'ga tegishli bo'lmagan papkalar ko'chirilmaydi: `spike/` o'z manifestiga ega
-// (host chalkashmasin), `scripts/`+`dist/` esa Node kodi — UXP paketiga aloqasi yo'q.
-const SKIP_DIRS = new Set(["scripts", "spike", "dist", "node_modules", ".git"]);
+// (host chalkashmasin), `scripts/`+`dist/` esa Node kodi, `dev/` — brauzer stub
+// harness (fikstura ma'lumot bilan) — UXP paketiga aloqasi yo'q.
+const SKIP_DIRS = new Set(["scripts", "spike", "dist", "dev", "node_modules", ".git"]);
 fs.mkdirSync(dest, { recursive: true });
 fs.cpSync(src, dest, {
   recursive: true,

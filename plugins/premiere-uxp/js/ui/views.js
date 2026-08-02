@@ -56,6 +56,31 @@
       el("div", { class: "ff-faint", style: "margin-bottom:8px;",
         text: "API: " + window.FF_ENV.apiBase + " · token: " + window.FFStore.tokenBackend() }),
     ];
+
+    // UXP layout tekshiruvi — natija shu yerda, joyida chiziladi.
+    if (window.FFDiag) {
+      var out = el("div", { class: "ff-log", style: "margin-bottom:8px;display:none;" });
+      var runBtn = button("UXP tekshiruvi (" + window.FFDiag.count + ")", {
+        variant: "ghost",
+        onClick: function () {
+          out.style.display = "flex";
+          window.FFUI.clear(out);
+          out.appendChild(el("div", { class: "ff-log-line", text: "ishlamoqda…" }));
+          window.FFDiag.run(function (rec, i, n) {
+            if (i === 1) window.FFUI.clear(out);
+            out.appendChild(el("div", { class: "ff-log-line", text: i + "/" + n + "  " + rec.name }));
+            // UXP matn tugunida `\n` ko'rinmaydi — har qatorni alohida chizamiz.
+            String(rec.detail).split("\n").forEach(function (ln) {
+              out.appendChild(el("div", { class: "ff-log-line ff-log-info", text: "    " + ln }));
+            });
+          }).then(function () {
+            out.appendChild(el("div", { class: "ff-log-line", text: "— tugadi —" }));
+          });
+        },
+      });
+      body.push(el("div", { class: "ff-row", style: "margin-bottom:8px;" }, [runBtn]));
+      body.push(out);
+    }
     if (!entries.length) {
       body.push(el("div", { class: "ff-muted", text: "Log yozuvlari yo'q." }));
     } else {
@@ -217,15 +242,12 @@
       relBody,
     ]));
 
-    // FAZA 2 — katalog. Ishlamaydigan narsani faol tugma qilmaymiz (UX qoidasi).
+    // Katalog (FAZA 2) — Premiere shablonlari + app-neutral stock/LUT.
     kids.push(el("div", { class: "ff-card" }, [
       el("div", { class: "ff-h2", text: "Shablonlar katalogi" }),
       el("div", { class: "ff-muted", style: "margin-bottom:8px;",
-        text: "Premiere shablonlari (app=pr) katalogi keyingi fazada shu panelga ulanadi." }),
-      button("Katalog — tez orada", {
-        disabled: true,
-        disabledReason: "FAZA 2 da ulanadi",
-      }),
+        text: "Premiere shablonlari (app=pr), LUT va stock kontent. Import amallari FAZA 3 da ulanadi." }),
+      button("Katalogni ochish", { variant: "primary", onClick: p.onBrowse }),
     ]));
 
     var logoutBtn = button("Chiqish", { variant: "ghost", onClick: p.onLogout });

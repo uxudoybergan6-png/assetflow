@@ -1,16 +1,16 @@
-# Session report — 2026-08-02 (Premiere Pro UXP plagin: FAZA 0 + FAZA 1)
-- FAZA 0 yopildi: 43/43 probe OK → `docs/PREMIERE-UXP-SPIKE-NATIJA.md`; spike plagini o'chirildi.
-- FAZA 1 yozildi: `plugins/premiere-uxp/` (manifest v5, qobiq+tema, secureStorage token, API klient, host adapter).
-- Ekranlar: yuklanish · login (parol + Google device-code) · hisob · diagnostika ("Loglar").
-- Premiere 26.2.2 ichida JONLI tasdiqlandi: tema darkest⇄light jonli almashadi.
-- Parol bilan kirish ishladi (`user@assetflow.uz`, Enter bilan yuborish) → hisob ekrani.
-- Hisob ekrani: tarif nishoni, loyiha `FF-UXP-Spike.prproj`, `FF Spike Seq`, 3 video trek, `Premiere Pro 26.2.2`.
-- Google device-code: kod ko'rsatildi, brauzer ochildi, polling ketdi, "Bekor qilish" ishladi.
-- TOPILDI: UXP `<button>` `background-color`/`color` ni e'tiborsiz qoldiradi → `div role="button"`.
-- TOPILDI: bo'sh absolyut toast overlay footer bosishlarini yutgan → bo'sh holatda 0px, `bottom:34px`.
-- TOPILDI: `html, body { height:100% }` bo'lmasa footer panel o'rtasida osiladi.
-- TOPILDI: `shell.openExternal` har URL uchun UXP "Request For Permission" dialogini chiqaradi.
-- Yangi tuzoqlar hujjatga yozildi (SPIKE-NATIJA §9); dev tsikl = install skript + to'liq restart.
-- KUTILMOQDA (launch to'sig'i): `GET /api/plugin/catalog?app=pr` production'da 0 element — kontent vazifasi.
-- KUTILMOQDA: `/api/plugin/version?app=pr` → `latest:null`, `installerStatus:"unsupported_platform"` (backend #10).
-- Keyingi: FAZA 2 Browse (`?app=pr`) → FAZA 3 import → backend `pr` kanali → `.ccx` paketlash.
+# Session report — 2026-08-02 (Premiere UXP: FAZA 2 + AE parity o'lchovi)
+- FAZA 2 yopildi: karta/detal media **ko'rinmasligi** tuzatildi — UXP `<img>`/`<video>` intrinsic
+  o'lchamni o'lchamaydi, `object-fit` yo'q → `sizeMedia()` ikkala o'lchovni `orient` dan beradi.
+- Jonli tasdiq (Premiere 26.2.2): Motion tab 5 natija — rasm/preview ko'rinadi, detal video o'ynaydi.
+- `js/diag-layout.js` qo'shildi: panel ichida **18 ta UXP probe** ("Diagnostika → UXP tekshiruvi").
+- Ishlatilmagan spike plagini registrdan olib tashlandi (menyuda faqat bitta dev plagin chiqardi).
+- PARITY ✅ ko'chadi: inline `<svg>` (285 ikona), `>` `+` `[attr]` `:not()` `:first-child`,
+  `ellipsis`, `position`, scroll, `::before`, `@media`, runtime CSS var, gradient/soya;
+  1200 tugun = `innerHTML` 45 ms · layout 0 ms → AE hajmi to'siq emas.
+- PARITY ❌ transform shart: inline `onclick` bajarilmaydi (`new Function` shim mumkin),
+  `transition` va `Element.animate` yo'q, `filter`/`backdrop-filter` yo'q,
+  `-webkit-line-clamp` kesmaydi, `DOMParser`/`<template>` yo'q, `grid`/`gap` yo'q.
+- TUZOQ: `getComputedStyle` native widget uchun dalil emas (bg qaytaradi, lekin chizmaydi).
+- Hujjat: SPIKE-NATIJA §10 (FAZA 2 tuzoqlari) + §11 (AE→UXP parity jadvali).
+- KUTILMOQDA: FAZA 3 import · 1:1 AE port transformi + host adapter · backend `app=pr` kanali.
+- KUTILMOQDA (launch to'sig'i): `GET /api/plugin/catalog?app=pr` production'da 0 element.

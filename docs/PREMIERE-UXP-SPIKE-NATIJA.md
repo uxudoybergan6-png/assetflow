@@ -147,6 +147,59 @@ hozir **0 element** qaytaradi. Bu FAZA 2 emas, kontent/moderatsiya vazifasi.
 ketma-ketlik `FF Spike Seq`, 3 video trek, `Premiere Pro 26.2.2`) → Chiqish → Google device-code
 (kod ko'rsatildi, brauzer ochildi, polling ketdi, Bekor qilish ishladi). Token `secureStorage`da.
 
+## 10. FAZA 2 da o'lchangan tuzoqlar (katalog/karta/detal)
+
+| Band | Natija | Tafsilot |
+|------|--------|---------|
+| flex — **siqadi, o'ramaydi** | **TUZOQ** | `flex-wrap:wrap` bo'lsa ham, o'lchami faqat `width` bilan berilgan karta yangi qatorga tushmasdan **siqiladi** (3 ta 132px karta 300px konteynerda 100px ga qisqardi). → qotirilgan o'lchamli karta uchun `flex-grow:0; flex-shrink:0; flex-basis:<w>` **uchalasi ham** shart |
+| `<img>` ichki o'lchami | **YO'Q** | UXP `<img>`/`<video>` ning intrinsic o'lchamini o'lchamaydi: bitta o'lchov `auto`/berilmagan qolsa quti **0×0** bo'ladi va rasm butunlay ko'rinmaydi. `object-fit` ham qo'llanmaydi. → **ikkala o'lchov ham JS'da** hisoblanib inline berilsin (`sizeMedia(node, orient, boxH)`; nomalum orient = 16:9) |
+| `box-sizing` sukut qiymati | **TUZOQ** | `border-box` sukut emas: `width:100%` + `padding`/`border` konteynerdan **chiqib ketadi**. → o'lchovli har bir qutiga `box-sizing:border-box` yozilsin |
+| `getBoundingClientRect()` | **YAGONA o'lchov** | `offsetLeft`/`offsetTop` **doim 0**, `window.innerWidth/innerHeight` **undefined**. Panel eni = `document.body.clientWidth` |
+
+## 11. Parity o'lchovi — AE CEP panelini UXP'ga 1:1 ko'chirish mumkinmi
+
+Jonli panel ichidagi **18 ta probe** (`js/diag-layout.js` → Diagnostika ekranidagi "UXP tekshiruvi").
+AE paneli: 18 033 qator HTML · 3 844 qator inline CSS · **285 inline `<svg>`** · **64 `display:grid`**
+· **406 `gap:`** · butunlay inline `onclick` · 3 223 qator ExtendScript.
+
+### ✅ O'zgarishsiz ko'chadi
+
+| Band | O'lchov |
+|------|---------|
+| **Inline `<svg>` (`innerHTML`)** | topildi · bolalar=2 · **24×24** → 285 ikona **qayta chizilmaydi** |
+| `createElementNS` SVG | 24×24 |
+| `innerHTML` murakkab markup | `span` `button` `input[text]` `select` `input[checkbox]` `input[range]` `a` — hammasi + `data-*` saqlandi |
+| **Murakkab selektorlar** | `>`=11px · `+`=22px · `[attr]`=33px · `:not()`=4px · `:first-child`=5px — **hammasi to'g'ri** |
+| `text-overflow:ellipsis` | 120×14 (1 qator) ✓ |
+| `position` absolute / relative / fixed | (40,24)→40,24 · (12,0)→12,0 · (8,8)→8,8 — **aniq** |
+| `overflow-y:auto` | clientH=100 scrollH=600 scrollTop→200 ✓ |
+| `::before { content }` quti | ota h≈12 ✓ |
+| `flex:1` / `flex:2` / qotirilgan | **80 / 160 / 60** — aniq |
+| **Runtime CSS var** | `#111111 → #C8F24C` **almashdi** → 3 tema ish vaqtida almashadi |
+| `@media (max-width)` | 44px qo'llandi ✓ |
+| `linear-gradient` · `box-shadow` | `linear-gradient(135deg,…)` · `rgba(0,0,0,.45) 0 28px 80px` ✓ |
+| DOM API | `closest` `matches` `cloneNode` `insertAdjacentHTML` `scrollIntoView` `append` `replaceChildren` · `dataset` `classList` `CustomEvent` `ResizeObserver` |
+| **Katta DOM** | 400 karta / 1200 tugun = **`innerHTML` 45 ms · layout 0 ms** → AE hajmi muammo emas |
+
+### ❌ Transform shart
+
+| Band | O'lchov | Transform |
+|------|---------|-----------|
+| Inline `onclick=""` | atribut **bor**, `el.onclick`=**undefined**, bajarilmadi | `[onclick]` skanerlab `new Function(attr)` bilan listener ulaydigan **shim** |
+| `new Function` / `eval` | **ikkalasi ham ishlaydi** | ↑ shim shu sababdan mumkin |
+| `display:grid` (64 ta) | §3 — bolalar 0,0 da | flex-wrap + `flex:0 0 <w>` |
+| `gap` (406 ta) | §3 — bayt-bir-xil, ta'siri **yo'q** | bolaga `margin` |
+| `-webkit-line-clamp:2` | 120×**57** (≈4 qator) — **kesmadi** | 1 qatorli `ellipsis` yoki JS bilan qirqish |
+| `transition` | o'rtada=0 oxirida=0 — **sakrab o'tdi** | animatsiya **yo'q** yoki qo'lda rAF |
+| `Element.animate` (WAAPI) | **false** | ↑ |
+| `filter` / `backdrop-filter` | `undefined` / yo'q | shisha effekt → qattiq rang/gradient |
+| `<template>.content` · `DOMParser` | **false** / **false** | faqat `innerHTML` |
+| Native widget stillari | `getComputedStyle` **#C8F24C qaytardi**, lekin §9 da jonli render **kulrang** chiqqan | **`getComputedStyle` native widget uchun dalil emas** — `<div role="button">` qoidasi kuchda qoladi |
+
+**Xulosa:** UI qatlami (HTML+CSS) mexanik transform bilan 1:1 ko'chadi; **host/IO qatlami almashtiriladi**
+(CSInterface + ExtendScript → `premierepro` UXP API · `http`/`https` → `fetch` · `zlib` → server ·
+`child_process` secret store → `secureStorage`).
+
 ## Ochiq (texnik bo'lmagan) risk
 
 `GET /api/plugin/catalog?app=pr` production'da **0 element**. Plagin texnik jihatdan tayyor bo'lsa ham,

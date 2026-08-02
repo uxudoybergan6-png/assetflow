@@ -23,9 +23,12 @@
     deviceHandle: null,
     /** "logs" ekranidan qaytiladigan marshrut */
     prevRoute: "login",
+    /** Detal ekranida ochilgan katalog elementi */
+    detailItem: null,
   };
 
   function mount(node) {
+    if (node === root) return; // browse node DOIMIY — qayta biriktirish shart emas
     var parent = root.parentNode;
     parent.replaceChild(node, root);
     node.id = "ffRoot";
@@ -38,6 +41,16 @@
       return mount(window.FFViews.fatal(app.loginError || "Noma'lum xato", function () { boot(); }));
     if (app.route === "logs")
       return mount(window.FFViews.logs(function () { go(app.prevRoute || "login"); }));
+    if (app.route === "browse")
+      return mount(window.FFBrowse.view({
+        onHome: function () { go("home"); },
+        onOpenDetail: function (item) {
+          app.detailItem = item;
+          go("detail");
+        },
+      }));
+    if (app.route === "detail" && app.detailItem)
+      return mount(window.FFBrowse.detailView(app.detailItem, function () { go("browse"); }));
     if (app.route === "login")
       return mount(
         window.FFViews.login({
@@ -57,11 +70,18 @@
         release: app.release,
         onLogout: onLogout,
         onRefreshContext: refreshContext,
+        onBrowse: function () { go("browse"); },
       })
     );
   }
 
   function go(route) {
+    // Browse'dan chiqishda scroll eslab qolinadi, media to'xtatiladi (dekoder oqmasin).
+    if (app.route === "browse" && route !== "browse") {
+      window.FFBrowse.saveScroll();
+      window.FFBrowse.stopMedia();
+    }
+    if (app.route === "detail" && route !== "detail") window.FFBrowse.stopMedia();
     app.route = route;
     render();
   }
@@ -152,6 +172,9 @@
     app.user = null;
     app.context = null;
     app.release = null;
+    app.detailItem = null;
+    // Boshqa hisob boshqa katalogni ko'radi — browse holati butunlay tozalanadi.
+    window.FFBrowse.reset();
     go("login");
   }
 

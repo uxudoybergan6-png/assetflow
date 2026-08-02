@@ -147,6 +147,8 @@ body {
   font-size: var(--ff-fs);
   font-family: var(--ff-font);
   cursor: pointer;
+  /* width:100% + padding/border content-box'da ota elementdan toshib ketadi. */
+  box-sizing: border-box;
   width: 100%;
   text-align: center;
 }
@@ -198,6 +200,7 @@ body {
 }
 
 .ff-input {
+  box-sizing: border-box;
   width: 100%;
   padding: var(--ff-sp-2);
   border: 1px solid var(--ff-border-strong);
@@ -269,6 +272,169 @@ body {
   text-align: center;
   margin-bottom: var(--ff-sp-3);
 }
+
+/* ── Browse: tablar · qidiruv · filtrlar ──────────────────────────────── */
+
+.ff-tabs {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-bottom: var(--ff-sp-3);
+}
+
+.ff-chip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* Siqilib matn kesilmasin — o'rniga qatorga sig'masa yangi qatorga o'tsin. */
+  flex-shrink: 0;
+  padding: 3px var(--ff-sp-2);
+  margin: 0 var(--ff-sp-1) var(--ff-sp-1) 0;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-r-sm);
+  background-color: var(--ff-surface);
+  color: var(--ff-text-muted);
+  font-size: var(--ff-fs-sm);
+  cursor: pointer;
+}
+.ff-chip:hover { background-color: var(--ff-surface-2); color: var(--ff-text); }
+.ff-chip:focus { border-color: var(--ff-lime); outline: 1px solid var(--ff-lime); }
+.ff-chip-on {
+  background-color: var(--ff-lime);
+  border-color: var(--ff-lime);
+  color: var(--ff-ink);
+  font-weight: 600;
+}
+.ff-chip-on:hover { background-color: var(--ff-lime); color: var(--ff-ink); }
+
+.ff-search-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: var(--ff-sp-2);
+}
+.ff-search-input { flex-grow: 1; width: auto; margin-right: var(--ff-sp-2); }
+.ff-search-btn { display: flex; flex-direction: row; flex-shrink: 0; }
+.ff-search-btn .ff-btn { width: auto; }
+
+.ff-filters {
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface);
+  padding: var(--ff-sp-3);
+  margin-bottom: var(--ff-sp-3);
+}
+.ff-filter-group { margin-bottom: var(--ff-sp-2); }
+.ff-chips { display: flex; flex-direction: row; flex-wrap: wrap; }
+
+/* ── Browse: to'r va kartalar ─────────────────────────────────────────── */
+/* CSS Grid UXP'da ISHLAMAYDI (spike §3) — flex-wrap + margin. Qator tartibi
+   DOM tartibi bilan bir xil (klaviatura navigatsiyasi to'g'ri ketadi). */
+
+.ff-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.ff-card-item {
+  display: flex;
+  flex-direction: column;
+  /* UXP flex'i kartani qatorga SIQADI (5 ta karta 78px bo'lib qolgan) — o'lchamni
+     qotirib qo'yamiz, shunda `flex-wrap` haqiqatan yangi qatorga o'tkazadi. */
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: 132px;
+  width: 132px;
+  margin: 0 var(--ff-sp-2) var(--ff-sp-3) 0;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface);
+  padding: var(--ff-sp-1);
+  cursor: pointer;
+}
+.ff-card-item:hover { border-color: var(--ff-border-strong); background-color: var(--ff-surface-2); }
+.ff-card-item:focus { border-color: var(--ff-lime); outline: 1px solid var(--ff-lime); }
+
+.ff-card-media {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 124px;
+  height: 70px;
+  border-radius: var(--ff-r-sm);
+  background-color: var(--ff-surface-3);
+  overflow: hidden;
+}
+/* `object-fit` UXP'da yo'q va UXP `<img>` ning ICHKI o'lchamini o'lchamaydi
+   (bir o'lchov `auto` bo'lsa quti 0 ga tushadi — jonli panelda o'lchandi).
+   Shuning uchun ikkala o'lchov ham JS'da `orient` dan hisoblanib beriladi
+   (`FFBrowse.sizeMedia`); bu yerda faqat siqilishdan himoya. */
+.ff-card-img,
+.ff-card-video { flex-shrink: 0; }
+.ff-hidden { display: none; }
+.ff-card-noimg { color: var(--ff-text-faint); font-size: var(--ff-fs-xs); text-align: center; }
+
+.ff-card-badges { display: flex; flex-direction: row; flex-wrap: wrap; margin-top: var(--ff-sp-1); }
+.ff-tag {
+  padding: 1px var(--ff-sp-1);
+  margin: 0 var(--ff-sp-1) var(--ff-sp-1) 0;
+  border-radius: var(--ff-r-sm);
+  background-color: var(--ff-surface-3);
+  color: var(--ff-text-muted);
+  font-size: var(--ff-fs-xs);
+}
+.ff-tag-pro { background-color: var(--ff-lime); color: var(--ff-ink); font-weight: 600; }
+.ff-tag-warn { background-color: var(--ff-surface-2); color: var(--ff-warn); }
+
+.ff-card-title {
+  font-size: var(--ff-fs-sm);
+  color: var(--ff-text);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ff-card-sub {
+  font-size: var(--ff-fs-xs);
+  color: var(--ff-text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Skeleton — animation TAQIQ (spike §3), shuning uchun statik plashka. */
+.ff-skel { background-color: var(--ff-surface-2); }
+.ff-skel-line {
+  height: 8px;
+  margin-top: var(--ff-sp-1);
+  border-radius: var(--ff-r-sm);
+  background-color: var(--ff-surface-2);
+}
+.ff-skel-line-sm { width: 60px; }
+
+/* ── Browse: detal ────────────────────────────────────────────────────── */
+
+.ff-detail-media {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* UXP'da faqat `width` berilgan `<img>` 0 balandlikda qoladi (jonli panelda
+     o'lchandi — detal media umuman ko'rinmagan). Balandlik QOTIRILADI. */
+  height: 180px;
+  border-radius: var(--ff-r);
+  background-color: var(--ff-surface-3);
+  overflow: hidden;
+}
+.ff-detail-video,
+.ff-detail-img { flex-shrink: 0; }
+
+.ff-meta-row { display: flex; flex-direction: row; align-items: flex-start; margin-bottom: var(--ff-sp-1); }
+.ff-meta-key { width: 90px; color: var(--ff-text-faint); font-size: var(--ff-fs-sm); }
+.ff-meta-val { flex-grow: 1; color: var(--ff-text); font-size: var(--ff-fs-sm); }
 
 /* ── Toast ────────────────────────────────────────────────────────────── */
 

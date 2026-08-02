@@ -1,0 +1,70 @@
+<!--
+  FrameFlow UXP — BRAUZER STUB HARNESS (faqat dev; `.ccx` ga KIRMAYDI).
+
+  Maqsad: Premiere'ni har o'zgarishda qayta ishga tushirmasdan (≈2 daqiqa tsikl)
+  ekran mantiqini tez tekshirish. UXP LAYOUT ENGINE BOSHQACHA — bu yerda ko'ringan
+  narsa Premiere'da bir xil chiqishiga KAFOLAT YO'Q (CSS Grid/gap farqi, native
+  widget farqi). Yakuniy tasdiq HAR DOIM jonli panelda.
+
+  Rejimlar:  ?mock=1  — tarmoqsiz, fikstura ma'lumot (grid/karta/detal)
+             ?mock=0  — haqiqiy API (CORS sababli brauzerda odatda xato holati)
+             ?empty=1 — bo'sh natija (empty state tekshiruvi)
+             ?fail=1  — so'rov xatosi (error + oflayn kesh yo'li)
+
+  Agar muhit query-string'ni yo'qotsa (ba'zi preview panellari shunday qiladi),
+  o'sha kalitlarni localStorage'ga qo'ying va sahifani yangilang:
+      localStorage.ff_dev_harness = "mock=1&empty=1"
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../css/tokens-uxp.css" />
+    <link rel="stylesheet" href="../css/panel.css" />
+    <style>
+      /* Premiere paneli o'lchamini taqlid qilish (dok holati). */
+      body { width: 420px; height: 760px; border: 1px solid #444; }
+    </style>
+    <script>
+      // ── UXP stublari (brauzerda `require` yo'q) ──────────────────────────
+      var __secure = {};
+      window.require = function (m) {
+        if (m === "uxp") {
+          return {
+            host: { version: "26.2.2 (stub)" },
+            shell: { openExternal: function (u) { console.log("openExternal", u); return Promise.resolve(); } },
+            storage: {
+              secureStorage: {
+                getItem: function (k) {
+                  return __secure[k]
+                    ? Promise.resolve(new TextEncoder().encode(__secure[k]))
+                    : Promise.reject(new Error("not found"));
+                },
+                setItem: function (k, v) { __secure[k] = String(v); return Promise.resolve(); },
+                removeItem: function (k) { delete __secure[k]; return Promise.resolve(); },
+              },
+            },
+          };
+        }
+        throw new Error("stub: " + m + " mavjud emas");
+      };
+    </script>
+  </head>
+  <body>
+    <div id="ffRoot" class="ff-root"><div class="ff-boot">Yuklanmoqda…</div></div>
+    <div id="ffToasts" class="ff-toasts"></div>
+
+    <script src="../js/env.js"></script>
+    <script src="../js/log.js"></script>
+    <script src="../js/bytes.js"></script>
+    <script src="../js/storage.js"></script>
+    <script src="../js/api-client.js"></script>
+    <script src="../js/host.js"></script>
+    <script src="../js/catalog.js"></script>
+    <script src="../js/ui/components.js"></script>
+    <script src="../js/ui/views.js"></script>
+    <script src="../js/ui/browse.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="fixtures.js"></script>
+    <script src="../js/main.js"></script>
+  </body>
+</html>
