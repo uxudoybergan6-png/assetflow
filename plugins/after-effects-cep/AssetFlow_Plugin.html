@@ -912,6 +912,11 @@ html.dens-lg .af-dens-btn .dn-lg{display:block}
 .ck-st{position:absolute;top:7px;right:7px;z-index:3;font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;border-radius:4px;background:rgba(8,10,14,.72)}
 .ck-app{position:absolute;bottom:7px;left:7px;z-index:3;display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;background:rgba(8,10,14,.72);border-radius:4px;color:#E7ECF3}
 .ck-app i{width:5px;height:5px;border-radius:50%;flex:none}
+/* D10 — dastur belgisi: nuqta+qisqartma ("Ae") o'rniga tanib olinadigan PLITA + TO'LIQ nom.
+   Bu bizning belgimiz, Adobe/Apple/Blackmagic rasmiy logotipi EMAS (egasi tasdig'i talab qiladi).
+   Stock turlari (LUT/Music/SFX) dastur emas → eski nuqtada qoladi. WEB: `.va-rc .sub i.tile` mirror. */
+.ck-app i.tile{width:13px;height:13px;border-radius:3.5px;border:1px solid;display:inline-flex;
+  align-items:center;justify-content:center;font-weight:800;font-size:7px;letter-spacing:-.2px}
 /* Yuklab olingan sahifada o'chirish tugmasi (showDl) — katalog gridida ko'rinmaydi */
 .ck-del{position:absolute;bottom:7px;right:7px;z-index:4;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:rgba(8,10,14,.72);border:1px solid rgba(255,107,94,.4);color:#FF9A8E;cursor:pointer;font-size:11px;padding:0}
 .ck-del:hover{background:rgba(255,107,94,.24)}
@@ -3454,6 +3459,7 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .axhome .hm-x{position:absolute;top:7px;right:7px;font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;border-radius:4px;background:rgba(8,10,14,.72)}
 .axhome .hm-app{position:absolute;bottom:7px;left:7px;display:flex;align-items:center;gap:4px;font-family:var(--font-mono);font-weight:600;font-size:8px;padding:2px 6px;background:rgba(8,10,14,.72);border-radius:4px;color:#E7ECF3}
 .axhome .hm-app i{width:5px;height:5px;border-radius:50%}
+.axhome .hm-app i.tile{width:13px;height:13px;border-radius:3.5px;border:1px solid;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:7px;letter-spacing:-.2px}
 .axhome .hm-cn{font-weight:600;font-size:11.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axhome .hm-cc{font-size:10px;color:var(--mut2);margin-top:-3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .axhome .hm-empty{grid-column:1/-1;text-align:center;color:var(--mut2);font-size:12px;padding:30px 0}
@@ -5902,6 +5908,11 @@ function renderCard(a,i,showDl){
   const appInfo=ffTypeBadge(a.templateApp,a.nav);
   const appLbl=appInfo.lbl;
   const appDot=appInfo.dot;
+  // D10 — dastur (FF_APPS) bo'lsa plita + to'liq nom; stock turi bo'lsa eski nuqta + qisqa yorliq.
+  const isApp=Object.keys(FF_APPS).some(function(k){return FF_APPS[k]===appInfo;});
+  const appMark=isApp
+    ? `<i class="tile" style="${hmAppTileStyle(appDot)}">${appLbl}</i>${appInfo.full||appLbl}`
+    : `<i style="background:${appDot}"></i>${appLbl}`;
   // Status rozetkasi (yuqori-o'ng, bitta): ⏳ Pack > ✓ Yuklandi > AI bilan > YANGI
   let stTx='',stCol='';
   if(noPack){stTx='⏳ Pack';stCol='var(--amber)';}
@@ -5925,7 +5936,7 @@ function renderCard(a,i,showDl){
     <div class="thumb${hasPreview?' has-preview':''}" style="background:${escHtml(a.bg)}">
       <span class="ck-plan ${a.isPro?'pro':'free'}">${a.isPro?'PRO':'FREE'}</span>
       ${stBadge}
-      <span class="ck-app"><i style="background:${appDot}"></i>${appLbl}</span>
+      <span class="ck-app">${appMark}</span>
       ${hasPreview?renderThumbMedia(a):`<span class="ico">${escHtml(a.i)}</span>${getAnim(i)}`}
       ${dlBtn}
     </div>
@@ -7880,6 +7891,24 @@ function hmG(a,b,c){return HM_HL+"linear-gradient(138deg,"+a+","+b+" 62%,"+c+")"
 var HM_GRAD={blue:hmG('#1A2A4E','#33549E','#0C1220'),violet:hmG('#2A1E49','#6C3FA8','#130E24'),teal:hmG('#0F312C','#1F7A5F','#08150F'),crimson:hmG('#3A1B22','#A8434E','#150A0D'),amber:hmG('#3A2A12','#BE8428','#171006'),steel:hmG('#122032','#3E7BA6','#0A1118'),purple:hmG('#20153A','#8F4FD1','#0F0A1C'),cyan:hmG('#0F2436','#2E9DC0','#081019')};
 var HM_GKEYS=Object.keys(HM_GRAD);
 var HM_APPDOT={Ae:'#A79BFF',Pr:'#E585FF',Dr:'#FFB27C',Mn:'#5CC8B0',Motion:'#5CC8B0',Graphic:'#7CC4FF',LUT:'#FFB27C',Music:'#F0907F',SFX:'#E5C07B'}; // P8 — stock belgi ranglari ham shu jadvalda
+// D10 — Home kartada ham plita + TO'LIQ dastur nomi (qisqartma tanish emas edi).
+// Faqat dastur kodlari (Ae/Pr/Mn/Dr); stock turlari (LUT/Music/SFX…) eski nuqtada qoladi.
+var HM_APPFULL={Ae:'After Effects',Pr:'Premiere Pro',Mn:'Apple Motion',Dr:'DaVinci Resolve'};
+// #RRGGBB → rgba(...). color-mix() ISHLATILMAYDI: CEP 11 (Chromium 88) uni bilmaydi va
+// plita shaffof bo'lib qolardi — belgi esa aynan tanib olinishi uchun qo'yilgan.
+function hmRgba(hex,a){
+  var h=String(hex||'').replace('#',''); if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var n=parseInt(h,16); if(isNaN(n))return 'rgba(167,155,255,'+a+')';
+  return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
+}
+function hmAppTileStyle(col){
+  return 'background:'+hmRgba(col,.18)+';border-color:'+hmRgba(col,.55)+';color:'+col;
+}
+function hmAppMark(lbl){
+  var col=HM_APPDOT[lbl]||'#A79BFF', full=HM_APPFULL[lbl];
+  if(!full)return '<i style="background:'+col+'"></i>'+hmEsc(lbl);
+  return '<i class="tile" style="'+hmAppTileStyle(col)+'">'+hmEsc(lbl)+'</i>'+full;
+}
 var HM_NAVLBL=NAV_LABELS; // P2 — yagona xaritadan (avval alohida, nomuvofiq nusxa edi)
 var HM_DEMO=[
   {n:'Glitch Logo Reveal',c:'Templates',a:'Aziza K.',app:'Ae',g:HM_GRAD.purple,plan:'PRO',x:'With AI',nav:'video'},
@@ -8847,7 +8876,7 @@ function hmCardHTML(vm){
     +'<div class="hm-thumb" style="background-image:'+hmBg(vm)+(vm.nopack?';opacity:.5':'')+'">'
     +'<span class="hm-badge '+hmPlanCls(vm.plan)+'">'+hmEsc(vm.plan)+'</span>'
     +hmXBadge(vm)
-    +'<span class="hm-app"><i style="background:'+(HM_APPDOT[vm.app]||'#A79BFF')+'"></i>'+hmEsc(vm.app)+'</span>'
+    +'<span class="hm-app">'+hmAppMark(vm.app)+'</span>'
     +'</div><div class="hm-cn">'+hmEsc(vm.n)+'</div>'
     +'<div class="hm-cc">'+hmEsc(vm.c)+(vm.a?(' · '+hmEsc(vm.a)):'')+'</div></div>';
 }

@@ -243,6 +243,14 @@ Skrinshotda ham xuddi shu ko'rinadi: 5 ustun chap tomonda, o'ng tomonda katta qo
 **Nima buziladi:** kosmetik/qulaylik — "Ae"/"Pr"/"Mn"/"Dr" qisqartmalari tanish bo'lmagan foydalanuvchi uchun tushunarsiz, logotip bilan bir qarashda tanish bo'lardi. Pul/ma'lumot buzilmaydi.
 **Kim:** CC (dastur logotiplari — SVG asset kerak, litsenziya/brand-guideline'ga e'tibor: Adobe/Blackmagic/Apple logotiplarini ishlatish shartlarini EGA tasdiqlashi tavsiya etiladi)
 
+> **✅ Tuzatildi (2026-08-02) — rasmiy logotipsiz.** Ildiz shikoyat "Ae/Pr/Mn/Dr qisqartmasi tushunarsiz" edi; u **to'liq nom** bilan yopiladi, rasmiy logotip esa shart emas.
+> - **Nuqta → PLITA:** 7px rangli doira o'rniga yumaloq-kvadrat plita (dastur ikonkasi shakli) — fon = brend rangi 18%, chegara 55%, harflar brend rangida. Bu **bizning belgimiz**, Adobe/Apple/Blackmagic logotipi EMAS → EGA'dan brand-guideline tasdig'i kutilmaydi. Rasmiy SVG kerak bo'lsa keyin faqat `<i>` ichini almashtirish yetadi.
+> - **Qisqartma → to'liq nom:** kartada endi `[Ae] After Effects` (avval faqat "Ae").
+> - **Web** (`platform/index.html`): `appBadgeOf()` + `APP_FULL` — 6 ta karta joyi, landing overlay chipi va demo `templates` massivi bitta manbadan; detal sahifasidagi takroriy `appFull` xaritasi ham shu `APP_FULL`ga bog'landi.
+> - **Plagin** (`AssetFlow_Plugin.html`): katalog kartasi (`.ck-app`) va Home kartasi (`.hm-app`) — `hmAppMark()`/`hmAppTileStyle()`, `FF_APPS.full`dan.
+> - **Gotcha:** plaginda `color-mix()` ISHLATILMADI — CEP 11 = Chromium 88 uni bilmaydi va plita shaffof bo'lib qolardi. `hmRgba()` hex→rgba hisoblaydi. Webda `color-mix` qoldi (atrofdagi kod ham shunday).
+> - **Stock turlari** (LUT/Music/SFX/Motion/Graphic/AI) dastur emas → eski nuqta + o'z yorlig'ida qoldi (ataylab).
+
 ---
 
 ## D11 · Upscale (Gigapixel/Topaz) umuman ishlamayapti  ·  P0 · [YANGI]
@@ -333,7 +341,7 @@ Muhim: Topaz provayder kodi (`topaz.ts`) va model katalog yozuvlari (`gen-models
 | D7.1 | P2 | Web — Upscale natija shu filtr sabab yo'qolishi mumkin | CC | ❌ Bekor — filtr o'lik edi, jonli xavf yo'q |
 | D8 | P3 | Web/Plagin — model nomi qisqargan, logotip yo'q | CC | Qisman tasdiqlandi |
 | D9 | P3 | Web — audio karta player yo'q; related sarlavha noto'g'ri | CC | ✅ **Tuzatildi** — `waveBg()` to'lqin fon (muqovasiz Music/SFX) + `relatedTitle` turga mos. Grid'da inline `<audio>` ATAYLAB yo'q (30+ karta = 30+ preload) — pleer detal/lightbox'da |
-| D10 | P3 | Web — dastur logotipi o'rniga rang+qisqartma | CC | Tasdiqlandi |
+| D10 | P3 | Web+Plagin — dastur belgisi: rang+qisqartma | CC | ✅ Tuzatildi 2026-08-02 (plita + to'liq nom; rasmiy logotip shart emas) |
 | D11 | P0 | API — Upscale (Topaz) umuman ishlamaydi | EGA | ✅ Hal qilindi 2026-08-02 (kalit prod'ga chiqarildi, `/gen/ops` 5001+5002 qaytaradi) |
 | D11.a | P2 | API — `/gen/ops` provayder holatini tekshirmaydi | CC | ✅ **Tuzatildi** — `isProviderConfigured()` yagona manba (`/gen` guard + `/gen/ops`) |
 | D11.b | P2 | Web — eski composer-Upscale rejimi "Regenerate" orqali qaytadi | CC | ✅ Tuzatildi (prompt+Enhance yashirildi; qolgani manba+faktor+Generate) |

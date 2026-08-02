@@ -14951,6 +14951,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-rc .tt{font-weight:600;font-size:13.5px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ff .va-rc .sub{display:flex;align-items:center;gap:6px;font:500 10px var(--mono);color:var(--muted);flex:none}
   .ff .va-rc .sub i{width:7px;height:7px;border-radius:50%;background:#B794F6;display:inline-block}
+  /* D10 — video shablon kartada dastur belgisi: rangli nuqta+qisqartma o'rniga tanib olinadigan
+     PLITA (dastur ikonkasi shakli) + TO'LIQ dastur nomi. Ataylab bizning belgimiz — Adobe/Apple/
+     Blackmagic rasmiy logotipi EMAS (brand-guideline: egasi tasdig'isiz ishlatilmaydi).
+     Stock turlari (LUT/Music/SFX/AI…) eski nuqtada qoladi — ular dastur emas. */
+  .ff .va-rc .sub i.tile{width:16px;height:16px;border-radius:4.5px;border:1px solid;display:inline-flex;
+    align-items:center;justify-content:center;font:800 8px/1 var(--mono);letter-spacing:-.2px;flex:none}
+  .ff .va-rc .sub .an{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:106px}
   .ff .va-rc .cat{font-size:10.5px;color:var(--muted2);padding:2px 3px 0}
   .ff .va-rcgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 40px 8px}
   /* FAZA D · Option A — true masonry (CSS columns); har karta o'z aspect'ini (t.ar) saqlaydi.
@@ -16050,7 +16057,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 <sc-if value="{{ c.fHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ c.fmedia }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if>
                 <sc-if value="{{ c.fIsVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ c.fmedia }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if>
                 <span class="{{ c.badgeClsL }}">{{ c.badge }}</span>
-                <span class="ffl-appc"><span class="d" style="background:{{ c.ac }}"></span>{{ c.a }}</span>
+                <span class="ffl-appc"><span class="d" style="background:{{ c.ac }}"></span>{{ c.aLabel }}</span>
                 <span class="ffl-tdur">{{ c.d }}</span>
                 <span class="ffl-fplay"><b><i class="ph-fill ph-play"></i></b></span>
               </div>
@@ -16433,7 +16440,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                         <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                         <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                       </div>
-                      <div class="meta"><span class="tt" title="{{ r.n }}">{{ r.n }}</span><span class="sub"><i style="background:{{ r.ac }}"></i>{{ r.a }}</span></div>
+                      <div class="meta"><span class="tt" title="{{ r.n }}">{{ r.n }}</span><span class="sub"><i class="{{ r.abCls }}" style="{{ r.abStyle }}">{{ r.ab }}</i><span class="an">{{ r.aLabel }}</span></span></div>
                       <div class="cat">{{ r.catMeta }}</div>
                     </div>
                   </sc-for>
@@ -16617,7 +16624,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                   <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                 </div>
-                <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i class="{{ t.abCls }}" style="{{ t.abStyle }}">{{ t.ab }}</i><span class="an">{{ t.aLabel }}</span></span></div>
                 <div class="cat">{{ t.catMeta }}</div>
               </div>
             </sc-for>
@@ -16647,7 +16654,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                       <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                     </div>
-                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i class="{{ t.abCls }}" style="{{ t.abStyle }}">{{ t.ab }}</i><span class="an">{{ t.aLabel }}</span></span></div>
                     <div class="cat">{{ t.catMeta }}</div>
                   </div>
                 </sc-for>
@@ -16675,7 +16682,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                       <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                     </div>
-                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i class="{{ t.abCls }}" style="{{ t.abStyle }}">{{ t.ab }}</i><span class="an">{{ t.aLabel }}</span></span></div>
                     <div class="cat">{{ t.catMeta }}</div>
                   </div>
                 </sc-for>
@@ -16703,7 +16710,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                       <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                       <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                     </div>
-                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                    <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i class="{{ t.abCls }}" style="{{ t.abStyle }}">{{ t.ab }}</i><span class="an">{{ t.aLabel }}</span></span></div>
                     <div class="cat">{{ t.catMeta }}</div>
                   </div>
                 </sc-for>
@@ -16791,7 +16798,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     <span class="va-playov"><span><svg class="va-ic"><use href="#i-play"></use></svg></span></span>
                     <span class="rise"><span class="sp"></span><span class="fa"><svg class="va-ic"><use href="#i-down"></use></svg></span></span>
                   </div>
-                  <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i style="background:{{ t.ac }}"></i>{{ t.a }}</span></div>
+                  <div class="meta"><span class="tt" title="{{ t.n }}">{{ t.n }}</span><span class="sub"><i class="{{ t.abCls }}" style="{{ t.abStyle }}">{{ t.ab }}</i><span class="an">{{ t.aLabel }}</span></span></div>
                   <div class="cat">{{ t.catMeta }}</div>
                 </div>
               </sc-for>
@@ -17992,6 +17999,20 @@ function typeBadge(it, APP_L, APP_C) {
   if (t !== 'video-templates' && STOCK_TYPE_BADGES[t]) return STOCK_TYPE_BADGES[t];
   return { a: APP_L[it.templateApp] || 'Ae', ac: APP_C[it.templateApp] || '#b794f6' };
 }
+// D10 — karta belgisi. Dastur (Ae/Pr/Mn/Dr) bo'lsa: PLITA (2 harf) + TO'LIQ nom
+// ("Ae" o'rniga "After Effects") — qisqartma tanish bo'lmagan foydalanuvchi uchun tushunarsiz edi.
+// Stock turi (LUT/Music/SFX/AI…) dastur emas → eski nuqta + o'z yorlig'i.
+const APP_FULL = { Ae: 'After Effects', Pr: 'Premiere Pro', Mn: 'Apple Motion', Dr: 'DaVinci Resolve' };
+function appBadgeOf(a, ac) {
+  const full = APP_FULL[a];
+  if (!full) return { ab: '', abCls: '', abStyle: 'background:' + ac, aLabel: a };
+  return {
+    ab: a, abCls: 'tile',
+    abStyle: 'background:color-mix(in srgb,' + ac + ' 18%,transparent);border-color:color-mix(in srgb,'
+      + ac + ' 55%,transparent);color:' + ac,
+    aLabel: full,
+  };
+}
 // P7 — avatar rasm URL preload-keshi: yuklanmaguncha/404 bo'lsa bosh harflarga qaytaradi (bo'sh doira emas).
 const __ffAvaCache = {};
 function ffAvaOk(url, onChange) {
@@ -18187,7 +18208,7 @@ class Component extends DCLogic {
     { id: 18, n: 'AI Style Transfer', c: 'AI Templates', a: 'Ae', ac: '#b794f6', pro: true, h: 295, d: '0:16' },
     { id: 19, n: 'Particle Logo Reveal', c: 'Graphics', a: 'Ae', ac: '#b794f6', pro: true, h: 265, d: '0:09' },
     { id: 20, n: 'Clean Promo Pack', c: 'Video Templates', a: 'Ae', ac: '#7aa2f7', pro: false, h: 205, d: '0:30' },
-  ];
+  ].map(t => ({ ...t, ...appBadgeOf(t.a, t.ac) })); // D10 — demo kartalar ham ayni plita belgisini oladi
 
   categories = ['Video Templates', 'Lower Thirds', 'AI Templates', 'Graphics', 'LUT', 'SFX'];
 
@@ -19708,7 +19729,7 @@ class Component extends DCLogic {
   mapCatalogItems(raw, APP_L, APP_C) {
       return raw.map((it) => { const tb = typeBadge(it, APP_L, APP_C); return {
         id: String(it.id), n: it.name || 'Template', c: it.catLabel || it.cat || 'Template',
-        a: tb.a, ac: tb.ac,
+        a: tb.a, ac: tb.ac, ...appBadgeOf(tb.a, tb.ac), // D10 — plita + to'liq dastur nomi
         pro: !!it.isPro, h: this.hueOf(it.id), d: it.res || '4K',
         ori: it.orient === 'vertical' ? '9:16' : (it.orient === 'square' ? '1:1' : '16:9'),
         // §B (P2) — sifat klassifikatsiyasi endi mustahkam: "2160p"/"UHD"/"4096"/"8K" ham 4K
@@ -22236,7 +22257,7 @@ class Component extends DCLogic {
       // FAZA 5 (C3) — tugma yorlig'i real pack kengaytmasi bilan (.zip/.mogrt)
       dlLabel: 'Download pack (' + (dRaw.hasPack ? '.' + String((dRaw.fileName || 'pack.zip').split('.').pop() || 'zip').toLowerCase() : '.zip') + ')',
       resLine: (dRaw.qual || dRaw.d || '4K') + ' · ' + (dRaw.ori || '16:9'),
-      appFull: { Ae: 'After Effects', Pr: 'Premiere Pro', Mn: 'Apple Motion', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a,
+      appFull: APP_FULL[dRaw.a] || dRaw.a, // D10 — yagona xarita (appBadgeOf bilan bir manba)
       metaPills: [dRaw.qual || dRaw.d, dRaw.ori || '16:9', ({ Ae: 'After Effects', Pr: 'Premiere Pro', Mn: 'Apple Motion', Dr: 'DaVinci Resolve' }[dRaw.a] || dRaw.a)].filter(Boolean),
       // FAZA D — related endi boy karta (rcOf), bo'sh bo'lsa seksiya yashirin
       related: colOthers.slice(0, 4).map(t => rcOf(t)),
