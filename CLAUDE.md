@@ -154,6 +154,29 @@ npm run demo:clear -- --dry-run   # ⚠️ FAQAT LOKAL DB. Avval --dry-run bilan
 - Production URL: `assetflow-rqbq.onrender.com`, Studio: `assetflow-20j.pages.dev`.
 - Har diagnostika/tuzatish tugaganda qisqa natijani `docs/SESSION-REPORT.md` ga yoz (almashtirib): nima qilindi, nima topildi, nima kutilmoqda. Maks 15 qator.
 
+## UX/UI qoidalari (har frontend vazifasida amal qil)
+
+To'liq versiya: `docs/FRAMEFLOW-CODEX-UX-UI-SYSTEM-PROMPT.md` (Codex uchun system prompt).
+Yo'nalish manbai: `docs/FRAMEFLOW-COMPETITOR-AUDIT-2026-08-02.md`. Quyidagilar — majburiy minimum:
+
+- **Holatni halol ko'rsat.** Action/model faqat shu shart bajarilsa faol bo'lsin:
+  `catalog.enabled AND providerConfigured AND entitlementAvailable AND healthNotHardDown AND inputCompatible`.
+  Ishlamaydigan narsani faol tugma qilma; `Unavailable` bo'lsa qisqa sabab + mumkin bo'lsa fallback ber.
+  Backend yo'q feature'ni ishlayotgandek qurma — scope'ni ochiq ayt.
+- **Grid:** CSS Grid yoki row-order saqlovchi masonry. `column-count`/CSS columns **TAQIQ** (visual va keyboard tartibi buziladi — `38d25ed` shu sababdan).
+- **Empty state:** bo'sh grid qoldirma. 3–5 **bosiladigan** preset (bosganda model+prompt+ref slotlari haqiqatan to'ladi), Upload/My Library, aniq primary CTA.
+- **Kontekst saqlansin:** tool/model/route almashganda creations, background job, session, prompt, references yo'qolmasin.
+- **Natija = keyingi ishning inputi.** Har natijada type-aware keyingi amal ko'rinsin (Use as reference, Animate, Upscale, Add to Project, Import to AE) — faqat backendda real bo'lganlari.
+- **A11y/perf:** keyboard navigatsiya + row-first DOM tartibi; modalda focus trap/Escape/focus return; icon-only tugmada `title`/aria-label; rang yagona holat signali bo'lmasin; `prefers-reduced-motion`; media lazy + poster + aniq aspect-ratio.
+- **Raw `{{ }}` yoki unresolved binding hech qachon network so'roviga aylanmasin.**
+- **Narx:** generatsiyadan oldin aniq kredit narxi tugma yaqinida ko'rinsin. Client narxiga ishonma — server `cost-quote` imzosi va atomik consume/refund naqshiga **TEGMA**.
+- **Brend:** noir + acid-lime, mavjud tokenlar. Rang/radius/shadow/typography'ni komponent ichida hardcode qilma. Raqib (Higgsfield/Magnific) trade dress'ini ko'chirma.
+
+**Definition of done** (bularsiz UX ishi tugagan hisoblanmaydi):
+asosiy user job oxirigacha ishlaydi · loading/empty/error/success holatlari bor · disabled sababi halol ·
+responsive tekshirilgan (desktop + tor CEP kengligi) · keyboard/focus ishlaydi · console'da yangi error yo'q ·
+unresolved binding so'rovi yo'q · tegishli build/test o'tgan · begona o'zgarishlarga tegilmagan · session report yangilangan.
+
 ## Keyingi ustuvor vazifalar
 
 1. Render/Vercel deploy holatini tasdiqlash (katalog `hasPack` productionda).
