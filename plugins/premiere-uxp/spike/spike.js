@@ -1,0 +1,803 @@
+/*
+ * FAZA 0 spike — Premiere Pro UXP imkoniyatlarini EMPIRIK tekshiradi.
+ * Har probe: OK / FAIL / SKIP + tafsilot. Natija markdown hisobot sifatida
+ * plugin-data:/spike-report.md ga yoziladi (Save report) va panelda ko'rinadi.
+ *
+ * Bu fayl mahsulot kodi EMAS — faqat razvedka. Natijalari
+ * docs/PREMIERE-UXP-SPIKE-NATIJA.md ga ko'chiriladi.
+ */
+"use strict";
+
+var uxp = require("uxp");
+var fsmod = null;
+try { fsmod = require("fs"); } catch (e) { fsmod = null; }
+var ppro = null;
+var pproError = null;
+try { ppro = require("premierepro"); } catch (e) { pproError = String(e && e.message || e); }
+
+var API_BASE = "https://api.getframeflow.app";
+var SAMPLE_MP4 = "https://cdn.getframeflow.app/templates/cmrl3rf1r0018s601jepn9bmn/preview.mp4";
+var SAMPLE_JPG = "https://cdn.getframeflow.app/templates/cmrl3rf1r0018s601jepn9bmn/thumb.jpg";
+
+var results = [];
+var listEl, outEl, statusEl;
+
+/* ---------- probe infratuzilmasi ---------- */
+
+function log() {
+  var s = Array.prototype.slice.call(arguments).join(" ");
+  if (outEl) { outEl.value += s + "\n"; outEl.scrollTop = outEl.scrollHeight; }
+  console.log("[spike]", s);
+}
+
+function render() {
+  if (!listEl) return;
+  listEl.innerHTML = "";
+  for (var i = 0; i < results.length; i++) {
+    var r = results[i];
+    var row = document.createElement("div");
+    row.className = "probe";
+    var top = document.createElement("div");
+    top.className = "top";
+    var b = document.createElement("span");
+    b.className = "badge " + (r.status === "OK" ? "ok" : r.status === "FAIL" ? "fail" : r.status === "SKIP" ? "skip" : "run");
+    b.textContent = r.status;
+    var n = document.createElement("span");
+    n.className = "nm";
+    n.textContent = r.name;
+    top.appendChild(b); top.appendChild(n);
+    row.appendChild(top);
+    if (r.detail) {
+      var d = document.createElement("div");
+      d.className = "det";
+      d.textContent = String(r.detail).slice(0, 600);
+      row.appendChild(d);
+    }
+    listEl.appendChild(row);
+  }
+}
+
+function short(v) {
+  if (v === undefined) return "undefined";
+  if (v === null) return "null";
+  if (typeof v === "string") return v;
+  try { return JSON.stringify(v); } catch (e) { return String(v); }
+}
+
+/** Bitta probe ishga tushiradi va natijani ro'yxatga yozadi. */
+async function probe(group, name, fn) {
+  var rec = { group: group, name: name, status: "RUN", detail: "" };
+  results.push(rec); render();
+  var t0 = Date.now();
+  try {
+    var out = await fn();
+    if (out && out.skip) { rec.status = "SKIP"; rec.detail = out.skip; }
+    else { rec.status = "OK"; rec.detail = (out && out.detail) || (typeof out === "string" ? out : ""); }
+  } catch (e) {
+    rec.status = "FAIL";
+    rec.detail = String((e && (e.message || e.description)) || e);
+  }
+  rec.ms = Date.now() - t0;
+  render();
+  log(rec.status + " · " + name + (rec.detail ? " · " + String(rec.detail).slice(0, 200) : ""));
+  return rec;
+}
+
+/* ---------- yordamchilar ---------- */
+
+/** Obyektdagi (va prototipidagi) funksiya nomlari ro'yxati. */
+function methodNames(obj) {
+  var seen = {}, out = [];
+  var o = obj;
+  var depth = 0;
+  while (o && o !== Object.prototype && depth < 4) {
+    Object.getOwnPropertyNames(o).forEach(function (k) {
+      if (k === "constructor" || seen[k]) return;
+      seen[k] = 1;
+      try { if (typeof obj[k] === "function") out.push(k); } catch (e) { /* getter otishi mumkin */ }
+    });
+    o = Object.getPrototypeOf(o);
+    depth++;
+  }
+  return out.sort();
+}
+
+/** Har qanday binar chunk'ni Uint8Array'ga keltiradi (UXP chunk turi barqaror emas). */
+function toU8(v) {
+  if (!v) return new Uint8Array(0);
+  if (v instanceof Uint8Array) return v;
+  if (typeof ArrayBuffer !== "undefined" && v instanceof ArrayBuffer) return new Uint8Array(v);
+  if (v.buffer) return new Uint8Array(v.buffer, v.byteOffset || 0, v.byteLength);
+  if (typeof v.length === "number") return Uint8Array.from(v);
+  return new Uint8Array(0);
+}
+
+function hex2(n) {
+  return ("0" + Number(n).toString(16)).slice(-2).toUpperCase();
+}
+
+/** TextDecoder yo'q — UTF-8 ni qo'lda dekodlaymiz (secureStorage/binar o'qish uchun kerak). */
+function utf8Decode(u8) {
+  var s = "", i = 0;
+  while (i < u8.length) {
+    var c = u8[i++];
+    if (c < 0x80) s += String.fromCharCode(c);
+    else if (c < 0xe0) s += String.fromCharCode(((c & 0x1f) << 6) | (u8[i++] & 0x3f));
+    else if (c < 0xf0) s += String.fromCharCode(((c & 0x0f) << 12) | ((u8[i++] & 0x3f) << 6) | (u8[i++] & 0x3f));
+    else {
+      var cp = ((c & 0x07) << 18) | ((u8[i++] & 0x3f) << 12) | ((u8[i++] & 0x3f) << 6) | (u8[i++] & 0x3f);
+      cp -= 0x10000;
+      s += String.fromCharCode(0xd800 + (cp >> 10), 0xdc00 + (cp & 0x3ff));
+    }
+  }
+  return s;
+}
+
+/** plugin-temp:/ffspike papkasini idempotent qaytaradi (mavjud bo'lsa xato bermaydi). */
+async function ensureTmpDir() {
+  var lfs = uxp.storage.localFileSystem;
+  try {
+    return await lfs.getEntryWithUrl("plugin-temp:/ffspike");
+  } catch (e) {
+    return await lfs.createEntryWithUrl("plugin-temp:/ffspike", { type: uxp.storage.types.folder });
+  }
+}
+
+/** CSS xossasi UXP tomonidan qabul qilinadimi — inline set/read-back bilan. */
+function cssSupported(prop, value) {
+  var el = document.createElement("div");
+  try { el.style[prop] = value; } catch (e) { return false; }
+  var got = el.style[prop];
+  return !!got && String(got).length > 0;
+}
+
+var testState = { project: null, sequence: null, tmpDir: null, mogrtPath: null };
+
+/* ---------- probe to'plamlari ---------- */
+
+async function probeEnvironment() {
+  await probe("env", "require('premierepro')", async function () {
+    if (!ppro) throw new Error(pproError || "modul yo'q");
+    return { detail: "top-level kalitlar: " + Object.keys(ppro).length };
+  });
+
+  await probe("env", "Host versiya / UXP versiya", async function () {
+    var v = {};
+    try { v.uxp = uxp.versions && JSON.parse(JSON.stringify(uxp.versions)); } catch (e) { v.uxp = "?"; }
+    try {
+      var app = await ppro.Application;
+      v.appKeys = app ? Object.keys(app).slice(0, 10) : null;
+    } catch (e) { /* ignore */ }
+    try {
+      if (ppro && ppro.Application && ppro.Application.getVersion) v.pproVersion = await ppro.Application.getVersion();
+    } catch (e) { v.pproVersionErr = String(e.message || e); }
+    return { detail: short(v) };
+  });
+
+  await probe("env", "premierepro eksportlari (API yuzasi)", async function () {
+    if (!ppro) return { skip: "premierepro yo'q" };
+    return { detail: Object.keys(ppro).sort().join(", ") };
+  });
+
+  await probe("env", "Node modullari YO'Qligini tasdiqlash", async function () {
+    var got = [];
+    ["child_process", "zlib", "http", "https", "crypto", "buffer", "stream"].forEach(function (m) {
+      try { require(m); got.push(m); } catch (e) { /* kutilgan */ }
+    });
+    return { detail: got.length ? "KUTILMAGAN: mavjud → " + got.join(", ") : "hech biri yo'q (kutilgani)" };
+  });
+
+  await probe("env", "fs / os / path modullari", async function () {
+    var have = [];
+    ["fs", "os", "path"].forEach(function (m) {
+      try { require(m); have.push(m); } catch (e) { /* yo'q */ }
+    });
+    return { detail: "mavjud: " + (have.join(", ") || "hech biri") };
+  });
+
+  await probe("env", "Global'lar (fetch/WebSocket/IntersectionObserver/FormData...)", async function () {
+    var names = ["fetch", "WebSocket", "IntersectionObserver", "FormData", "Blob", "URL",
+      "URLSearchParams", "TextDecoder", "TextEncoder", "AbortController", "crypto",
+      "localStorage", "requestAnimationFrame", "ResizeObserver", "MutationObserver", "structuredClone"];
+    var have = [], miss = [];
+    names.forEach(function (n) {
+      var g = (typeof globalThis !== "undefined" ? globalThis : window);
+      (typeof g[n] !== "undefined" ? have : miss).push(n);
+    });
+    return { detail: "BOR: " + have.join(", ") + "\nYO'Q: " + (miss.join(", ") || "—") };
+  });
+}
+
+async function probeCss() {
+  var checks = [
+    ["display", "grid"], ["display", "flex"], ["gap", "8px"], ["rowGap", "8px"],
+    ["transform", "translateX(4px)"], ["transition", "all .2s"], ["animation", "x 1s"],
+    ["boxShadow", "0 2px 8px #000"], ["zIndex", "5"], ["lineHeight", "1.4"],
+    ["objectFit", "cover"], ["aspectRatio", "16 / 9"], ["position", "fixed"],
+    ["position", "sticky"], ["position", "absolute"], ["position", "relative"],
+    ["backgroundImage", "linear-gradient(90deg,#000,#fff)"], ["opacity", "0.5"],
+    ["borderRadius", "6px"], ["overflow", "hidden"], ["textOverflow", "ellipsis"],
+    ["whiteSpace", "nowrap"], ["flexWrap", "wrap"], ["cursor", "pointer"],
+    ["outline", "1px solid #fff"], ["filter", "blur(2px)"], ["backdropFilter", "blur(2px)"],
+    ["minWidth", "0"], ["maxHeight", "10px"], ["letterSpacing", "1px"]
+  ];
+  await probe("css", "CSS xossalari qabul qilinishi (inline read-back)", async function () {
+    var yes = [], no = [];
+    checks.forEach(function (c) {
+      (cssSupported(c[0], c[1]) ? yes : no).push(c[0] + ":" + c[1]);
+    });
+    return { detail: "QABUL: " + yes.join(" | ") + "\nRAD: " + (no.join(" | ") || "—") };
+  });
+
+  // Inline read-back faqat PARSER qabul qilishini isbotlaydi. Haqiqiy savol —
+  // layout dvigateli qo'llaydimi? Uni bolalar koordinatasini o'lchab tekshiramiz.
+  await probe("css", "LAYOUT haqiqati: grid vs flex vs gap (o'lchangan)", async function () {
+    // offsetLeft/offsetTop UXP'da har doim 0 — getBoundingClientRect ishlatamiz.
+    // MUHIM: UXP appendChild'dan keyin darhol layout qilmaydi — rAF kutish shart.
+    function nextFrame() {
+      return new Promise(function (res) {
+        if (typeof requestAnimationFrame === "function") requestAnimationFrame(function () { res(); });
+        else setTimeout(res, 32);
+      });
+    }
+    async function measure(css) {
+      var host = document.createElement("div");
+      host.setAttribute("style", "width:300px;height:200px;" + css);
+      for (var i = 0; i < 4; i++) {
+        var kid = document.createElement("div");
+        kid.setAttribute("style", "width:100px;height:40px;background:#333;");
+        host.appendChild(kid);
+      }
+      document.body.appendChild(host);
+      await nextFrame();
+      await nextFrame();
+      var k = host.children;
+      var base = host.getBoundingClientRect ? host.getBoundingClientRect() : { left: 0, top: 0 };
+      var pos = [];
+      for (var j = 0; j < k.length; j++) {
+        var r = k[j].getBoundingClientRect ? k[j].getBoundingClientRect() : null;
+        pos.push(r ? Math.round(r.left - base.left) + "," + Math.round(r.top - base.top) : "rect yo'q");
+      }
+      document.body.removeChild(host);
+      return pos.join(" | ");
+    }
+    // 300px kenglikda 100px'lik 4 bola: grid(2 ustun) → 2 qator; flex-wrap → 3+1; blok → 4 qator.
+    var block = await measure("display:block;");
+    var grid = await measure("display:grid;grid-template-columns:1fr 1fr;");
+    var gridGap = await measure("display:grid;grid-template-columns:1fr 1fr;gap:20px;");
+    var flexWrap = await measure("display:flex;flex-direction:row;flex-wrap:wrap;");
+    var flexGap = await measure("display:flex;flex-direction:row;flex-wrap:wrap;gap:20px;");
+    var laidOut = block !== "0,0 | 0,0 | 0,0 | 0,0";
+    var gridWorks = laidOut && grid !== block && grid !== flexWrap;
+    var gapWorks = laidOut && flexGap !== flexWrap;
+    return {
+      detail:
+        (laidOut ? "" : "⚠️ layout umuman o'lchanmadi (hammasi 0,0)\n") +
+        "block=" + block + "\ngrid(2col)=" + grid + "\ngrid+gap20=" + gridGap +
+        "\nflex-wrap=" + flexWrap + "\nflex+gap20=" + flexGap +
+        "\n→ grid layout " + (gridWorks ? "ISHLAYDI" : "flex bilan bir xil (ishlamaydi)") +
+        " · gap " + (gapWorks ? "ISHLAYDI" : "ta'sir qilmaydi"),
+    };
+  });
+
+  await probe("css", "calc() va CSS o'zgaruvchilari", async function () {
+    var el = document.createElement("div");
+    el.style.width = "calc(50% - 6px)";
+    var w = el.style.width;
+    var st = document.createElement("style");
+    st.textContent = ":root { --ff-probe: #c8f24c; } .ff-probe-el { color: var(--ff-probe); }";
+    document.head.appendChild(st);
+    var p = document.createElement("div");
+    p.className = "ff-probe-el";
+    document.body.appendChild(p);
+    var col = "";
+    try { col = window.getComputedStyle(p).color; } catch (e) { col = "getComputedStyle xato: " + e.message; }
+    document.body.removeChild(p);
+    return { detail: "calc → " + short(w) + " · var() computed color → " + short(col) };
+  });
+
+  await probe("css", "::before / :hover / :nth-child selektorlari", async function () {
+    var st = document.createElement("style");
+    st.textContent = ".ff-pb::before{content:'x';} .ff-pb:hover{color:#f00;} .ff-pb:nth-child(1){color:#0f0;}";
+    document.head.appendChild(st);
+    var p = document.createElement("div");
+    p.className = "ff-pb";
+    document.body.appendChild(p);
+    var col = "";
+    try { col = window.getComputedStyle(p).color; } catch (e) { col = "?"; }
+    document.body.removeChild(p);
+    return { detail: "nth-child qo'llandi → color=" + short(col) + " (yashil bo'lsa selektor ishlaydi)" };
+  });
+
+  await probe("css", "@font-face (woff2 remote)", async function () {
+    var st = document.createElement("style");
+    st.textContent = "@font-face{font-family:'FFProbe';src:url('" +
+      "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2" +
+      "') format('woff2');}";
+    document.head.appendChild(st);
+    var el = document.createElement("span");
+    el.style.fontFamily = "'FFProbe', monospace";
+    el.textContent = "probe";
+    document.body.appendChild(el);
+    await new Promise(function (r) { setTimeout(r, 1200); });
+    var fam = "";
+    try { fam = window.getComputedStyle(el).fontFamily; } catch (e) { fam = "?"; }
+    var w = el.offsetWidth;
+    document.body.removeChild(el);
+    return { detail: "computed font-family=" + short(fam) + " offsetWidth=" + w + " (xato konsolda yo'q bo'lsa yuklangan)" };
+  });
+
+  await probe("css", "Panel o'lchami va tema", async function () {
+    var t = "?";
+    try { t = document.theme && document.theme.getCurrent ? document.theme.getCurrent() : "document.theme yo'q"; } catch (e) { t = "xato: " + e.message; }
+    var hasListener = !!(document.theme && document.theme.onUpdated && document.theme.onUpdated.addListener);
+    return {
+      detail: "theme=" + short(t) + " onUpdated=" + hasListener +
+        " · window " + window.innerWidth + "x" + window.innerHeight +
+        " · body " + document.body.clientWidth + "x" + document.body.clientHeight
+    };
+  });
+}
+
+async function probeStorageAndNet() {
+  await probe("storage", "localStorage yozish/o'qish", async function () {
+    localStorage.setItem("ff.spike", "v1");
+    var v = localStorage.getItem("ff.spike");
+    return { detail: "o'qildi: " + short(v) };
+  });
+
+  await probe("storage", "secureStorage (uxp.storage.secureStorage)", async function () {
+    var ss = uxp.storage && uxp.storage.secureStorage;
+    if (!ss) return { skip: "secureStorage eksport qilinmagan" };
+    await ss.setItem("ff.spike.token", "secret-123");
+    var got = await ss.getItem("ff.spike.token");
+    var asStr = "";
+    try {
+      // UXP Uint8Array qaytaradi; TextDecoder yo'q → qo'lda UTF-8 dekod.
+      asStr = (got && got.byteLength !== undefined) ? utf8Decode(toU8(got)) : String(got);
+    } catch (e) { asStr = "dekod xato: " + e.message; }
+    await ss.removeItem("ff.spike.token");
+    var ok = asStr === "secret-123";
+    if (!ok) throw new Error("qaytgan qiymat mos emas: " + short(asStr));
+    return { detail: "tur=" + (got && got.constructor && got.constructor.name) + " · utf8Decode → " + short(asStr) + " ✓" };
+  });
+
+  await probe("fs", "plugin-data:/ ga yozish + nativePath", async function () {
+    var lfs = uxp.storage.localFileSystem;
+    var f = await lfs.createEntryWithUrl("plugin-data:/ff-spike.txt", { overwrite: true });
+    await f.write("hello");
+    var back = await f.read();
+    testState.dataDirNative = f.nativePath.replace(/[/\\][^/\\]+$/, "");
+    return { detail: "nativePath=" + f.nativePath + " · o'qildi=" + short(back) };
+  });
+
+  await probe("fs", "plugin-temp:/ papka yaratish (idempotent)", async function () {
+    var dir = await ensureTmpDir();
+    // Ikkinchi chaqiruv ham xato bermasligi kerak — bu FAZA 3 yuklab olish yo'lida majburiy.
+    var again = await ensureTmpDir();
+    return { detail: "tmp nativePath=" + dir.nativePath + " · qayta chaqiruv=" + (again ? "OK" : "xato") };
+  });
+
+  await probe("net", "fetch GET JSON (api.getframeflow.app)", async function () {
+    var r = await fetch(API_BASE + "/api/plugin/catalog?limit=1");
+    var j = await r.json();
+    return { detail: "status=" + r.status + " items=" + (j.items ? j.items.length : "?") };
+  });
+
+  await probe("net", "fetch — ruxsat berilmagan domen bloklanishi", async function () {
+    try {
+      await fetch("https://example.com/");
+      return { detail: "KUTILMAGAN: allowlist tashqarisidagi domen ochildi" };
+    } catch (e) {
+      return { detail: "to'g'ri bloklandi: " + String(e.message || e).slice(0, 120) };
+    }
+  });
+
+  await probe("net", "Streaming fetch (reader) chunk turi + progress", async function () {
+    var r = await fetch(SAMPLE_JPG);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    var len = r.headers && r.headers.get ? r.headers.get("content-length") : null;
+    if (!r.body || !r.body.getReader) {
+      var ab = await r.arrayBuffer();
+      return { detail: "response.body/getReader YO'Q — arrayBuffer fallback, " + ab.byteLength + " bayt (content-length=" + len + ")" };
+    }
+    var reader = r.body.getReader();
+    var chunks = [], got = 0, n = 0, kind = "?";
+    while (true) {
+      var st = await reader.read();
+      if (st.done) break;
+      var u = toU8(st.value);
+      if (n === 0) {
+        kind = (st.value && st.value.constructor && st.value.constructor.name) || typeof st.value;
+        kind += " (.length=" + (st.value && st.value.length) + " .byteLength=" + (st.value && st.value.byteLength) + ")";
+      }
+      chunks.push(u); got += u.length; n++;
+    }
+    testState.streamBytes = got;
+    return {
+      detail: "chunk=" + n + " · chunk turi=" + kind + " · yig'ilgan=" + got + " bayt · content-length=" + len +
+        (len && Number(len) !== got ? "  ⚠️ MOS EMAS" : "  ✓ mos"),
+    };
+  });
+
+  await probe("net", "Binar yuklab olish → fayl butunligi (magic + o'lcham)", async function () {
+    var r = await fetch(SAMPLE_JPG);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    var expect = Number(r.headers.get("content-length") || 0);
+    var buf = new Uint8Array(await r.arrayBuffer());
+    var dir = await ensureTmpDir();
+    var f = await dir.createFile("probe.jpg", { overwrite: true });
+    await f.write(buf, { format: uxp.storage.formats.binary });
+    // Diskdan qaytib o'qib, JPEG magic (FF D8 FF) va o'lchamni tekshiramiz.
+    var back = toU8(await f.read({ format: uxp.storage.formats.binary }));
+    var magic = [back[0], back[1], back[2]].map(hex2).join(" ");
+    var okMagic = back[0] === 0xff && back[1] === 0xd8 && back[2] === 0xff;
+    testState.jpgNative = f.nativePath;
+    testState.jpgOk = okMagic && back.length === buf.length;
+    if (!okMagic) throw new Error("magic noto'g'ri: " + magic + " (yozildi " + buf.length + ", o'qildi " + back.length + ")");
+    if (expect && expect !== buf.length) throw new Error("content-length " + expect + " ≠ " + buf.length);
+    return { detail: "yozildi=" + buf.length + " o'qildi=" + back.length + " magic=" + magic + " ✓ · " + f.nativePath };
+  });
+
+  await probe("net", "FormData multipart POST", async function () {
+    if (typeof FormData === "undefined") return { skip: "FormData yo'q → presigned PUT kerak" };
+    var fd = new FormData();
+    fd.append("probe", "1");
+    var r = await fetch(API_BASE + "/api/plugin/catalog?limit=1", { method: "GET" });
+    return { detail: "FormData konstruktori bor; jonli multipart endpoint sinovi FAZA 1'da (GET status=" + r.status + ")" };
+  });
+
+  await probe("net", "shell.openExternal mavjudligi", async function () {
+    var sh = uxp.shell;
+    if (!sh || !sh.openExternal) throw new Error("uxp.shell.openExternal yo'q");
+    return { detail: "mavjud (haqiqiy ochish sinovi qo'lda — brauzer ochiladi)" };
+  });
+}
+
+async function probeVideo() {
+  await probe("media", "<video> https MP4 metadata + play", async function () {
+    var v = document.createElement("video");
+    v.setAttribute("src", SAMPLE_MP4);
+    v.setAttribute("muted", "");
+    v.style.width = "1px"; v.style.height = "1px";
+    document.body.appendChild(v);
+    var info = await new Promise(function (resolve) {
+      var done = false;
+      var to = setTimeout(function () { if (!done) { done = true; resolve({ ok: false, why: "10s timeout, readyState=" + v.readyState }); } }, 10000);
+      v.addEventListener("loadedmetadata", function () {
+        if (done) return; done = true; clearTimeout(to);
+        resolve({ ok: true, w: v.videoWidth, h: v.videoHeight, d: v.duration });
+      });
+      v.addEventListener("error", function () {
+        if (done) return; done = true; clearTimeout(to);
+        resolve({ ok: false, why: "error event, code=" + (v.error && v.error.code) });
+      });
+    });
+    var played = "?";
+    if (info.ok) {
+      try { await v.play(); played = "play() OK, currentTime=" + v.currentTime; }
+      catch (e) { played = "play() xato: " + (e.message || e); }
+    }
+    try { v.pause(); } catch (e) { /* ignore */ }
+    v.removeAttribute("src");
+    document.body.removeChild(v);
+    if (!info.ok) throw new Error(info.why);
+    return { detail: info.w + "x" + info.h + " dur=" + info.d + " · " + played };
+  });
+
+  await probe("media", "<img> remote + lazy/IntersectionObserver", async function () {
+    var im = document.createElement("img");
+    im.style.width = "1px"; im.style.height = "1px";
+    document.body.appendChild(im);
+    var ok = await new Promise(function (resolve) {
+      var to = setTimeout(function () { resolve(false); }, 8000);
+      im.addEventListener("load", function () { clearTimeout(to); resolve(true); });
+      im.addEventListener("error", function () { clearTimeout(to); resolve(false); });
+      im.src = SAMPLE_JPG;
+    });
+    var natural = im.naturalWidth + "x" + im.naturalHeight;
+    document.body.removeChild(im);
+    var io = typeof IntersectionObserver !== "undefined";
+    if (!ok) throw new Error("img yuklanmadi");
+    return { detail: "yuklandi " + natural + " · IntersectionObserver=" + io };
+  });
+}
+
+async function probeHostApi() {
+  if (!ppro) { await probe("host", "premierepro API", async function () { return { skip: "modul yo'q" }; }); return; }
+
+  await probe("host", "Project.getActiveProject()", async function () {
+    var p = await ppro.Project.getActiveProject();
+    if (!p) return { skip: "ochiq loyiha yo'q — 'Prepare test project' bosing" };
+    testState.project = p;
+    return { detail: "name=" + short(p.name) + " path=" + short(p.path) + "\nmetodlar: " + methodNames(p).join(", ") };
+  });
+
+  await probe("host", "project.getActiveSequence()", async function () {
+    if (!testState.project) return { skip: "loyiha yo'q" };
+    var s = await testState.project.getActiveSequence();
+    if (!s) return { skip: "faol ketma-ketlik yo'q — 'Prepare test project' bosing" };
+    testState.sequence = s;
+    return { detail: "name=" + short(s.name) + "\nmetodlar: " + methodNames(s).join(", ") };
+  });
+
+  await probe("host", "TickTime factory nomlari", async function () {
+    var tt = ppro.TickTime;
+    if (!tt) throw new Error("ppro.TickTime yo'q");
+    var names = methodNames(tt);
+    var made = null, how = "";
+    var tries = [
+      ["createWithSeconds", 0], ["createWithTicks", 0], ["createWithFrames", 0]
+    ];
+    for (var i = 0; i < tries.length; i++) {
+      if (typeof tt[tries[i][0]] === "function") {
+        try { made = tt[tries[i][0]](tries[i][1]); how = tries[i][0]; break; } catch (e) { /* keyingisi */ }
+      }
+    }
+    testState.zeroTime = made;
+    return { detail: "static: " + names.join(", ") + "\nTIME_ZERO=" + (tt.TIME_ZERO !== undefined) + " · yaratildi=" + how };
+  });
+
+  await probe("host", "SequenceEditor.getEditor()", async function () {
+    if (!testState.sequence) return { skip: "ketma-ketlik yo'q" };
+    var ed = await ppro.SequenceEditor.getEditor(testState.sequence);
+    testState.editor = ed;
+    return { detail: "metodlar: " + methodNames(ed).join(", ") };
+  });
+
+  await probe("host", "SequenceEditor.getInstalledMogrtPath()", async function () {
+    var p = await ppro.SequenceEditor.getInstalledMogrtPath();
+    testState.egDir = p;
+    var listing = "";
+    try {
+      var lfs = uxp.storage.localFileSystem;
+      var dir = await lfs.getEntryWithUrl("file:" + (p.charAt(0) === "/" ? p : "/" + p));
+      var kids = await dir.getEntries();
+      var mogrts = kids.filter(function (k) { return /\.mogrt$/i.test(k.name); });
+      if (mogrts.length) testState.mogrtPath = mogrts[0].nativePath;
+      listing = " · ichida " + kids.length + " element, " + mogrts.length + " ta .mogrt";
+    } catch (e) { listing = " · ro'yxat o'qilmadi: " + (e.message || e); }
+    return { detail: p + listing };
+  });
+
+  // FAZA 3 "Essential Graphics'ga o'rnatish" yo'li: faylni EG papkasiga yozib bo'ladimi?
+  await probe("host", "EG papkasiga yozish huquqi (.mogrt o'rnatish yo'li)", async function () {
+    if (!testState.egDir) return { skip: "EG papka yo'li yo'q" };
+    var lfs = uxp.storage.localFileSystem;
+    var p = testState.egDir;
+    var dir = await lfs.getEntryWithUrl("file:" + (p.charAt(0) === "/" ? p : "/" + p));
+    var f = await dir.createFile("ff-spike-write-test.txt", { overwrite: true });
+    await f.write("ok");
+    var back = await f.read();
+    await f.delete();
+    return { detail: "yozildi+o'qildi+o'chirildi (" + short(back) + ") → EG'ga to'g'ridan-to'g'ri o'rnatish MUMKIN · " + p };
+  });
+
+  await probe("host", "insertMogrtFromPath() — timeline'ga qo'yish", async function () {
+    if (!testState.editor) return { skip: "editor yo'q" };
+    if (!testState.mogrtPath) return { skip: "sinov uchun .mogrt topilmadi (EG papkasi bo'sh)" };
+    var tt = ppro.TickTime;
+    var t = tt.TIME_ZERO !== undefined ? tt.TIME_ZERO : (testState.zeroTime || tt.createWithSeconds(0));
+    var res = await testState.editor.insertMogrtFromPath(testState.mogrtPath, t, 0, 0);
+    var n = res && res.length !== undefined ? res.length : (res ? 1 : 0);
+    return { detail: "qaytdi: " + n + " trackItem · manba=" + testState.mogrtPath };
+  });
+
+  // FAZA 3 haqiqiy oqimi: .mogrt EG papkasida EMAS, plugin-temp'ga yuklab olinadi.
+  // insertMogrtFromPath ixtiyoriy yo'lni qabul qiladimi — shu yerda tekshiriladi.
+  await probe("host", "insertMogrtFromPath(plugin-temp yo'li) — yuklab olingan .mogrt", async function () {
+    if (!testState.editor) return { skip: "editor yo'q" };
+    if (!testState.mogrtPath) return { skip: "sinov uchun .mogrt topilmadi" };
+    var lfs = uxp.storage.localFileSystem;
+    var src = await lfs.getEntryWithUrl("file:" + testState.mogrtPath);
+    var bytes = toU8(await src.read({ format: uxp.storage.formats.binary }));
+    var dir = await ensureTmpDir();
+    var dst = await dir.createFile("ff-downloaded.mogrt", { overwrite: true });
+    await dst.write(bytes, { format: uxp.storage.formats.binary });
+    var tt = ppro.TickTime;
+    var t = tt.TIME_ZERO !== undefined ? tt.TIME_ZERO : tt.createWithSeconds(0);
+    var res = await testState.editor.insertMogrtFromPath(dst.nativePath, t, 1, 0);
+    var n = res && res.length !== undefined ? res.length : (res ? 1 : 0);
+    if (!n) throw new Error("qaytdi bo'sh — tashqi yo'ldan mogrt qo'yilmadi (" + dst.nativePath + ")");
+    return { detail: "nusxa=" + bytes.length + " bayt · V2 trekka qo'yildi, trackItem=" + n + " · " + dst.nativePath };
+  });
+
+  await probe("host", "project.importFiles() — media bin'ga (butun fayl)", async function () {
+    if (!testState.project) return { skip: "loyiha yo'q" };
+    if (!testState.jpgNative) return { skip: "sinov fayli yo'q (binar probe ishlamadi)" };
+    if (!testState.jpgOk) return { skip: "fayl buzuq — import sinovi o'tkazilmadi (modal xato oldini olish)" };
+    var root = await testState.project.getRootItem();
+    var ok = await testState.project.importFiles([testState.jpgNative], true, root);
+    return { detail: "importFiles → " + short(ok) + " · manba=" + testState.jpgNative };
+  });
+
+  await probe("host", "Exporter.exportSequenceFrame() — joriy kadr", async function () {
+    if (!testState.sequence) return { skip: "ketma-ketlik yo'q" };
+    if (!ppro.Exporter || !ppro.Exporter.exportSequenceFrame) throw new Error("Exporter.exportSequenceFrame yo'q");
+    var tt = ppro.TickTime;
+    var t = tt.TIME_ZERO !== undefined ? tt.TIME_ZERO : tt.createWithSeconds(0);
+    var dir = await ensureTmpDir();
+    var tried = [];
+    // Qaysi konteyner formati qo'llab-quvvatlanadi — empirik aniqlaymiz.
+    var names = ["ffspike.jpg", "ffspike.png", "ffspike.tga", "ffspike.dpx", "ffspike.tif", "ffspike.bmp", "ffspike"];
+    var found = "";
+    // Export ASINXRON: qaytish qiymati true bo'lsa ham fayl bir necha yuz ms keyin paydo bo'ladi.
+    async function waitForFile(name, ms) {
+      var deadline = Date.now() + ms;
+      var last = -1;
+      while (Date.now() < deadline) {
+        try {
+          var f = await dir.getEntry(name);
+          var md = await f.getMetadata();
+          if (md.size > 0 && md.size === last) return { entry: f, size: md.size };
+          last = md.size; // hali yozilyapti — o'lchov barqarorlashguncha kutamiz
+        } catch (e) { /* hali yaratilmagan */ }
+        await new Promise(function (r) { setTimeout(r, 120); });
+      }
+      return last > 0 ? { entry: null, size: last } : null;
+    }
+    for (var i = 0; i < names.length; i++) {
+      var verdict;
+      try {
+        // Eski (oldingi seansdagi) faylni o'chirib, natija toza bo'lsin.
+        try { var old = await dir.getEntry(names[i]); await old.delete(); } catch (e0) { /* yo'q */ }
+        var ret = await ppro.Exporter.exportSequenceFrame(testState.sequence, t, names[i], dir.nativePath, 640, 360);
+        verdict = "qaytdi=" + short(ret);
+        var hit = await waitForFile(names[i], 4000);
+        if (hit) {
+          verdict += " fayl=" + hit.size + "b";
+          if (!found) { found = names[i]; testState.framePath = hit.entry ? hit.entry.nativePath : ""; }
+        } else { verdict += " fayl=yo'q (4s)"; }
+      } catch (e) {
+        verdict = "XATO: " + String(e.message || e).slice(0, 60);
+      }
+      tried.push(names[i] + " → " + verdict);
+    }
+    var kids = await dir.getEntries();
+    tried.push("papka: " + kids.map(function (k) { return k.name; }).join(", "));
+    if (!found) throw new Error(tried.join(" ‖ "));
+    return { detail: "ISHLAYDI: " + found + " ‖ " + tried.join(" ‖ ") };
+  });
+
+  await probe("host", "lockedAccess + executeTransaction", async function () {
+    if (!testState.project) return { skip: "loyiha yo'q" };
+    var seq = testState.sequence;
+    if (!seq) return { skip: "ketma-ketlik yo'q" };
+    var tracks = null;
+    try { tracks = await seq.getVideoTrackCount(); } catch (e) { /* nom boshqa bo'lishi mumkin */ }
+    var did = false, err = "";
+    try {
+      testState.project.lockedAccess(function () {
+        var vt = null;
+        try { vt = seq.getVideoTrack ? seq.getVideoTrack(0) : null; } catch (e2) { /* async bo'lishi mumkin */ }
+        if (vt && vt.createSetNameAction) {
+          testState.project.executeTransaction(function (ca) {
+            ca.addAction(vt.createSetNameAction("FF Spike"));
+          }, "FF spike rename");
+          did = true;
+        }
+      });
+    } catch (e) { err = String(e.message || e); }
+    return {
+      detail: "lockedAccess chaqirildi · videoTrackCount=" + short(tracks) +
+        " · transaction bajarildi=" + did + (err ? " · xato=" + err : "")
+    };
+  });
+
+  await probe("host", "importSequences imzosi (.prproj)", async function () {
+    if (!testState.project) return { skip: "loyiha yo'q" };
+    var f = testState.project.importSequences;
+    if (typeof f !== "function") throw new Error("importSequences yo'q");
+    return { detail: "mavjud, arity=" + f.length + " (jonli .prproj sinovi FAZA 3'da — sequenceId Guid[] talab qiladi)" };
+  });
+
+  await probe("host", "Muhim sinf'lar API yuzasi", async function () {
+    var out = [];
+    ["Project", "SequenceEditor", "Exporter", "TickTime", "Utils", "ProjectUtils", "SequenceUtils", "Constants"].forEach(function (k) {
+      if (ppro[k]) out.push("### " + k + ": " + methodNames(ppro[k]).join(", "));
+    });
+    return { detail: out.join("\n") };
+  });
+}
+
+/* ---------- sinov loyihasini tayyorlash ---------- */
+
+async function prepareTestProject() {
+  statusEl.textContent = "Sinov loyihasi tayyorlanmoqda…";
+  try {
+    var p = await ppro.Project.getActiveProject();
+    if (!p) {
+      var lfs = uxp.storage.localFileSystem;
+      var dir = await lfs.createEntryWithUrl("plugin-temp:/ffspike", { type: uxp.storage.types.folder, overwrite: true });
+      var path = dir.nativePath + "/ff-spike.prproj";
+      p = await ppro.Project.createProject(path);
+      log("loyiha yaratildi: " + path);
+    }
+    var s = await p.getActiveSequence();
+    if (!s) {
+      s = await p.createSequence("FF Spike Seq");
+      log("ketma-ketlik yaratildi: " + (s && s.name));
+      if (s && p.setActiveSequence) await p.setActiveSequence(s);
+    }
+    testState.project = p; testState.sequence = s;
+    statusEl.textContent = "Tayyor: loyiha=" + (p && p.name) + " · seq=" + (s && s.name);
+  } catch (e) {
+    statusEl.textContent = "Tayyorlash xatosi: " + (e.message || e);
+    log("prepare FAIL: " + (e.message || e));
+  }
+}
+
+/* ---------- hisobot ---------- */
+
+function toMarkdown() {
+  var lines = [];
+  lines.push("# Premiere UXP spike natijasi");
+  lines.push("");
+  var t = "?";
+  try { t = document.theme.getCurrent(); } catch (e) { /* ignore */ }
+  lines.push("- Panel: " + window.innerWidth + "x" + window.innerHeight + " · tema: " + t);
+  lines.push("");
+  lines.push("| Guruh | Probe | Natija | ms | Tafsilot |");
+  lines.push("|---|---|---|---|---|");
+  results.forEach(function (r) {
+    var d = String(r.detail || "").replace(/\n/g, "<br>").replace(/\|/g, "\\|");
+    lines.push("| " + r.group + " | " + r.name + " | **" + r.status + "** | " + (r.ms || 0) + " | " + d + " |");
+  });
+  return lines.join("\n");
+}
+
+async function saveReport() {
+  try {
+    var lfs = uxp.storage.localFileSystem;
+    var f = await lfs.createEntryWithUrl("plugin-data:/spike-report.md", { overwrite: true });
+    await f.write(toMarkdown());
+    statusEl.textContent = "Saqlandi: " + f.nativePath;
+    log("hisobot: " + f.nativePath);
+  } catch (e) {
+    statusEl.textContent = "Saqlash xatosi: " + (e.message || e);
+  }
+}
+
+async function runAll() {
+  results = []; render();
+  if (outEl) outEl.value = "";
+  statusEl.textContent = "Ishlamoqda…";
+  await probeEnvironment();
+  await probeCss();
+  await probeStorageAndNet();
+  await probeVideo();
+  await probeHostApi();
+  var ok = results.filter(function (r) { return r.status === "OK"; }).length;
+  var fail = results.filter(function (r) { return r.status === "FAIL"; }).length;
+  var skip = results.filter(function (r) { return r.status === "SKIP"; }).length;
+  statusEl.textContent = "Tugadi — OK " + ok + " · FAIL " + fail + " · SKIP " + skip;
+  await saveReport();
+}
+
+/* ---------- boot ---------- */
+
+function boot() {
+  listEl = document.getElementById("list");
+  outEl = document.getElementById("out");
+  statusEl = document.getElementById("status");
+  var envEl = document.getElementById("env");
+  var v = "";
+  try { v = "UXP " + (uxp.versions && uxp.versions.uxp) + " · plugin " + (uxp.versions && uxp.versions.plugin); } catch (e) { v = "versiya o'qilmadi"; }
+  envEl.textContent = v + (ppro ? " · premierepro OK" : " · premierepro XATO: " + pproError);
+
+  document.getElementById("runAll").addEventListener("click", function () { runAll(); });
+  document.getElementById("prep").addEventListener("click", function () { prepareTestProject(); });
+  document.getElementById("save").addEventListener("click", function () { saveReport(); });
+  document.getElementById("copy").addEventListener("click", function () {
+    outEl.value = toMarkdown();
+    outEl.focus();
+  });
+
+  // Panel ochilishining o'zi hisobot beradi: foydalanuvchi hech narsa bosmasa ham
+  // probe'lar avtomatik ishlaydi va natija plugin-data:/spike-report.md ga yoziladi.
+  statusEl.textContent = "Avto-ishga tushirish 2 soniyadan keyin…";
+  setTimeout(function () { runAll(); }, 2000);
+}
+
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();

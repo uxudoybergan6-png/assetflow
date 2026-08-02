@@ -1,0 +1,40 @@
+<!-- FAZA 0 spike paneli — Premiere UXP imkoniyatlarini empirik tekshiradi. -->
+<!-- Bu panel MAHSULOT emas: natijasi docs/PREMIERE-UXP-SPIKE-NATIJA.md ga ko'chiriladi. -->
+<style>
+  body { margin: 0; padding: 0; background: #16181c; color: #e6e8ea;
+         font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 12px; }
+  .wrap { padding: 10px; }
+  .row { display: flex; flex-direction: row; flex-wrap: wrap; }
+  h2 { font-size: 14px; margin: 0 0 8px 0; color: #c8f24c; }
+  button { background: #c8f24c; color: #11130f; border: none; border-radius: 4px;
+           padding: 6px 10px; margin: 0 6px 8px 0; font-size: 12px; font-weight: 700; }
+  button.ghost { background: transparent; color: #e6e8ea; border: 1px solid #3a3f47; }
+  .hint { color: #8b929c; margin-bottom: 8px; }
+  .probe { border-bottom: 1px solid #262a30; padding: 5px 0; }
+  .probe .top { display: flex; flex-direction: row; }
+  .badge { width: 62px; font-weight: 700; }
+  .ok { color: #6ee787; }
+  .fail { color: #ff7b72; }
+  .skip { color: #d0a215; }
+  .run { color: #8b929c; }
+  .nm { flex: 1; }
+  .det { color: #8b929c; margin-left: 62px; white-space: pre-wrap; overflow: hidden; }
+  #out { width: 100%; height: 140px; background: #0f1114; color: #b9c0c8;
+         border: 1px solid #262a30; border-radius: 4px; font-size: 10px; }
+</style>
+
+<div class="wrap">
+  <h2>FrameFlow · Premiere UXP spike</h2>
+  <div class="hint" id="env">…</div>
+  <div class="row">
+    <button id="runAll">Run all probes</button>
+    <button id="prep" class="ghost">Prepare test project</button>
+    <button id="save" class="ghost">Save report</button>
+    <button id="copy" class="ghost">Copy markdown</button>
+  </div>
+  <div class="hint" id="status"></div>
+  <div id="list"></div>
+  <textarea id="out" readonly></textarea>
+</div>
+
+<script src="spike.js"></script>
