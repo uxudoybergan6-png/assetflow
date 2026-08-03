@@ -168,6 +168,91 @@
     };
   }
 
+  // ── path: Premiere UXP 26.2 dagi bo'sh native modulni to'ldiramiz ──────────
+
+  /*
+   * Host logi tasdiqladi: `require("path")` muvaffaqiyatli qaytadi, ammo
+   * obyektning `join()` metodi yo'q. Shuning uchun `nativeModule("path") || …`
+   * tekshiruvi yetarli emas. AE kodi ishlatadigan besh metodni mustaqil
+   * beramiz; native metod mavjud bo'lsa uni saqlaymiz.
+   */
+  function wrapPath(nativePath) {
+    var base = nativePath || {};
+
+    function isWinPath(p) { return /^[A-Za-z]:[\\/]/.test(p) || /^\\\\/.test(p); }
+    function sepFor(parts) {
+      if (base.sep === "\\" || parts.some(function (p) { return isWinPath(String(p)); })) return "\\";
+      return "/";
+    }
+    function parsePrefix(raw, sep) {
+      var s = String(raw || "").replace(/[\\/]+/g, sep);
+      if (sep === "\\") {
+        if (/^\\\\/.test(s)) return { prefix: "\\\\", rest: s.replace(/^\\+/, "") };
+        var drive = s.match(/^[A-Za-z]:/);
+        if (drive) return { prefix: drive[0] + (s.charAt(2) === "\\" ? "\\" : ""), rest: s.slice(s.charAt(2) === "\\" ? 3 : 2) };
+      }
+      if (s.charAt(0) === sep) return { prefix: sep, rest: s.replace(new RegExp("^" + (sep === "\\" ? "\\\\" : "\\/") + "+"), "") };
+      return { prefix: "", rest: s };
+    }
+    function normalizeParts(raw, sep) {
+      var parsed = parsePrefix(raw, sep), out = [];
+      parsed.rest.split(/[\\/]+/).forEach(function (part) {
+        if (!part || part === ".") return;
+        if (part === "..") {
+          if (out.length && out[out.length - 1] !== "..") out.pop();
+          else if (!parsed.prefix) out.push(part);
+        } else out.push(part);
+      });
+      var body = out.join(sep);
+      if (!body) return parsed.prefix || ".";
+      return parsed.prefix + body;
+    }
+    function fallbackJoin() {
+      var parts = Array.prototype.slice.call(arguments).filter(function (p) { return p !== undefined && p !== null && String(p) !== ""; });
+      if (!parts.length) return ".";
+      var sep = sepFor(parts);
+      return normalizeParts(parts.map(String).join(sep), sep);
+    }
+    function fallbackDirname(p) {
+      var raw = String(p || ""), sep = sepFor([raw]), n = normalizeParts(raw, sep);
+      var parsed = parsePrefix(n, sep), rest = parsed.rest.replace(/[\\/]+$/, "");
+      var i = rest.lastIndexOf(sep);
+      if (i < 0) return parsed.prefix || ".";
+      var dir = rest.slice(0, i);
+      return parsed.prefix + dir || parsed.prefix || ".";
+    }
+    function fallbackBasename(p, suffix) {
+      var raw = String(p || "").replace(/[\\/]+$/, "");
+      var name = raw.slice(Math.max(raw.lastIndexOf("/"), raw.lastIndexOf("\\")) + 1);
+      suffix = suffix === undefined ? "" : String(suffix);
+      return suffix && name.slice(-suffix.length) === suffix ? name.slice(0, -suffix.length) : name;
+    }
+    function fallbackExtname(p) {
+      var name = fallbackBasename(p), i = name.lastIndexOf(".");
+      return i > 0 ? name.slice(i) : "";
+    }
+    function fallbackRelative(from, to) {
+      var sep = sepFor([from, to]);
+      var a = normalizeParts(from, sep), b = normalizeParts(to, sep);
+      var ap = parsePrefix(a, sep), bp = parsePrefix(b, sep);
+      if (ap.prefix.toLowerCase() !== bp.prefix.toLowerCase()) return b;
+      var aa = ap.rest ? ap.rest.split(sep) : [], bb = bp.rest ? bp.rest.split(sep) : [], i = 0;
+      while (i < aa.length && i < bb.length && (sep === "\\" ? aa[i].toLowerCase() === bb[i].toLowerCase() : aa[i] === bb[i])) i++;
+      return aa.slice(i).map(function () { return ".."; }).concat(bb.slice(i)).join(sep);
+    }
+
+    return {
+      join: typeof base.join === "function" ? base.join.bind(base) : fallbackJoin,
+      dirname: typeof base.dirname === "function" ? base.dirname.bind(base) : fallbackDirname,
+      basename: typeof base.basename === "function" ? base.basename.bind(base) : fallbackBasename,
+      extname: typeof base.extname === "function" ? base.extname.bind(base) : fallbackExtname,
+      relative: typeof base.relative === "function" ? base.relative.bind(base) : fallbackRelative,
+      sep: base.sep || sepFor([]),
+      delimiter: base.delimiter || (sepFor([]) === "\\" ? ";" : ":"),
+      __ffWrapped: true,
+    };
+  }
+
   // ── fs: mavjud native yuzani polifil bilan to'ldiramiz ──────────────────────
 
   function wrapFs(nativeFs) {
@@ -486,9 +571,17 @@
   window.__FFNodeIO = {
     wrapFs: wrapFs,
     wrapOs: wrapOs,
+    wrapPath: wrapPath,
     makeHttp: makeHttp,
     toU8: toU8,
     ready: pathsReady,
+    /**
+     * Plaginning YOZILADIGAN ma'lumot papkasi (`getDataFolder`). Plagin
+     * papkasining o'zi UXP'da faqat O'QISH uchun — lokal kesh/meta shu yerga
+     * tushadi (`csinterface-shim.getSystemPath(EXTENSION)` shuni qaytaradi).
+     */
+    dataDir: function () { return dataPath; },
+    tmpDir: function () { return tmpPath; },
     /** Diagnostika: bitta jonli chaqiruvda butun yuzani ko'rish uchun. */
     report: function () {
       var nfs = null;

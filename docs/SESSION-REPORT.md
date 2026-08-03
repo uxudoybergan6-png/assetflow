@@ -1,14 +1,12 @@
-# Session report — 2026-08-03 (Premiere UXP: produkt-audit + prod system prompt)
+# Session report — 2026-08-03 (Premiere UXP release candidate)
 
-- **Yangi audit:** `docs/PREMIERE-UXP-PROD-AUDIT-2026-08-03.md` — butun zanjir
-  (Contributor→ingest→katalog→panel→import→AI→reliz→ops) 12-zveno matritsasi.
-  Kritik topilmalar: prod `?app=pr` = 0 kontent (launch gate); `.prproj` import yo'li
-  umuman qurilmagan; AI ref yuklash o'lik (`window.cep.fs` shim'lanmagan, AE:12552 gate);
-  contributor UI'da `.prproj` qabul kengaytmasi yo'q; migratsiya prod'ga qo'llanmagan.
-- **Yangi prompt:** `docs/PREMIERE-UXP-PROD-SYSTEM-PROMPT.md` — P0 (qora repaint,
-  Google E2E, indexedDB, dev-gating) → P1 (kontent zanjiri) → P2 (mogrt+prproj import)
-  → P3 (AI Tools + cep-fs shim) → P4 (reliz) → P5 (ops); har faza DoD bilan;
-  15 o'lchangan gotcha jamlandi.
-- Jonli o'lchov: qora tana repaint nosozligi — DOM SOG'LOM (`homeGuest display=block`,
-  `accountSheet display=none`, xato 0) → davo `repaintKick` (P0.1).
-- KUTILMOQDA: P0 ijrosi (birinchi — repaint fix); migratsiya→prod; birinchi pr shablon.
+- Writable path: plugin-data → plugin-temp → native tmp; UXP 26.2 uchun `path` shim qo'shildi.
+- P0: repaint/indexedDB/transform/clipboard va dev-package byte-guardlar tayyor.
+- P1: `.prproj` upload + neutral music/SFX `app=pr` katalog filtri tuzatildi.
+- P2/P3: `.mogrt`, `.prproj importSequences`, media bundle, async `cep.fs` picker/Base64 ulandi.
+- P4/P5: `app=pr` updater, `.ccx` landing, crash-log, app analytics va browse restore tayyor.
+- Test: DB/API build; installer 262/262; public 137/137; release 110/110; updater 118/118.
+- CCX: 65 fayl, 783.9 KB; SHA-256 `ab42a001aec3795175d2a47ba9c5fb4bad8796d71b7a4067d2a6b9013491d8a0`.
+- Jonli: MOGRT saqlandi; Premiere 26.2.2 quit/relaunch; docked panel render; boot xatosi 0.
+- Production hozir: `app=pr` katalog 0, reliz `latest:null/not_published`; deploy hali kutilmoqda.
+- Qolgan tashqi darvoza: prod PR kontent/release, login ortidagi import/AI va Windows beta.

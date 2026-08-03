@@ -49,7 +49,11 @@
     var dl = (usage && typeof usage.eventDownloadsTotal === "number") ? usage.eventDownloadsTotal
       : (usage && typeof usage.downloadsTotal === "number") ? usage.downloadsTotal
       : (sc.totalDownloads || 0);
-    var dlFoot = (usage && typeof usage.eventDownloadsTotal === "number") ? "unique user·template" : "plugin count";
+    var hostEvents = usage && usage.eventsByApp;
+    var prEvents = hostEvents && hostEvents.pr;
+    var dlFoot = (usage && typeof usage.eventDownloadsTotal === "number")
+      ? (prEvents ? ("Premiere " + (prEvents.downloads || 0) + " dl · " + (prEvents.imports || 0) + " imports") : "unique user·template")
+      : "plugin count";
     var dlDisp = dl >= 1000 ? (dl / 1000).toFixed(1) + "K" : String(dl);
     return statCard({ label: "In queue", val: c.pending, ic: "clock-countdown", icColor: "#FFB27C", foot: "awaiting review" }) +
       // FAZA 5 (C6): "Active" aniqlashtirildi — last-seen 7 kun (status emas)

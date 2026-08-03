@@ -321,7 +321,7 @@ const PRODUCT_KIND_GROUPS = [
     label: "Template",
     options: [
       { sub: "ae", label: "After Effects", exts: [".aep", ".ffx", ".zip"] },
-      { sub: "pr", label: "Premiere Pro", exts: [".mogrt", ".zip"] },
+      { sub: "pr", label: "Premiere Pro", exts: [".mogrt", ".prproj", ".zip"] },
       { sub: "motion", label: "Apple Motion", exts: [".motn", ".zip"] },
       { sub: "resolve", label: "DaVinci Resolve", exts: [".drfx", ".setting", ".zip"] },
     ],

@@ -498,11 +498,11 @@
     }catch(_){}
   });
   // 1) Fayl yuklash
-  $('igSrcFile').addEventListener('click',function(){
+  $('igSrcFile').addEventListener('click',async function(){
     closeSheets();
     if(!(window.cep&&window.cep.fs&&typeof window.cep.fs.showOpenDialog==='function')){ toast('Upload only works inside Premiere Pro','warning'); return; }
     var exts=['png','jpg','jpeg','webp','gif','bmp'],r;
-    try{ r=window.cep.fs.showOpenDialog(true,false,'Choose image(s)','',exts); }catch(e){ toast('Dialog error: '+String(e),'error'); return; }
+    try{ r=await window.cep.fs.showOpenDialog(true,false,'Choose image(s)','',exts); }catch(e){ toast('Dialog error: '+String(e),'error'); return; }
     var paths=(r&&r.data)||[];
     try{console.log('[ig] showOpenDialog →',paths.length,'fayl:',paths);}catch(_){}
     if(!paths.length)return; // bekor qilindi

@@ -2,6 +2,26 @@
 
 ---
 
+## §-6. 2026-08-03 PREMIERE UXP — lokal release candidate va macOS host smoke tayyor
+
+- `plugins/premiere-uxp/` qayta tiklangan: AE panelining generativ 1:1 porti, UXP repaint/
+  transform/indexedDB/input/clipboard/file-picker shimlari va yoziladigan plugin-data backend.
+- `.mogrt` timeline import + Essential Graphics o'rnatish, media bundle va `.prproj`
+  `Project.importSequences` ko'prigi kodda; `cep.fs` picker/Base64 AI referens oqimi ulangan.
+- `?app=pr` release tekshiruvi, `.ccx` landing CTA/CCD yo'riqnomasi, global xato-log,
+  `eventsByApp.pr` admin analitikasi va browse holatini tiklash qo'shilgan.
+- Lokal isbot: DB/API build, public-copy 137/137, installer 262/262, release-contract 110/110,
+  updater 118/118, host-shim kontrakti va deterministik CCX byte-verify — PASS. Artefakt:
+  `plugins/premiere-uxp/dist/frameflow-premiere-0.1.0-standalone.ccx` (65 fayl, 783.9 KB),
+  SHA-256 `ab42a001aec3795175d2a47ba9c5fb4bad8796d71b7a4067d2a6b9013491d8a0`.
+- Production haqiqati: `/api/plugin/catalog?app=pr` hozir 0 item; `/api/plugin/version?app=pr`
+  `latest:null/not_published`. Kod hali push/deploy qilinmagan, real Premiere kontent/release yo'q.
+- Jonli macOS isbot: `MOGRT.prproj` saqlandi, Premiere 26.2.2 to'liq quit/relaunch qilindi,
+  FrameFlow docked paneli render bo'ldi; boot diag `(xato yo'q)`, writable path/token warning 0.
+  Auth/import/AI uchun prod PR kontent + login, Windows uchun tashqi beta hali darvoza.
+
+---
+
 ## §-5. 2026-07-22 CI NODE 20 DEPRECATION — 3 workflow ko'tarildi, push kutilmoqda
 
 - Barcha `.github/workflows/*.yml` (`ci.yml`, `db-backup.yml`, `deploy-cloudrun.yml`):

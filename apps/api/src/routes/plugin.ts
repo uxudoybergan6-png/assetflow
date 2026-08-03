@@ -204,7 +204,16 @@ function appPredicate(apps: string[]): Prisma.ContributorTemplateWhereInput {
   if (!apps.length) return {};
   const own: Prisma.ContributorTemplateWhereInput =
     apps.length === 1 ? { templateApp: apps[0] } : { templateApp: { in: apps } };
-  return { OR: [own, { templateType: { in: [...APP_NEUTRAL_TYPES] } }] };
+  return {
+    OR: [
+      own,
+      { templateType: { in: [...APP_NEUTRAL_TYPES] } },
+      // Eski AI-stock ingest audio turini `templateType=ai-stock`, haqiqiy
+      // turini esa `stockType=music|sfx` qilib saqlagan. Faqat templateType'ni
+      // tekshirish Premiere katalogidan real musiqa/SFX'ni yashirib qo'yardi.
+      { stockType: { in: ["music", "sfx"] } },
+    ],
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

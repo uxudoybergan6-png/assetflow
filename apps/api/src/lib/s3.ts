@@ -545,7 +545,11 @@ export function s3UploadKeyForFile(
   const ext = path.extname(localPath).toLowerCase();
   const allowed =
     kind === "pack"
-      ? [".zip", ".aep", ".mogrt"]
+      // `.prproj` — Premiere loyihasi (apps.ts `pr.packExts`). Kengaytma
+      // saqlanmasa kalit `templates/{id}/pack` bo'lib qoladi va yuklab olishda
+      // fayl nomi `.zip` deb berilardi (serve-asset ext fallback) → Premiere
+      // ocha olmaydi.
+      ? [".zip", ".aep", ".mogrt", ".prproj"]
       : kind === "preview"
         ? [".mp4", ".mov", ".webm"]
         : [".jpg", ".jpeg", ".png", ".webp"];

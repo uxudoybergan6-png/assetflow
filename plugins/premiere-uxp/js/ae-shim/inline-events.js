@@ -37,13 +37,35 @@
   }
 
   /** Hodisa yo'lidagi HAR tugunni tekshiradi (haqiqiy bubbling semantikasi):
-   *  eng ichkidan tashqariga, `stopPropagation` chaqirilsa to'xtaydi. */
+   *  eng ichkidan tashqariga, `stopPropagation` chaqirilsa to'xtaydi.
+   *
+   * MUHIM — `stopPropagation` NATIVE tarzda CHAQIRILMAYDI (avval chaqirilardi):
+   * bu ishlovchilar `document` da CAPTURE fazasida yuritiladi, ya'ni haqiqiy
+   * nishondan ANCHA oldin. Capture'da native `stopPropagation()` qolgan BUTUN
+   * tarqalishni o'ldiradi — nishonning O'Z `addEventListener` ishlovchilari ham
+   * umuman ishlamaydi.
+   *
+   * O'lchov (Premiere, jonli): `<div class="account-panel"
+   * onclick="event.stopPropagation()">` (panel.html:1140) — klassik "overlay
+   * ichini bosganda yopilmasin" naqshi. Uning ICHIDAGI har qanday
+   * `el.addEventListener('click',…)` jim o'lik edi: Google kirishidagi
+   * "Copy code"/"Copy link"/"Open again" bosilardi-yu, hech nima bo'lmasdi
+   * (`byId===bosilgan=true`, keyin biriktirilgan proba listeneri ham
+   * ishlamadi — ya'ni ayb biriktirishda emas, tarqalishda edi). AE manbasida
+   * shu naqsh ~20 joyda (lightbox yopish, galereya tanlash, sheet'lar…).
+   *
+   * Endi `stopPropagation` FAQAT shimning o'z yurishini to'xtatadi — bu AE'dagi
+   * ma'noning aynan o'zi, chunki ustki ishlovchilar ham inline va shu yurishda
+   * bajariladi. Yagona farq: to'xtatilgandan KEYIN ustki tugunlarning
+   * `addEventListener` ishlovchilari baribir ishlaydi (AE'da ishlamasdi) —
+   * bu naqsh kodda deyarli uchramaydi va zarari qiyoslab bo'lmas darajada kam.
+   */
   function runFor(type, ev) {
     var attr = "on" + type;
     var node = ev.target;
     var stopped = false;
     var origStop = ev.stopPropagation;
-    ev.stopPropagation = function () { stopped = true; if (origStop) origStop.call(ev); };
+    ev.stopPropagation = function () { stopped = true; };
     while (node && node.nodeType === 1) {
       if (node.hasAttribute && node.hasAttribute(attr)) {
         var fn = compiled(node, attr);

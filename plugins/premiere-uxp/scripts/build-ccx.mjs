@@ -42,6 +42,40 @@ const DIST = path.join(ROOT, "dist");
 /** Paketga HECH QACHON kirmaydigan yo'l boshlanishlari (yopilma tashqarisi ham). */
 const NEVER = ["scripts/", "spike/", "dev/", "dist/", "node_modules/", ".git/"];
 
+/**
+ * DEV ASBOBLARI — relizdan BUTUNLAY chiqariladi.
+ *
+ * `uxp-diag.js` ish vaqtida `#afBuild` shtampiga qarab o'zini yashiradi
+ * (`dev-` bo'lmasa oyna qurilmaydi), lekin bu YETARLI EMAS: fayl paketda
+ * qolsa, u baribir `window.onerror`/`console.error` ni ushlaydi, bosishlarni
+ * yozadi va T1/T2/T3 zondlarini olib yuradi — ya'ni mijoz paketida hech kim
+ * so'ramagan instrumentatsiya. Bayroq emas, PAKET tekshiriladi (audit P0.5).
+ *
+ * Fayl yopilmadan chiqarilgani uchun `main` HTML dagi `<script src>` tegi ham
+ * olib tashlanadi — aks holda o'rnatilgan panel "fayl topilmadi" deb yiqilardi.
+ */
+const DEV_ONLY = ["js/ae-shim/uxp-diag.js"];
+
+/** `main` HTML dan dev asboblarining `<script src>` teglarini olib tashlaydi. */
+function stripDevRefs(html, mainRel) {
+  const dir = path.posix.dirname(mainRel);
+  let out = html;
+  let removed = 0;
+  for (const dev of DEV_ONLY) {
+    // `main` ga NISBIY yo'l (bizda `panel.html` ildizda → yo'l o'zgarmaydi).
+    const rel = path.posix.relative(dir === "." ? "" : dir, dev) || dev;
+    for (const ref of new Set([dev, rel])) {
+      const esc = ref.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(`[ \\t]*<script\\b[^>]*\\bsrc\\s*=\\s*["']${esc}(?:[?#][^"']*)?["'][^>]*>\\s*</script>\\s*\\n?`, "gi");
+      out = out.replace(re, () => { removed++; return ""; });
+    }
+  }
+  if (removed !== DEV_ONLY.length) {
+    throw new Error(`dev asbob tegi topilmadi (${removed}/${DEV_ONLY.length}) — ${mainRel} ichida nom o'zgarganmi?`);
+  }
+  return out;
+}
+
 /** Yopilma qidiruvida e'tiborsiz qoldiriladigan manbalar (tashqi/inline). */
 function isLocalRef(u) {
   if (!u) return false;
@@ -224,6 +258,11 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 if (!manifest.main) throw new Error("manifest.json ichida `main` yo'q");
 
 const files = new Set(["manifest.json", ...closureFrom(manifest.main)]);
+// Dev asboblari yopilmaga tushadi (panel.html ularni yuklaydi) — shu yerda
+// chiqarib tashlaymiz; tegining o'zi `stripDevRefs` bilan olinadi.
+for (const dev of DEV_ONLY) {
+  if (!files.delete(dev)) throw new Error(`DEV_ONLY ro'yxati eskirgan: ${dev} yopilmada yo'q`);
+}
 
 /**
  * Manifest ikonkasi. `scale: [1,2]` bo'lsa Adobe faylni `@1x`/`@2x` qo'shimchasi
@@ -272,8 +311,9 @@ for (const fl of flavors(manifest)) {
     // pastida xom placeholder ko'rinadi. Qiymat DETERMINISTIK — sana emas,
     // versiya+flavor, aks holda takrorlanuvchi build buzilardi.
     if (rel === manifest.main) {
-      return { name: rel, data: Buffer.from(
-        data.toString("utf8").split("__AF_BUILD__").join(`${manifest.version}-${fl.key}`), "utf8") };
+      const html = stripDevRefs(data.toString("utf8"), rel)
+        .split("__AF_BUILD__").join(`${manifest.version}-${fl.key}`);
+      return { name: rel, data: Buffer.from(html, "utf8") };
     }
     return { name: rel, data };
   });

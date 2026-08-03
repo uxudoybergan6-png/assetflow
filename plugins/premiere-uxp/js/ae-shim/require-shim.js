@@ -110,7 +110,12 @@
       if (!n && !IO) return absent("os", "UXP `os` moduli mavjud emas.");
       return IO ? IO.wrapOs(n) : n;
     },
-    path: function () { return nativeModule("path") || absent("path", "UXP `path` moduli mavjud emas."); },
+    // Premiere 26.2 `path` uchun truthy, ammo metodsiz obyekt qaytaradi.
+    path: function () {
+      var n = nativeModule("path");
+      if (!n && !IO) return absent("path", "UXP `path` moduli mavjud emas.");
+      return IO && IO.wrapPath ? IO.wrapPath(n) : n;
+    },
     buffer: function () { return { Buffer: BufferShim }; },
     child_process: function () {
       return absent("child_process",

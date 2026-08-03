@@ -1186,11 +1186,11 @@
     if(list.length>take.length)toast(take.length+' added (limit '+lim[type]+')','info');
   }
   // Manba 1 — Fayl yuklash (kompyuterdan); rasm/ovoz uchun BIR NECHTA fayl tanlash mumkin (video bittadan)
-  function pickFileMedia(type){
+  async function pickFileMedia(type){
     if(!IS_CEP){ toast('File upload only works inside Premiere Pro','info'); return; }
     if(!mediaAllowed(type))return;
     var multi=(type!=='video'); // video klipperда bittadan
-    var r; try{ r=window.cep.fs.showOpenDialog(multi,false,'Choose '+typeLabel(type).toLowerCase()+' reference(s)','',mediaExts(type)); }catch(e){ toast('Dialog error','error'); return; }
+    var r; try{ r=await window.cep.fs.showOpenDialog(multi,false,'Choose '+typeLabel(type).toLowerCase()+' reference(s)','',mediaExts(type)); }catch(e){ toast('Dialog error','error'); return; }
     var paths=(r&&r.data)||[]; if(!paths.length)return;
     addMediaPaths(paths,type);
     if(type!=='video')closeVgSheets();
@@ -1412,7 +1412,7 @@
     box.classList.add('has-img');
     var img=document.createElement('img'); img.className='fb-thumb'; img.src=frame.dataUrl; box.appendChild(img);
     if(frame.loading){
-      var sp=document.createElement('div'); sp.style.cssText='position:absolute;inset:0;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border-radius:9px;z-index:2'; sp.textContent='Loading…'; box.appendChild(sp);
+      var sp=document.createElement('div'); sp.style.cssText='position:absolute;top:0;right:0;bottom:0;left:0;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border-radius:9px;z-index:2'; sp.textContent='Loading…'; box.appendChild(sp);
     } else {
       // SC_42: rol nishoni START / END (frame 1/2 o'rniga)
       var tag=document.createElement('span'); tag.className='fbtag'; tag.textContent=(which==='start')?'START':'END'; box.appendChild(tag);
@@ -1436,10 +1436,10 @@
   }
 
   // ── kadr manba funksiyalari (readDataUrl = igScript bilan bir xil isbotlangan yo'l) ──
-  function pickFileFrame(which){
+  async function pickFileFrame(which){
     if(!IS_CEP){ toast('File upload only works inside Premiere Pro','info'); return; }
     var exts=['png','jpg','jpeg','webp','gif','bmp'],r;
-    try{ r=window.cep.fs.showOpenDialog(false,false,'Choose image','',exts); }catch(e){ toast('Dialog error','error'); return; }
+    try{ r=await window.cep.fs.showOpenDialog(false,false,'Choose image','',exts); }catch(e){ toast('Dialog error','error'); return; }
     var paths=(r&&r.data)||[]; if(!paths.length)return;
     var p=paths[0]; if(!isImg(p)){ toast('Choose an image file (jpg/png/webp)','warning'); return; }
     var d=readDataUrl(p); // preview uchun dataURL, upload esa raw file
@@ -2999,7 +2999,7 @@
    Panel imtiyoz KO'TARMAYDI va Premiere ichida hech narsa o'rnatmaydi.
    Nosozlikda faqat tasdiqlangan installer/yuklab olish sahifasi taklif qilinadi —
    extension papkasini qo'lda almashtirish maslahati BERILMAYDI. */
-window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
+window.AF_PLUGIN_VERSION="0.1.0"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
 (function(){
   function $(id){return document.getElementById(id);}
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
@@ -3256,7 +3256,7 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
   function platformQuery(){ var pi=platformInfo(osPlatform()); return pi?('&platform='+encodeURIComponent(pi.id)):''; }
 
   function checkForUpdate(silent){
-    pubFetch('/api/plugin/version?current='+encodeURIComponent(window.AF_PLUGIN_VERSION)+platformQuery(),{headers:{Accept:'application/json'}},15000)
+    pubFetch('/api/plugin/version?app=pr&current='+encodeURIComponent(window.AF_PLUGIN_VERSION)+platformQuery(),{headers:{Accept:'application/json'}},15000)
       .then(function(r){ return r.json(); })
       .then(function(d){
         if(!d||!d.updateAvailable)return;

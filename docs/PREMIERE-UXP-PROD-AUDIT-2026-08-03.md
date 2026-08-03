@@ -7,6 +7,15 @@
 > Oldingi hujjatlar: `PREMIERE-UXP-AUDIT-2026-08-02.md` (qurish auditi),
 > `PREMIERE-UXP-SPIKE-NATIJA.md` (empirik probe), `PREMIERE-UXP-SYSTEM-PROMPT.md` (qurish prompti).
 
+> **2026-08-03 yakuniy kod yangilanishi:** ushbu auditdagi P0/P2/P3/P5 kod bo'shliqlari
+> yopildi: repaint/indexedDB/dev-package guard, `.prproj importSequences`, `cep.fs`,
+> app=pr updater/landing, crash-log, app kesimli analitika va state restore. Lokal CCX
+> 65 fayl/783.9 KB va byte-verify PASS. Premiere 26.2.2 macOS'da save→quit→relaunch,
+> docked panel render va boot diag `(xato yo'q)` bilan tasdiqlandi. Quyidagi matritsa
+> boshlang'ich audit tarixidir;
+> joriy darvozalar: production push/deploy, kamida bitta real `app=pr` kontent/release,
+> login ortidagi import/AI smoke va Windows beta.
+
 ---
 
 ## 1. XULOSA (bitta jumla)

@@ -10,7 +10,7 @@ export type TemplateAssetKind = "thumb" | "preview" | "pack";
 const KIND_EXT: Record<TemplateAssetKind, string[]> = {
   thumb: [".jpg", ".jpeg", ".png", ".webp"],
   preview: [".mp4", ".mov", ".webm"],
-  pack: [".aep", ".zip", ".mogrt"],
+  pack: [".aep", ".zip", ".mogrt", ".prproj"],
 };
 
 const RESOLVED_UPLOADS_ROOT = path.resolve(UPLOADS_ROOT);

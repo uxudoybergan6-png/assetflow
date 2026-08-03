@@ -16285,6 +16285,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <p data-cms-text="pluginPage.sub">{{ lcPgSub }}</p>
             <div class="pg-cta">
               <button class="ffm-btn lg" onclick="{{ download }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ lcPgCta }}</button>
+              <button class="ffm-btn lg secondary" onclick="{{ downloadAe }}"><i class="ph ph-download-simple" style="font-size:15px"></i>After Effects (.zxp)</button>
+            </div>
+            <div style="margin-top:12px;padding:11px 13px;border:1px solid var(--border);border-radius:12px;font-size:11px;line-height:1.55;color:var(--muted)">
+              <b style="color:var(--text)">Premiere Pro 25.6+:</b> download the <code>.ccx</code>, open it with Adobe Creative Cloud, then restart Premiere Pro and choose Window → Extensions → FrameFlow.
             </div>
             <small>{{ lcPgVersion }}</small>
           </div>
@@ -18171,6 +18175,7 @@ class Component extends DCLogic {
     pluginDl: 'idle',
     pluginRelease: null, // { version, releaseNotes, checksum }
     pluginDownloadUrl: null,
+    pluginAeDownloadUrl: null,
     pluginDlErr: '',
     fApps: [], // #3 — Applications Supported multi-select (bo'sh = hammasi)
     fCats: [], // #3 — granular Categories multi-select (bo'sh = hammasi)
@@ -18642,16 +18647,16 @@ class Component extends DCLogic {
         teaserFeats: ['3,000 credits per month', 'Unlimited downloads', 'After Effects plugin'] },
     ],
     pluginPage: {
-      badge: 'After Effects 2022+', title: 'Install the FrameFlow plugin in one click',
-      sub: 'Catalog, import and AI Studio — right inside After Effects. With your account and credits.',
-      ctaLabel: 'Download the plugin (.zxp)', versionNote: 'Compatible ZXP installer · requires After Effects 2022 (22.0) or newer',
+      badge: 'Premiere Pro 25.6+', title: 'FrameFlow for Premiere Pro and After Effects',
+      sub: 'Catalog, timeline import and AI Studio — right inside Adobe Premiere Pro. The After Effects build remains available too.',
+      ctaLabel: 'Premiere Pro (.ccx)', versionNote: 'Creative Cloud installer · requires Premiere Pro 25.6 or newer',
       guarantee: 'Refund eligibility is explained in the Refund Policy',
       steps: [
-        { t: 'Download the .zxp file', d: 'Get the latest version from the platform in one click.' },
-        { t: 'Install with a compatible ZXP installer', d: 'Install quickly with any compatible ZXP installer.' },
+        { t: 'Download the .ccx file', d: 'Get the signed Premiere Pro release for your platform.' },
+        { t: 'Open it with Creative Cloud', d: 'Creative Cloud installs the plugin into Premiere Pro.' },
         { t: 'Connect your account', d: 'Enter your platform key — templates and credits are ready.' },
       ],
-      winTitle: 'FrameFlow · After Effects', winSearch: 'Search templates',
+      winTitle: 'FrameFlow · Premiere Pro', winSearch: 'Search templates',
       mockName: 'Football Championship', mockImport: 'Import',
     },
     // v3 — vizual muharrir qatlamlari (server bilan AYNI shakl)
@@ -18949,13 +18954,26 @@ class Component extends DCLogic {
   async loadPluginRelease() {
     this.setState({ pluginDl: 'loading', pluginDlErr: '' });
     try {
-      // manual:true — bu sahifa AYNAN qo'lda yuklab olish uchun (.zxp tugmasi), shu bois
-      // legacy havolani aniq so'raydi. Opt-in'siz server downloadUrl bermaydi.
-      const r = await FFAPI.pluginVersion(null, { manual: true });
-      if (r && r.latest && r.latest.version && r.downloadUrl) {
-        this.setState({ pluginDl: 'ready', pluginRelease: r.latest, pluginDownloadUrl: r.downloadUrl });
+      // Premiere uchun platformaga xos .ccx; AE uchun legacy .zxp faqat aniq
+      // manual opt-in bilan. Bitta kanal vaqtincha xato bersa ikkinchisi ishlashda davom etadi.
+      const ua = navigator.userAgent || '';
+      const platform = /Windows/i.test(ua) ? 'win' : /Macintosh|Mac OS/i.test(ua) ? 'mac' : null;
+      const both = await Promise.all([
+        FFAPI.pluginVersion(null, platform ? { app: 'pr', platform } : { app: 'pr' }).catch(() => null),
+        FFAPI.pluginVersion(null, { app: 'ae', manual: true }).catch(() => null),
+      ]);
+      const pr = both[0], ae = both[1];
+      if (!pr && !ae) throw new Error('Plugin release service is unavailable');
+      if (pr && pr.latest && pr.latest.version && pr.installer && pr.installer.url) {
+        this.setState({
+          pluginDl: 'ready', pluginRelease: pr.latest, pluginDownloadUrl: pr.installer.url,
+          pluginAeDownloadUrl: ae && ae.downloadUrl ? ae.downloadUrl : null,
+        });
       } else {
-        this.setState({ pluginDl: 'unavailable', pluginRelease: r && r.latest ? r.latest : null, pluginDownloadUrl: null });
+        this.setState({
+          pluginDl: 'unavailable', pluginRelease: pr && pr.latest ? pr.latest : null,
+          pluginDownloadUrl: null, pluginAeDownloadUrl: ae && ae.downloadUrl ? ae.downloadUrl : null,
+        });
       }
     } catch (e) {
       this.setState({ pluginDl: 'error', pluginDlErr: this.errMsg(e) });
@@ -18968,6 +18986,10 @@ class Component extends DCLogic {
     if (st.pluginDl === 'error') { this.toast(st.pluginDlErr || "Couldn't check the plugin release", 'error'); this.loadPluginRelease(); return; }
     if (st.pluginDl === 'idle') { this.loadPluginRelease(); return; }
     this.toast('The beta download isn’t published yet — check back soon', 'info');
+  }
+  downloadAePlugin() {
+    if (this.state.pluginAeDownloadUrl) { window.location.href = this.state.pluginAeDownloadUrl; return; }
+    this.toast('The After Effects download is not published yet', 'info');
   }
 
   // P30 (29c) — toast endi TIPGA ega (ikonka/rang shundan): success=✓ · error=✕ · warning · info.
@@ -23007,12 +23029,12 @@ class Component extends DCLogic {
     // Plugin sahifa — CTA/versiya matni haqiqiy reliz holatiga qarab (loadPluginRelease/downloadPlugin);
     // CMS matni FAQAT 'idle' fallback (hali so'ralmagan holat).
     const pgDl = this.state.pluginDl;
-    const pgCtaLabel = pgDl === 'loading' ? 'Checking latest version…'
-      : pgDl === 'unavailable' ? 'Beta download not published yet'
+    const pgCtaLabel = pgDl === 'loading' ? 'Checking Premiere release…'
+      : pgDl === 'unavailable' ? 'Premiere Pro (.ccx) — not published yet'
       : pgDl === 'error' ? 'Retry check'
-      : lc.pluginPage.ctaLabel;
+      : 'Premiere Pro (.ccx)';
     const pgVersionNote = pgDl === 'ready' && this.state.pluginRelease
-      ? ('v' + this.state.pluginRelease.version + ' · Compatible ZXP installer · After Effects 2022+')
+      ? ('v' + this.state.pluginRelease.version + ' · Creative Cloud .ccx · Premiere Pro 25.6+')
       : pgDl === 'unavailable' ? 'The beta download isn’t published yet — check back soon'
       : pgDl === 'error' ? (this.state.pluginDlErr || "Couldn't check for updates — click the button to retry")
       : pgDl === 'loading' ? 'Checking the latest release…'
@@ -23214,6 +23236,7 @@ class Component extends DCLogic {
       onFaq: (e) => { const i = +e.currentTarget.dataset.idx; this.setState(st => ({ openFaq: st.openFaq === i ? -1 : i })); },
       onTryTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k }, refClearIfModeChanged(k))); this.go('aistudio'); },
       download: () => this.downloadPlugin(),
+      downloadAe: () => this.downloadAePlugin(),
       downloadTpl: () => this.downloadTemplate(),
       downloadGen: () => { const g = this.state.lightbox || activeGenRaw; if (g) this.downloadGenAsset(g.id); },
       closeCredits: () => this.setState({ showCredits: false }),

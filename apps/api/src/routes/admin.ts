@@ -575,7 +575,7 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const [agg, byPlan, byStatus, total, weekActive, dayActive, eventDownloads, eventImports] =
+  const [agg, byPlan, byStatus, total, weekActive, dayActive, eventDownloads, eventImports, eventsByAppRows] =
     await Promise.all([
       prisma.pluginProfile.aggregate({
         _sum: {
@@ -600,7 +600,19 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
       // qayta yuklab olishni sanaydi — ikkalasi additive qaytadi.
       prisma.templateDownloadEvent.count({ where: { kind: "download" } }),
       prisma.templateDownloadEvent.count({ where: { kind: "import" } }),
+      prisma.templateDownloadEvent.groupBy({
+        by: ["app", "kind"],
+        _count: { _all: true },
+      }),
     ]);
+
+  const eventsByApp: Record<string, { downloads: number; imports: number }> = {};
+  for (const row of eventsByAppRows) {
+    const key = row.app || "unknown";
+    const bucket = eventsByApp[key] || (eventsByApp[key] = { downloads: 0, imports: 0 });
+    if (row.kind === "download") bucket.downloads = row._count._all;
+    if (row.kind === "import") bucket.imports = row._count._all;
+  }
 
   const planCounts: Record<string, number> = { free: 0, pro: 0, studio: 0 };
   byPlan.forEach((g) => {
@@ -659,6 +671,8 @@ adminRouter.get("/plugin-analytics", async (_req, res) => {
       // FAZA 5 (C6) — additive: per-shablon jadval bilan mos keladigan hodisa hisobi
       eventDownloadsTotal: eventDownloads,
       eventImportsTotal: eventImports,
+      // P5 — AE/Premiere host kesimi (null eski klientlar uchun `unknown`).
+      eventsByApp,
     },
     activityByDay,
     approvalRatePct,

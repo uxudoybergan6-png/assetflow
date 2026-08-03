@@ -20,6 +20,7 @@
   ],
   "requiredPermissions": {
     "localFileSystem": "fullAccess",
+    "clipboard": "readAndWrite",
     "launchProcess": {
       "schemes": ["https"],
       "extensions": []

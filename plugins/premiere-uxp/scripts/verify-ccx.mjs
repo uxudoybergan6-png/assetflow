@@ -90,6 +90,21 @@ function readEntry(buf, e, label) {
 const FORBIDDEN_PREFIX = ["scripts/", "spike/", "dev/", "dist/", "node_modules/", ".git/"];
 const FORBIDDEN_NAME = [/\.map$/i, /(^|\/)\.env/i, /(^|\/)\.DS_Store$/i, /(^|\/)qa-/i];
 
+/**
+ * DEV INSTRUMENTATSIYASI — mijoz paketida bo'lmasligi kerak (audit P0.5).
+ *
+ * MUHIM: "ish vaqtida `isDev` bayrog'i o'chiq" degani YETARLI EMAS — bayroq
+ * kodni yo'q qilmaydi. Shu sabab tekshiruv PAKETGA qaraydi: fayl bormi va uning
+ * imzosi biror faylga singib ketmaganmi (masalan kelajakda kimdir diag'ni
+ * boshqa shim ichiga ko'chirса).
+ */
+const DEV_FILE = [/(^|\/)uxp-diag\.js$/i];
+/** Diag oynasining o'ziga xos, boshqa hech qayerda uchramaydigan imzolari. */
+const DEV_MARK = [
+  ["__ffT1", "diag T1/T2/T3 hodisa zondi"],
+  ["repaintProbe", "diag RPT turtki zondi"],
+];
+
 /** Matn ichidagi lokal manzillar — mijoz paketida bo'lmasligi kerak. */
 const LOCAL_RE = /\b(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])\b/gi;
 
@@ -164,6 +179,7 @@ function verify(file) {
     const pre = FORBIDDEN_PREFIX.find((p) => e.name.startsWith(p));
     if (pre) errs.push(`taqiqlangan papka: ${e.name}`);
     if (FORBIDDEN_NAME.some((r) => r.test(e.name))) errs.push(`taqiqlangan fayl: ${e.name}`);
+    if (DEV_FILE.some((r) => r.test(e.name))) errs.push(`dev instrumenti: ${e.name}`);
   }
 
   const text = new Map();
@@ -182,6 +198,10 @@ function verify(file) {
         `lokal manzil soni o'zgardi: ${e.name} — kutilgan ${okCount}, topildi ${hits.length}` +
           ` (${hits.join(", ")}). LOCAL_OK ni qayta ko'rib chiq.`,
       );
+    }
+    for (const [mark, why] of DEV_MARK) {
+      const at = s.indexOf(mark);
+      if (at >= 0) errs.push(`${why}: ${e.name}:${s.slice(0, at).split("\n").length}`);
     }
     for (const [re, why] of SECRET_RE) {
       const m = re.exec(s);

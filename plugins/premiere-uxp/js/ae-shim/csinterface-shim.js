@@ -93,6 +93,19 @@
     return m ? m[1].toLowerCase() : "";
   }
 
+  /** Premiere versiyalari `CloseProjectOptions`ni factory yoki constructor
+   *  sifatida eksport qilgan. Ikkalasini ham xavfsiz sinaymiz. */
+  function closeProjectOptions() {
+    if (!ppro || !ppro.CloseProjectOptions) return undefined;
+    try { return ppro.CloseProjectOptions(); } catch (e) { /* constructor varianti */ }
+    try { return new ppro.CloseProjectOptions(); } catch (e) { return undefined; }
+  }
+
+  async function closeProjectQuietly(p) {
+    if (!p || typeof p.close !== "function") return;
+    try { await p.close(closeProjectOptions()); } catch (e) { /* cleanup import natijasini bosmasin */ }
+  }
+
   /** UXP entry'sini disk yo'lidan oladi (`file:` sxemasi shart). */
   async function entryAt(path) {
     var lfs = uxp && uxp.storage && uxp.storage.localFileSystem;
@@ -307,7 +320,72 @@
         return jstr({ ok: true, folder: "", folderId: 0, movedCount: 1, missingFonts: [], installedToLibrary: installed });
       }
 
-      // .prproj va boshqa import qilinadigan turlar — loyiha paneliga.
+      // .prproj — Adobe rasmiy sample naqshi:
+      // source projectni ochish → sequence GUID'larini olish → original projectni
+      // qayta faollashtirish → `importSequences(sourcePath, ids)`.
+      // `importFiles(.prproj)` halol ekvivalent emas: u sequence tanlovini bermaydi
+      // va host versiyasiga qarab butun projectni media sifatida rad qilishi mumkin.
+      if (ext === "prproj") {
+        if (!ppro.Project || typeof ppro.Project.open !== "function" || typeof p.importSequences !== "function") {
+          return jstr({ ok: false, message: "Premiere project sequence import is not available in this Premiere Pro version" });
+        }
+        try {
+          if (typeof ppro.Project.isProject === "function" && !ppro.Project.isProject(filePath)) {
+            return jstr({ ok: false, message: "Premiere rejected this .prproj file as invalid" });
+          }
+        } catch (e) { /* 25.6–26.1 da isProject yo'q — open yakuniy tekshiruv */ }
+
+        var source = null;
+        var sourcePath = filePath;
+        var originalPath = String(p.path || "");
+        try {
+          var openOpts = null;
+          try { openOpts = ppro.OpenProjectOptions ? ppro.OpenProjectOptions() : null; } catch (e) { openOpts = null; }
+          if (openOpts) {
+            try { if (openOpts.setShowLocateFileDialog) openOpts.setShowLocateFileDialog(false); } catch (e) {}
+            try { if (openOpts.setShowWarningDialog) openOpts.setShowWarningDialog(false); } catch (e) {}
+            try { if (openOpts.setShowConvertProjectDialog) openOpts.setShowConvertProjectDialog(false); } catch (e) {}
+            try { if (openOpts.setAddToMRUList) openOpts.setAddToMRUList(false); } catch (e) {}
+          }
+          source = await ppro.Project.open(filePath, openOpts || undefined);
+          if (!source) return jstr({ ok: false, message: "Could not open the Premiere project template" });
+          sourcePath = String(source.path || filePath);
+          var seqs = typeof source.getSequences === "function" ? await source.getSequences() : [];
+          if (!seqs || !seqs.length) {
+            if (originalPath) await ppro.Project.open(originalPath);
+            await closeProjectQuietly(source);
+            return jstr({ ok: false, message: "This Premiere project contains no sequences to import" });
+          }
+          var ids = [], names = [];
+          for (var si = 0; si < seqs.length; si++) {
+            if (seqs[si] && seqs[si].guid) ids.push(seqs[si].guid);
+            if (seqs[si] && seqs[si].name) names.push(String(seqs[si].name));
+          }
+          if (!ids.length) {
+            if (originalPath) await ppro.Project.open(originalPath);
+            await closeProjectQuietly(source);
+            return jstr({ ok: false, message: "Premiere could not read sequence IDs from this project" });
+          }
+          if (originalPath) await ppro.Project.open(originalPath);
+          var imported = await p.importSequences(sourcePath, ids);
+          await closeProjectQuietly(source);
+          if (!imported) return jstr({ ok: false, message: "Premiere did not import the project sequences" });
+          return jstr({
+            ok: true,
+            folder: "",
+            folderId: 0,
+            movedCount: ids.length,
+            missingFonts: [],
+            importedSequences: names,
+          });
+        } catch (e) {
+          try { if (originalPath) await ppro.Project.open(originalPath); } catch (e2) {}
+          await closeProjectQuietly(source);
+          return jstr({ ok: false, message: "Premiere project import failed: " + String((e && e.message) || e) });
+        }
+      }
+
+      // Boshqa import qilinadigan turlar — loyiha paneliga.
       var root = null;
       try { root = await p.getRootItem(); } catch (e) { root = null; }
       var okImp = false;
@@ -369,7 +447,14 @@
       try {
         var eg = await entryAt(egPath);
         var src = await entryAt(filePath);
-        await src.copyTo(eg, { overwrite: true });
+        // So'rovsiz overwrite TAQIQ: foydalanuvchining mavjud MOGRT'i jimgina
+        // almashtirilmasin. Mavjud nom bo'lsa import timeline'da muvaffaqiyatli
+        // qoladi, faqat doimiy o'rnatish halol sabab bilan o'tkazib yuboriladi.
+        try {
+          var existing = await eg.getEntry(src.name);
+          if (existing) return jstr({ ok: false, reason: "A Motion Graphics template named '" + src.name + "' is already installed" });
+        } catch (e) { /* topilmadi — nusxalash mumkin */ }
+        await src.copyTo(eg, { overwrite: false });
         return jstr({ ok: true, path: egPath });
       } catch (e) {
         return jstr({ ok: false, reason: "Install failed: " + String((e && e.message) || e) });
@@ -465,22 +550,42 @@
     MY_DOCUMENTS: "myDocuments",
   };
 
-  // AE `getSystemPath(EXTENSION)` ni faqat jsx yo'lini yasash uchun ishlatadi;
-  // dispetcher u yo'lni e'tiborsiz qoldiradi. Shunga qaramay haqiqiy plagin
-  // papkasini beramiz — log va diagnostikada to'g'ri ko'rinsin.
-  var pluginPath = "";
-  (async function () {
+  // AE `getSystemPath(EXTENSION)` ni asosan jsx yo'lini yasash uchun ishlatadi
+  // (dispetcher u yo'lni e'tiborsiz qoldiradi), LEKIN bitta chaqiruvchi undan
+  // YOZISH uchun foydalanadi: `assetflow-local-store.js:32` u yerda
+  // `assetflow-data/` papkasini yasaydi (lokal kesh + meta).
+  //
+  // O'LCHANGAN MUAMMO: UXP'da plagin papkasi FAQAT O'QISH uchun, ustiga
+  // `getPluginFolder()` — ASINXRON, ya'ni boot paytida yo'l hali bo'sh
+  // (`""`) edi. Natijada `path.join("", "assetflow-data")` NISBIY yo'l berib
+  // `mkdirSync` yiqilardi → `useDisk=false` → kod `indexedDB` shoxiga tushardi
+  // (UXP'da u ham yo'q) → har boot'da xato-log va lokal keshsiz panel.
+  //
+  // DAVO: EXTENSION uchun plaginning YOZILADIGAN ma'lumot papkasini beramiz
+  // (`node-io` boot'da keshlagan `getDataFolder()`). U juda erta boot oynasida
+  // hali yechilmagan bo'lsa, yoziladigan plugin-temp/native tmpdir ishlatiladi.
+  // Read-only `getPluginFolder()`ga HECH QACHON qaytmaymiz. jsx yo'lini
+  // yasovchilar uchun farqi yo'q (yo'l dispetcherda baribir ishlatilmaydi),
+  // disk backend esa HAQIQATAN yoziladigan joy oladi.
+  function writableSystemPath() {
+    var io = window.__FFNodeIO;
+    var data = (io && io.dataDir && io.dataDir()) || "";
+    if (data) return data;
+    var temp = (io && io.tmpDir && io.tmpDir()) || "";
+    if (temp) return temp;
     try {
-      var lfs = uxp && uxp.storage && uxp.storage.localFileSystem;
-      if (lfs && lfs.getPluginFolder) pluginPath = (await lfs.getPluginFolder()).nativePath || "";
-    } catch (e) { /* ixtiyoriy */ }
-  })();
+      var os = require("os");
+      return (os && os.tmpdir && os.tmpdir()) || "";
+    } catch (e) {
+      return "";
+    }
+  }
 
   function CSInterface() {}
 
   CSInterface.prototype.getSystemPath = function (kind) {
     if (kind === window.SystemPath.HOST_APPLICATION) return "Adobe Premiere Pro";
-    return pluginPath;
+    return writableSystemPath();
   };
   CSInterface.prototype.evalScript = function (script, cb) {
     dispatch(script).then(function (r) { if (typeof cb === "function") cb(r); });
@@ -488,15 +593,36 @@
   // Xatoni YUTMAYMIZ: chaqiruvchi (`assetflow-account.js` → `openExternal`) buni
   // "brauzer ochildi" deb qabul qiladi va `true` qaytaradi. Jim `catch` bo'lsa
   // foydalanuvchiga "brauzerda tasdiqlang" deyilardi, ammo hech narsa ochilmasdi.
+  //
+  // MUHIM ASIMMETRIYA: CEP'da bu SINXRON va haqiqiy natija beradi; UXP'da esa
+  // `openExternal` — ASYNC va RUXSAT SO'RAYDI ("… wants to open: https://…"
+  // modali). Foydalanuvchi "Block" bossa, chaqiruv allaqachon `true` qaytargan
+  // bo'ladi va panel "Browser opened — type this code there" deb YOLG'ON
+  // gapiradi. Shu bois natijani keyin e'lon qilamiz: `ff-open-external`
+  // hodisasi + `window.__ffOpenExternalOk` (uni `uxp-external-link.js` kartani
+  // halol holatga o'tkazish uchun tinglaydi).
   CSInterface.prototype.openURLInDefaultBrowser = function (url) {
     if (!uxp || !uxp.shell || !uxp.shell.openExternal) {
       throw new Error("uxp.shell.openExternal mavjud emas");
     }
-    var p = uxp.shell.openExternal(String(url));
-    // Promise — sinxron `true` qaytarilgach rad javobi jim qolmasin.
-    if (p && typeof p.catch === "function") {
-      p.catch(function (e) { log.error("openExternal rad etildi:", e); });
+    var u = String(url);
+    function announce(ok, err) {
+      window.__ffOpenExternalOk = ok;
+      if (!ok) log.error("openExternal rad etildi:", err);
+      try {
+        window.dispatchEvent(new CustomEvent("ff-open-external", {
+          detail: { url: u, ok: ok, error: err ? String(err.message || err) : "" },
+        }));
+      } catch (e) { /* CustomEvent bo'lmasa — bayroq yetarli */ }
     }
+    window.__ffOpenExternalOk = null;   // "hali noma'lum"
+    var p = uxp.shell.openExternal(u);
+    if (p && typeof p.then === "function") {
+      p.then(function () { announce(true, null); }, function (e) { announce(false, e); });
+    } else {
+      announce(true, null);   // sinxron variant — xato otmadi
+    }
+    return true;   // AE zanjiri (c) sinxron javob kutadi
   };
   CSInterface.prototype.getHostEnvironment = function () {
     var v = "";

@@ -37,6 +37,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UXP = path.resolve(HERE, "..");
 const AE = path.resolve(UXP, "..", "after-effects-cep");
 const OUT = path.join(UXP, "ported");
+const UXP_VERSION = JSON.parse(fs.readFileSync(path.join(UXP, "manifest.json"), "utf8")).version;
 
 const stats = {
   gridRules: 0, gapRules: 0, gapOverrides: 0, gapSums: 0, gridColumn: 0, animOpacity: 0, backdrop: 0,
@@ -250,9 +251,9 @@ function topCommas(v) {
 }
 
 /**
- * `background` / `border` QISQARTMASINI longhand'ga yoyadi.
+ * `background` / `border` / `inset` QISQARTMASINI longhand'ga yoyadi.
  *
- * SABAB: UXP CSS dvigateli bu ikki qisqartmani tushunmay TASHLAB YUBORADI,
+ * SABAB: UXP CSS dvigateli bu qisqartmalarni tushunmay TASHLAB YUBORADI,
  * faqat longhand'ni qabul qiladi. Jonli o'lchovda ko'rindi: login maydonlarida
  * (`.lg-input` `background:rgba(255,255,255,.05)`, `.lg-passinput`
  * `background:none;border:0`) muallif foni umuman qo'llanmadi va UXP `<input>`
@@ -294,6 +295,21 @@ function expandShorthand(prop, v) {
     ];
   }
 
+  // `inset` — UXP uni butunlay tashlaydi (jonli o'lchov: `position:absolute;
+  // inset:0` → hisoblangan `top` = `auto`, nazorat `top:0` esa `0px`). AE'da
+  // 48 ta qoida `inset:0` bilan qoplama yasaydi (`.account-sheet` fon pardasi,
+  // `.ff-lock`, `.ff-backdrop`, karta media/scrim…) — hammasi joyidan chiqib
+  // ketardi. `margin` bilan bir xil 1–4 qiymatli sintaksis.
+  if (prop === "inset") {
+    const p = splitTop(v);
+    if (!p.length || p.length > 4) return null;
+    // Faqat oddiy uzunlik/`auto`/`%` — `var()`/`calc()` da tomonlarni ajratib
+    // bo'lmaydi (qavs ichida probel bor), noaniqlikda TEGMAYMIZ.
+    if (!p.every((x) => /^(auto|-?[\d.]+(px|%|em|rem|vh|vw)?)$/i.test(x))) return null;
+    const [t, r = t, b = t, l = r] = p;
+    return [["top", t], ["right", r], ["bottom", b], ["left", l]];
+  }
+
   return null;
 }
 
@@ -304,7 +320,7 @@ function expandShorthand(prop, v) {
  * `background:var(--accent-soft)`) Premiere'da butunlay ramkasiz/fonsiz chiqdi.
  */
 function expandInlineDeclList(text) {
-  if (!/(^|;|\s)(background|border)\s*:/i.test(text)) return text;
+  if (!/(^|;|\s)(background|border|inset)\s*:/i.test(text)) return text;
   // `;` bo'yicha QAVS DARAJASINI hisobga olib ajratamiz (`url(data:…;base64,…)`).
   const parts = []; let d = 0, cur = "";
   for (const ch of text) {
@@ -320,7 +336,7 @@ function expandInlineDeclList(text) {
     const i = raw.indexOf(":");
     if (i === -1) return raw;
     const prop = raw.slice(0, i).trim().toLowerCase();
-    if (prop !== "background" && prop !== "border") return raw;
+    if (prop !== "background" && prop !== "border" && prop !== "inset") return raw;
     const val = raw.slice(i + 1).trim();
 
     // Dinamik qiymat (`background:${c}`, `background:'+col+'`) — nima kelishini
@@ -723,6 +739,58 @@ const pillCls = new Set();
 const PILL_MIN_PX = 90;   // bundan katta radius hech qanday real qutiga sig'maydi
 
 /**
+ * `position:fixed` selektorlari — qoplama (overlay/sheet/modal) NOMZODLARI.
+ *
+ * `js/ae-shim/uxp-repaint.js` modal yopilgach qora qolgan tanani turtadi, lekin
+ * qaysi element qoplama ekanini bilishi kerak. UXP'da `MutationObserver`
+ * otilmaydi (spike §2), ya'ni "o'zgargan tugun" yo'li yo'q — davriy tekshiruv
+ * qoladi. Butun daraxtni skanerlash qimmat, shuning uchun nomzodlarni CSS'dan
+ * oldindan yig'amiz: `fixed` bo'lmagan element hech qachon panelni qoplamaydi.
+ */
+const fixSel = new Set();
+
+/**
+ * Foizli `transform: translate(...)` bilan MARKAZLANGAN qoidalar.
+ *
+ * UXP `transform`ni o'qib qaytaradi, lekin RENDERDA qo'llashi tasdiqlanmagan
+ * (spike §3). Agar qo'llanmasa, `left:50%; transform:translateX(-50%)` idiomasi
+ * elementni yarim kenglikka O'NGGA surib qo'yadi — mehmon Home'dagi
+ * "A PEEK AT THE CATALOG" ustma-ust tushishi shundan gumon qilinadi.
+ *
+ * CSS qiymatiga TEGMAYMIZ (brauzerdagi QA etaloni buzilmasin) — ro'yxat
+ * yig'amiz, `js/ae-shim/xform-center.js` esa AVVAL jonli zond bilan
+ * `transform` haqiqatan ishlaydimi deb o'lchaydi va faqat ISHLAMASA
+ * `margin-left/top` bilan kompensatsiya qiladi.
+ */
+const xfcRules = [];
+/**
+ * `translate(-50%, -50%)`, `translateX(-50%)`, `translateY(0)` …
+ * Birlik IXTIYORIY: `translateY(0)` — bekor qiluvchi holat qoidalarida
+ * (`.toast.show`) aynan shunday yoziladi va u ham yig'ilishi SHART.
+ */
+const XFC_RE = /translate(X|Y)?\(\s*(-?[\d.]+)(%|px)?\s*(?:,\s*(-?[\d.]+)(%|px)?\s*)?\)/i;
+
+/**
+ * `min()` / `max()` / `clamp()` ishlatgan o'lcham qoidalari.
+ *
+ * Jonli o'lchov (panel ichidagi CSS zondi): UXP bu funksiyalarni BUTUNLAY
+ * tashlaydi — 200px'lik hostda `width:min(50px,100%)` → 200px, `clamp(20px,
+ * 50%,40px)` → 200px. `calc()`, `%`, `vw`, `vh` esa ISHLAYDI. Ya'ni qiymatni
+ * ish vaqtida O'ZIMIZ hisoblab, inline qo'yishimiz mumkin.
+ *
+ * CSS qiymatiga TEGMAYMIZ (brauzerdagi 1:1 QA etaloni buzilmasin) — faqat
+ * ro'yxat yig'amiz; `js/ae-shim/uxp-mmc.js` uni FAQAT UXP ichida qo'llaydi.
+ * Tegishli qoidalar: toast/dropdown `max-width`, `.account-panel` balandligi,
+ * `.ai-menu` `max-width`/`max-height`, progress va popover kengliklari.
+ */
+const mmcRules = [];
+const MMC_PROPS = new Set([
+  "width", "min-width", "max-width", "height", "min-height", "max-height",
+]);
+/** `minmax()` grid funksiyasi emas — faqat mustaqil `min(`/`max(`/`clamp(`. */
+const MMC_RE = /(^|[^a-z-])(min|max|clamp)\(/i;
+
+/**
  * Xuddi shu ro'yxat, LEKIN oxirgi kompaundi klasssiz selektorlar uchun
  * (`.axroot .set-ltot span`, `.foo > b` …).
  *
@@ -964,6 +1032,56 @@ function transformRule(node, emit, media = "") {
       for (const one of selKey(node.selector).split(",")) {
         for (const c of classesOf(splitCompound(one.trim()).last)) pillCls.add(c.slice(1));
       }
+    }
+  }
+
+  // ── UXP: qoplama nomzodlari (`position:fixed`) va markazlovchi `translate`.
+  // Ikkalasi ham FAQAT ro'yxat — CSS qiymati o'zgarmaydi.
+  {
+    const pos = (get("position") || "").trim().toLowerCase();
+    const xf = String(get("transform") || "").replace(/ !important$/i, "").trim();
+    const m = xf ? XFC_RE.exec(xf) : null;
+    // `transform:none` ham yig'iladi: u avvalgi siljishni BEKOR qiladi
+    // (`.toast{translateY(14px)}` + `.toast.show{none}`). Yig'masak, ko'ringan
+    // toast 14px pastda osilib qolardi — davo nuqsonga aylanardi.
+    const isNone = /^none$/i.test(xf);
+    if (pos === "fixed" || m || isNone) {
+      for (const one of node.selector.split(",")) {
+        const s = one.trim();
+        // Psevdo-element/holat selektoriga `querySelectorAll` ham, inline uslub
+        // ham berib bo'lmaydi — o'tkazib yuboramiz.
+        if (!s || /::|:hover|:focus|:active|:disabled|:not\(/.test(s)) continue;
+        // `@keyframes` qadamlari (`from`/`to`/`50%`). AE manbasida bitta buzilgan
+        // keyframes bloki oddiy qoidaga aylanib qolgan (`.axroot from{…}`) —
+        // hech qanday elementga tushmaydi, ro'yxatni ifloslantirmasin.
+        if (/(^|\s)(from|to|\d+%)$/i.test(s)) continue;
+        if (pos === "fixed") fixSel.add(s);
+        if (isNone) {
+          xfcRules.push({ s, m: media, p: pos || "", x: { v: 0, u: "px" }, y: { v: 0, u: "px" } });
+        } else if (m) {
+          // `translateX(a)` → x=a; `translateY(a)` → y=a; `translate(a[,b])` → x=a, y=b.
+          const axis = (m[1] || "").toUpperCase();
+          const one1 = { v: parseFloat(m[2]), u: m[3] || "px" };
+          const two = m[4] != null ? { v: parseFloat(m[4]), u: m[5] || "px" } : null;
+          const x = axis === "Y" ? null : one1;
+          const y = axis === "Y" ? one1 : (axis === "X" ? null : two);
+          xfcRules.push({ s, m: media, p: pos || "", x, y });
+        }
+      }
+    }
+  }
+
+  // ── UXP: `min()`/`max()`/`clamp()` — ro'yxatga yig'amiz (qiymat o'zgarmaydi).
+  // Psevdo-element/holat selektorlarini o'tkazib yuboramiz: shim inline uslub
+  // qo'yadi, uni esa `::before` yoki `:hover` ga berib bo'lmaydi.
+  for (const d of decls) {
+    if (!MMC_PROPS.has(d.prop)) continue;
+    const v = String(d.value).replace(/ !important$/i, "").trim();
+    if (!MMC_RE.test(v)) continue;
+    for (const one of node.selector.split(",")) {
+      const s = one.trim();
+      if (!s || /::|:hover|:focus|:active|:disabled/.test(s)) continue;
+      mmcRules.push({ s, m: media, p: d.prop, v });
     }
   }
 
@@ -1654,6 +1772,29 @@ function transformJs(code) {
   out = svgInheritAttrs(out);
   // Inline `style="…"` / `cssText='…'` — CSS o'tishi ularga tegmaydi.
   out = expandInlineStyles(out);
+
+  // CEP picker SINXRON, UXP picker ASINXRON. `cep-fs.js` Promise qaytaradi;
+  // FAQAT portlangan nusxadagi picker egalari async bo'ladi (AE manbasi o'zgarmaydi).
+  // Oltita haqiqiy chaqiruvning enclosing funksiyalari aniq nom/naqsh bilan
+  // yangilanadi — keng "har function async" transformi yo'q.
+  if (out.indexOf("window.cep.fs.showOpenDialog") >= 0) {
+    out = out
+      .replace(/\bfunction\s+(cepPickFolder|axRefUpload|pickFileMedia|pickFileFrame)\s*\(/g, "async function $1(")
+      .replace(/(\$\('igSrcFile'\)\.addEventListener\('click',)function\s*\(/g, "$1async function(")
+      .replace(/\b(const|let|var)\s+r\s*=\s*window\.cep\.fs\.showOpenDialog\(/g,
+        "$1 r=await window.cep.fs.showOpenDialog(")
+      .replace(/\br\s*=\s*window\.cep\.fs\.showOpenDialog\(/g,
+        "r=await window.cep.fs.showOpenDialog(")
+      .replace(/\blet\s+path\s*=\s*cepPickFolder\(\)/g, "let path=await cepPickFolder() ");
+  }
+
+  // UXP o'z versiyasi va o'z release kanalini ishlatadi. AE manbasidagi
+  // `1.1.1`/default `app=ae` qoldirilsa Premiere paneli .zxp yangilanishini
+  // taklif qilib, noto'g'ri installerga yuborardi.
+  out = out.replace(/window\.AF_PLUGIN_VERSION\s*=\s*(['"])[^'"]+\1/,
+    `window.AF_PLUGIN_VERSION=${JSON.stringify(UXP_VERSION)}`);
+  out = out.replace(/\/api\/plugin\/version\?current=/g,
+    "/api/plugin/version?app=pr&current=");
   return transformCopy(out);
 }
 
@@ -1854,7 +1995,10 @@ function main() {
     // qoidalar `.grid`ni xato ravishda "padding'siz" deb belgilardi.
     `window.__AF_NOPADC=${JSON.stringify([...noPadCompCls].filter((c) => !padCompCls.has(c)).sort())};\n` +
     `window.__AF_TRACKC=${JSON.stringify([...trackCls].sort())};\n` +
-    `window.__AF_PILLC=${JSON.stringify([...pillCls].sort())};\n`);
+    `window.__AF_PILLC=${JSON.stringify([...pillCls].sort())};\n` +
+    `window.__AF_MMC=${JSON.stringify(mmcRules)};\n` +
+    `window.__AF_FIXSEL=${JSON.stringify([...fixSel].sort())};\n` +
+    `window.__AF_XFC=${JSON.stringify(xfcRules)};\n`);
 
   const SHIMS = [
     "js/log.js",                     // FFLog — shim'lar diagnostikasi
@@ -1864,15 +2008,23 @@ function main() {
     "js/ae-shim/autofill.js",        // auto-fill grid ustun enini o'lchaydi
     "js/ae-shim/node-io.js",         // http/https → fetch, fs oqim, os.tmpdir (require-shim'dan OLDIN)
     "js/ae-shim/require-shim.js",    // __ffRequire (fs/os/path bor, qolganiga halol xato)
+    "js/ae-shim/cep-fs.js",          // window.cep.fs picker/readFile (FAQAT UXP; picker async)
+    "js/ae-shim/uxp-indexeddb.js",   // indexedDB o'rni (FAQAT UXP; disk backend zaxirasi)
     "js/ae-shim/element-fix.js",     // createElement('button'), DOMParser, animate
     "js/ae-shim/button-box.js",      // tugma tarkibini vertikal markazlaydi
     "js/ae-shim/csinterface-shim.js", // evalScript → premierepro API
     "js/ae-shim/inline-events.js",   // onclick="…" delegatsiyasi
     "js/ae-shim/media-fix.js",       // <img>/<video> aniq o'lchami
     "js/ae-shim/pill-radius.js",     // border-radius klampi (UXP o'zi klamplamaydi)
+    "js/ae-shim/uxp-mmc.js",         // min()/max()/clamp() ni hisoblaydi (FAQAT UXP)
+    "js/ae-shim/xform-center.js",    // translate(-50%) markazlash (zond bilan; FAQAT UXP)
     "js/ae-shim/uxp-input-chrome.js", // <input> native chizmasi (FAQAT UXP ichida)
+    "js/ae-shim/uxp-clipboard.js",   // execCommand('copy') o'rni (FAQAT UXP)
+    "js/ae-shim/uxp-external-link.js", // "brauzer ochildi" da'vosini halol qiladi
     "js/ae-shim/strip-settle.js",    // pill lentalari: layout tinchigach qayta hisob
     "js/ae-shim/wrap-gap.js",        // o'ralishda qator oxiridagi ortiqcha margin
+    "js/ae-shim/uxp-repaint.js",     // modal yopilgach qayta chizish turtkisi (FAQAT UXP)
+    "js/ae-shim/uxp-diag.js",        // panel ichidagi xato oynasi (FAQAT UXP + dev)
   ];
   // CMS matn qatlami — generatsiya, `ported/` ichida (TEXT_COPY dan).
   write(path.join(OUT, "host-copy.js"), hostCopyShim());
@@ -1885,7 +2037,19 @@ function main() {
   // (`../js/…` esa ildizdan tashqariga chiqib yana yiqilardi). Hujjat ildizda
   // bo'lsa ikkala yechim qoidasi ham BIR XIL natija beradi — taxminga bog'liq
   // emasmiz. Shu sabab barcha yo'l ildizdan boshlanadi: `js/…`, `ported/…`.
-  const tags = [...SHIMS, ...order.filter((p) => p !== "js/ae-shim/csinterface-shim.js")]
+  // KECH shim'lar — AE skriptlaridan KEYIN. Faqat AE o'zi `window.X=…` bilan
+  // e'lon qiladigan global'ni almashtirish uchun (oldin qo'yilsa AE bosib ketadi).
+  const LATE_SHIMS = [
+    "js/ae-shim/uxp-copy-late.js",   // afCopyText → UXP buferi (FAQAT UXP)
+    "js/ae-shim/uxp-browse-state.js", // pane/qidiruv/filtr/scroll tiklash (FAQAT UXP)
+    "js/ae-shim/uxp-error-report.js", // global error/rejection → mavjud /api/logs (FAQAT UXP)
+  ];
+
+  const tags = [
+    ...SHIMS,
+    ...order.filter((p) => p !== "js/ae-shim/csinterface-shim.js"),
+    ...LATE_SHIMS,
+  ]
     .map((p) => `    <script src="${p.startsWith("ae-src/") ? "ported/" + p : p}"></script>`)
     .join("\n");
 
@@ -1910,7 +2074,7 @@ function main() {
     `  <body>\n${body}\n${tags}\n  </body>\n</html>\n`);
 
   write(path.join(OUT, "script-order.json"), JSON.stringify({
-    generated: "scripts/ae-port.mjs", shims: SHIMS, order,
+    generated: "scripts/ae-port.mjs", shims: SHIMS, lateShims: LATE_SHIMS, order,
   }, null, 2));
 
   // ── 7. Hisobot ────────────────────────────────────────────────────────

@@ -4696,7 +4696,7 @@ window.afConfirm=function(msg,opts){
     try{
       var old=document.getElementById('afConfirmOv'); if(old)old.parentNode.removeChild(old);
       var ov=document.createElement('div'); ov.id='afConfirmOv';
-      ov.style.cssText='position:fixed;inset:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
+      ov.style.cssText='position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
       var card=document.createElement('div');
       card.style.cssText='width:100%;max-width:340px;background-color:var(--surface-2);border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit';
       // b9 mockup: birinchi qator — sarlavha (700), qolgani — izoh (kichik, kulrang)
@@ -4739,7 +4739,7 @@ window.afChoose=function(title,sub,options){
     try{
       var old=document.getElementById('afChooseOv'); if(old)old.parentNode.removeChild(old);
       var ov=document.createElement('div'); ov.id='afChooseOv';
-      ov.style.cssText='position:fixed;inset:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
+      ov.style.cssText='position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
       var card=document.createElement('div');
       card.style.cssText='width:100%;max-width:360px;background-color:var(--surface-2);border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit';
       var tt=document.createElement('div'); tt.style.cssText='color:var(--text);font-weight:700;font-size:13.5px;line-height:1.4'; tt.textContent=String(title||''); card.appendChild(tt);
@@ -4793,7 +4793,7 @@ window.afFontResolver=(function(){
   function open(fonts){
     try{ if(ov)close(); }catch(_){}
     ov=document.createElement('div');
-    ov.style.cssText='position:fixed;inset:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
+    ov.style.cssText='position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
     var card=document.createElement('div');
     card.style.cssText='width:100%;max-width:340px;background-color:var(--surface-2);border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit;max-height:80vh;display:flex;flex-direction:column';
     var tt=document.createElement('div');
@@ -5192,10 +5192,10 @@ function persistDownloadDir(dir){
 
 /** CEP native folder picker (ExtendScript'siz, ishonchli).
  *  Qaytaradi: yo'l (tanlandi) | '' (bekor) | null (CEP fs yo'q) */
-function cepPickFolder(){
+async function cepPickFolder(){
   try{
     if(window.cep&&window.cep.fs&&typeof window.cep.fs.showOpenDialog==='function'){
-      const r=window.cep.fs.showOpenDialog(false,true,'Choose a download folder','');
+      const r=await window.cep.fs.showOpenDialog(false,true,'Choose a download folder','');
       if(r&&r.err===0&&r.data&&r.data.length){
         return decodeURI(String(r.data[0]).replace(/^file:\/\//,''));
       }
@@ -5208,7 +5208,7 @@ function cepPickFolder(){
 async function chooseDownloadFolder(){
   if(!IS_CEP){ showToast('Only available inside Premiere Pro'); return; }
   // 1) CEP native picker
-  let path=cepPickFolder();
+  let path=await cepPickFolder() ;
   // 2) Fallback — ExtendScript
   if(path===null&&csInterface){
     try{

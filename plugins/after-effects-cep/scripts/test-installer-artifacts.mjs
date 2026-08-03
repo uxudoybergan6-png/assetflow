@@ -1425,8 +1425,9 @@ check(
 );
 const contractSrc = readFileSync(path.join(REPO_ROOT, "apps/api/src/lib/plugin-release-contract.ts"), "utf8");
 check(
-  "server kontrakti AYNAN shu fayl nomi shaklini kutadi (drift qorovuli)",
-  /frameflow-plugin-\$\{v \|\| "update"\}-\$\{p \|\| "unknown"\}\.\$\{e \|\| "bin"\}/.test(contractSrc)
+  "server kontrakti AE hostini `plugin` slugiga bog'lab, AYNAN shu fayl nomi shaklini kutadi (drift qorovuli)",
+  /ae:\s*"plugin"/.test(contractSrc) &&
+    /frameflow-\$\{h\}-\$\{v \|\| "update"\}-\$\{p \|\| "unknown"\}\.\$\{e \|\| "bin"\}/.test(contractSrc)
 );
 check(
   "kontrakt kengaytmalari o'zgarmagan: mac=[pkg], win=[exe,msi]",

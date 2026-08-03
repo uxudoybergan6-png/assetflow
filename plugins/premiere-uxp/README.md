@@ -140,7 +140,7 @@ Graphics papkasiga yozib bo'lmaydi (`installMogrtToLibrary`), spike §5.
 ## 3. Dev o'rnatish (UDT'siz)
 
 ```bash
-node plugins/premiere-uxp/scripts/install-uxp-dev.mjs
+node plugins/premiere-uxp/scripts/install-uxp-dev.mjs plugins/premiere-uxp
 ```
 
 `~/Library/Application Support/Adobe/UXP/Plugins/External/<id>_<version>/`

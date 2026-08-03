@@ -173,6 +173,8 @@
       var p = [];
       if (current) p.push("current=" + encodeURIComponent(current));
       if (opts && opts.manual) p.push("manual=1");
+      if (opts && opts.app) p.push("app=" + encodeURIComponent(opts.app));
+      if (opts && opts.platform) p.push("platform=" + encodeURIComponent(opts.platform));
       var qs = p.length ? "?" + p.join("&") : "";
       return req("/api/plugin/version" + qs, { auth: false, idempotent: true });
     },

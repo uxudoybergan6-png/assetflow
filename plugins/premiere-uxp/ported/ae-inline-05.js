@@ -77,7 +77,7 @@
     if(poster)v.poster=poster;
     v.src=String(url)+(/#/.test(String(url))?'':'#t=0.1');
     v.muted=true; v.setAttribute('muted',''); v.playsInline=true; v.setAttribute('playsinline',''); v.preload=poster?'metadata':'auto';
-    v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background-color:#000';
+    v.style.cssText='position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background-color:#000';
     try{ var sk=false; var seek=function(){ if(sk)return; try{v.currentTime=0.1;}catch(e){} };
       v.addEventListener('loadedmetadata',seek); v.addEventListener('loadeddata',seek); v.addEventListener('canplay',seek); v.addEventListener('seeked',function(){sk=true;}); }catch(e){}
     return v;
@@ -676,7 +676,7 @@
         var _li=(ctx.list&&typeof ctx.list==='function')?(ctx.list()||[]).indexOf(it):-1;
         im.loading=(_li>-1&&_li<4)?'eager':'lazy'; im.decoding='async'; im.alt=''; im.src=(it.display||it.thumb||it.url);
         if(it.display&&it.thumb){ im.srcset=it.thumb+' 512w, '+it.display+' 1280w'; im.sizes='(max-width:520px) 50vw, 240px'; }
-        im.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+        im.style.cssText='position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:cover';
         d.appendChild(im);
       }
       var tg=document.createElement('div'); tg.className='tg'; tg.innerHTML=catIcon(cat); d.appendChild(tg);
@@ -964,12 +964,12 @@
   }
   function axRefRemove(key,idx){var list=axRefStore[key];if(!list||idx<0||idx>=list.length)return;list.splice(idx,1);axRefRender(key);toast('Reference removed');}
 
-  function axRefUpload(key){
+  async function axRefUpload(key){
     var reg=axRefReg[key]; if(!reg)return;
     if(!(window.cep&&window.cep.fs&&typeof window.cep.fs.showOpenDialog==='function')){toast('File upload only works inside Premiere Pro','warn');return;}
     var exts=(reg.kind==='video')?AX_VID_EXT:(reg.kind==='audio')?AX_AUD_EXT:AX_IMG_EXT;
     var multi=reg.max>1; var r;
-    try{r=window.cep.fs.showOpenDialog(multi,false,'Choose reference file(s)','',exts);}catch(e){r=null;}
+    try{r=await window.cep.fs.showOpenDialog(multi,false,'Choose reference file(s)','',exts);}catch(e){r=null;}
     var paths=(r&&r.data)||[]; if(!paths.length){return;} // canceled: data empty (not an error)
     var added=0,skipped=0;
     paths.forEach(function(p){
