@@ -12,8 +12,10 @@
 > app=pr updater/landing, crash-log, app kesimli analitika va state restore. Lokal CCX
 > 65 fayl/783.9 KB va byte-verify PASS. Premiere 26.2.2 macOS'da save→quit→relaunch,
 > docked panel render va boot diag `(xato yo'q)` bilan tasdiqlandi. Quyidagi matritsa
-> boshlang'ich audit tarixidir;
-> joriy darvozalar: production push/deploy, kamida bitta real `app=pr` kontent/release,
+> boshlang'ich audit tarixidir. `c09e563` main'ga push qilindi; Cloud Run deploy
+> `30828591927` va CI `30828593547` PASS, DB/storage `ok`. Production `app=pr`
+> katalogida 2 ta app-neytral SFX bor va webda `.ccx` qo'llanmasi jonli. Joriy
+> darvozalar: CCX'ni admin reliz kanalida publish qilish, Premiere-native `.mogrt/.prproj`,
 > login ortidagi import/AI smoke va Windows beta.
 
 ---

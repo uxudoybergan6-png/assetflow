@@ -2,7 +2,7 @@
 
 ---
 
-## §-6. 2026-08-03 PREMIERE UXP — lokal release candidate va macOS host smoke tayyor
+## §-6. 2026-08-03 PREMIERE UXP — release candidate productionga deploy qilindi
 
 - `plugins/premiere-uxp/` qayta tiklangan: AE panelining generativ 1:1 porti, UXP repaint/
   transform/indexedDB/input/clipboard/file-picker shimlari va yoziladigan plugin-data backend.
@@ -14,11 +14,14 @@
   updater 118/118, host-shim kontrakti va deterministik CCX byte-verify — PASS. Artefakt:
   `plugins/premiere-uxp/dist/frameflow-premiere-0.1.0-standalone.ccx` (65 fayl, 783.9 KB),
   SHA-256 `ab42a001aec3795175d2a47ba9c5fb4bad8796d71b7a4067d2a6b9013491d8a0`.
-- Production haqiqati: `/api/plugin/catalog?app=pr` hozir 0 item; `/api/plugin/version?app=pr`
-  `latest:null/not_published`. Kod hali push/deploy qilinmagan, real Premiere kontent/release yo'q.
+- `c09e563` `main`ga push qilindi; Cloud Run `30828591927` va CI `30828593547` PASS.
+  Production `/health`: DB/storage `ok`; `?app=pr` katalogi 2 ta app-neytral SFX qaytaradi.
+  Web `/plugin` sahifasida Premiere `.ccx` CTA va Creative Cloud o'rnatish yo'riqnomasi jonli.
+- Installer API hanuz `latest:null/not_published`: tayyor CCX admin reliz kanaliga nashr qilinmagan;
+  Premiere-native `.mogrt/.prproj` kontent ham hali yo'q.
 - Jonli macOS isbot: `MOGRT.prproj` saqlandi, Premiere 26.2.2 to'liq quit/relaunch qilindi,
   FrameFlow docked paneli render bo'ldi; boot diag `(xato yo'q)`, writable path/token warning 0.
-  Auth/import/AI uchun prod PR kontent + login, Windows uchun tashqi beta hali darvoza.
+  Auth/import/AI smoke uchun foydalanuvchi login'i, native PR kontent/release va Windows beta darvoza.
 
 ---
 
