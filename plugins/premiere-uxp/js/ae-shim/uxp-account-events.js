@@ -18,13 +18,20 @@
     el.__ffUxpAccountBound = true;
     // Umumiy inline shim ham shu amalni ikkinchi marta bajarmasin.
     el.removeAttribute("onclick");
-    el.addEventListener("click", function (ev) {
+    var lastRun = 0;
+    function run(ev) {
+      var now = Date.now();
+      if (now - lastRun < 350) return;
+      lastRun = now;
       if (ev && ev.preventDefault) ev.preventDefault();
       var fn = window[handlerName];
       if (typeof fn === "function") fn();
-    });
+    }
+    el.addEventListener("mousedown", run);
+    el.addEventListener("click", run);
   }
 
   bind("accountLoginBlock", ".lg-primary", "accountLogin");
   bind("accountLoginBlock", "#accGoogleBtn", "accountLoginWithGoogle");
+  bind("accountActionsBlock", ".acs-logout", "accountLogout");
 })();

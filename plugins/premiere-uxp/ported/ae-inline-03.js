@@ -587,12 +587,21 @@ function renderCard(a,i,showDl){
     const uxpPack=packs[a.n];
     const uxpNoPack=!!(uxpPack&&uxpPack.server&&uxpPack.hasPack===false);
     const uxpDownloaded=window.downloaded.has(a.n);
-    const uxpBadge=uxpNoPack?'PACK KUTILMOQDA':uxpDownloaded?'YUKLANGAN':a.isPro?'PRO':'FREE';
-    // Premiere 26 rendererida nested media/SVG/interactive-card daraxti paint
-    // exception loop'ini boshlaydi. Bitta plain-text node barqaror; native UXP
-    // listener `data-ff-pack` orqali detail'ni ochadi.
-    return '<div class="ff-uxp-card" data-ff-pack="'+escHtml(a.n)+'">'
-      +escHtml(a.displayName||a.n)+' · '+escHtml(uxpBadge)+'</div>';
+    const uxpState=uxpNoPack?'Pack pending':uxpDownloaded?'Downloaded':a.isPro?'PRO':'FREE';
+    const uxpType=(typeof ffTypeBadge==='function'?ffTypeBadge(a.templateApp,a.nav):null);
+    const uxpTypeLabel=(uxpType&&uxpType.full)||a.t||NAV_LABELS[a.nav]||'Asset';
+    const uxpMedia=a.thumb
+      ? '<img class="ff-uxp-card-img" src="'+escHtml(a.thumb)+'" alt="'+escHtml(a.displayName||a.n)+'" loading="lazy">'
+      : '<div class="ff-uxp-card-fallback"><span>'+escHtml((uxpType&&uxpType.lbl)||String(a.nav||'asset').toUpperCase())+'</span></div>';
+    // UXP-safe boy karta: remote <img> spike'da tasdiqlangan. Video/SVG/hover
+    // qatlamlari gridda yo'q — ular Premiere renderer exception loop'iga sabab
+    // bo'lgan; preview detail ekranida ochiladi.
+    return '<div class="ff-uxp-card" role="button" tabindex="0" data-ff-pack="'+escHtml(a.n)+'">'
+      +'<div class="ff-uxp-card-media">'+uxpMedia+'</div>'
+      +'<div class="ff-uxp-card-body">'
+      +'<div class="ff-uxp-card-title">'+escHtml(a.displayName||a.n)+'</div>'
+      +'<div class="ff-uxp-card-meta"><span>'+escHtml(uxpTypeLabel)+'</span><b class="'+(uxpNoPack?'pending':a.isPro?'pro':'free')+'">'+escHtml(uxpState)+'</b></div>'
+      +'</div></div>';
   }
   const dled=window.downloaded.has(a.n);
   const hasPreview=a.thumb||a.preview;
@@ -898,14 +907,18 @@ function afNavTab(tab){
     // "video"=Templates) katalog nav linkini bosamiz → applyNavSwitch ai-mode'ni olib tashlaydi.
     const cur=(typeof currentNav!=='undefined' && ['video','motion','graphics','luts'].indexOf(currentNav)>=0)?currentNav:'video';
     const el=document.querySelector('.env-side-link[data-nav="'+cur+'"]');
-    if(el) el.click();
+    // Premiere UXP `HTMLElement.click()` ni vizual tugmada ham har doim
+    // dispatch qilmaydi. Routing funksiyasini bevosita chaqirish ikkala hostda
+    // bir xil va nested inline hodisaga bog'liq emas.
+    if(el&&typeof switchNavFromSidebar==='function') switchNavFromSidebar(el,cur);
     else if(typeof applyNavSwitch==='function') applyNavSwitch(cur);
     if(typeof syncTopNav==='function') syncTopNav();
     syncPillarSeg();
     return;
   }
   const el=document.querySelector('.env-side-link[data-nav="'+tab+'"]');
-  if(el) el.click();
+  if(el&&typeof switchNavFromSidebar==='function') switchNavFromSidebar(el,tab);
+  else if(typeof applyNavSwitch==='function') applyNavSwitch(tab);
   // AI yo'li render() chaqirmaydi (alohida sahifa) — tab aktiv holatini shu yerda moslaymiz
   if(typeof syncTopNav==='function') syncTopNav();
   syncPillarSeg();
@@ -1380,6 +1393,19 @@ function renderPackHero(name,pack,asset){
   const isAi=!!(asset&&asset.ai);
   hero.className='pd3-hero';
   hero.style.background=pd3Grad(name);
+  if(window.__FF_UXP_RUNTIME){
+    const videoOk=/\.mp4(?:\?|$)/i.test(heroVid);
+    if(videoOk){
+      const posterAttr=thumb?' poster="'+escHtml(thumb)+'"':'';
+      hero.innerHTML='<video class="ff-uxp-detail-video" src="'+escHtml(heroVid)+'"'+posterAttr+' controls muted playsinline preload="metadata"></video>';
+    }else if(thumb){
+      hero.innerHTML='<img class="ff-uxp-detail-image" src="'+escHtml(thumb)+'" alt="'+escHtml(asset?.displayName||name)+'">';
+    }else{
+      const kind=(typeof ffTypeBadge==='function'?ffTypeBadge(asset&&asset.templateApp,asset&&asset.nav):null);
+      hero.innerHTML='<div class="ff-uxp-detail-fallback">'+escHtml((kind&&kind.full)||asset?.t||'FrameFlow asset')+'</div>';
+    }
+    return;
+  }
   let inner='';
   if(thumb) inner+=`<img class="pd3-hero-poster" src="${escHtml(thumb)}" alt="${escHtml(asset?.displayName||name)}">`;
   if(heroVid){
@@ -2245,7 +2271,9 @@ function renderGrid(){
   // Kichik ro'yxat — hammasini chizamiz (virtualizatsiya shart emas).
   if(list.length<=VIRT_THRESHOLD){
     grid.innerHTML=list.map((a,i)=>renderCard(a,i,false)).join('');
-    initDrag(); __gridWinKey='all'; return;
+    initDrag();
+    if(window.__FF_UXP_RUNTIME&&typeof window.__ffBindNativeEvents==='function')window.__ffBindNativeEvents(grid);
+    __gridWinKey='all'; return;
   }
   try{
     // Metrikalar noma'lum — kichik probe chizib o'lchaymiz.
@@ -2276,10 +2304,12 @@ function renderGrid(){
     if(botH>0) html+='<div class="grid-spacer" style="flex:0 0 100%;height:'+botH+'px"></div>';
     grid.innerHTML=html;
     initDrag();
+    if(window.__FF_UXP_RUNTIME&&typeof window.__ffBindNativeEvents==='function')window.__ffBindNativeEvents(grid);
   }catch(e){
     try{ console.warn('grid virt fallback',e); }catch(_){}
     grid.innerHTML=list.map((a,i)=>renderCard(a,i,false)).join('');
     initDrag(); __gridWinKey='all';
+    if(window.__FF_UXP_RUNTIME&&typeof window.__ffBindNativeEvents==='function')window.__ffBindNativeEvents(grid);
   }
 }
 

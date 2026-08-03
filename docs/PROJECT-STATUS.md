@@ -2,6 +2,21 @@
 
 ---
 
+# §-8. 2026-08-04 PREMIERE UXP 0.1.3 — AE parity va AI/Stock release candidate
+
+- AE va Premiere paneli jonli yonma-yon tekshirildi; UXP Home/AI/Stock navigatsiyasi,
+  dinamik kartalar, detail/import va Image/Video prompt fokuslari native hodisalarga o‘tkazildi.
+- UXP repaint qora-kadr xatosi `opacity` invalidatsiyasi bilan tuzatildi; ishlamaydigan
+  MutationObserver olib tashlandi. `getSystemPath` writable data/temp kontrakti saqlandi.
+- Raw stock app-neutral: Premiere `?app=pr` endi video/rasm/audio stockni ham ko‘radi.
+  Removed/inactive profil login/me/device oqimida `ACCOUNT_INACTIVE` bilan fail-closed.
+- Lokal isbot: API build, release 110/110, host-shim, CCX byte-verify va dev-instrument
+  salbiy testi PASS. `0.1.3`: 59 fayl, 768.4 KB, SHA-256
+  `9c5b2d92b93d65202812b31f9d8fff88735c9aaec86c6a9e72c40a638113d9c9`.
+- Production deploy, active-user AI generation/import va `pr` release publish kutilmoqda.
+
+---
+
 # §-7. 2026-08-04 PREMIERE UXP 0.1.2 — jonli import va stabil runtime
 
 - Premiere 26.2.2 ichida production login → Sound Effects → `Industrial Alarm Bell`

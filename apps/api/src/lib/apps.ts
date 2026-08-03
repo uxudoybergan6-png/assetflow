@@ -52,9 +52,11 @@ export function isKnownApp(code: string | null | undefined): boolean {
 }
 
 /**
- * DASTURDAN MUSTAQIL kontent turlari — LUT (.cube), musiqa va SFX (audio) hech
+ * DASTURDAN MUSTAQIL template turlari — LUT (.cube), musiqa va SFX (audio) hech
  * qanday host loyihasiga bog'lanmagan xom fayllar: After Effects'da ham,
- * Premiere'da ham, Resolve'da ham bir xil ishlaydi.
+ * Premiere'da ham, Resolve'da ham bir xil ishlaydi. `kind=stock` bo'lgan rasm/
+ * video/audio fayllarning barchasi ham app-neutral; u predikat route qatlamida
+ * `kind: "stock"` bilan alohida qamrab olinadi.
  *
  * `templateApp` ustuni ularda baribir to'ldirilgan (ko'pincha `ae` — ingest
  * default'i). `?app=pr` filtri buni hisobga olmasa, Premiere paneli LUT/musiqa/

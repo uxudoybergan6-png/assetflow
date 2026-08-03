@@ -198,7 +198,7 @@ function catalogWhere(appParam: unknown) {
   return { ...approvedCatalogWhere, AND: [appPredicate([code])] };
 }
 
-/** `?app=` predikati: SHU dastur YOKI dasturdan mustaqil tur (LUT/musiqa/SFX).
+/** `?app=` predikati: SHU dastur YOKI dasturdan mustaqil kontent.
  *  Bo'sh ro'yxat = filtr yo'q. Batafsil sabab: lib/apps.ts `APP_NEUTRAL_TYPES`. */
 function appPredicate(apps: string[]): Prisma.ContributorTemplateWhereInput {
   if (!apps.length) return {};
@@ -207,6 +207,11 @@ function appPredicate(apps: string[]): Prisma.ContributorTemplateWhereInput {
   return {
     OR: [
       own,
+      // Stock — host loyiha formati emas, xom media (.mp4/.mov/.png/.jpg/
+      // .wav/.mp3). Shu bois graphics va motion-graphics ham AE+PR'da bir xil
+      // import qilinadi. Ilgari faqat music/sfx o'tar, Premiere katalogi real
+      // rasm/video stocklarni sun'iy ravishda yashirardi.
+      { kind: "stock" },
       { templateType: { in: [...APP_NEUTRAL_TYPES] } },
       // Eski AI-stock ingest audio turini `templateType=ai-stock`, haqiqiy
       // turini esa `stockType=music|sfx` qilib saqlagan. Faqat templateType'ni
@@ -1035,8 +1040,12 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
 
   const profile = await ensurePluginProfile(user.id);
 
-  if (profile.status === PluginAccountStatus.BLOCKED) {
-    res.status(403).json({ error: "Account is blocked — contact an admin" });
+  if (profile.status !== PluginAccountStatus.ACTIVE) {
+    const blocked = profile.status === PluginAccountStatus.BLOCKED;
+    res.status(403).json({
+      error: blocked ? "Account is blocked — contact an admin" : "Account is not active",
+      code: blocked ? "ACCOUNT_BLOCKED" : "ACCOUNT_INACTIVE",
+    });
     return;
   }
 
@@ -1136,9 +1145,13 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
   }
 
   const profile = await ensurePluginProfile(user.id);
-  if (profile.status === PluginAccountStatus.BLOCKED) {
+  if (profile.status !== PluginAccountStatus.ACTIVE) {
     await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
-    res.status(403).json({ error: "Account is blocked — contact an admin" });
+    const blocked = profile.status === PluginAccountStatus.BLOCKED;
+    res.status(403).json({
+      error: blocked ? "Account is blocked — contact an admin" : "Account is not active",
+      code: blocked ? "ACCOUNT_BLOCKED" : "ACCOUNT_INACTIVE",
+    });
     return;
   }
 
@@ -1207,9 +1220,13 @@ pluginRouter.post("/device/confirm-password", loginLimiter, async (req: Request,
   }
 
   const profile = await ensurePluginProfile(user.id);
-  if (profile.status === PluginAccountStatus.BLOCKED) {
+  if (profile.status !== PluginAccountStatus.ACTIVE) {
     await prisma.pluginDeviceCode.update({ where: { id: row.id }, data: { status: "denied" } });
-    res.status(403).json({ error: "Account is blocked — contact an admin" });
+    const blocked = profile.status === PluginAccountStatus.BLOCKED;
+    res.status(403).json({
+      error: blocked ? "Account is blocked — contact an admin" : "Account is not active",
+      code: blocked ? "ACCOUNT_BLOCKED" : "ACCOUNT_INACTIVE",
+    });
     return;
   }
 
@@ -1258,8 +1275,12 @@ pluginRouter.get("/device/poll", deviceStatusLimiter, async (req: Request, res: 
 /** Joriy foydalanuvchi + tarif + limitlar */
 pluginRouter.get("/me", requireAuth, async (req: Request, res: Response) => {
   const profile = await ensurePluginProfile(req.user!.userId);
-  if (profile.status === PluginAccountStatus.BLOCKED) {
-    res.status(403).json({ error: "Account is blocked", code: "ACCOUNT_BLOCKED" });
+  if (profile.status !== PluginAccountStatus.ACTIVE) {
+    const blocked = profile.status === PluginAccountStatus.BLOCKED;
+    res.status(403).json({
+      error: blocked ? "Account is blocked" : "Account is not active",
+      code: blocked ? "ACCOUNT_BLOCKED" : "ACCOUNT_INACTIVE",
+    });
     return;
   }
   res.json({
@@ -1278,7 +1299,7 @@ pluginRouter.post("/heartbeat", usageLimiter, requireAuth, async (req: Request, 
   const body = heartbeatSchema.safeParse(req.body);
   const profile = await ensurePluginProfile(req.user!.userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {
-    res.status(403).json({ error: "Account is not active" });
+    res.status(403).json({ error: "Account is not active", code: "ACCOUNT_INACTIVE" });
     return;
   }
   await prisma.pluginProfile.update({

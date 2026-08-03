@@ -82,27 +82,96 @@ img, video { flex: none; }
 #afTabs > .af-tab:nth-child(4) { margin-left: 0; }
 
 /* AE kartasidagi video-hover + murakkab SVG qatlami Premiere rendererida
-   frame-loop qiladi. UXP kartasi yengil, ammo barcha asosiy metadata va CTA'ni
-   saqlaydi; ikki ustunli katalogda barqaror chiziladi. */
+   frame-loop qiladi. UXP kartasi remote poster + oddiy matnli metadata bilan
+   mahsulot darajasidagi ko'rinishni saqlaydi; grid ichida video/SVG yo'q. */
 .ff-uxp-card {
-  flex: 1 0 42%;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 100%;
   min-width: 0;
-  padding: 11px;
-  margin-right: 8px;
-  margin-bottom: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
   color: var(--text);
-  background-color: var(--surface-2);
+  background-color: var(--surface, #151518);
   border-width: 1px;
   border-style: solid;
   border-color: var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
 }
-.ff-uxp-card { font-size: 10px; font-weight: 700; line-height: 1.35; }
+.ff-uxp-card-media {
+  display: flex;
+  width: 100%;
+  height: 118px;
+  overflow: hidden;
+  background-color: #202126;
+}
+.ff-uxp-card-img {
+  display: block;
+  width: 100%;
+  height: 118px;
+  object-fit: cover;
+}
+.ff-uxp-card-fallback {
+  display: flex;
+  width: 100%;
+  height: 118px;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent, #d7ff20);
+  background-color: #202126;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+.ff-uxp-card-body { display: flex; flex-direction: column; padding: 10px 11px 11px; }
+.ff-uxp-card-title {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ff-uxp-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 7px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.2;
+}
+.ff-uxp-card-meta > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ff-uxp-card-meta > b {
+  flex: none;
+  margin-left: 8px;
+  color: #080808;
+  background-color: var(--accent, #d7ff20);
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 8px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.ff-uxp-card-meta > b.pro { color: #080808; background-color: var(--accent, #d7ff20); }
+.ff-uxp-card-meta > b.pending { color: #161616; background-color: #f3b64f; }
+@media (min-width: 520px) {
+  .ff-uxp-card { flex: 0 0 calc(50% - 6px); margin-right: 10px; }
+  .ff-uxp-card:nth-child(2n) { margin-right: 0; }
+  .ff-uxp-card-media, .ff-uxp-card-img, .ff-uxp-card-fallback { height: 132px; }
+}
 
-/* Detail ham UXP-safe: eski hero gradient/psevdo qatlamlari CTA'ning vizual
-   joyi bilan hitbox'ini ajratib yuborardi. Metadata + import amali qoladi. */
-#packDetail .pd3-hero,
+/* Detail ham UXP-safe: oddiy poster/native video + metadata + CTA. */
 #packDetail .pd3-sim,
 #packDetail .pd3-fade,
 #packDetail .pd3-favbtn { display: none !important; }
@@ -117,6 +186,36 @@ img, video { flex: none; }
 }
 #packDetail .pd3-body { padding: 12px; }
 #packDetail .pd3-cta { display: flex; position: static; margin-top: 12px; }
+#packDetail .pd3-hero {
+  display: flex !important;
+  position: relative;
+  flex: 0 0 160px;
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  margin: 0;
+  background-color: #202126;
+}
+#packDetail .ff-uxp-detail-image,
+#packDetail .ff-uxp-detail-video {
+  display: block;
+  position: static;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+#packDetail .ff-uxp-detail-fallback {
+  display: flex;
+  width: 100%;
+  height: 160px;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent, #d7ff20);
+  background-color: #202126;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+}
 #packDetail #importSceneBtn {
   display: flex !important;
   position: static !important;
@@ -137,3 +236,18 @@ img, video { flex: none; }
 .af-modal, .af-sheet, .af-popover, .glass {
   background-color: var(--surface, #131316);
 }
+
+/* UXP contenteditable klaviatura fokusini olmaydi. Portlangan image/video
+   promptlar native textarea; mavjud chipedit geometriyasi saqlanadi. */
+textarea.chipedit {
+  display: block;
+  resize: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: transparent;
+  border-width: 0;
+  outline-width: 0;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+textarea.chipedit::placeholder { color: var(--muted-2); }

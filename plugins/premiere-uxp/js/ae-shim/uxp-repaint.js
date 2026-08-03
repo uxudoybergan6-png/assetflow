@@ -32,7 +32,10 @@
     : function (f) { return setTimeout(f, 16); };
 
   /** Turtki usuli. Jonli o'lchov uchun diag oynasidan almashtirsa bo'ladi. */
-  var MODE = "vis";                 // vis | opacity | size | display
+  // `visibility:hidden` sinxron flip Premiere 26.2 kompozitorida ayrim async
+  // handlerlardan keyin tiklangan DOM'ni qora kadrda keshlar ekan. Opacity
+  // paint invalidatsiyasini beradi, lekin qatlamni daraxtdan/paintdan uzmaydi.
+  var MODE = "opacity";             // vis | opacity | size | display
   var STAT = { kicks: 0, mode: MODE, last: "" };
 
   function rootEl() {

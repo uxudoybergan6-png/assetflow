@@ -79,15 +79,13 @@
     (window.requestAnimationFrame || function (f) { return setTimeout(f, 16); })(scan);
   }
 
-  var hasMO = false;
-  try {
-    new MutationObserver(schedule).observe(document.documentElement, {
-      childList: true, subtree: true, attributeFilter: ["class", "data-theme"],
-    });
-    hasMO = true;
-  } catch (e) { /* zaxira pastda */ }
+  // Premiere UXP'da MutationObserver konstruktori muvaffaqiyatli yaratiladi,
+  // ammo callback hech qachon otilmaydi (spike §2). Shuning uchun uning
+  // "mavjud"ligiga qarab intervalni o'chirish yangi inputlarni tuzatmay qolardi.
+  // Arzon davriy scan + foydalanuvchi amali triggerlari deterministik yo'l.
   document.addEventListener("click", schedule, true);
-  if (!hasMO) setInterval(schedule, 1500);
+  document.addEventListener("mousedown", schedule, true);
+  setInterval(schedule, 1500);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", schedule);
   [0, 300, 900, 2000].forEach(function (ms) { setTimeout(schedule, ms); });
 

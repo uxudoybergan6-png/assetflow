@@ -784,6 +784,7 @@
       if(_gb)_gb.classList.remove('busy');
       startJobProg(j); pollJob(j,0);
     }).catch(function(err){
+      try{ console.error('[FF][ig] generation start failed status='+String(err&&err.status)+' code='+String(err&&err.code)+' message='+String(err&&err.message)); }catch(e){}
       if(_gb)_gb.classList.remove('busy');
       if(j.cancelled||(err&&err.message==='CANCELLED')){ removeJob(j); return; }
       removeJob(j); toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Generation error','error');

@@ -95,6 +95,34 @@
   //       interceptEnter() → true bo'lsa Enter yangi qator QO'YMAYDI (mention dropdown tanlovi).
   window.afChipEditor=function(el,opts){
     opts=opts||{};
+    // Premiere UXP contenteditable'ga klaviatura fokusini bermaydi. Port shu
+    // ikki editorni native <textarea>ga aylantiradi; Premiere/web contenteditable
+    // yo'li pastda o'zgarishsiz qoladi. UXP'da mentionlar oddiy @token matni
+    // sifatida ko'rinadi, alohida reference grid esa thumbnailni saqlaydi.
+    if(el&&String(el.tagName||'').toUpperCase()==='TEXTAREA'){
+      function fireSimple(){ try{el.dispatchEvent(new Event('input'));}catch(e){} }
+      function simpleSet(v){ el.value=String(v==null?'':v); fireSimple(); }
+      function simpleBefore(){ var p=typeof el.selectionStart==='number'?el.selectionStart:el.value.length; return el.value.slice(0,p); }
+      function simpleInsert(text,smartSpace){
+        try{el.focus();}catch(e){}
+        var a=typeof el.selectionStart==='number'?el.selectionStart:el.value.length;
+        var b=typeof el.selectionEnd==='number'?el.selectionEnd:a;
+        var sep=(smartSpace&&a>0&&!/\s$/.test(el.value.slice(0,a)))?' ':'';
+        var ins=sep+String(text==null?'':text);
+        el.value=el.value.slice(0,a)+ins+el.value.slice(b);
+        try{el.setSelectionRange(a+ins.length,a+ins.length);}catch(e){}
+        fireSimple();
+      }
+      function simpleReplace(len,text){
+        var p=typeof el.selectionStart==='number'?el.selectionStart:el.value.length;
+        var start=Math.max(0,p-(Number(len)||0));
+        try{el.setSelectionRange(start,p);}catch(e){}
+        simpleInsert(text,false);
+      }
+      return {el:el,getValue:function(){return el.value||'';},setValue:simpleSet,
+        insertText:simpleInsert,textBeforeCaret:simpleBefore,replaceBeforeCaret:simpleReplace,
+        undo:function(){},redo:function(){},commit:function(){},flushTyping:function(){}};
+    }
     var KIND={img:'image',image:'image',vid:'video',video:'video',aud:'audio',audio:'audio'};
     var GLYPH={image:'⊞',video:'▶',audio:'♪'};
     var TOKEN_RE=/@(image|img|video|vid|audio|aud)(\d+)/gi;

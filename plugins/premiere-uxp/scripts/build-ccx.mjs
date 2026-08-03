@@ -60,8 +60,8 @@ const DEV_ONLY = ["js/ae-shim/uxp-diag.js"];
 function stripDevRefs(html, mainRel) {
   const dir = path.posix.dirname(mainRel);
   let out = html;
-  let removed = 0;
   for (const dev of DEV_ONLY) {
+    let removed = 0;
     // `main` ga NISBIY yo'l (bizda `panel.html` ildizda → yo'l o'zgarmaydi).
     const rel = path.posix.relative(dir === "." ? "" : dir, dev) || dev;
     for (const ref of new Set([dev, rel])) {
@@ -69,9 +69,11 @@ function stripDevRefs(html, mainRel) {
       const re = new RegExp(`[ \\t]*<script\\b[^>]*\\bsrc\\s*=\\s*["']${esc}(?:[?#][^"']*)?["'][^>]*>\\s*</script>\\s*\\n?`, "gi");
       out = out.replace(re, () => { removed++; return ""; });
     }
-  }
-  if (removed !== DEV_ONLY.length) {
-    throw new Error(`dev asbob tegi topilmadi (${removed}/${DEV_ONLY.length}) — ${mainRel} ichida nom o'zgarganmi?`);
+    // Release port dev tegini oldindan umuman chiqarmasligi mumkin. Ammo yo'l
+    // matnda bor-u regex uni olib tashlamasa, HTML shakli o'zgargan — qattiq xato.
+    if (html.includes(dev) && removed === 0) {
+      throw new Error(`dev asbob tegi olib tashlanmadi: ${dev} — ${mainRel} shakli o'zgarganmi?`);
+    }
   }
   return out;
 }
@@ -258,10 +260,12 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 if (!manifest.main) throw new Error("manifest.json ichida `main` yo'q");
 
 const files = new Set(["manifest.json", ...closureFrom(manifest.main)]);
-// Dev asboblari yopilmaga tushadi (panel.html ularni yuklaydi) — shu yerda
-// chiqarib tashlaymiz; tegining o'zi `stripDevRefs` bilan olinadi.
+// Dev asboblari yopilmaga tushgan bo'lsa chiqarib tashlaymiz; release panel
+// ularni umuman yuklamasa closure'da bo'lmasligi aynan kerakli holat. Ro'yxat
+// eskirmaganini manba faylning o'zi mavjudligi bilan tekshiramiz.
 for (const dev of DEV_ONLY) {
-  if (!files.delete(dev)) throw new Error(`DEV_ONLY ro'yxati eskirgan: ${dev} yopilmada yo'q`);
+  if (!fs.existsSync(path.join(ROOT, dev))) throw new Error(`DEV_ONLY ro'yxati eskirgan: ${dev} manbada yo'q`);
+  files.delete(dev);
 }
 
 /**

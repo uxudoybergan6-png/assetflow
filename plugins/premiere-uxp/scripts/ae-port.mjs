@@ -1962,6 +1962,14 @@ function main() {
   body = transformCopy(expandInlineStyles(svgInheritAttrs(buttonsToDivs(body))))
     // Markupdagi inline `style="grid-column:1/-1"` — JS shablonlaridagidek.
     .replace(/grid-column:\s*1\s*\/\s*-1/g, () => { stats.gridColumn++; return "flex:0 0 100%"; });
+  // UXP `contenteditable`ni chizadi, ammo klaviatura fokusini bermaydi: prompt
+  // yozuvi Premiere shortcut'lariga o'tib ketadi. Native textarea UXP'da
+  // fokus/IME/selection bilan ishlaydi; afChipEditor textarea fallback'i token
+  // qiymatini shu bir xil `.value` kontraktida saqlaydi.
+  body = body.replace(
+    /<div id="(igPrompt|vgPrompt)" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="([^"]*)"><\/div>/g,
+    '<textarea id="$1" class="chipedit" aria-multiline="true" placeholder="$2"></textarea>',
+  );
   stats.inlineHandlers = (body.match(/\son[a-z]+\s*=/gi) || []).length;
   write(path.join(OUT, "ae-body.html"), body);
   const inlineFiles = [];
@@ -2057,12 +2065,14 @@ function main() {
     "js/ae-shim/uxp-copy-late.js",   // afCopyText → UXP buferi (FAQAT UXP)
     "js/ae-shim/uxp-account-events.js", // login/Google → native UXP click (inline onclick emas)
     "js/ae-shim/uxp-import-events.js", // detail Import → native UXP async click
+    "js/ae-shim/uxp-native-events.js", // barcha inline UI amallari → element native listener
   ];
 
   // Premiere 26 UXP throws blank host-side exceptions while these legacy
-  // layout scanners walk the live catalog DOM.  The ported CSS already has
+  // layout scanners walk the live catalog DOM. The ported CSS already has
   // deterministic flex fallbacks, so keep the scanners out of production.
-  // (The compatibility APIs remain in source for isolated diagnostics.)
+  // `uxp-diag` ham foydalanuvchi panelini qoplaydigan dev strip — release/dev
+  // o'rnatmada mahsulot UI'siga aralashmaydi; loglar FFLog orqali qoladi.
   const HOST_UNSAFE_LAYOUT_SHIMS = new Set([
     "js/ae-shim/gap-text.js",
     "js/ae-shim/autofill.js",
@@ -2071,6 +2081,7 @@ function main() {
     "js/ae-shim/pill-radius.js",
     "js/ae-shim/uxp-mmc.js",
     "js/ae-shim/xform-center.js",
+    "js/ae-shim/uxp-diag.js",
   ]);
   const tagPaths = [
     ...SHIMS.filter((p) => !HOST_UNSAFE_LAYOUT_SHIMS.has(p)),

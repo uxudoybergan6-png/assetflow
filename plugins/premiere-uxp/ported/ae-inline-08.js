@@ -2999,7 +2999,7 @@
    Panel imtiyoz KO'TARMAYDI va Premiere ichida hech narsa o'rnatmaydi.
    Nosozlikda faqat tasdiqlangan installer/yuklab olish sahifasi taklif qilinadi —
    extension papkasini qo'lda almashtirish maslahati BERILMAYDI. */
-window.AF_PLUGIN_VERSION="0.1.2"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
+window.AF_PLUGIN_VERSION="0.1.3"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
 (function(){
   function $(id){return document.getElementById(id);}
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
