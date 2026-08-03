@@ -7147,6 +7147,15 @@ async function __downloadAllImpl(n){
         // MOGRT tanlash ro'yxati ochildi — detal ochiq qoladi
         return;
       }
+      // Raw stock importlari host JSON emas, ichki muvaffaqiyat sentinelini
+      // qaytaradi va aniq success toastini importPackFileToAE ichida ko'rsatadi.
+      // Ularni loyiha-template JSON parseriga yuborsak import muvaffaqiyatidan
+      // keyin yolg'on "Import error: unknown" chiqardi.
+      if(result==='media:ok'||result==='bundle:ok'||result==='lut:downloaded'){
+        markPackDownloaded();
+        render();renderDl();closePack();
+        return;
+      }
       // Bo'sh natija — bekor qilingan yoki CEP emas: jim chiqamiz
       // (bekor qilish toast'i onAfCancel'da ko'rsatiladi).
       if(!result){ render();renderDl(); return; }
@@ -12890,14 +12899,20 @@ async function bootPlugin(){
       var dsEl=el.querySelector('.cat-models'); if(dsEl)dsEl.setAttribute('data-cms-text','aiLauncher.cards.'+idx+'.desc');
       var mEl=el.querySelector('.cat-media video,.cat-media img');
       if(mEl)mEl.addEventListener('error',function(){ var w=el.querySelector('.cat-media'); if(w)w.remove(); });
-      el.addEventListener('click',function(){
+      var _catLast=0;
+      var _catOpen=function(){
+        var _catNow=Date.now(); if(_catNow-_catLast<350)return; _catLast=_catNow;
         // SC_17: oraliq kategoriya ekrani yo'q. SC_18 (supersede): kirish qadami =
         // SESSION PICKER (0 sessiya bo'lsa picker o'zi workspace'ga avto-o'tadi).
         var live=c.tools.filter(function(t){return !t.soon&&t.dest;});
         if(!live.length){ aiSoonToast(); return; }
         if(typeof window.afSessionPicker==='function'){ window.afSessionPicker(c.id); return; }
         go(live[0].dest); // fallback — picker moduli yo'q bo'lsa
-      });
+      };
+      // Premiere 26.2 Drover ba'zan dinamik karta `click`ini yutadi. Mousedown
+      // deterministic fallback; throttle oddiy click bilan ikki marta ochmaydi.
+      el.addEventListener('mousedown',_catOpen);
+      el.addEventListener('click',_catOpen);
       g.appendChild(el);
     });
   }
@@ -17438,6 +17453,11 @@ window.afGallery=(function(){
   }
   window.afSessionPicker=function(mode){
     if(!SPICK_DEST[mode]){ if(typeof window.axGo==='function')window.axGo('launcher'); return; }
+    // Premiere 26.2 UXP populated picker'ni va uning `New session` o'tishini
+    // ayrim panel kompozitsiyalarida qora kadrga muzlatadi. Asosiy generatorni
+    // bloklamaymiz: UXP launcher yangi workspace'ga to'g'ridan kiradi; mavjud
+    // sessiyalar My Library/Account orqali ochiq qoladi. AE oqimi o'zgarmaydi.
+    if(window.__FFNodeIO){ spickMode=mode; spickEnter(mode,null); return; }
     spickMode=mode;
     var decide=function(){
       var list=(sp.sessions||[]).filter(function(s){ return spickMatch(mode,s); });
@@ -17824,8 +17844,15 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
   window.axwsAfterView=function(id){
     closePops();
     // Composer view'lari uchun shared .scroll'ni qat'iy flex-ustun rejimiga o'tkazamiz (dock pinlanadi).
-    var ax=document.querySelector('.axroot'); if(ax)ax.classList.toggle('axws-tool',!!VIEWS[id]);
-    var ap=document.getElementById('aiPage'); if(ap)ap.classList.toggle('axws-tool',!!VIEWS[id]); // #R1-FIX: balandlik zanjiri #aiPage'dan boshlanadi (scroll-area bounded)
+    var ax=document.querySelector('.axroot'), ap=document.getElementById('aiPage');
+    var toolLayout=!!VIEWS[id];
+    // Premiere 26.2 UXP `axws-tool` balandlik/flex zanjirini o'chirib-yoqishda
+    // keyingi generatorni qora kompozitor kadrida qoldiradi. Bir composer
+    // ochilgach AI ichida bounded flex layoutni saqlash launcher/history uchun
+    // ham xavfsiz va tool→launcher→tool o'tishini barqaror qiladi.
+    if(window.__FFNodeIO&&((ax&&ax.classList.contains('axws-tool'))||(ap&&ap.classList.contains('axws-tool'))))toolLayout=true;
+    if(ax)ax.classList.toggle('axws-tool',toolLayout);
+    if(ap)ap.classList.toggle('axws-tool',toolLayout); // #R1-FIX: balandlik zanjiri #aiPage'dan boshlanadi (scroll-area bounded)
     var cfg=VIEWS[id]; if(!cfg)return;
     ensureObserver(cfg);
     syncEmpty(cfg);

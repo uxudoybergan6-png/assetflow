@@ -1788,6 +1788,15 @@ async function __downloadAllImpl(n){
         // MOGRT tanlash ro'yxati ochildi — detal ochiq qoladi
         return;
       }
+      // Raw stock importlari host JSON emas, ichki muvaffaqiyat sentinelini
+      // qaytaradi va aniq success toastini importPackFileToAE ichida ko'rsatadi.
+      // Ularni loyiha-template JSON parseriga yuborsak import muvaffaqiyatidan
+      // keyin yolg'on "Import error: unknown" chiqardi.
+      if(result==='media:ok'||result==='bundle:ok'||result==='lut:downloaded'){
+        markPackDownloaded();
+        render();renderDl();closePack();
+        return;
+      }
       // Bo'sh natija — bekor qilingan yoki CEP emas: jim chiqamiz
       // (bekor qilish toast'i onAfCancel'da ko'rsatiladi).
       if(!result){ render();renderDl(); return; }

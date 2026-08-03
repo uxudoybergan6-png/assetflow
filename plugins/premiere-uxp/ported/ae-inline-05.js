@@ -1176,14 +1176,20 @@
       var dsEl=el.querySelector('.cat-models'); if(dsEl)dsEl.setAttribute('data-cms-text','aiLauncher.cards.'+idx+'.desc');
       var mEl=el.querySelector('.cat-media video,.cat-media img');
       if(mEl)mEl.addEventListener('error',function(){ var w=el.querySelector('.cat-media'); if(w)w.remove(); });
-      el.addEventListener('click',function(){
+      var _catLast=0;
+      var _catOpen=function(){
+        var _catNow=Date.now(); if(_catNow-_catLast<350)return; _catLast=_catNow;
         // SC_17: oraliq kategoriya ekrani yo'q. SC_18 (supersede): kirish qadami =
         // SESSION PICKER (0 sessiya bo'lsa picker o'zi workspace'ga avto-o'tadi).
         var live=c.tools.filter(function(t){return !t.soon&&t.dest;});
         if(!live.length){ aiSoonToast(); return; }
         if(typeof window.afSessionPicker==='function'){ window.afSessionPicker(c.id); return; }
         go(live[0].dest); // fallback — picker moduli yo'q bo'lsa
-      });
+      };
+      // Premiere 26.2 Drover ba'zan dinamik karta `click`ini yutadi. Mousedown
+      // deterministic fallback; throttle oddiy click bilan ikki marta ochmaydi.
+      el.addEventListener('mousedown',_catOpen);
+      el.addEventListener('click',_catOpen);
       g.appendChild(el);
     });
   }

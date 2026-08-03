@@ -230,6 +230,11 @@ img, video { flex: none; }
   border-radius: 8px;
 }
 #packDetail #importSceneBtn svg { display: none !important; }
+#packDetail #importSceneBtn > span {
+  display: inline-block !important;
+  color: #080808 !important;
+  font-weight: 700;
+}
 
 /* `backdrop-filter` qo'llanmaydi — shisha panellar shaffof bo'lib o'qilmay
    qolardi; port uni olib tashladi, o'rniga qattiq fon beramiz. */
@@ -251,3 +256,39 @@ textarea.chipedit {
   padding-bottom: 8px;
 }
 textarea.chipedit::placeholder { color: var(--muted-2); }
+
+/* Decorative press transforms can black out the whole UXP compositor before
+   the click event is dispatched. Keep the hit target stable; state feedback
+   still comes from border/background rules. */
+.axroot .cat:active,
+.axroot .catcard:active,
+.axroot .cardbig:active,
+.axhome .hm-card:active { transform: none !important; }
+
+/* Premiere 26.2 UXP multi-column paint'i (`columns`) populated session/recent
+   ro'yxatida butun AI view'ni qora qiladi. Port `columns` deklaratsiyasini
+   olib tashlaydi; bu yerda bir xil mazmunni renderer-safe flex bilan beramiz. */
+#spickList,
+.axws-stage .recentgrid,
+.axroot .galgrid {
+  display: flex !important;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
+}
+#spickList { flex-direction: column; flex-wrap: nowrap; }
+#spickList > .sp-row {
+  flex: 0 0 auto;
+  width: 100%;
+  margin-left: 0 !important;
+}
+.axws-stage .recentgrid > *,
+.axroot .galgrid > * {
+  flex: 0 0 calc(50% - 5px);
+  min-width: 0;
+  margin-right: 9px;
+  margin-bottom: 9px;
+}
+.axws-stage .recentgrid > *:nth-child(2n),
+.axroot .galgrid > *:nth-child(2n) { margin-right: 0; }
+.axws-stage .recentgrid.dense1 > * { flex-basis: 100%; margin-right: 0; }

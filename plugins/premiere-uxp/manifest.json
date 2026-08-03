@@ -2,7 +2,7 @@
   "manifestVersion": 5,
   "id": "com.frameflow.premiere",
   "name": "FrameFlow",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "main": "panel.html",
   "host": {
     "app": "premierepro",

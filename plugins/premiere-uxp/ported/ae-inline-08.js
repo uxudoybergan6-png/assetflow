@@ -2958,6 +2958,11 @@
   }
   window.afSessionPicker=function(mode){
     if(!SPICK_DEST[mode]){ if(typeof window.axGo==='function')window.axGo('launcher'); return; }
+    // Premiere 26.2 UXP populated picker'ni va uning `New session` o'tishini
+    // ayrim panel kompozitsiyalarida qora kadrga muzlatadi. Asosiy generatorni
+    // bloklamaymiz: UXP launcher yangi workspace'ga to'g'ridan kiradi; mavjud
+    // sessiyalar My Library/Account orqali ochiq qoladi. Premiere oqimi o'zgarmaydi.
+    if(window.__FFNodeIO){ spickMode=mode; spickEnter(mode,null); return; }
     spickMode=mode;
     var decide=function(){
       var list=(sp.sessions||[]).filter(function(s){ return spickMatch(mode,s); });
@@ -2999,7 +3004,7 @@
    Panel imtiyoz KO'TARMAYDI va Premiere ichida hech narsa o'rnatmaydi.
    Nosozlikda faqat tasdiqlangan installer/yuklab olish sahifasi taklif qilinadi —
    extension papkasini qo'lda almashtirish maslahati BERILMAYDI. */
-window.AF_PLUGIN_VERSION="0.1.3"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
+window.AF_PLUGIN_VERSION="0.1.4"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
 (function(){
   function $(id){return document.getElementById(id);}
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
@@ -3344,8 +3349,15 @@ window.AF_PLUGIN_VERSION="0.1.3"; // CSXS/manifest.xml ExtensionBundleVersion bi
   window.axwsAfterView=function(id){
     closePops();
     // Composer view'lari uchun shared .scroll'ni qat'iy flex-ustun rejimiga o'tkazamiz (dock pinlanadi).
-    var ax=document.querySelector('.axroot'); if(ax)ax.classList.toggle('axws-tool',!!VIEWS[id]);
-    var ap=document.getElementById('aiPage'); if(ap)ap.classList.toggle('axws-tool',!!VIEWS[id]); // #R1-FIX: balandlik zanjiri #aiPage'dan boshlanadi (scroll-area bounded)
+    var ax=document.querySelector('.axroot'), ap=document.getElementById('aiPage');
+    var toolLayout=!!VIEWS[id];
+    // Premiere 26.2 UXP `axws-tool` balandlik/flex zanjirini o'chirib-yoqishda
+    // keyingi generatorni qora kompozitor kadrida qoldiradi. Bir composer
+    // ochilgach AI ichida bounded flex layoutni saqlash launcher/history uchun
+    // ham xavfsiz va tool→launcher→tool o'tishini barqaror qiladi.
+    if(window.__FFNodeIO&&((ax&&ax.classList.contains('axws-tool'))||(ap&&ap.classList.contains('axws-tool'))))toolLayout=true;
+    if(ax)ax.classList.toggle('axws-tool',toolLayout);
+    if(ap)ap.classList.toggle('axws-tool',toolLayout); // #R1-FIX: balandlik zanjiri #aiPage'dan boshlanadi (scroll-area bounded)
     var cfg=VIEWS[id]; if(!cfg)return;
     ensureObserver(cfg);
     syncEmpty(cfg);

@@ -72,7 +72,7 @@ import {
 } from "../lib/gen-models.js";
 import { signCostQuote, verifyCostQuote, genParamsHash } from "../lib/gen-quote.js";
 import { startAdaptiveTimer } from "../lib/idle-timer.js"; // D0 — idle-aware fon jadvali
-import { priceGeneration } from "../lib/model-pricing.js";
+import { priceGeneration, resolveCatalogModels } from "../lib/model-pricing.js";
 import { writeProviderSpend } from "../lib/ledger.js";
 import { estimateProviderUsd } from "../lib/provider-cost.js";
 import {
@@ -857,13 +857,16 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
   // (ular generativ model emas; R4_08 gen/library kartalarida "Use ▾" bilan ochiladi). Katalogda
   // qoladi (cost-quote/pricing panel getModelById orqali ko'radi) — faqat bu ro'yxatdan filtrlanadi.
   const base = (mode ? getModelsByMode(mode) : GEN_MODELS).filter((m) => !m.opType);
+  // Picker ham quote/gen bilan bir xil DB narxi va enabled holatini ko'rsatsin.
+  // Aks holda katalogdagi ✦N bilan imzolangan quote o'rtasida yashirin farq chiqadi.
+  const catalogModels = await resolveCatalogModels(base);
   // #141 (PX4) — etaSec: O'LCHANGAN mediana (oxirgi 7 kun tarixi), ma'lumot yetmasa
   // feature bo'yicha zaxira. Klient "≈ 1–2 min" qattiq matni o'rniga shuni ko'rsatadi.
   const eta = await measuredEtaSeconds();
   res.json({
     // refKind'ni HAR modelga qo'shamiz (So'nggi-grid "Referens" model-aware bo'lishi uchun).
     // P30 (29c) — policyStrictness ham (klient "qattiq siyosat" ogohlantirishi + boshqa-model taklifi uchun).
-    models: base.map((m) => ({
+    models: catalogModels.map((m) => ({
       ...m,
       refKind: getRefKind(m),
       policyStrictness: modelPolicyStrictness(m),

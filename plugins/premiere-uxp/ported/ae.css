@@ -3033,12 +3033,12 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* SC_23: My Library skeleton kartalar — yuklanishда qora void o'rniga shimmer */.axroot .galgrid .gskel{aspect-ratio:16/9;border-radius:12px;border-width:1px;border-style:solid;border-color:var(--line2);background-image:linear-gradient(100deg,var(--card3) 38%,var(--card) 50%,var(--card3) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
 
 /* SC_46: sessiya feed skeleton kartalar — sessiya ochilganда LOADING holati (bo'sh flash EMAS) */.axroot .recentgrid .rcskel{aspect-ratio:1/1;border-radius:12px;border-width:1px;border-style:solid;border-color:var(--line2);background-image:linear-gradient(100deg,var(--card3) 38%,var(--card) 50%,var(--card3) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
-.axroot .galgrid[data-cols="1"]{columns:270px}
-.axroot .galgrid[data-cols="2"]{columns:186px}
-.axroot .galgrid[data-cols="3"]{columns:138px}
+.axroot .galgrid[data-cols="1"]{}
+.axroot .galgrid[data-cols="2"]{}
+.axroot .galgrid[data-cols="3"]{}
 .axroot .galgrid .galempty,.axroot .galgrid .axighint{column-span:all}
-.axroot .galgrid .gskel{break-inside:avoid;margin-bottom:9px}
-.axroot .gcard{break-inside:avoid;margin-bottom:9px;border-width:1px;border-style:solid;border-color:var(--line2);border-radius:12px;overflow:hidden;background-color:var(--card);position:relative}
+.axroot .galgrid .gskel{margin-bottom:9px}
+.axroot .gcard{margin-bottom:9px;border-width:1px;border-style:solid;border-color:var(--line2);border-radius:12px;overflow:hidden;background-color:var(--card);position:relative}
 
 /* SC_16: default 16/9 (1:1 majburlash yo'q) — haqiqiy nisbat inline style'da yengadi */.axroot .gcard .gth{width:100%;aspect-ratio:16/9;background-size:cover;background-position:center;background-color:var(--card3);position:relative}
 
@@ -3271,14 +3271,14 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* P5: RECENT grid endi IXCHAM MASONRY (CSS columns) — kartalar turli nisbatda (16:9/1:1/9:16)
    bo'lgani uchun turli balandliklar zich joylanadi, katta bo'shliqsiz. Nisbat card() ichida
    INLINE (it.params.aspectRatio) beriladi; bu CSS aspect-ratio:1/1 DEFAULT'ini per-karta yengadi.
-   Ikkala tool (image .axig + video .axvg) bir xil. */.recentgrid{display:block;columns:2}
+   Ikkala tool (image .axig + video .axvg) bir xil. */.recentgrid{display:block}
 .recentgrid.recentgrid > *:nth-child(n+2){margin-left:10px}
 
 /* width:100%/height:auto/flex:none — .axroot .rc{flex:0 0 60px;height:60px} (home strip) LEAK'ini yengadi:
    aks holda karta 60×60 kichik bo'lib qolardi. aspect-ratio:1/1 = DEFAULT (pending + nisbatsiz gen). */
 /* P17 — gen kartasi endi elevation (soft soya) + hover'da ko'tariladi; yuza/chegara=token (3 tema).
    Soya=rgba qora (drop-shadow — och temada ham to'g'ri). Pending plitka ko'tarilmaydi. */
-/* SC_16: default aspect endi 16/9 (1:1 majburlash yo'q) — haqiqiy nisbat JS inline'da yengadi */.recentgrid .rc{width:100%;height:auto;flex:none;break-inside:avoid;margin:0 0 10px;border-width:1px;border-style:solid;border-color:var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:16/9;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.25),0 6px 16px -8px rgba(0,0,0,.38);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+/* SC_16: default aspect endi 16/9 (1:1 majburlash yo'q) — haqiqiy nisbat JS inline'da yengadi */.recentgrid .rc{width:100%;height:auto;flex:none;margin:0 0 10px;border-width:1px;border-style:solid;border-color:var(--line2);border-radius:12px;overflow:hidden;aspect-ratio:16/9;background-size:cover;background-position:center;background-color:var(--card3);cursor:pointer;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.25),0 6px 16px -8px rgba(0,0,0,.38);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
 
 /* SC_16: audio karta — sobit ixcham balandlik (1:1 emas, minora ham emas) + maqsadli dizayn */.recentgrid .rc.rc-aud{aspect-ratio:auto;height:76px;display:flex;align-items:center;padding:0 12px;background:linear-gradient(135deg,var(--card3),var(--card))}
 .recentgrid .rc.rc-aud.rc-aud > *:nth-child(n+2){margin-left:10px}
@@ -3585,9 +3585,9 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 
 /* SC_26: Sessions/Projects keng panelда to'ldiradi — qatorlar/kartalar ustunlarga bo'linadi.
    Tor (<560px) bitta-ustun ro'yxat / 2-ustun grid saqlanadi. */@media(min-width:560px){
-#spickList{columns:320px}
+#spickList{}
 #spickList > *:nth-child(n+2){margin-left:9px}
-#spickList .sp-row{break-inside:avoid}
+#spickList .sp-row{}
 .axsp .sp-grid{flex-wrap:wrap}
 .axsp .sp-grid > *{flex:1 0 240px;min-width:240px}
 .axsp .sp-grid.sp-grid > *:nth-child(n+1){margin-right:9px;margin-top:0}
@@ -4444,13 +4444,13 @@ html.home-mode .foot{display:none!important}
 /* recent grid = stage — kartalar mockup ai-result-card kabi o'qiladi (recentgrid tokenlari yetarli) */.axws-stage .res{margin-bottom:14px}
 .axws-stage .res .lbl{margin-bottom:8px}
 
-/* 1× zichlik (density) */.axws-stage .recentgrid.dense1{columns:1}
+/* 1× zichlik (density) */.axws-stage .recentgrid.dense1{}
 .axws-stage .recentgrid.dense1 .rc{aspect-ratio:16/10}
 
 /* SC_26: keng panelда feed ustun QO'SHADI (masonry column-width) — cho'zilmaydi, zichlashadi.
    Tor (<560px) 2 ustun (dense1=1) saqlanadi; ≥560px'да kenglikka qarab ustun soni o'sadi. */@media(min-width:560px){
-.recentgrid{columns:260px}
-.axws-stage .recentgrid.dense1{columns:440px}
+.recentgrid{}
+.axws-stage .recentgrid.dense1{}
 
 }
 
@@ -4920,6 +4920,11 @@ img, video { flex: none; }
   border-radius: 8px;
 }
 #packDetail #importSceneBtn svg { display: none !important; }
+#packDetail #importSceneBtn > span {
+  display: inline-block !important;
+  color: #080808 !important;
+  font-weight: 700;
+}
 
 /* `backdrop-filter` qo'llanmaydi — shisha panellar shaffof bo'lib o'qilmay
    qolardi; port uni olib tashladi, o'rniga qattiq fon beramiz. */
@@ -4941,3 +4946,39 @@ textarea.chipedit {
   padding-bottom: 8px;
 }
 textarea.chipedit::placeholder { color: var(--muted-2); }
+
+/* Decorative press transforms can black out the whole UXP compositor before
+   the click event is dispatched. Keep the hit target stable; state feedback
+   still comes from border/background rules. */
+.axroot .cat:active,
+.axroot .catcard:active,
+.axroot .cardbig:active,
+.axhome .hm-card:active { transform: none !important; }
+
+/* Premiere 26.2 UXP multi-column paint'i (`columns`) populated session/recent
+   ro'yxatida butun AI view'ni qora qiladi. Port `columns` deklaratsiyasini
+   olib tashlaydi; bu yerda bir xil mazmunni renderer-safe flex bilan beramiz. */
+#spickList,
+.axws-stage .recentgrid,
+.axroot .galgrid {
+  display: flex !important;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
+}
+#spickList { flex-direction: column; flex-wrap: nowrap; }
+#spickList > .sp-row {
+  flex: 0 0 auto;
+  width: 100%;
+  margin-left: 0 !important;
+}
+.axws-stage .recentgrid > *,
+.axroot .galgrid > * {
+  flex: 0 0 calc(50% - 5px);
+  min-width: 0;
+  margin-right: 9px;
+  margin-bottom: 9px;
+}
+.axws-stage .recentgrid > *:nth-child(2n),
+.axroot .galgrid > *:nth-child(2n) { margin-right: 0; }
+.axws-stage .recentgrid.dense1 > * { flex-basis: 100%; margin-right: 0; }

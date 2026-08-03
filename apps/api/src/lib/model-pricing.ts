@@ -158,6 +158,25 @@ export async function resolvePricedModel(model: GenModel): Promise<GenModel> {
 }
 
 /**
+ * Klient model katalogi uchun DB'dagi joriy narx va enabled holatini qo'llaydi.
+ *
+ * `/gen/models` ilgari statik `gen-models.ts` qiymatini ko'rsatardi, ammo
+ * `/gen/cost-quote` DB ModelPricing qiymatini ishlatardi. Masalan UI ✦4 deb
+ * ko'rsatib, imzolangan quote ✦8 qaytarishi mumkin edi. Katalog va pul yechish
+ * endi bir xil cache/applyRow manbasidan yuradi; DB'da o'chirilgan model ham
+ * pickerda ko'rinmaydi.
+ */
+export async function resolveCatalogModels(models: GenModel[]): Promise<GenModel[]> {
+  const map = await loadCache();
+  return models
+    .filter((model) => {
+      const row = map.get(model.id);
+      return model.enabled !== false && (row?.enabled ?? true);
+    })
+    .map((model) => applyRow(model, map.get(model.id)));
+}
+
+/**
  * YAGONA NARX YO'LI — `/gen/cost-quote` VA `/gen` ikkalasi SHUNI chaqiradi (M3/M7/M8/M10).
  *
  * Uch ishni bir joyda bajaradi:

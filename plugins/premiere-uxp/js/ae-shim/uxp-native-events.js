@@ -16,12 +16,6 @@
   var EVENTS = ["click", "change", "input", "keydown", "keyup", "submit", "dblclick", "contextmenu"];
   var bound = new WeakMap();
 
-  function repaintSoon() {
-    if (!window.FFRepaint || typeof window.FFRepaint.kick !== "function") return;
-    setTimeout(function () { window.FFRepaint.kick(); }, 0);
-    setTimeout(function () { window.FFRepaint.kick(); }, 180);
-  }
-
   function bindPrimary(id, action) {
     var el = document.getElementById(id);
     if (!el || el.__ffPrimaryBound) return;
@@ -33,7 +27,11 @@
       if (now - lastRun < 350) return;
       lastRun = now;
       if (ev && ev.preventDefault) ev.preventDefault();
-      try { action(); repaintSoon(); }
+      // Global root repaint Premiere 26.2 da sog'lom yangi view'ni 180 ms
+      // o'tib qora kompozitor kadriga aylantiradi. Navigatsiya o'z DOM/CSS
+      // holatini yetarli invalidatsiya qiladi; FFRepaint faqat aniq overlay
+      // diagnostikasi uchun qo'lda chaqiriladi.
+      try { action(); }
       catch (e) {
         try { console.error("[uxp-native-events] #" + id + " failed", e); } catch (_) {}
       }
@@ -92,7 +90,6 @@
       setTimeout(bindAll, 0);
       setTimeout(bindAll, 250);
       setTimeout(bindAll, 1200);
-      repaintSoon();
     }
     if (type === "click") el.addEventListener("mousedown", run);
     el.addEventListener(type, run);

@@ -41,6 +41,7 @@ const UXP_VERSION = JSON.parse(fs.readFileSync(path.join(UXP, "manifest.json"), 
 
 const stats = {
   gridRules: 0, gapRules: 0, gapOverrides: 0, gapSums: 0, gridColumn: 0, animOpacity: 0, backdrop: 0,
+  multicol: 0,
   buttons: 0, buttonSel: 0, disabledSel: 0, selWeak: 0, rowLeakWeak: 0, pseudoGap: 0, gapSpec: 0, gapSideSwap: 0, gapStale: 0, inlineHandlers: 0, cssRules: 0, emitted: 0,
   jsRequire: 0, jsButtons: 0, jsQuery: 0, copy: 0,
   shorthand: 0, svgAttrs: 0, styleBg: 0,
@@ -1503,6 +1504,14 @@ function transformRule(node, emit, media = "") {
     stats.backdrop++;
     drop("backdrop-filter"); drop("-webkit-backdrop-filter");
   }
+  // Premiere 26.2 UXP multi-column layout (`columns`/`column-width`) ichida
+  // remote media yoki bir nechta kartalar bo'lsa butun view'ni qora qatlamga
+  // aylantiradi. Masonry'lar UXP override'da flex-wrap bilan beriladi.
+  if (get("columns") || get("column-count") || get("column-width")) {
+    stats.multicol++;
+    drop("columns"); drop("column-count"); drop("column-width");
+  }
+  if (get("break-inside")) drop("break-inside");
 
   node.decls = declText(decls);
 }
@@ -2135,6 +2144,7 @@ function main() {
     (stats.selWeak ? ` (${stats.selWeak} selektor kuchaytirilmadi — klasssiz)` : ""));
   console.log(`    animatsiya opacity: ${stats.animOpacity}`);
   console.log(`    backdrop-filter  : ${stats.backdrop} olib tashlandi`);
+  console.log(`    multi-column     : ${stats.multicol} olib tashlandi (UXP flex override)`);
   console.log(`    qo'shilgan qoida : ${stats.emitted}`);
   console.log(`  <button> → <div>   : ${stats.buttons} (markup) + ${stats.jsButtons} (JS shablon) + ${stats.buttonSel} (CSS selektor)`);
   console.log(`  :disabled → [disabled]: ${stats.disabledSel} selektor`);

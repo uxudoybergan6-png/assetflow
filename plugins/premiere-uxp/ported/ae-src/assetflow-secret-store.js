@@ -52,6 +52,14 @@ const AssetFlowSecret = (() => {
   function settingsDir() {
     const path = __ffRequire("path");
     const os = __ffRequire("os");
+    // Premiere UXP'da `os.homedir()` node-io orqali allaqachon plagin uchun
+    // yoziladigan, mavjud DataFolder'ni qaytaradi. Hostda `fs.mkdirSync` yo'q,
+    // shuning uchun uning ostida yana `Library/Application Support/AssetFlow`
+    // daraxti yasash login tokenini har restartda yo'qotardi. UXP'da token va
+    // sozlamalar DataFolder ildizida saqlanadi; Premiere CEP yo'li o'zgarmaydi.
+    if (typeof window !== "undefined" && window.__FFNodeIO) {
+      return os.homedir();
+    }
     const p = platform();
     if (p === "win32") {
       const base = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
