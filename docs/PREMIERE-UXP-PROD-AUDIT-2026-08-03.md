@@ -25,6 +25,8 @@
 > layout skanerlari ishlab chiqarish script-orderidan chiqarildi; 10 soniyalik faol panel
 > kuzatuvida yangi `Uncaught JS Exception` yo'q. `0.1.2` CCX 58 fayl/763.6 KB, byte-verify
 > PASS, SHA-256 `677dd2bd39b80b711c236b614987d817ff5b2bdc39de495b48d6e476f6bb5bb1`.
+> `801e955` uchun CI `30847212557` PASS; `0.1.2` production `pr` kanaliga publish
+> qilindi va mac/win signed-downloadlar qayta yuklanib, shu hash bilan mosligi tekshirildi.
 
 ---
 

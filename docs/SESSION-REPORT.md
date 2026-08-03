@@ -12,4 +12,4 @@
 - Qo'shimcha: marketplace 100/100; public 137/137; Windows CI 169/169; host-shim PASS.
 - CCX: 58 fayl, 763.6 KB; byte-verify va `git diff --check` PASS.
 - SHA-256: `677dd2bd39b80b711c236b614987d817ff5b2bdc39de495b48d6e476f6bb5bb1`.
-- Keyingi operatsion qadam: commit/CI o'tgach production `pr` reliz kanaliga publish.
+- Deploy: `801e955`; CI `30847212557` PASS; production `pr` v0.1.2 mac/win hash-match.

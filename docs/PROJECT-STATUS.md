@@ -16,6 +16,8 @@
   `Uncaught JS Exception` 35→35: yangi xato yo'q.
 - `0.1.2` CCX: 58 fayl, 763.6 KB, SHA-256
   `677dd2bd39b80b711c236b614987d817ff5b2bdc39de495b48d6e476f6bb5bb1`; byte-verify PASS.
+- `801e955` main'ga push; GitHub CI `30847212557` PASS. Production `pr` kanalida
+  `0.1.2` publish qilindi; mac/win signed-download baytlari shu SHA-256 bilan mos.
 
 ## §-6. 2026-08-03 PREMIERE UXP — release candidate productionga deploy qilindi
 
