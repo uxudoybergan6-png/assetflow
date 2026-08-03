@@ -10,3 +10,5 @@
 - CCX: 59 fayl, 789215 bayt; corrupt-ZIP salbiy testi PASS.
 - SHA-256: `97676a317753de2a402a969721cd23e99642c3e663ce3459a8bcc95aa7af245c`.
 - Production `pr` 0.1.5 mac/win publish; signed download hashlar mos.
+- GitHub CI `30860447510`: build va real Windows MSI install/migration/uninstall PASS.
+- Tashqi bloker: Render workspace $7.20 June invoice sabab suspend; payment sahifasi ochiq.
