@@ -24,7 +24,13 @@
   var CLS = window.__AF_PILLC || [];
   if (!CLS.length) return;
 
-  var SEL = CLS.map(function (c) { return "." + c; }).join(",");
+  // `[style]` HAM kerak: AE'ning bir qancha bloki radiusni JS shabloni ichida
+  // inline beradi (`border-radius:999px` — Google device-code kartasidagi
+  // "Copy code"/"Copy link"/"Open again" tugmalari aynan shunday). Port vaqtida
+  // yig'ilgan klass ro'yxati ularni ko'rmaydi, natijada Premiere'da tugmalar
+  // 999px yoyi bilan "linza" bo'lib chiqardi.
+  // Narxi past: radiusi yo'q element birinchi o'tishda `[0,0,0,0]` deb keshlanadi.
+  var SEL = CLS.map(function (c) { return "." + c; }).join(",") + ",[style]";
   var CAMEL = ["borderTopLeftRadius", "borderTopRightRadius", "borderBottomRightRadius", "borderBottomLeftRadius"];
   var KEBAB = ["border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius"];
   var raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window)
@@ -71,11 +77,21 @@
     raf(function () { raf(scan); });
   }
 
+  var hasMO = false;
   try {
     new MutationObserver(schedule).observe(document.documentElement, {
       childList: true, subtree: true, attributeFilter: ["class"],
     });
-  } catch (e) { /* UXP'da MutationObserver yo'q bo'lsa — pastdagi taymerlar qoladi */ }
+    hasMO = true;
+  } catch (e) { /* UXP'da MutationObserver yo'q bo'lsa — pastdagi zaxira qoladi */ }
+
+  // Zaxira: DOM o'zgarishlarining aksariyati foydalanuvchi amalidan keyin
+  // bo'ladi (modal ochish, kirish tugmasi, tab almashish). MutationObserver
+  // bo'lsa ham arzon — `schedule()` o'zi dedupe qiladi.
+  document.addEventListener("click", schedule, true);
+  document.addEventListener("keyup", schedule, true);
+  // MutationObserver umuman bo'lmasa — sekin, lekin uzilmaydigan tekshiruv.
+  if (!hasMO) setInterval(schedule, 1500);
 
   window.addEventListener("resize", schedule);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", schedule);

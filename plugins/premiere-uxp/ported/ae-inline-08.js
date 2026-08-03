@@ -1220,13 +1220,13 @@
       host.innerHTML='';
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
-        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||type)+'</small></div>'+(multi?'<span class="vgprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>':'');
+        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||type)+'</small></div>'+(multi?'<span class="vgprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>':'');
         (function(item,row){ d.addEventListener('click',function(){
           var mp=item.mediaPath||''; if(!mp)return;
           if(!multi){ if(!mediaAllowed('video'))return; addOneMediaPath(mp,'video'); closeVgSheets(); return; }
           var chk=row.querySelector('.vgprojchk');
-          if(sel[mp]){ delete sel[mp]; row.style.background=''; if(chk)chk.textContent='○'; }
-          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Not enough space left (≤'+slotsLeft()+')','warning'); return; } sel[mp]=true; row.style.background='var(--accent-soft)'; if(chk)chk.textContent='✓'; }
+          if(sel[mp]){ delete sel[mp]; row.style.backgroundColor=''; if(chk)chk.textContent='○'; }
+          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Not enough space left (≤'+slotsLeft()+')','warning'); return; } sel[mp]=true; row.style.backgroundColor='var(--accent-soft)'; if(chk)chk.textContent='✓'; }
           refreshFoot();
         }); })(it,d);
         host.appendChild(d);
@@ -1412,7 +1412,7 @@
     box.classList.add('has-img');
     var img=document.createElement('img'); img.className='fb-thumb'; img.src=frame.dataUrl; box.appendChild(img);
     if(frame.loading){
-      var sp=document.createElement('div'); sp.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border-radius:9px;z-index:2'; sp.textContent='Loading…'; box.appendChild(sp);
+      var sp=document.createElement('div'); sp.style.cssText='position:absolute;inset:0;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;border-radius:9px;z-index:2'; sp.textContent='Loading…'; box.appendChild(sp);
     } else {
       // SC_42: rol nishoni START / END (frame 1/2 o'rniga)
       var tag=document.createElement('span'); tag.className='fbtag'; tag.textContent=(which==='start')?'START':'END'; box.appendChild(tag);
@@ -1460,7 +1460,7 @@
       host.innerHTML='';
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
-        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div>';
+        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div>';
         (function(item){ d.addEventListener('click',function(){
           var mp=item.mediaPath||''; var du=readDataUrl(mp); // readDataUrl: file:// normalize + Node fs → cep.fs
           if(du){ uploadFrame({path:mp,dataUrl:du},which); } else { toast('Could not read file','error'); }
@@ -1512,7 +1512,7 @@
       list.forEach(function(it){
         var d=document.createElement('div');
         var bg=(it.thumb&&want!=='audio')?('background:#0c0f14 url("'+String(it.thumb).replace(/"/g,'&quot;')+'") center/cover no-repeat'):'background:#0c0f14;display:flex;align-items:center;justify-content:center;color:#5b6472;font-size:10px';
-        d.style.cssText='aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid rgba(255,255,255,.08);'+bg;
+        d.style.cssText='aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border-width:1px;border-style:solid;border-color:rgba(255,255,255,.08);'+bg;
         if(want==='audio'&&!it.thumb)d.textContent=(it.title||'Audio').slice(0,14);
         d.title=(it.title||'').slice(0,60);
         d.addEventListener('click',function(){
@@ -1750,24 +1750,24 @@
     var vid=$('vgVideo'); if(vid){ vid.src=url; vid.load(); }
     var acts=$('vgActs'); if(!acts)return; acts.innerHTML='';
     var btnImp=document.createElement('div'); btnImp.className='vact';
-    btnImp.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Premiere import';
+    btnImp.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Premiere import';
     btnImp.addEventListener('click',function(){ if(typeof aiImportMedia==='function')aiImportMedia(url,'video','mp4'); else toast('Only works inside Premiere Pro','info'); });
     acts.appendChild(btnImp);
     if(!IS_CEP){
       var btnDl=document.createElement('div'); btnDl.className='vact';
-      btnDl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg> Download';
+      btnDl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Download';
       btnDl.addEventListener('click',function(){ try{ var a=document.createElement('a'); a.href=a0.downloadUrl||url; a.download=window.afGenDlName((j&&j.prompt)||'',url,'video'); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} });
       acts.appendChild(btnDl);
     }
   }
 
   // ── So'nggi grid (2-ustun; HAMMA tur: rasm/video/ovoz; to'g'ri badge; hover Import/Referens/⬇/✕; ☑ batch; lightbox) ──
-  var VG_RC_X='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>';
-  var VG_RC_CHK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
-  var VG_RC_IMP='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
-  var VG_RC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>';
-  var VG_RC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
-  var VG_IC_AUD='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>';
+  var VG_RC_X='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var VG_RC_CHK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var VG_RC_IMP='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var VG_RC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var VG_RC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var VG_IC_AUD='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var vgRcState={items:[],sel:{},selecting:false,loaded:false,loading:false,error:'',audCount:0,sessTotal:null}; // SC_29: faol sessiya sanoqlari
   function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Voice':(c==='sfx')?'SFX':'Image'; }
   function urlExt(u){ var m=String(u||'').match(/\.(\w{2,5})(?:\?|#|$)/); return m?m[1].toLowerCase():''; }
@@ -2313,7 +2313,7 @@
     var res=$('agRes'), wrap=$('agResults'); if(!res||!wrap)return;
     var a0=(assets&&assets[0])||{}; var url=a0.url; if(!url){ toast('Empty result','warning'); return; }
     var row=document.createElement('div');
-    row.style.cssText='display:flex;flex-direction:column;gap:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;margin-bottom:8px';
+    row.style.cssText='display:flex;flex-direction:column;gap:7px;background-color:rgba(255,255,255,.04);border-width:1px;border-style:solid;border-color:rgba(255,255,255,.08);border-radius:12px;padding:10px;margin-bottom:8px';
     var cap=document.createElement('div'); cap.style.cssText='font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap'; cap.textContent=prompt||''; row.appendChild(cap);
     var au=document.createElement('audio'); au.controls=true; au.src=url; au.style.width='100%'; row.appendChild(au);
     var acts=document.createElement('div'); acts.style.cssText='display:flex;gap:8px';
@@ -2555,7 +2555,7 @@
       if(!items.length){ var e=document.createElement('div'); e.className='sp-empty'; e.textContent='No projects yet — create one below.'; list.appendChild(e); }
       items.forEach(function(p){
         var row=document.createElement('div'); row.className='spr';
-        row.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
+        row.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
           +'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+String(p.name||'Project').replace(/[<>&]/g,'')+'</span><small>'+(p.count||0)+' items</small>';
         row.addEventListener('click',function(){ doAdd(p.id); });
         list.appendChild(row);
@@ -2611,7 +2611,7 @@
   }
   function rowRenameBtn(row,tx,s,rerender){
     var rn=document.createElement('span'); rn.className='sp-act ren'; rn.title='Rename session';
-    rn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+    rn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     rn.addEventListener('click',function(e){ e.stopPropagation(); startRowRename(tx,s,rerender); });
     row.appendChild(rn);
   }
@@ -2630,7 +2630,7 @@
   //   Server cascade qiladi (gen'lar + assetlar): DELETE /gen/sessions/:id.
   function rowDeleteBtn(row,s,rerender){
     var dl=document.createElement('span'); dl.className='sp-act ren del'; dl.title='Delete session';
-    dl.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
+    dl.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6V4h8v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6l-1 14H6L5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     dl.addEventListener('click',function(e){
       e.stopPropagation();
       var nm=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'this session');
@@ -2656,11 +2656,11 @@
     sp.sessions.forEach(function(s){
       var row=document.createElement('div'); row.className='sp-row'+(sel&&sp.sSel[s.id]?' picked':'');
       if(sel){ // P11: select rejimда checkbox (muqova o'rniga chapda)
-        var ck=document.createElement('span'); ck.className='sp-check'; ck.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>'; row.appendChild(ck);
+        var ck=document.createElement('span'); ck.className='sp-check'; ck.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'; row.appendChild(ck);
       }
       var cov=document.createElement('span'); cov.className='sp-cov';
       if(s.coverUrl)cov.style.backgroundImage='url("'+s.coverUrl+'")';
-      else cov.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>';
+      else cov.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
       row.appendChild(cov);
       var tx=document.createElement('span'); tx.className='sp-tx';
       tx.innerHTML='<b></b><small></small>';
@@ -2761,12 +2761,12 @@
     var sel=sp.pSelect;
     sp.projects.forEach(function(p){
       var card=document.createElement('div'); card.className='sp-card'+(sel&&sp.pSel[p.id]?' picked':'');
-      if(sel){ var ck=document.createElement('span'); ck.className='sp-check'; ck.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>'; card.appendChild(ck); }
+      if(sel){ var ck=document.createElement('span'); ck.className='sp-check'; ck.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'; card.appendChild(ck); }
       var cv=document.createElement('div'); cv.className='cv';
       // P6: faqat HAQIQIY muqovalar (thumb bor) — soniga qarab 1/2/3/4 layout, bo'sh katak yo'q.
       var covers=(p.covers||[]).filter(function(c){return c&&c.thumb;}).slice(0,4);
       cv.className='cv cv-n'+covers.length;
-      if(!covers.length){ cv.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'; }
+      if(!covers.length){ cv.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
       else covers.forEach(function(c){ var cell=document.createElement('i'); cell.style.backgroundImage='url("'+c.thumb+'")'; cv.appendChild(cell); });
       card.appendChild(cv);
       var nm=document.createElement('div'); nm.className='nm'; nm.textContent=p.name||'Project'; card.appendChild(nm);
@@ -2944,7 +2944,7 @@
       var row=document.createElement('div'); row.className='sp-row';
       var cov=document.createElement('span'); cov.className='sp-cov';
       if(s.coverUrl)cov.style.backgroundImage='url("'+s.coverUrl+'")';
-      else cov.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>';
+      else cov.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
       row.appendChild(cov);
       var tx=document.createElement('span'); tx.className='sp-tx'; tx.innerHTML='<b></b><small></small>';
       tx.querySelector('b').textContent=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'Session');

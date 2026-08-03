@@ -90,10 +90,26 @@
     return new Uint8Array(out);
   }
 
+  // `js/ae-shim/node-io.js` — `fetch`/UXP `fs` ustidagi Node adapteri (shu
+  // fayldan OLDIN yuklanadi). Bo'lmasa native modul o'zi qaytariladi.
+  var IO = window.__FFNodeIO || null;
+
   var MAP = {
-    fs: function () { return nativeModule("fs") || absent("fs", "UXP `fs` moduli mavjud emas."); },
+    // Native UXP `fs` da AE kutadigan bir nechta sync metod yo'q
+    // (`existsSync`, `rmSync`, `createWriteStream` …) — adapter to'ldiradi.
+    fs: function () {
+      var n = nativeModule("fs");
+      if (!n) return absent("fs", "UXP `fs` moduli mavjud emas.");
+      return (IO && IO.wrapFs(n)) || n;
+    },
     "fs/promises": function () { var m = nativeModule("fs"); return (m && m.promises) || m; },
-    os: function () { return nativeModule("os") || absent("os", "UXP `os` moduli mavjud emas."); },
+    // `tmpdir()`/`homedir()` → UXP plugin-temp / plugin-data nativePath.
+    // Spike: `insertMogrtFromPath()` plugin-temp yo'lidan ishlaydi.
+    os: function () {
+      var n = nativeModule("os");
+      if (!n && !IO) return absent("os", "UXP `os` moduli mavjud emas.");
+      return IO ? IO.wrapOs(n) : n;
+    },
     path: function () { return nativeModule("path") || absent("path", "UXP `path` moduli mavjud emas."); },
     buffer: function () { return { Buffer: BufferShim }; },
     child_process: function () {
@@ -101,8 +117,15 @@
         "Premiere UXP jarayon ishga tushira olmaydi. Kalit saqlash → `uxp.storage.secureStorage`, " +
         "brauzer ochish → `uxp.shell.openExternal`.");
     },
-    http: function () { return absent("http", "Tarmoq uchun `fetch()` ishlating."); },
-    https: function () { return absent("https", "Tarmoq uchun `fetch()` ishlating."); },
+    // `downloadUrlToFile()` (pack/.mogrt yuklab olish) sof Node naqshida —
+    // `lib.get(u, {headers}, res => res.pipe(ws))`. Adapter uni `fetch` ustida
+    // qayta yasaydi; usiz Premiere'da import umuman ishga tushmasdi.
+    http: function () {
+      return IO ? IO.makeHttp("http") : absent("http", "Tarmoq uchun `fetch()` ishlating.");
+    },
+    https: function () {
+      return IO ? IO.makeHttp("https") : absent("https", "Tarmoq uchun `fetch()` ishlating.");
+    },
     zlib: function () {
       return absent("zlib", "UXP'da siqish yo'q. `.zip`/`.mogrt` ochish SERVERDA bajariladi.");
     },

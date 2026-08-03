@@ -55,7 +55,7 @@ qaytadan yozadi. Asosiy transformlar:
 
 Oxirida statistika bosiladi (qoidalar soni, gap→margin, psevdo gap …).
 
-### UXP'ning ikki qimmat tuzog'i
+### UXP'ning qimmat tuzoqlari
 
 > **1. Nisbiy yo'l plagin ILDIZIDAN yechiladi, hujjat papkasidan emas.**
 > Kirish nuqtasi `ported/index.html` bo'lganda `href="ae.css"` → `/ae.css`
@@ -71,6 +71,69 @@ Oxirida statistika bosiladi (qoidalar soni, gap→margin, psevdo gap …).
 > ketadi. To'g'ri qiymat `min(w,h)/2` — faqat ish vaqtida ma'lum, shuning uchun
 > port `__AF_PILLC` ro'yxatini yig'adi va `js/ae-shim/pill-radius.js` klamplaydi.
 > CSS qiymati O'ZGARTIRILMAYDI, brauzerdagi QA etaloni buzilmasin.
+>
+> **3. `window.__adobe_cep__` = "host ichidamiz" bayrog'i.** AE manbasi 25+
+> joyda `typeof window.__adobe_cep__ === "undefined"` bo'yicha shoxlanadi.
+> UXP'da uni hech kim e'lon qilmagani uchun panel **Premiere ichida "brauzer"
+> rejimida** yurardi: import `"Import only works inside After Effects"` deb
+> tashlardi, disk/sekret saqlash o'chiq qolardi, Google kirish esa yagona
+> ishlaydigan shoxni (`__adobe_cep__ && CSInterface`) o'tkazib yuborardi.
+> `js/ae-shim/csinterface-shim.js` uni **faqat `uxp` mavjud bo'lganda** e'lon
+> qiladi — brauzerdagi 1:1 QA etaloni (u ham "brauzer" rejimida) tegilmaydi.
+>
+> **4. Qisqartma (`shorthand`) CSS e'lonlari TASHLANADI.** UXP `background` va
+> `border` qisqartmasini tushunmaydi, faqat longhand'ni qabul qiladi. Natijasi
+> jonli ko'rindi: `.lg-input{background:rgba(255,255,255,.05)}` umuman
+> qo'llanmadi va UXP `<input>` o'zining native chizmasini — pill ichida ochroq
+> kvadrat quti — ko'rsatib qoldi. Port ularni longhand'ga yoyadi
+> (`background-color`, `border-width/style/color`). Hisoblangan qiymat aynan
+> bir xil: 3719 qoidadan `background`/`border` dan TASHQARIDA nol farq —
+> geometriya imzosi o'zgarmaydi.
+>
+> **5. Ildiz `<svg>` prezentatsiya atributlari MEROS BO'LMAYDI.** Lucide
+> uslubidagi kontur ikonalari (`<svg fill="none" stroke="currentColor">`)
+> UXP'da standart `fill:black; stroke:none` bilan chiziladi: kontur yo'qoladi,
+> ichki shakl qora dog' bo'lib qoladi (login "ko'z" tugmasida aynan shunday
+> bo'ldi). Port `fill`/`stroke`/`stroke-*`/`*-rule` ni bolalarga ko'chiradi;
+> bolada o'z atributi bo'lsa TEGILMAYDI. Markup atributlar olib tashlangandan
+> keyin bayt-bir-xil qoladi.
+>
+> **6. `http`/`https` va `fs.createWriteStream` YO'Q.** AE'ning butun yuklab
+> olish yo'li (`downloadUrlToFile` → pack va `.mogrt`) sof Node naqshida
+> yozilgan. AE manbasiga TEGMASLIK sharti bilan `js/ae-shim/node-io.js` ularni
+> `fetch` + UXP `fs` ustida qayta yasaydi. Eng nozik joyi: `fetch` bo'laklari
+> **ArrayBuffer**, ya'ni `.length` — `undefined`. AE `done += chunk.length`
+> deydi (→ `NaN` progress) va `body += chunk` deydi (→ buzilgan JSON), shuning
+> uchun har bo'lak `Uint8Array` ga (utf8 `toString()` bilan) normallashtiriladi.
+> `os.tmpdir()`/`homedir()` sinxron, UXP `getTemporaryFolder()` esa Promise —
+> yo'llar panel yuklanganda bir marta yechilib keshlanadi.
+>
+> **7. Tuzoq 2 va 4 INLINE uslubga ham tegishli.** AE'ning bir qancha bloki
+> qutini JS shabloni ichida yasaydi (`style="border:1px solid var(--accent);
+> background:var(--accent-soft)"`, `border-radius:999px`). Qoida darajasidagi
+> tuzatish ularni KO'RMAYDI: Google bir martalik kod kartasi Premiere'da
+> chegarasiz/fonsiz chiqar, "Copy code" tugmasi esa 999px yoyi bilan linzaga
+> aylanardi. Shu sabab: (a) port `style="…"`, `cssText='…'` va
+> `.style.background` ni ham yoyadi (dinamik qiymat — `background:${c}` — ham
+> `background-color` ga o'tadi; gradient/`url()` ga TEGILMAYDI, UXP ularni
+> baribir chizmaydi), (b) `pill-radius.js` selektoriga `[style]` qo'shildi.
+>
+> **8. `<input>` yarim shaffof fonni IKKI MARTA chizadi.** UXP `background-color`
+> ni ham element qutisiga, ham ichki "matn tahriri" sohasiga (matn qatori
+> balandligi, padding'dan ichkarida, o'tkir burchakli) chizadi. Alfa < 1 bo'lsa
+> ikkinchi qatlam birinchisi ustiga tushadi → maydon ichida ochroq lenta
+> (`.lg-input`: 5% oq → lenta joyida ~10%). Jonli zond bilan aniqlandi: NOSHAFFOF
+> rang berilganda butun quti bir tekis va radius bo'yicha to'g'ri chiziladi, ya'ni
+> nuqson faqat alfa < 1 da. Tekislab noshaffof qilish yordam bermaydi — ustki
+> qatlam MUALLIF rangini oladi. `js/ae-shim/uxp-input-chrome.js` (FAQAT UXP)
+> bunday maydonlar fonini `transparent` qiladi va native widget bezagini
+> (`appearance`, `background-image`, `box-shadow`, `outline-width`) o'chiradi.
+> **Ma'lum chetlanish:** AE'da maydon ichida 5% oq to'ldirish bor, UXP'da yo'q —
+> chegara va radius joyida, ko'rinish bir tekis. Rangni oldindan tekislab
+> bo'lmaydi: natija ortidagi fonga, u esa mavzuga (A/B/C) bog'liq.
+
+`manifest.json` da `localFileSystem: "fullAccess"` — `"plugin"` bilan Essential
+Graphics papkasiga yozib bo'lmaydi (`installMogrtToLibrary`), spike §5.
 
 ---
 

@@ -42,6 +42,7 @@ const stats = {
   gridRules: 0, gapRules: 0, gapOverrides: 0, gapSums: 0, gridColumn: 0, animOpacity: 0, backdrop: 0,
   buttons: 0, buttonSel: 0, disabledSel: 0, selWeak: 0, rowLeakWeak: 0, pseudoGap: 0, gapSpec: 0, gapSideSwap: 0, gapStale: 0, inlineHandlers: 0, cssRules: 0, emitted: 0,
   jsRequire: 0, jsButtons: 0, jsQuery: 0, copy: 0,
+  shorthand: 0, svgAttrs: 0, styleBg: 0,
 };
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -234,6 +235,142 @@ function splitTop(v) {
     cur += ch;
   }
   if (cur) out.push(cur);
+  return out;
+}
+
+/** Qavsdan TASHQARIDAGI vergullar soni (`rgba(1,2,3,.4)` → 0). */
+function topCommas(v) {
+  let d = 0, n = 0;
+  for (const ch of v) {
+    if (ch === "(") d++;
+    else if (ch === ")") d--;
+    else if (ch === "," && d === 0) n++;
+  }
+  return n;
+}
+
+/**
+ * `background` / `border` QISQARTMASINI longhand'ga yoyadi.
+ *
+ * SABAB: UXP CSS dvigateli bu ikki qisqartmani tushunmay TASHLAB YUBORADI,
+ * faqat longhand'ni qabul qiladi. Jonli o'lchovda ko'rindi: login maydonlarida
+ * (`.lg-input` `background:rgba(255,255,255,.05)`, `.lg-passinput`
+ * `background:none;border:0`) muallif foni umuman qo'llanmadi va UXP `<input>`
+ * o'zining native chizmasini ko'rsatib qoldi.
+ *
+ * Longhand'ning HISOBLANGAN qiymati aynan bir xil, shu sabab brauzerdagi 1:1
+ * QA etaloni va geometriya imzosi o'zgarmaydi.
+ *
+ * Bir joyda yozilgan: qoida deklaratsiyalari HAM, inline `style="…"` /
+ * `cssText='…'` HAM shu funksiyadan o'tadi.
+ *
+ * @returns {Array<[string,string]>|null} `null` = tegilmaydi.
+ */
+function expandShorthand(prop, v) {
+  if (prop === "background") {
+    // Ko'p qatlamli/rasmli qisqartmaga TEGMAYMIZ — UXP'da `url()`/gradient
+    // baribir yo'q, uni port'ning boshqa bosqichi hal qiladi.
+    // Vergul TEPA darajada bo'lsa — ko'p qatlamli qisqartma. `rgba(1,2,3,.4)`
+    // ichidagi vergul hisobga olinmasligi SHART (`.lg-input` aynan shunday).
+    if (/url\(|gradient\(/i.test(v) || topCommas(v)) return null;
+    if (!/^(none|transparent|currentcolor|#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)|hsla?\([^)]*\)|var\([^)]*\)|[a-zA-Z]+)$/.test(v)) return null;
+    return [["background-color", /^none$/i.test(v) ? "transparent" : v]];
+  }
+
+  if (prop === "border") {
+    if (/^(0|0px|none)$/i.test(v)) return [["border-width", "0"], ["border-style", "none"]];
+    // `1px solid X`. `splitTop` qavs ichini butun qoldiradi, ya'ni
+    // `rgba(255,255,255,.07)` bo'linib ketmaydi.
+    const parts = splitTop(v);
+    if (parts.length !== 3) return null;
+    const styleIdx = parts.findIndex((p) => /^(solid|dashed|dotted|double|none|hidden)$/i.test(p));
+    const widthIdx = parts.findIndex((p) => /^(0|[\d.]+px|thin|medium|thick)$/i.test(p));
+    if (styleIdx === -1 || widthIdx === -1) return null;
+    const colorIdx = [0, 1, 2].find((n) => n !== styleIdx && n !== widthIdx);
+    return [
+      ["border-width", parts[widthIdx]],
+      ["border-style", parts[styleIdx]],
+      ["border-color", parts[colorIdx]],
+    ];
+  }
+
+  return null;
+}
+
+/**
+ * Inline deklaratsiya ro'yxati (`style="…"` atributi yoki `cssText='…'`).
+ * CSS o'tishi style ATRIBUTIGA tegmaydi — qisqartma u yerda ham tashlanadi.
+ * O'lchovda: device-code kartasi (`border:1px solid var(--accent)` +
+ * `background:var(--accent-soft)`) Premiere'da butunlay ramkasiz/fonsiz chiqdi.
+ */
+function expandInlineDeclList(text) {
+  if (!/(^|;|\s)(background|border)\s*:/i.test(text)) return text;
+  // `;` bo'yicha QAVS DARAJASINI hisobga olib ajratamiz (`url(data:…;base64,…)`).
+  const parts = []; let d = 0, cur = "";
+  for (const ch of text) {
+    if (ch === "(") d++;
+    else if (ch === ")") d--;
+    if (ch === ";" && d === 0) { parts.push(cur); cur = ""; continue; }
+    cur += ch;
+  }
+  parts.push(cur);
+
+  let changed = false;
+  const out = parts.map((raw) => {
+    const i = raw.indexOf(":");
+    if (i === -1) return raw;
+    const prop = raw.slice(0, i).trim().toLowerCase();
+    if (prop !== "background" && prop !== "border") return raw;
+    const val = raw.slice(i + 1).trim();
+
+    // Dinamik qiymat (`background:${c}`, `background:'+col+'`) — nima kelishini
+    // port vaqtida bilmaymiz, lekin qisqartma UXP'da BARIBIR tashlanadi.
+    // Gradient bo'lsa tegmaymiz (UXP uni chizmaydi — yolg'on va'da bermaylik).
+    if (prop === "background" && /\$\{|'\s*\+|\+\s*'/.test(val) && !/gradient\s*\(|url\(/i.test(val)) {
+      changed = true;
+      stats.shorthand++;
+      return `background-color:${val}`;
+    }
+
+    const pairs = expandShorthand(prop, val);
+    if (!pairs) return raw;
+    changed = true;
+    stats.shorthand++;
+    return pairs.map(([p, v]) => `${p}:${v}`).join(";");
+  });
+  return changed ? out.join(";") : text;
+}
+
+/**
+ * Matn ichidagi HAR QANDAY inline uslubni qisqartmadan tozalaydi:
+ *   `style="…"` / `style='…'`  — markup va JS shablonlari,
+ *   `cssText='…'`              — JS'da dinamik yasalgan elementlar,
+ *   `.style.background=`       — DOM xossasi (UXP faqat `backgroundColor` ni biladi).
+ *
+ * Oxirgisi gradient/funksiya qiymatiga TEGMAYDI: `hero.style.background=pd3Grad(x)`
+ * va `'linear-gradient(…)'` — UXP'da baribir chizilmaydi, `backgroundColor` ga
+ * o'girish esa yolg'on "ishladi" degan taassurot berardi.
+ */
+function expandInlineStyles(text) {
+  // DIQQAT: qiymat ichida IKKINCHI turdagi tirnoq bo'lishi mumkin
+  // (`style="background:'+col+'"` — JS konkatenatsiyasi, `${escHtml(a.bg||'')}`),
+  // shu sabab har bir chegara uchun alohida naqsh — «ikkalasidan boshqa» EMAS.
+  let out = text
+    .replace(/(\sstyle\s*=\s*)"([^"]*)"/gi, (_m, pre, body) => `${pre}"${expandInlineDeclList(body)}"`)
+    .replace(/(\sstyle\s*=\s*)'([^']*)'/gi, (_m, pre, body) => `${pre}'${expandInlineDeclList(body)}'`);
+
+  out = out
+    .replace(/(cssText\s*=\s*)'([^']*)'/g, (_m, pre, body) => `${pre}'${expandInlineDeclList(body)}'`)
+    .replace(/(cssText\s*=\s*)"([^"]*)"/g, (_m, pre, body) => `${pre}"${expandInlineDeclList(body)}"`);
+
+  out = out.replace(/\.style\.background\s*=\s*([^;\n]*)/g, (m, rhs) => {
+    // `var(` chaqiruv sifatida hisoblanmasin — u yagona ruxsat etilgan funksiya.
+    const probe = rhs.replace(/\bvar\s*\(/g, "(");
+    if (/gradient\s*\(/i.test(rhs) || /[A-Za-z_$][\w$]*\s*\(/.test(probe)) return m;
+    stats.styleBg++;
+    return m.replace(".style.background", ".style.backgroundColor");
+  });
+
   return out;
 }
 
@@ -830,6 +967,17 @@ function transformRule(node, emit, media = "") {
     }
   }
 
+  // ── UXP: `background` / `border` QISQARTMASI → longhand (`expandShorthand`).
+  for (let i = decls.length - 1; i >= 0; i--) {
+    const d = decls[i];
+    if (!d.prop) continue;
+    const imp = / !important$/i.test(d.value) ? " !important" : "";
+    const pairs = expandShorthand(d.prop, String(d.value).replace(/ !important$/i, "").trim());
+    if (!pairs) continue;
+    decls.splice(i, 1, ...pairs.map(([p, v]) => ({ prop: p, value: v + imp })));
+    stats.shorthand++;
+  }
+
   const display = (get("display") || "").trim().toLowerCase();
   const isGrid = display === "grid" || display === "inline-grid";
 
@@ -1358,6 +1506,47 @@ function buttonsToDivs(html) {
   return out;
 }
 
+/**
+ * Ildiz `<svg>` dagi prezentatsiya atributlarini bolalarga KO'CHIRADI.
+ *
+ * UXP SVG dvigateli `fill`/`stroke` ni ildizdan meros qilmaydi — natijada
+ * lucide uslubidagi kontur ikonalari (`<svg fill="none" stroke="currentColor">`)
+ * standart `fill:black; stroke:none` bilan chiziladi: kontur yo'qoladi, ichki
+ * shakl esa qora dog' bo'lib qoladi. Jonli o'lchov (login "ko'z" tugmasi):
+ * ko'z konturi umuman ko'rinmadi, `<circle r="3">` to'ldirilgan nuqta bo'ldi.
+ *
+ * Bolada o'z atributi bo'lsa TEGILMAYDI (to'ldirilgan + konturli aralash
+ * ikonalar buzilmasin). Brauzerda natija piksel-bir xil — meros qiymati aynan
+ * shu qiymatning o'zi, shu sabab 1:1 QA etaloni o'zgarmaydi.
+ */
+const SVG_INHERIT = ["fill", "stroke", "stroke-width", "stroke-linecap",
+  "stroke-linejoin", "stroke-miterlimit", "fill-rule", "clip-rule"];
+const SVG_SHAPES = /^(path|circle|rect|line|polyline|polygon|ellipse|g)$/i;
+
+function svgInheritAttrs(html) {
+  return html.replace(/<svg(\s[^>]*)?>([\s\S]*?)<\/svg>/gi, (whole, rootAttrs, inner) => {
+    const attrs = rootAttrs || "";
+    const own = {};
+    for (const name of SVG_INHERIT) {
+      const m = attrs.match(new RegExp(`\\s${name}\\s*=\\s*(['"])([^'"]*)\\1`, "i"));
+      if (m) own[name] = m[2];
+    }
+    if (!Object.keys(own).length) return whole;
+
+    const patched = inner.replace(/<([a-zA-Z][\w-]*)((?:\s[^>]*?)?)(\/?)>/g, (tag, name, tagAttrs, slash) => {
+      if (!SVG_SHAPES.test(name)) return tag;
+      let extra = "";
+      for (const [k, v] of Object.entries(own)) {
+        if (new RegExp(`\\s${k}\\s*=`, "i").test(tagAttrs)) continue;
+        extra += ` ${k}="${v}"`;
+        stats.svgAttrs++;
+      }
+      return `<${name}${tagAttrs}${extra}${slash}>`;
+    });
+    return `<svg${attrs}>${patched}</svg>`;
+  });
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    JS
    ══════════════════════════════════════════════════════════════════════════ */
@@ -1460,6 +1649,11 @@ function transformJs(code) {
   // maslahatlari — 12 joy). CSS o'tishi style ATRIBUTIGA tegmaydi, flexda esa
   // `grid-column` ma'nosiz: spacer butun qator o'rniga bitta ustunga tushardi.
   out = out.replace(/grid-column:\s*1\s*\/\s*-1/g, () => { stats.gridColumn++; return "flex:0 0 100%"; });
+
+  // JS shablonlari ichidagi SVG ikonalari ham ildizdan meros olmaydi.
+  out = svgInheritAttrs(out);
+  // Inline `style="…"` / `cssText='…'` — CSS o'tishi ularga tegmaydi.
+  out = expandInlineStyles(out);
   return transformCopy(out);
 }
 
@@ -1610,7 +1804,7 @@ function main() {
     else if (code.trim()) scripts.push({ code });
     return "";
   });
-  body = transformCopy(buttonsToDivs(body))
+  body = transformCopy(expandInlineStyles(svgInheritAttrs(buttonsToDivs(body))))
     // Markupdagi inline `style="grid-column:1/-1"` — JS shablonlaridagidek.
     .replace(/grid-column:\s*1\s*\/\s*-1/g, () => { stats.gridColumn++; return "flex:0 0 100%"; });
   stats.inlineHandlers = (body.match(/\son[a-z]+\s*=/gi) || []).length;
@@ -1668,6 +1862,7 @@ function main() {
     "ported/gap-text-classes.js",    // __AF_GAPC — gap konteynerlari (generatsiya)
     "js/ae-shim/gap-text.js",        // yalang'och matnni <span> ga o'raydi
     "js/ae-shim/autofill.js",        // auto-fill grid ustun enini o'lchaydi
+    "js/ae-shim/node-io.js",         // http/https → fetch, fs oqim, os.tmpdir (require-shim'dan OLDIN)
     "js/ae-shim/require-shim.js",    // __ffRequire (fs/os/path bor, qolganiga halol xato)
     "js/ae-shim/element-fix.js",     // createElement('button'), DOMParser, animate
     "js/ae-shim/button-box.js",      // tugma tarkibini vertikal markazlaydi
@@ -1675,6 +1870,7 @@ function main() {
     "js/ae-shim/inline-events.js",   // onclick="…" delegatsiyasi
     "js/ae-shim/media-fix.js",       // <img>/<video> aniq o'lchami
     "js/ae-shim/pill-radius.js",     // border-radius klampi (UXP o'zi klamplamaydi)
+    "js/ae-shim/uxp-input-chrome.js", // <input> native chizmasi (FAQAT UXP ichida)
     "js/ae-shim/strip-settle.js",    // pill lentalari: layout tinchigach qayta hisob
     "js/ae-shim/wrap-gap.js",        // o'ralishda qator oxiridagi ortiqcha margin
   ];
@@ -1742,6 +1938,9 @@ function main() {
   console.log(`  require() → shim   : ${stats.jsRequire}`);
   console.log(`  host atamasi (AE→PR): ${stats.copy}`);
   console.log(`  inline hodisa      : ${stats.inlineHandlers} (delegatsiya bilan bajariladi)`);
+  console.log(`  qisqartma → longhand: ${stats.shorthand} (background/border — UXP qisqartmani tashlaydi)`);
+  console.log(`  SVG atribut merosi : ${stats.svgAttrs} (ildiz fill/stroke → bolalarga)`);
+  console.log(`  .style.background  : ${stats.styleBg} → backgroundColor (gradientlarga tegilmadi)`);
   console.log(`  inline skript      : ${inlineFiles.length} fayl`);
   console.log(`  AE tashqi JS       : ${copied} fayl · shrift: ${fonts}`);
   console.log(`  → ${path.relative(process.cwd(), OUT)}`);

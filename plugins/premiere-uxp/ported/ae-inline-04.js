@@ -11,7 +11,7 @@
     if(ov)return ov;
     ov=document.createElement('div'); ov.className='ai-sess-ov'; ov.id='aiSessModal';
     ov.innerHTML='<div class="ai-sess-card">'
-      +'<div class="ai-sess-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>'
+      +'<div class="ai-sess-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
       +'<div class="ai-sess-t">Session expired — please sign in again</div>'
       +'<div class="ai-sess-s">For security, sessions refresh every 24 hours.</div>'
       +'<div role="button" tabindex="0" type="button" class="ai-sess-btn">Sign in</div></div>';

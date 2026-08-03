@@ -526,7 +526,7 @@
       host.innerHTML='';
       pics.forEach(function(it){
         var d=document.createElement('div');
-        d.style.cssText='aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border:1px solid rgba(255,255,255,.08);background:#0c0f14 url("'+String(it.thumb||it.url).replace(/"/g,'&quot;')+'") center/cover no-repeat';
+        d.style.cssText='aspect-ratio:1/1;border-radius:8px;overflow:hidden;cursor:pointer;border-width:1px;border-style:solid;border-color:rgba(255,255,255,.08);background:#0c0f14 url("'+String(it.thumb||it.url).replace(/"/g,'&quot;')+'") center/cover no-repeat';
         d.title=(it.title||'').slice(0,60);
         d.addEventListener('click',function(){
           if(st.refs.length>=meta.maxRefs){ toast('Max '+meta.maxRefs+' reference(s)','warning'); return; }
@@ -556,12 +556,12 @@
       items.forEach(function(it){
         var mp=it.mediaPath||'';
         var o=document.createElement('div'); o.className='opt';
-        o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||base(mp)).replace(/[<>]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div><span class="igprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>';
+        o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><b>'+String(it.name||base(mp)).replace(/[<>]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div><span class="igprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>';
         (function(path,row){ o.addEventListener('click',function(){
           if(!path)return;
           var chk=row.querySelector('.igprojchk');
-          if(sel[path]){ delete sel[path]; row.style.background=''; if(chk)chk.textContent='○'; }
-          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Not enough space left (≤'+slotsLeft()+')','warning'); return; } sel[path]=true; row.style.background='var(--accent-soft)'; if(chk)chk.textContent='✓'; }
+          if(sel[path]){ delete sel[path]; row.style.backgroundColor=''; if(chk)chk.textContent='○'; }
+          else { if(Object.keys(sel).length>=slotsLeft()){ toast('Not enough space left (≤'+slotsLeft()+')','warning'); return; } sel[path]=true; row.style.backgroundColor='var(--accent-soft)'; if(chk)chk.textContent='✓'; }
           refreshFoot();
         }); })(mp,o);
         $('igProjList').appendChild(o);
@@ -879,10 +879,10 @@
 
   // ---- natija kartalari ----
   function mkAct(svg,label,fn){ var d=document.createElement('div'); d.innerHTML=svg+' '+label; d.addEventListener('click',fn); return d; }
-  var IC_IMP='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
-  var IC_SAVE='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
-  var IC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
-  var IC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>';
+  var IC_IMP='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var IC_SAVE='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var IC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var IC_REF='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function downloadUrl(url,name){
     if(IS_CEP){ toast('Download — import into the Premiere Project panel instead','info'); return; }
     // PROBLEM 13 — nom prompt'dan (afGenDlName); berilmasa URL kengaytmasi bilan fallback.
@@ -950,8 +950,8 @@
   }
 
   // ---- lightbox (natijani to'liq ko'rish + amal paneli: Import / Referensга / Yuklab) ----
-  var IC_VID='<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="M22 8l-6 4 6 4z"/></svg>';
-  var IC_AUD='<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>';
+  var IC_VID='<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 8l-6 4 6 4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var IC_AUD='<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function importMediaCat(url,cat){ var kind=cat==='video'?'video':(cat==='audio'||cat==='sfx')?'audio':'image'; if(typeof aiImportMedia==='function')aiImportMedia(url,kind,null); else toast('Premiere import only works inside Premiere Pro','info'); }
   function lbAct(svg,label,fn){ var d=document.createElement('div'); d.className='lba'; d.innerHTML=svg+' '+label; d.addEventListener('click',fn); return d; }
   // item = string (rasm) yoki {url,cat}. UMUMIY lightbox: rasm→<img>, video→<video controls autoplay>, ovoz→<audio>.
@@ -963,9 +963,9 @@
 
   // ---- SO'NGGI grid (katta kartali 2-ustun; hover ⬇/✕ · ☑ select batch o'chirish; Barchasi → Tarix) ----
   function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Voice':(c==='sfx')?'SFX':'Image'; }
-  var RC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
-  var RC_X='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>';
-  var RC_CHK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+  var RC_DL='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var RC_X='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var RC_CHK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function recentBatchEl(){ return $('igRecentBatch'); }
   function updRecentBatch(){ var b=recentBatchEl(); if(!b)return; b.classList.toggle('on',st.recentSelect); var bi=$('igRecentBI'); if(bi)bi.textContent=Object.keys(st.recentSel).length+' selected'; }
   // Image tool refKind (model-aware): edit modellar referens oladi (image/@imgN), t2i — yo'q.

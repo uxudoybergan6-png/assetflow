@@ -60,7 +60,7 @@
   // Skript parse vaqtida ishlaydi va uchta konteyner ham yuqorida (markup'da) e'lon qilingan, ya'ni
   // birinchi gate chaqirig'idan (`igCreditGate` va h.k.) ancha oldin id'lar mavjud bo'ladi.
   (function(){
-    var ic='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg>';
+    var ic='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm1 11.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z" fill="currentColor"/></svg>';
     var ls=document.querySelectorAll('[data-lowcred]');
     for(var i=0;i<ls.length;i++){ var el=ls[i], p=el.getAttribute('data-lowcred');
       el.id=p+'LowBanner';
@@ -77,7 +77,7 @@
     if(poster)v.poster=poster;
     v.src=String(url)+(/#/.test(String(url))?'':'#t=0.1');
     v.muted=true; v.setAttribute('muted',''); v.playsInline=true; v.setAttribute('playsinline',''); v.preload=poster?'metadata':'auto';
-    v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background:#000';
+    v.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;background-color:#000';
     try{ var sk=false; var seek=function(){ if(sk)return; try{v.currentTime=0.1;}catch(e){} };
       v.addEventListener('loadedmetadata',seek); v.addEventListener('loadeddata',seek); v.addEventListener('canplay',seek); v.addEventListener('seeked',function(){sk=true;}); }catch(e){}
     return v;
@@ -434,22 +434,22 @@
   // — har tool o'z ctx'ini beradi (model-aware refKind/onRef tool ichida); RENDER + LIGHTBOX umumiy.
   window.afRecent=(function(){
     var IC={
-      x:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>',
-      chk:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
-      imp:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
-      ref:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
-      rst:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
-      dl:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
-      up:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',
-      aud:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>',
-      play:'<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none"/></svg>'
+      x:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      chk:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      imp:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      ref:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      rst:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      dl:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      up:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21H3v-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 3l-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 21l7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      aud:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      play:'<svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"><circle cx="12" cy="12" r="10" fill="rgba(0,0,0,.5)" stroke="#fff" stroke-width="1.4"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff" stroke="none" stroke-width="1.4"/></svg>'
     };
     function catLabel(c){ return c==='video'?'Video':(c==='audio')?'Voice':(c==='sfx')?'SFX':'Image'; }
     // P16 — grid kartalar uchun matnsiz tur ikonkasi (.tg/.rc-cat); web .va-typeicon bilan bir xil uslub
     function catIcon(c){
-      if(c==='video')return '<svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>';
-      if(c==='audio'||c==='sfx')return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>';
-      return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+      if(c==='video')return '<svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z" fill="#fff"/></svg>';
+      if(c==='audio'||c==='sfx')return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     }
 
     // ---- UMUMIY lightbox (bitta DOM, body oxirida; rasm/video/ovoz) — b10 mockup 1:1 ----
@@ -459,16 +459,16 @@
       if(lb)return lb;
       lb=document.createElement('div'); lb.className='lightbox'; lb.id='afLightbox';
       lb.innerHTML='<div class="lbinner">'
-        +'<div class="lbtop"><span class="lbcount" id="afLbCount"></span><span class="lbsp"></span><span class="lbesc">ESC</span><div class="lx" id="afLbClose"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div></div>'
+        +'<div class="lbtop"><span class="lbcount" id="afLbCount"></span><span class="lbsp"></span><span class="lbesc">ESC</span><div class="lx" id="afLbClose"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>'
         +'<div class="lbmedia">'
         +  '<video id="afLbVideo" playsinline style="display:none"></video>'
         +  '<img id="afLbImg" alt="" style="display:none"/>'
         +  '<audio id="afLbAudio" style="display:none"></audio>'
-        +  '<div class="lbaud" id="afLbAud"><div role="button" tabindex="0" type="button" class="lbaplay" id="afLbAudPlay"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div><div class="lbamid"><div class="lbawave" id="afLbAudWave"><div class="lbabars" id="afLbAudBars"></div><div class="lbaprog" id="afLbAudProg"></div><div class="lbaline" id="afLbAudLine"></div></div><div class="lbatime" id="afLbAudTime">00:00 / 00:00</div></div></div>'
-        +  '<div class="lbplay" id="afLbPlay" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></div>'
-        +  '<div class="lbnav" id="afLbNav" style="display:none"><div class="lbnavb" id="afLbPrev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="lbnavb" id="afLbNext"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div></div>'
+        +  '<div class="lbaud" id="afLbAud"><div role="button" tabindex="0" type="button" class="lbaplay" id="afLbAudPlay"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></div><div class="lbamid"><div class="lbawave" id="afLbAudWave"><div class="lbabars" id="afLbAudBars"></div><div class="lbaprog" id="afLbAudProg"></div><div class="lbaline" id="afLbAudLine"></div></div><div class="lbatime" id="afLbAudTime">00:00 / 00:00</div></div></div>'
+        +  '<div class="lbplay" id="afLbPlay" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z" fill="#fff"/></svg></div>'
+        +  '<div class="lbnav" id="afLbNav" style="display:none"><div class="lbnavb" id="afLbPrev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="lbnavb" id="afLbNext"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>'
         +'</div>'
-        +'<div class="lbscrub" id="afLbScrub"><div class="lbtrack" id="afLbTrack"><div class="lbfill" id="afLbFill"></div><span class="lbknob" id="afLbKnob"></span></div><span class="lbtime" id="afLbTime">00:00 / 00:00</span><span class="lbspk" id="afLbSpk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span></div>'
+        +'<div class="lbscrub" id="afLbScrub"><div class="lbtrack" id="afLbTrack"><div class="lbfill" id="afLbFill"></div><span class="lbknob" id="afLbKnob"></span></div><span class="lbtime" id="afLbTime">00:00 / 00:00</span><span class="lbspk" id="afLbSpk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>'
         +'<div class="lbcard" id="afLbCard"><div class="lbprompt" id="afLbPrompt"></div><div class="lbchips" id="afLbChips"></div></div>'
         +'<div class="lbacts" id="afLbActs"></div>'
         +'<div class="lbcap" id="afLbCap"></div>'
@@ -504,8 +504,8 @@
       var au=lb.querySelector('#afLbAudio'), aplay=lb.querySelector('#afLbAudPlay'),
           awave=lb.querySelector('#afLbAudWave'), aprog=lb.querySelector('#afLbAudProg'),
           aline=lb.querySelector('#afLbAudLine'), atime=lb.querySelector('#afLbAudTime');
-      var A_PLAY='<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-      var A_PAUSE='<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+      var A_PLAY='<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
+      var A_PAUSE='<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor"/></svg>';
       function updAu(){ var d=au.duration||0, c=au.currentTime||0, p=d?Math.min(100,c/d*100):0; aprog.style.width=p+'%'; aline.style.left=p+'%'; atime.textContent=fmtT(c)+' / '+fmtT(d); }
       au.addEventListener('timeupdate',updAu);
       au.addEventListener('loadedmetadata',updAu);
@@ -542,7 +542,7 @@
         for(var aw2=0;aw2<40;aw2++){ var abar=document.createElement('i'); abar.style.height=(20+((aseed+aw2*37)%67))+'%'; abars.appendChild(abar); }
         document.getElementById('afLbAudProg').style.width='0%'; document.getElementById('afLbAudLine').style.left='0%';
         document.getElementById('afLbAudTime').textContent='00:00 / 00:00';
-        document.getElementById('afLbAudPlay').innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+        document.getElementById('afLbAudPlay').innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
         au.src=it.url;
       }
       else {
@@ -584,19 +584,19 @@
       // amallar: lime Import + icon-doiralar (ctx handlerlari SAQLANADI)
       acts.innerHTML=''; var cap=[];
       var imp=document.createElement('div'); imp.className='lbimp';
-      imp.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Import';
+      imp.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Import';
       imp.addEventListener('click',function(){ ctx.onImport&&ctx.onImport(it); });
       acts.appendChild(imp); cap.push('Import');
       // P1: lightbox'da ham Add to project (ctx bergan bo'lsa)
-      if(ctx.onAddProject&&it.id){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>','Add to project',function(){ ctx.onAddProject(it); })); cap.push('Add to project'); }
+      if(ctx.onAddProject&&it.id){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 11v6M9 14h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>','Add to project',function(){ ctx.onAddProject(it); })); cap.push('Add to project'); }
       // P3 (step 34) — lightbox'da Add to Explore
-      if(ctx.onAddExplore&&it.id){ var exLbl=window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'; acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',exLbl,function(){ ctx.onAddExplore(it); })); cap.push(exLbl); }
-      if(ctx.refAllowed&&ctx.refAllowed(it)){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>','Reference',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); })); cap.push('Reference'); }
+      if(ctx.onAddExplore&&it.id){ var exLbl=window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'; acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',exLbl,function(){ ctx.onAddExplore(it); })); cap.push(exLbl); }
+      if(ctx.refAllowed&&ctx.refAllowed(it)){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>','Reference',function(){ closeLb(); ctx.onRef&&ctx.onRef(it); })); cap.push('Reference'); }
       // BATCH4 #1/#2 — lightbox'da Upscale (rasm: Imagen · video: Topaz)
       // SC_17: lightbox Upscale amali olib tashlandi
       // D6 — qadash: lightbox YOPILMAYDI (natijani ko'rib turib qilinadigan amal)
       if(ctx.onPin&&it.id){
-        var _pinEl=lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>',(it.pinned?'Unpin':'Pin to top'),function(){
+        var _pinEl=lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',(it.pinned?'Unpin':'Pin to top'),function(){
           ctx.onPin(it);
           // holat darhol ko'rinadi: `it` optimistik yangilanadi (galTogglePin), shu yerda aks etadi
           setTimeout(function(){ _pinEl.title=(it.pinned?'Unpin':'Pin to top'); _pinEl.classList.toggle('on',!!it.pinned); },0);
@@ -604,9 +604,9 @@
         _pinEl.classList.toggle('on',!!it.pinned);
         acts.appendChild(_pinEl); cap.push('Pin');
       }
-      if(ctx.onRestore&&it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>','Regenerate',function(){ closeLb(); ctx.onRestore(it); })); cap.push('Regenerate'); }
-      if(it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>','Copy prompt',function(){ window.afCopyText(it.prompt); })); cap.push('Copy prompt'); } // P2/P7: afCopyText o'zi toast qiladi
-      if(!ctx.isCEP){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="M6 11l6 6 6-6"/><path d="M5 21h14"/></svg>','Download',function(){ ctx.onDownload&&ctx.onDownload(it); })); cap.push('Download'); }
+      if(ctx.onRestore&&it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>','Regenerate',function(){ closeLb(); ctx.onRestore(it); })); cap.push('Regenerate'); }
+      if(it.prompt){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15V5a2 2 0 0 1 2-2h10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>','Copy prompt',function(){ window.afCopyText(it.prompt); })); cap.push('Copy prompt'); } // P2/P7: afCopyText o'zi toast qiladi
+      if(!ctx.isCEP){ acts.appendChild(lbIcon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 11l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>','Download',function(){ ctx.onDownload&&ctx.onDownload(it); })); cap.push('Download'); }
       document.getElementById('afLbCap').textContent=cap.join(' · ');
       lb.classList.add('on');
     }
@@ -642,13 +642,13 @@
         // SC_16: maqsadli ixcham audio karta — play/pause + tur chipi + statik waveform + bitta satr.
         d.classList.add('rc-aud');
         var ap=document.createElement('button'); ap.type='button'; ap.className='aplay'; ap.title='Play / pause';
-        ap.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
+        ap.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg>';
         ap.addEventListener('click',function(e){
           e.stopPropagation();
           // Yagona umumiy <audio> (lightbox pleer bilan bir xil URL yo'li) — bitta vaqtda bitta ijro
           var au=window.__afCardAudio||(window.__afCardAudio=new Audio());
-          var pauseSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
-          var playSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
+          var pauseSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/></svg>';
+          var playSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg>';
           if(au.src===it.url&&!au.paused){ au.pause(); ap.innerHTML=playSvg; return; }
           try{ au.pause(); }catch(err){}
           au.src=it.url; var pp=au.play(); if(pp&&pp.catch)pp.catch(function(){});
@@ -691,11 +691,11 @@
         e.stopPropagation();
         var items=[];
         items.push({ic:IC.imp,label:'Import to Premiere',fn:function(){ ctx.onImport&&ctx.onImport(it); }});
-        if(ctx.onAddProject&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6M9 14h6"/></svg>',label:'Add to project',fn:function(){ ctx.onAddProject(it); }});
-        if(ctx.onAddExplore&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',label:(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),fn:function(){ ctx.onAddExplore(it); }});
+        if(ctx.onAddProject&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 11v6M9 14h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',label:'Add to project',fn:function(){ ctx.onAddProject(it); }});
+        if(ctx.onAddExplore&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',label:(window.afExploreState?window.afExploreState(it.id).label:'Add to Explore'),fn:function(){ ctx.onAddExplore(it); }});
         if(ctx.refAllowed&&ctx.refAllowed(it))items.push({ic:IC.ref,label:'Use as reference',fn:function(){ ctx.onRef&&ctx.onRef(it); }});
         // R4_08 — Topaz bir-bosishlik enhance/upscale (faqat yoqilgan op + mos media turida)
-        var _tzIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+        var _tzIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         var _tzOp=(typeof window.afTopazOpFor==='function')?window.afTopazOpFor(it.cat||'image'):null;
         if(_tzOp){
           if((it.cat||'image')==='video'){
@@ -706,9 +706,9 @@
           }
         }
         // D6 — qadash (ctx bergan ro'yxatlarda)
-        if(ctx.onPin&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>',label:(it.pinned?'Unpin':'Pin to top'),fn:function(){ ctx.onPin(it); }});
+        if(ctx.onPin&&it.id)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',label:(it.pinned?'Unpin':'Pin to top'),fn:function(){ ctx.onPin(it); }});
         if(ctx.onRestore&&it.prompt)items.push({ic:IC.rst,label:'Regenerate',fn:function(){ ctx.onRestore(it); }});
-        if(it.prompt)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
+        if(it.prompt)items.push({ic:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15V5a2 2 0 0 1 2-2h10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',label:'Copy prompt',fn:function(){ window.afCopyText(it.prompt); }});
         if(!ctx.isCEP)items.push({ic:IC.dl,label:'Download',fn:function(){ ctx.onDownload&&ctx.onDownload(it); }});
         // SC_30: onDelete bermagan ctx'da o'lik band ko'rsatilmaydi; loyiha view'da label "Remove from project"
         if(ctx.onDelete)items.push({ic:IC.x,label:(ctx.deleteLabel||'Delete'),danger:true,fn:function(){ ctx.onDelete(it); }});
@@ -839,9 +839,9 @@
     return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+' '+hm;
   }
   var _ledIC={
-    video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3z"/></svg>',
-    image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
-    audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 010 8"/></svg>'
+    video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 10l6-3v10l-6-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 8a5 5 0 010 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
   // P21 (29) — HAQIQIY kredit ledger (CreditLedger endpoint): consume/refund/topup KO'RINADI.
   // Ilgari /gen/history cost'idan yasalardi → QAYTARILGAN KREDITLAR KO'RINMASDI ("pulimni yeb qo'ydi").
@@ -855,8 +855,8 @@
     }).catch(function(){ ledgerLoading=false; ledgerFlush(); });
   }
   var _ledReasonIC={
-    refund:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 109-9 9 9 0 00-8 5"/><path d="M3 3v5h5"/></svg>',
-    topup:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>'
+    refund:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 109-9 9 9 0 00-8 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3v5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    topup:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
   function renderLedger(){
     var w=document.getElementById('setLedger'); if(!w)return;
@@ -1076,12 +1076,12 @@
     tick(); axAutoTimer=setInterval(tick,1500);
   }
   // ── AI Tools kategoriya navigatsiyasi ──
-  var _catImgSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>';
-  var _catVidSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M22 8l-6 4 6 4z"/></svg>';
-  var _catAudSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 8a5 5 0 010 8M19.5 5.5a9 9 0 010 13"/></svg>';
-  var _cat3dSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5L3 7"/></svg>';
-  var _toolImgSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
-  var _toolVidSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="M22 8l-6 4 6 4z"/></svg>';
+  var _catImgSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var _catVidSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 8l-6 4 6 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var _catAudSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 8a5 5 0 010 8M19.5 5.5a9 9 0 010 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var _cat3dSVG='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 22V12M21 7l-9 5L3 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var _toolImgSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var _toolVidSVG='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 8l-6 4 6 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   // SC_05: models/sub — FALLBACK matnlar (fetch kelguncha / xatoda); jonli katalog
   // (window.__afLiveModelNames — fhomeFetchModels to'ldiradi) kelgach ular almashadi.
   // BIR qator format (ellipsis CSS'da) — eski 2 qatorli <br> ro'yxat olib tashlandi.
@@ -1194,7 +1194,7 @@
         else if(vNoPoster&&typeof window.afVideoThumb==='function'){ var vt=window.afVideoThumb(h.url); if(vt)d.appendChild(vt); }
         var tlab=(h.t==='video')?'Video':(h.t==='audio'||h.t==='sfx')?'Audio':'Image';
         d.insertAdjacentHTML('beforeend','<span class="htbadge">'+tlab+'</span>');
-        if(h.t==='video')d.insertAdjacentHTML('beforeend','<svg width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg>');
+        if(h.t==='video')d.insertAdjacentHTML('beforeend','<svg width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z" fill="#fff"/></svg>');
         d.addEventListener('click',function(){
           if(window.afRecent&&typeof window.afRecent.openLightbox==='function'&&h.url)window.afRecent.openLightbox(histLbItem(h),histLbCtx());
           else go('history'); // fallback — lightbox komponenti bo'lmasa

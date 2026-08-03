@@ -485,8 +485,18 @@
   CSInterface.prototype.evalScript = function (script, cb) {
     dispatch(script).then(function (r) { if (typeof cb === "function") cb(r); });
   };
+  // Xatoni YUTMAYMIZ: chaqiruvchi (`assetflow-account.js` → `openExternal`) buni
+  // "brauzer ochildi" deb qabul qiladi va `true` qaytaradi. Jim `catch` bo'lsa
+  // foydalanuvchiga "brauzerda tasdiqlang" deyilardi, ammo hech narsa ochilmasdi.
   CSInterface.prototype.openURLInDefaultBrowser = function (url) {
-    try { uxp.shell.openExternal(String(url)); } catch (e) { log.error("openExternal:", e); }
+    if (!uxp || !uxp.shell || !uxp.shell.openExternal) {
+      throw new Error("uxp.shell.openExternal mavjud emas");
+    }
+    var p = uxp.shell.openExternal(String(url));
+    // Promise — sinxron `true` qaytarilgach rad javobi jim qolmasin.
+    if (p && typeof p.catch === "function") {
+      p.catch(function (e) { log.error("openExternal rad etildi:", e); });
+    }
   };
   CSInterface.prototype.getHostEnvironment = function () {
     var v = "";
@@ -511,4 +521,45 @@
 
   window.CSInterface = CSInterface;
   window.__ffHostDispatch = dispatch;   // diagnostika uchun
+
+  /*
+   * `window.__adobe_cep__` — AE kodining "men host ilova ICHIDAMAN" bayrog'i.
+   *
+   * AE manbasida 25+ joyda `typeof window.__adobe_cep__ === "undefined"` bilan
+   * tekshiriladi va bu HAMMASI xatti-harakatni ikkiga ajratadi:
+   *   • yuklab olish / import (`downloadPackToTemp`, `downloadSceneMogrt`,
+   *     `extractMogrtItem`) — bayroqsiz "Import only works inside After Effects"
+   *     xatosini otadi, ya'ni Premiere'da import UMUMAN ishlamasdi;
+   *   • lokal saqlash diskka (`assetflow-local-store`), sozlama fayli
+   *     (`settingsFilePath`), vaqtinchalik papka tozalash, shrift hal qilish;
+   *   • brauzer ochish zanjiri (`assetflow-account.js` (c) sharti) — Google
+   *     kirishida "Couldn't open the browser automatically" AYNAN shundan edi;
+   *   • `ae-inline-02.js` dagi FAQAT-BRAUZER QA bloki bayroqsiz Premiere ICHIDA
+   *     ham ishlab ketardi.
+   * Bayroq berilmagani uchun panel Premiere ichida "brauzer" rejimida yurardi.
+   *
+   * Faqat HAQIQIY UXP runtime'da qo'yamiz (`uxp` moduli bor). Brauzerdagi 1:1
+   * QA harness'ida qo'yilmasin — u yerda AE etaloni ham brauzer rejimida va
+   * ikkalasi bir xil shoxni bosishi shart.
+   *
+   * Shakl: CEP'da bu — native ko'prik obyekti. Bizda CSInterface o'z ustidan
+   * ishlaydi, shu bois bu yerda faqat MAVJUDLIK bayrog'i + CEP `CSInterface.js`
+   * (agar biror yo'l bilan yuklansa) chaqiradigan bir nechta metod bor.
+   */
+  if (uxp) {
+    window.__adobe_cep__ = window.__adobe_cep__ || {
+      __ffUxp: true,
+      openURLInDefaultBrowser: function (url) {
+        return CSInterface.prototype.openURLInDefaultBrowser(url);
+      },
+      getSystemPath: function (kind) { return CSInterface.prototype.getSystemPath(kind); },
+      getHostEnvironment: function () {
+        return JSON.stringify(CSInterface.prototype.getHostEnvironment());
+      },
+      evalScript: function (script, cb) { CSInterface.prototype.evalScript(script, cb); },
+      addEventListener: function () {},
+      removeEventListener: function () {},
+      dispatchEvent: function () {},
+    };
+  }
 })();

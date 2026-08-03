@@ -504,9 +504,9 @@ function escHtml(s){
 // SC_43: referens sig'imi ikonka indikatori — GLOBAL yordamchi (image/video toollar birga ishlatadi).
 // kinds = [{k:'image'|'video'|'audio', used:N, lim:M, tip:'Up to M images ≤30MB'}] — faqat lim>0 turlar.
 window.AF_CAP_ICONS={
-  image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>',
-  video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2.5"/><path d="M16 10l6-3.5v11L16 14"/></svg>',
-  audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'
+  image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 10l6-3.5v11L16 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 // SC_46: sessiya feed LOADING skeleton — bo'sh flash o'rniga shimmer kartalar (grid o'lchamiga mos)
 window.afRecentSkel=function(n){
@@ -562,7 +562,7 @@ function renderCard(a,i,showDl){
   const isApp=Object.keys(FF_APPS).some(function(k){return FF_APPS[k]===appInfo;});
   const appMark=isApp
     ? `<i class="tile" style="${hmAppTileStyle(appDot)}">${appLbl}</i>${appInfo.full||appLbl}`
-    : `<i style="background:${appDot}"></i>${appLbl}`;
+    : `<i style="background-color:${appDot}"></i>${appLbl}`;
   // Status rozetkasi (yuqori-o'ng, bitta): ⏳ Pack > ✓ Yuklandi > AI bilan > YANGI
   let stTx='',stCol='';
   if(noPack){stTx='⏳ Pack';stCol='var(--amber)';}
@@ -583,7 +583,7 @@ function renderCard(a,i,showDl){
   return`<div class="card${noPack?' no-pack':''}" role="button" tabindex="0" data-name="${escHtml(a.n)}" data-ico="${escHtml(a.i)}" data-preview="${escHtml(a.preview||'')}"
     onmouseenter="playCardPreview(this)" onmouseleave="pauseCardPreview(this)"
     onclick="openPack('${safeName}')">
-    <div class="thumb${hasPreview?' has-preview':''}" style="background:${escHtml(a.bg)}">
+    <div class="thumb${hasPreview?' has-preview':''}" style="background-color:${escHtml(a.bg)}">
       <span class="ck-plan ${a.isPro?'pro':'free'}">${a.isPro?'PRO':'FREE'}</span>
       ${stBadge}
       <span class="ck-app">${appMark}</span>
@@ -1287,7 +1287,7 @@ window.pd3ToggleHeroPlay=pd3ToggleHeroPlay;
 
 /* ===== Katalog a3 — shablon detail (mockup 1:1 qobiq; import mantig'i saqlangan) ===== */
 /* SC_49: PD3_STAR / PD3_STAR_FILL (Favorite icons) o'chirildi */
-const PD3_PLAY='<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg>';
+const PD3_PLAY='<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M8 5.2v13.6L19 12z" fill="currentColor"/></svg>';
 
 /* Gradient placeholder — Home (1b) bilan bir xil oila, nom bo'yicha barqaror */
 function pd3Grad(key){
@@ -1357,7 +1357,7 @@ function renderPackMeta(name,pack,asset){
   return `<div class="pd3-title">${title}</div>
     <div class="pd3-metarow">
       <span class="pd3-cat">${cat}</span>
-      <span class="pd3-appchip"><i style="background:${app.dot}"></i>${app.lbl}</span>
+      <span class="pd3-appchip"><i style="background-color:${app.dot}"></i>${app.lbl}</span>
       ${authorHtml}
     </div>
     <div class="pd3-sub">${escHtml(bits.join(' · '))}</div>
@@ -1884,7 +1884,7 @@ function renderNoticeItem(a){
   const thumb=a.thumb?`<img src="${escHtml(a.thumb)}" alt="${escHtml(label)}" loading="lazy">`:'';
   const nw=a.nw?'<span class="notice-item-new">NEW</span>':'';
   return`<div class="notice-item" onclick="openPack('${safe}')" title="${escHtml(label)}">
-    <div class="notice-item-thumb" style="background:${escHtml(a.bg)}">${nw}${thumb}</div>
+    <div class="notice-item-thumb" style="background-color:${escHtml(a.bg)}">${nw}${thumb}</div>
     <div class="notice-item-name">${escHtml(label)}</div>
   </div>`;
 }
@@ -1913,7 +1913,7 @@ function renderHeroCard(a){
   const label=a.displayName||a.n;
   const img=a.thumb?`<img class="cat-hero-img" src="${escHtml(a.thumb)}" alt="" loading="lazy">`:'';
   const cat=a.t?`<div class="cat-hero-cardcat">${escHtml(a.t)}</div>`:'';
-  return`<div class="cat-hero-card" style="background:${escHtml(a.bg)}" onclick="openPack('${safe}')" title="${escHtml(label)}">
+  return`<div class="cat-hero-card" style="background-color:${escHtml(a.bg)}" onclick="openPack('${safe}')" title="${escHtml(label)}">
     ${img}
     ${a.nw?'<span class="cat-hero-new">NEW</span>':''}
     <span class="plan-badge ${a.isPro?'pro':'free'}">${a.isPro?'PRO':'FREE'}</span>
@@ -2036,10 +2036,10 @@ function updateFilterIndicator(){
 }
 
 // a7 holat ikonlari (inline SVG — a3–a6 uslubi; CDN yo'q)
-var AF7_SPIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>';
-var AF7_WIFI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3l20 20"/><path d="M5 12.6a11 11 0 0 1 4.3-2.6"/><path d="M1.4 8.8A16 16 0 0 1 7 5.6"/><path d="M8.5 16.1a6 6 0 0 1 6-1.2"/><path d="M16.7 10.5a11 11 0 0 1 2.9 2.1"/><path d="M22.6 8.8a16 16 0 0 0-5-3.1"/><path d="M12 20h.01"/></svg>';
-var AF7_REFRESH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>';
-var AF7_SEARCHMINUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/><path d="M8 11h6"/></svg>';
+var AF7_SPIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
+var AF7_WIFI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3l20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 12.6a11 11 0 0 1 4.3-2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.4 8.8A16 16 0 0 1 7 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 16.1a6 6 0 0 1 6-1.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.7 10.5a11 11 0 0 1 2.9 2.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M22.6 8.8a16 16 0 0 0-5-3.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 20h.01" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var AF7_REFRESH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 3v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 21v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var AF7_SEARCHMINUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="m20 20-3.2-3.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 11h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 /** So'nggi muvaffaqiyatli sinxron vaqti (HH:MM) yoki '' */
 function af7LastSync(){
@@ -2261,9 +2261,9 @@ function renderDl(){
    (toggleFav / openPack / deleteDownloadedTemplate / syncServerCatalog) o'zgarmaydi. */
 function afLibEscKey(n){return String(n).replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 /* SC_49: AF_LIB_STAR (Favorites card star) o'chirildi */
-var AF_LIB_IMP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
-var AF_LIB_REIMP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/></svg>';
-var AF_LIB_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>';
+var AF_LIB_IMP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var AF_LIB_REIMP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var AF_LIB_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 // SC_49: afLibFavCard (Favorites grid card) O'CHIRILDI — Favorites olib tashlandi.
 function afLibDlMeta(a){
@@ -2286,7 +2286,7 @@ function afLibDlRow(a){
   // SC_14: Re-import tugmasi o'chirildi — QATOR bosilishi detail'ni ochadi (yagona oqim:
   // karta/qator → detail → Import). Orphan (katalogda yo'q) qator bosilmaydi.
   return `<div class="lib-row"${a._orphan?'':` onclick="openPack('${safe}')" title="Open template" style="cursor:pointer"`}>
-    <div class="lib-rthumb" style="background:${escHtml(a.bg||'')}"><span class="lib-rck">✓</span></div>
+    <div class="lib-rthumb" style="background-color:${escHtml(a.bg||'')}"><span class="lib-rck">✓</span></div>
     <div class="lib-rmid"><div class="lib-rname">${escHtml(a.displayName||a.n)}</div><div class="lib-rmeta">${escHtml(afLibDlMeta(a))}</div></div>
     <div role="button" tabindex="0" type="button" class="lib-rtrash" title="Remove from project" onclick="event.stopPropagation();deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</div>
   </div>`;
@@ -2370,13 +2370,13 @@ function addLayer(name,ico,updatePreview=true){
   nameRow.className='ae-layer';
   nameRow.innerHTML=`
     <span class="layer-num">${num}</span><span class="layer-sw">●</span><span class="layer-sw">○</span>
-    <div class="layer-label"><span class="layer-color" style="background:${c}"></span><span class="layer-name">${ico} ${name}</span></div>`;
+    <div class="layer-label"><span class="layer-color" style="background-color:${c}"></span><span class="layer-name">${ico} ${name}</span></div>`;
   layerNames.insertBefore(nameRow, layerNames.firstChild);
 
   const timeLayers=document.getElementById('layers');
   const timeRow=document.createElement('div');
   timeRow.className='time-layer';
-  timeRow.innerHTML=`<div class="time-bar" style="left:${ml}%;width:${w}%;background:${c}55;border-color:${c}"></div>`;
+  timeRow.innerHTML=`<div class="time-bar" style="left:${ml}%;width:${w}%;background-color:${c}55;border-color:${c}"></div>`;
   timeLayers.insertBefore(timeRow, timeLayers.firstChild);
 
   const bin=document.getElementById('binList');
@@ -2471,7 +2471,7 @@ function updateServerNavBadges(){
       if(!badge){
         badge=document.createElement('span');
         badge.className='server-nav-badge';
-        badge.style.cssText='margin-left:auto;font-size:var(--fs-xs);font-weight:700;color:#6ee7b7;background:rgba(110,231,183,.12);padding:2px 6px;border-radius:99px';
+        badge.style.cssText='margin-left:auto;font-size:var(--fs-xs);font-weight:700;color:#6ee7b7;background-color:rgba(110,231,183,.12);padding:2px 6px;border-radius:99px';
         btn.appendChild(badge);
       }
       badge.textContent=String(n);
@@ -2556,7 +2556,7 @@ function hmAppTileStyle(col){
 }
 function hmAppMark(lbl){
   var col=HM_APPDOT[lbl]||'#A79BFF', full=HM_APPFULL[lbl];
-  if(!full)return '<i style="background:'+col+'"></i>'+hmEsc(lbl);
+  if(!full)return '<i style="background-color:'+col+'"></i>'+hmEsc(lbl);
   return '<i class="tile" style="'+hmAppTileStyle(col)+'">'+hmEsc(lbl)+'</i>'+full;
 }
 var HM_NAVLBL=NAV_LABELS; // P2 — yagona xaritadan (avval alohida, nomuvofiq nusxa edi)
@@ -2750,12 +2750,12 @@ function hmExploreCards(sec,row,items){
 }
 /* SC_50: Browse by category — 6 katalog turi kafeli (real navigatsiya; son ko'rsatilmaydi agar ochiq bo'lmasa). */
 var FHOME_CATS=[
-  {nav:'video',label:'Video Templates',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg>'},
-  {nav:'motion',label:'Motion Graphics',ic:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z"/></svg>'},
-  {nav:'graphics',label:'Graphics',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none"/></svg>'},
-  {nav:'luts',label:'LUTs',ic:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2"/></svg>'},
-  {nav:'music',label:'Music',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>'},
-  {nav:'sfx',label:'SFX',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>'}
+  {nav:'video',label:'Video Templates',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="13" y="3" width="8" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="15" width="18" height="6" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'},
+  {nav:'motion',label:'Motion Graphics',ic:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l1.4 4.1L17.5 8l-4.1 1.4L12 13.5l-1.4-4.1L6.5 8l4.1-1.4z" fill="currentColor" stroke="none"/></svg>'},
+  {nav:'graphics',label:'Graphics',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20l8-8a3 3 0 1 0-4.24-4.24l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="19" r="2.25" fill="currentColor" stroke="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'},
+  {nav:'luts',label:'LUTs',ic:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="4" y="5" width="4.5" height="14" rx="1.2" opacity=".32" fill="currentColor" stroke="none"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.2" opacity=".58" fill="currentColor" stroke="none"/><rect x="15.5" y="5" width="4.5" height="14" rx="1.2" fill="currentColor" stroke="none"/></svg>'},
+  {nav:'music',label:'Music',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'},
+  {nav:'sfx',label:'SFX',ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
 ];
 function renderHomeCategories(){
   var host=document.getElementById('homeCatTiles'); if(!host)return;
@@ -3340,7 +3340,7 @@ function afCmsNotices(list) {
     var close = document.createElement('div');
     close.className = 'af-nt cta';
     close.textContent = 'Yopish';
-    close.style.cssText = 'margin:12px auto 0;display:inline-block;padding:5px 16px;border:1px solid rgba(255,255,255,.2);border-radius:99px;cursor:pointer;font-weight:700;font-size:11px;background:transparent;box-shadow:none';
+    close.style.cssText = 'margin:12px auto 0;display:inline-block;padding:5px 16px;border-width:1px;border-style:solid;border-color:rgba(255,255,255,.2);border-radius:99px;cursor:pointer;font-weight:700;font-size:11px;background-color:transparent;box-shadow:none';
     close.onclick = function () { if (n0.id) afNoticeDismiss(n0.id); m.remove(); };
     bx.appendChild(close);
     m.appendChild(bx);
@@ -3478,7 +3478,7 @@ function renderHomeContinue(){
     tx.innerHTML='<b>'+hmEsc(li.name)+'</b><small><span class="st">IMPORTED</span>'+hmEsc('Template'+(ago?(' · '+ago):''))+'</small>';
     row.appendChild(tx);
     const b=document.createElement('button'); b.type='button'; b.className='imp soft act';
-    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8"/></svg>Re-import';
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Re-import';
     b.addEventListener('click',function(e){ e.stopPropagation(); homeReimport(li.key); });
     row.appendChild(b);
     row.addEventListener('click',function(){ homeOpenImported(li); });
@@ -3490,10 +3490,10 @@ function renderHomeContinue(){
     if(gen.cat==='video'&&typeof window.afVideoThumb==='function'){
       const v=window.afVideoThumb(gen.url,(gen.thumb&&gen.thumb!==gen.url)?gen.thumb:null);
       if(v)th.appendChild(v);
-      const pl=document.createElement('span'); pl.className='cplay'; pl.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>'; th.appendChild(pl);
+      const pl=document.createElement('span'); pl.className='cplay'; pl.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg>'; th.appendChild(pl);
     }else if(gen.cat==='audio'||gen.cat==='sfx'){
       th.style.background='linear-gradient(135deg,#1A2A4E,#33549E)';
-      const pl=document.createElement('span'); pl.className='cplay'; pl.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>'; th.appendChild(pl);
+      const pl=document.createElement('span'); pl.className='cplay'; pl.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l10-2v13" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'; th.appendChild(pl);
     }else{ th.style.backgroundImage='url("'+gen.thumb+'")'; }
     row.appendChild(th);
     const tx=document.createElement('div'); tx.className='tx';
@@ -3503,7 +3503,7 @@ function renderHomeContinue(){
     tx.innerHTML='<b>'+hmEsc(gen.title)+'</b><small><span class="st">READY</span>'+hmEsc(bits.join(' · '))+'</small>';
     row.appendChild(tx);
     const b=document.createElement('button'); b.type='button'; b.className='imp act';
-    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Import';
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Import';
     b.addEventListener('click',function(e){ e.stopPropagation(); homeImportGen(gen); });
     row.appendChild(b);
     row.addEventListener('click',function(){ if(window.afRecent&&window.afRecent.openLightbox)window.afRecent.openLightbox(gen,homeGenCtx()); });
@@ -3740,7 +3740,7 @@ function afHdrSyncAll(){
       if(ava)ava.style.display='none';
       if(!si){
         si=document.createElement('button'); si.type='button'; si.className='hd-signin';
-        si.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>Sign in';
+        si.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 17l5-5-5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12H3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Sign in';
         si.addEventListener('click',function(){ if(typeof openAccountSheet==='function')openAccountSheet(); });
         // SC_12: af-topbar endi grid — pill headerning O'NG klasteriga kiradi
         // (to'g'ridan grid'ga qo'shilsa yangi qatorga tushib layoutni buzadi)
@@ -4042,7 +4042,7 @@ document.addEventListener('keydown',function(e){
    MAVJUD per-entry extract+import yo'lidan (importSceneWithMode → extractMogrtItem)
    ketma-ket import qiladi va STATE-1 progress kartasini haydaydi. Bitta sahna va
    "Hammasini import" (downloadAll) yo'llari o'zgarmaydi. */
-const MGS_CHECK='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>';
+const MGS_CHECK='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 let __mogrtPackKey='', __mogrtItems=[], __mogrtSel=new Set();
 function openMogrtSheet(packKey,items){
   __mogrtPackKey=packKey;
@@ -4286,7 +4286,7 @@ function afSavePrefs(patch){ try{ const p=afGetPrefs(); Object.assign(p,patch); 
 // P12 — model pin (mahkamlash): image (.axig) va video (.axvg) kompozerlari alohida IIFE (Section C
 // darsi — biri ichida e'lon qilingan funksiya ikkinchisiga ko'rinmaydi), shu bois umumiy pin
 // mantiqi ATAYLAB shu haqiqiy top-level qamrovda — ikkalasi ham af.prefs.pinnedModels'ni ishlatadi.
-var PIN_SVG='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12 21s-7-7.1-7-12a7 7 0 0 1 14 0c0 4.9-7 12-7 12Z"></path><circle cx="12" cy="9" r="2.3"></circle></svg>';
+var PIN_SVG='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12 21s-7-7.1-7-12a7 7 0 0 1 14 0c0 4.9-7 12-7 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="12" cy="9" r="2.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></circle></svg>';
 /* ══ SC_16: umumiy "Use ▾" langar menyusi — gen kartalari uchun ══
    Tugma getBoundingClientRect'iga fixed langar; chekkada yuqoriga/ichkariga flip;
    tashqi bosish / Esc / scroll'da yopiladi. Menyu FAQAT aniq bosishda ochiladi. */
@@ -4656,13 +4656,13 @@ function toggleExpand(){
 
 /* ===== Toast — turli xil (success/error/warning/info) · pastda STACK (P23) ===== */
 // Success (a4) kartadagi lime check-circle ikonasi (Phosphor fill · inline SVG)
-const TOAST_CHECK='<svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
+const TOAST_CHECK='<svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z" fill="currentColor"/></svg>';
 // P23 — STACK toast (web pariteti): har xabar alohida karta, pastda-markazda ustma-ust (maks 3),
 // tur ikonkasi + rang, slide/fade auto-dismiss. showToast() imzosi O'ZGARMAGAN (msg,type,elapsedSec).
 const TOAST_TYPE_IC={
-  error:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
-  warning:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
-  info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>'
+  error:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 9l-6 6M9 9l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  warning:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 function showToast(msg,type,elapsedSec){
   let t=type||'info';
@@ -4696,9 +4696,9 @@ window.afConfirm=function(msg,opts){
     try{
       var old=document.getElementById('afConfirmOv'); if(old)old.parentNode.removeChild(old);
       var ov=document.createElement('div'); ov.id='afConfirmOv';
-      ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
+      ov.style.cssText='position:fixed;inset:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
       var card=document.createElement('div');
-      card.style.cssText='width:100%;max-width:340px;background:var(--surface-2);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit';
+      card.style.cssText='width:100%;max-width:340px;background-color:var(--surface-2);border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit';
       // b9 mockup: birinchi qator — sarlavha (700), qolgani — izoh (kichik, kulrang)
       var raw=String(msg==null?'':msg); var nl=raw.indexOf('\n');
       var titleTxt=(nl>=0)?raw.slice(0,nl):raw, subTxt=(nl>=0)?raw.slice(nl+1):'';
@@ -4739,9 +4739,9 @@ window.afChoose=function(title,sub,options){
     try{
       var old=document.getElementById('afChooseOv'); if(old)old.parentNode.removeChild(old);
       var ov=document.createElement('div'); ov.id='afChooseOv';
-      ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
+      ov.style.cssText='position:fixed;inset:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
       var card=document.createElement('div');
-      card.style.cssText='width:100%;max-width:360px;background:var(--surface-2);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit';
+      card.style.cssText='width:100%;max-width:360px;background-color:var(--surface-2);border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit';
       var tt=document.createElement('div'); tt.style.cssText='color:var(--text);font-weight:700;font-size:13.5px;line-height:1.4'; tt.textContent=String(title||''); card.appendChild(tt);
       if(sub){ var tx=document.createElement('div'); tx.style.cssText='color:var(--muted);font-size:11px;margin-top:5px;line-height:1.5'; tx.textContent=String(sub); card.appendChild(tx); }
       var done=function(v){ try{ ov.parentNode.removeChild(ov); }catch(_){ } document.removeEventListener('keydown',esc,true); resolve(v); };
@@ -4749,14 +4749,14 @@ window.afChoose=function(title,sub,options){
       var col=document.createElement('div'); col.style.cssText='display:flex;flex-direction:column;gap:8px;margin-top:13px';
       (options||[]).forEach(function(o){
         var b=document.createElement('button'); b.type='button'; b.textContent=o.label;
-        b.style.cssText='height:38px;border-radius:11px;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.06);color:var(--text);font-weight:600;text-align:left;padding:0 13px';
+        b.style.cssText='height:38px;border-radius:11px;font-size:12px;cursor:pointer;font-family:inherit;border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);background-color:rgba(255,255,255,.06);color:var(--text);font-weight:600;text-align:left;padding:0 13px';
         b.addEventListener('mouseenter',function(){ b.style.borderColor='var(--accent)'; });
         b.addEventListener('mouseleave',function(){ b.style.borderColor='rgba(255,255,255,.09)'; });
         b.addEventListener('click',function(){ done(o.value); });
         col.appendChild(b);
       });
       var no=document.createElement('button'); no.type='button'; no.textContent='Cancel';
-      no.style.cssText='height:34px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.09);background:transparent;color:var(--muted);font-weight:600;margin-top:2px';
+      no.style.cssText='height:34px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);background-color:transparent;color:var(--muted);font-weight:600;margin-top:2px';
       no.addEventListener('click',function(){ done(null); });
       col.appendChild(no); card.appendChild(col);
       ov.addEventListener('click',function(e){ if(e.target===ov)done(null); });
@@ -4793,9 +4793,9 @@ window.afFontResolver=(function(){
   function open(fonts){
     try{ if(ov)close(); }catch(_){}
     ov=document.createElement('div');
-    ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
+    ov.style.cssText='position:fixed;inset:0;z-index:99999;background-color:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:0 34px';
     var card=document.createElement('div');
-    card.style.cssText='width:100%;max-width:340px;background:var(--surface-2);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit;max-height:80vh;display:flex;flex-direction:column';
+    card.style.cssText='width:100%;max-width:340px;background-color:var(--surface-2);border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);border-radius:14px;padding:16px;box-shadow:0 18px 42px rgba(0,0,0,.5);font-family:inherit;max-height:80vh;display:flex;flex-direction:column';
     var tt=document.createElement('div');
     tt.style.cssText='color:var(--text);font-weight:700;font-size:13.5px;line-height:1.4';
     tt.textContent='Missing fonts';
@@ -4824,7 +4824,7 @@ window.afFontResolver=(function(){
     }
     var closeBtn=document.createElement('button');
     closeBtn.type='button';closeBtn.textContent='Close';
-    closeBtn.style.cssText='margin-top:14px;height:36px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.06);color:var(--text);font-weight:600';
+    closeBtn.style.cssText='margin-top:14px;height:36px;border-radius:999px;font-size:12px;cursor:pointer;font-family:inherit;border-width:1px;border-style:solid;border-color:rgba(255,255,255,.09);background-color:rgba(255,255,255,.06);color:var(--text);font-weight:600';
     closeBtn.addEventListener('click',close);
     card.appendChild(tt);card.appendChild(sub);card.appendChild(listEl);card.appendChild(closeBtn);
     ov.appendChild(card);
@@ -5137,7 +5137,7 @@ function refreshStorageBar(){
       var pct=s.quotaBytes?Math.min(100,Math.round((s.usedBytes||0)/s.quotaBytes*100)):0;
       var fill=document.getElementById('accStoreFill');
       fill.style.width=pct+'%';
-      fill.style.background=pct>=90?'#e84242':''; // to'lay deb qolganda ogohlantirish rangi
+      fill.style.backgroundColor=pct>=90?'#e84242':''; // to'lay deb qolganda ogohlantirish rangi
     }).catch(function(){ wrap.style.display='none'; });
   }catch(e){ wrap.style.display='none'; }
 }
@@ -5413,25 +5413,25 @@ async function accountLoginWithGoogle(){
       // BATCH8 auth-device: bir martalik kodni ko'zga tashlanadigan mono blok sifatida ko'rsatamiz
       setStatus(
         '<span style="display:block;margin-bottom:10px;color:var(--muted);font-size:11px">Browser opened — type this code there, then sign in.</span>'+
-        '<span style="display:block;margin:0 0 10px;padding:14px 10px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-soft);text-align:center">'+
+        '<span style="display:block;margin:0 0 10px;padding:14px 10px;border-width:1px;border-style:solid;border-color:var(--accent);border-radius:12px;background-color:var(--accent-soft);text-align:center">'+
           '<span style="display:block;color:var(--faint);font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;margin-bottom:6px">ONE-TIME CODE</span>'+
           '<b id="afGsigCode" style="display:block;font-family:var(--font-mono);font-size:17px;font-weight:750;letter-spacing:.1em;color:var(--accent);word-break:break-all"></b>'+
-          '<div role="button" tabindex="0" type="button" id="afGsigCopyCode" style="margin-top:8px;cursor:pointer;font:inherit;font-size:10px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);color:var(--text)">Copy code</div>'+
+          '<div role="button" tabindex="0" type="button" id="afGsigCopyCode" style="margin-top:8px;cursor:pointer;font:inherit;font-size:10px;padding:3px 10px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Copy code</div>'+
         '</span>'+
         '<span style="display:block;color:var(--faint);font-size:11px;margin-bottom:4px">Didn’t see it? Copy this link into your browser:</span>'+
         '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:11px;color:var(--muted);margin-bottom:8px"></code>'+
         '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
-          '<div role="button" tabindex="0" type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);color:var(--text)">Copy link</div>'+
-          '<div role="button" tabindex="0" type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);color:var(--text)">Open again</div>'+
+          '<div role="button" tabindex="0" type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:11px;padding:4px 10px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Copy link</div>'+
+          '<div role="button" tabindex="0" type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:4px 10px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Open again</div>'+
         '</span>'
       );
     } else {
       setStatus(
         '<span style="display:block;margin-bottom:8px;font-weight:600">Couldn’t open the browser automatically — copy this link and open it manually:</span>'+
-        '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:12px;padding:8px;border-radius:6px;border:1px solid currentColor;margin-bottom:8px"></code>'+
+        '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:12px;padding:8px;border-radius:6px;border-width:1px;border-style:solid;border-color:currentColor;margin-bottom:8px"></code>'+
         '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
-          '<div role="button" tabindex="0" type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent)">Copy link</div>'+
-          '<div role="button" tabindex="0" type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit">Try again</div>'+
+          '<div role="button" tabindex="0" type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;border-width:1px;border-style:solid;border-color:var(--accent);background-color:var(--accent);color:var(--on-accent)">Copy link</div>'+
+          '<div role="button" tabindex="0" type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 10px;border-radius:6px;border-width:1px;border-style:solid;border-color:currentColor;background-color:transparent;color:inherit">Try again</div>'+
           '<span style="font-size:11px;opacity:.7">Code: <b id="afGsigCode"></b></span>'+
         '</span>'
       );
@@ -5926,7 +5926,7 @@ async function publishDetectScenes(){
   if(!data||!data.ok){ listEl.innerHTML='<div class="account-hint">'+((data&&data.message)||'No scenes found')+'</div>'; return; }
   window.__pubScenes=data.results;
   document.getElementById('pubScenesCount').textContent='('+data.results.length+')';
-  const _checkSvg='<svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>';
+  const _checkSvg='<svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z" fill="currentColor"/></svg>';
   listEl.innerHTML=data.results.map(function(s){
     const meta=(s.width&&s.height?s.width+'×'+s.height:'')+(s.fps?' · '+s.fps+'fps':'');
     const thumb=(s.ok&&s.path)?'<img class="pub-scene-thumb" src="file://'+encodeURI(s.path)+'">':'<div class="pub-scene-thumb">✦</div>';

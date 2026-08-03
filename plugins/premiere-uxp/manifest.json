@@ -19,7 +19,7 @@
     }
   ],
   "requiredPermissions": {
-    "localFileSystem": "plugin",
+    "localFileSystem": "fullAccess",
     "launchProcess": {
       "schemes": ["https"],
       "extensions": []

@@ -6,6 +6,7 @@
     "ported/gap-text-classes.js",
     "js/ae-shim/gap-text.js",
     "js/ae-shim/autofill.js",
+    "js/ae-shim/node-io.js",
     "js/ae-shim/require-shim.js",
     "js/ae-shim/element-fix.js",
     "js/ae-shim/button-box.js",
@@ -13,6 +14,7 @@
     "js/ae-shim/inline-events.js",
     "js/ae-shim/media-fix.js",
     "js/ae-shim/pill-radius.js",
+    "js/ae-shim/uxp-input-chrome.js",
     "js/ae-shim/strip-settle.js",
     "js/ae-shim/wrap-gap.js",
     "ported/host-copy.js"
