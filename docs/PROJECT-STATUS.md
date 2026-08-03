@@ -1,6 +1,23 @@
-> **STATUS:** ⚠️ QUYIDAGI §0-§9 ASOSAN 2026-06-21 HOLATI — INFRA/AI/BREND QISMLARI ESKIRGAN. Joriy haqiqat uchun avval **«§-5 · 2026-07-22 CI NODE 20 DEPRECATION»**, **«§-4 · 2026-07-22 MARKETPLACE PREFLIGHT»**, **«§-3 · 2026-07-22 PLAGIN RELIZ ZANJIRI»**, **«§-2 · 2026-07-11 JONLI TEKSHIRUV»** va **«§-1 · 2026-07-03 YANGILANISH»** bloklarini o'qing (ular eski faktlarni bekor qiladi).
+> **STATUS:** ⚠️ Quyidagi eski §0-§8 bloklarining ayrim infra/AI/brend faktlari eskirgan. Joriy Premiere holati uchun avval **«§-9 · 2026-08-04 PREMIERE UXP 0.1.5»** blokini o'qing; u oldingi Premiere bloklarini bekor qiladi.
 
 ---
+
+# §-9. 2026-08-04 PREMIERE UXP 0.1.5 — production release va real AI/import QA
+
+- Premiere 26.2.2 jonli QA’da login restartdan keyin saqlandi; Home, AI launcher,
+  Image/Video/Audio workspace va Stock katalogi AE bilan bir zanjirda ishladi.
+- UXP qora-kadr sabablari yopildi: AI flex zanjiri doimiy, barcha view’larda
+  `getBoundingClientRect().height` layout barrier + faqat view’ga target repaint;
+  pending spinner/hover transformlari statik, natija kartalariga aniq balandlik berildi.
+- Production Nano Banana 2 bilan ikki real rasm yaratildi; DB model narxi, quote va
+  UI ✦8 bo‘lib teng, pending progress ko‘rindi, kredit 50→42→34 yangilandi.
+- Graphics video va Industrial Alarm Bell SFX Premiere Project paneliga import qilindi;
+  raw success sentinellari yolg‘on `Import error` chiqarmaydi. `getSystemPath`/token
+  writable UXP DataFolder’da, UXP local-store esa CEP disk backendini noto‘g‘ri yoqmaydi.
+- API build (51/24), release 110/110, responsive, host-shim, CCX byte-verify va
+  buzilgan-ZIP salbiy testi PASS. Artefakt: 59 fayl, 789215 bayt, SHA-256
+  `97676a317753de2a402a969721cd23e99642c3e663ce3459a8bcc95aa7af245c`.
+- Production `pr` kanalida 0.1.5 mac/win publish; ikkala signed download bayti hashga mos.
 
 # §-8. 2026-08-04 PREMIERE UXP 0.1.3 — AE parity va AI/Stock release candidate
 

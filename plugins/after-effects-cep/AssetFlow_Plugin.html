@@ -17457,7 +17457,21 @@ window.afGallery=(function(){
     // ayrim panel kompozitsiyalarida qora kadrga muzlatadi. Asosiy generatorni
     // bloklamaymiz: UXP launcher yangi workspace'ga to'g'ridan kiradi; mavjud
     // sessiyalar My Library/Account orqali ochiq qoladi. AE oqimi o'zgarmaydi.
-    if(window.__FFNodeIO){ spickMode=mode; spickEnter(mode,null); return; }
+    if(window.__FFNodeIO){
+      spickMode=mode;
+      // Xuddi shu tool ichidagi ‹ tugma ham afSessionPicker'ni chaqiradi.
+      // Picker'ni chetlab o'tuvchi eski UXP shoxi tool'ni o'ziga qayta ochib,
+      // view klassini off/on qilardi va qora kadr berardi. Launcher'dan kirish
+      // = yangi workspace; workspace ichidagi back = AI launcher.
+      var uxpCur=document.querySelector('.axroot .view.on');
+      if(uxpCur&&uxpCur.id==='v-'+SPICK_DEST[mode]){
+        if(typeof window.afNavTab==='function')window.afNavTab('ai');
+        else if(typeof window.axGo==='function')window.axGo('launcher');
+        return;
+      }
+      spickEnter(mode,null);
+      return;
+    }
     spickMode=mode;
     var decide=function(){
       var list=(sp.sessions||[]).filter(function(s){ return spickMatch(mode,s); });
@@ -17847,12 +17861,28 @@ window.AF_PLUGIN_VERSION='1.1.1'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var ax=document.querySelector('.axroot'), ap=document.getElementById('aiPage');
     var toolLayout=!!VIEWS[id];
     // Premiere 26.2 UXP `axws-tool` balandlik/flex zanjirini o'chirib-yoqishda
-    // keyingi generatorni qora kompozitor kadrida qoldiradi. Bir composer
-    // ochilgach AI ichida bounded flex layoutni saqlash launcher/history uchun
-    // ham xavfsiz va tool→launcher→tool o'tishini barqaror qiladi.
-    if(window.__FFNodeIO&&((ax&&ax.classList.contains('axws-tool'))||(ap&&ap.classList.contains('axws-tool'))))toolLayout=true;
+    // keyingi generatorni qora kompozitor kadrida qoldiradi. Hatto birinchi
+    // launcher→composer o'tishidagi ilk toggle ham populated history bilan shu
+    // nuqsonni beradi. Bounded flex launcher/history uchun xavfsiz, shuning
+    // uchun UXP'da AI ochilgan zahoti uni doimiy saqlaymiz.
+    if(window.__FFNodeIO)toolLayout=true;
     if(ax)ax.classList.toggle('axws-tool',toolLayout);
     if(ap)ap.classList.toggle('axws-tool',toolLayout); // #R1-FIX: balandlik zanjiri #aiPage'dan boshlanadi (scroll-area bounded)
+    // Premiere 26.2 UXP yangi flex view'ni DOM'da to'g'ri yoqadi, lekin ba'zan
+    // layoutni talab qilmaguncha uning paint qutisini qora qoldiradi. Spike'da
+    // offsetHeight doim 0; getBoundingClientRect esa haqiqiy layout barrier.
+    // Root opacity/visibility flip yo'q — faqat yangi view'ning o'zi o'qiladi.
+    // Bu faqat composer emas: launcher/history/settings qaytishlari ham barrier
+    // talab qiladi, shuning uchun VIEWS guard'idan oldin bajariladi.
+    if(window.__FFNodeIO){
+      var uxpView=document.getElementById('v-'+id);
+      var uxpReflow=function(){ try{ if(uxpView&&uxpView.isConnected!==false)return uxpView.getBoundingClientRect().height; }catch(e){} return 0; };
+      uxpReflow();
+      setTimeout(function(){
+        uxpReflow();
+        try{ if(window.FFRepaint&&uxpView)window.FFRepaint.kick(uxpView); }catch(e){}
+      },300);
+    }
     var cfg=VIEWS[id]; if(!cfg)return;
     ensureObserver(cfg);
     syncEmpty(cfg);

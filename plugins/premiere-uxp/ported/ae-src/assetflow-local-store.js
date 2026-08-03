@@ -28,6 +28,12 @@ const AssetFlowStore = (() => {
   function initDiskBackend() {
     if (useDisk || diskAttempted || typeof window === "undefined" || !window.__adobe_cep__) return useDisk;
     diskAttempted = true;
+    // Premiere UXP exposes a CEP compatibility object, but its fs provider has
+    // no mkdirSync. Treating it as real CEP tries to create
+    // extension/assetflow-data/blobs and logs an exception on every launch.
+    // The UXP indexedDB shim is the supported backend here; Premiere CEP keeps its
+    // shared on-disk store unchanged.
+    if (window.__FFNodeIO) return false;
     try {
       fs = __ffRequire("fs");
       pathLib = __ffRequire("path");

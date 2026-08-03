@@ -292,3 +292,38 @@ textarea.chipedit::placeholder { color: var(--muted-2); }
 .axws-stage .recentgrid > *:nth-child(2n),
 .axroot .galgrid > *:nth-child(2n) { margin-right: 0; }
 .axws-stage .recentgrid.dense1 > * { flex-basis: 100%; margin-right: 0; }
+
+/* Pending generation cards update their numeric percentage in JS. Premiere
+   26.2's UXP compositor can turn the entire AI canvas black when the spinner's
+   infinite transform animation and the bar's width transition run together.
+   Keep the useful live percentage/bar, but make their paint path static. */
+.axws-stage .recentgrid .rc-pend .rc-spin {
+  animation: none !important;
+  border-color: var(--line2) !important;
+  border-top-color: var(--acc, var(--accent)) !important;
+}
+.axws-stage .recentgrid .rc-pend .rc-pbar > i {
+  transition: none !important;
+}
+
+/* The pointer stays over the first result after launcher → workspace. A hover
+   translate on that populated media card reproduces the same compositor-black
+   frame, so Premiere keeps the card in place and uses its border/shadow only. */
+.axws-stage .recentgrid .rc:hover,
+.axroot .galgrid .rc:hover {
+  transform: none !important;
+}
+
+/* UXP ignores aspect-ratio for a background-only flex item, collapsing a
+   finished generation to a one-pixel border. Give visual result cards a real
+   paint box; audio keeps its own compact row geometry. */
+.axws-stage .recentgrid > .rc:not(.rc-aud),
+.axroot .galgrid > .rc:not(.rc-aud) {
+  height: 160px !important;
+  min-height: 160px;
+  aspect-ratio: auto !important;
+}
+.axws-stage .recentgrid > .rc.rc-pend {
+  height: 118px !important;
+  min-height: 118px;
+}

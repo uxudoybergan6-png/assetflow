@@ -12,7 +12,7 @@
 
   window.FF_ENV = {
     /** Plagin kodi versiyasi — manifest.json bilan QO'LDA sinxron (UXP manifestni o'qiy olmaydi). */
-    version: "0.1.4",
+    version: "0.1.5",
     /** Bu plagin qaysi host dastur uchun — katalog `?app=pr` filtri shundan. */
     app: "pr",
     appLabel: "Premiere Pro",
