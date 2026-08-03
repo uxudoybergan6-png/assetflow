@@ -186,19 +186,11 @@
     }
   }
 
-  // Qoplamalar deyarli har doim bosishdan keyin ochiladi/yopiladi — asosiy yo'l
-  // shu. Avval belgilanganlarni qayta ko'ramiz (yopilgan bo'lsa → turtki),
-  // so'ng yangi ochilganini belgilaymiz.
-  document.addEventListener("click", function () {
-    for (var i = 0; i < SEEN.length; i++) schedule(SEEN[i]);
-    raf(function () { raf(sweep); });
-  }, true);
-
-  // Zaxira: bosishsiz yopilgan holat (Escape, dastur mantig'i, tarmoq javobi).
-  setInterval(function () {
-    sweep();
-    for (var i = 0; i < SEEN.length; i++) schedule(SEEN[i]);
-  }, 1200);
+  // Premiere 26.2 ishlab chiqarish hostida global click → overlay sweep →
+  // visibility flip ketma-ketligi rendererni doimiy paint/exception sikliga
+  // tushirdi (birinchi katalog click'idan keyin ~80% CPU). Shu sabab avtomatik
+  // observer yo'li yo'q: `kick()` diagnostika orqali yoki aniq nuqson uchun
+  // maqsadli chaqiriladi. MutationObserver/taymerga qaytmaymiz.
 
   window.FFRepaint = {
     kick: kick,

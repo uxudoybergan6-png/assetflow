@@ -2999,7 +2999,7 @@
    Panel imtiyoz KO'TARMAYDI va Premiere ichida hech narsa o'rnatmaydi.
    Nosozlikda faqat tasdiqlangan installer/yuklab olish sahifasi taklif qilinadi —
    extension papkasini qo'lda almashtirish maslahati BERILMAYDI. */
-window.AF_PLUGIN_VERSION="0.1.1"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
+window.AF_PLUGIN_VERSION="0.1.2"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
 (function(){
   function $(id){return document.getElementById(id);}
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
@@ -3513,7 +3513,7 @@ window.AF_PLUGIN_VERSION="0.1.1"; // CSXS/manifest.xml ExtensionBundleVersion bi
     bar.style.top = bt + 'px';
     bar.style.left = Math.max(6, Math.min(r.left, innerWidth - bw - 8)) + 'px';
   }
-  (function loop() { if (selected) place(); requestAnimationFrame(loop); })();
+  /* FFCMS frame loop UXP portida o'chirilgan. */
 
   // ── hover ────────────────────────────────────────────────────────────────
   document.addEventListener('mousemove', function (ev) {

@@ -64,14 +64,29 @@
     var attr = "on" + type;
     var node = ev.target;
     var stopped = false;
-    var origStop = ev.stopPropagation;
-    ev.stopPropagation = function () { stopped = true; };
     while (node && node.nodeType === 1) {
       if (node.hasAttribute && node.hasAttribute(attr)) {
         var fn = compiled(node, attr);
         if (fn) {
           try {
-            if (fn.call(node, ev) === false) { if (ev.preventDefault) ev.preventDefault(); stopped = true; }
+            var src = node.getAttribute(attr) || "";
+            var arg = ev;
+            // UXP native Event obyektidagi metodni yozib-qaytarish xavfsiz emas:
+            // host obyektni click'dan keyin ham ichki dispatcherda qayta ishlatadi.
+            // Faqat stopPropagation so'ragan inline kodga native eventni mutatsiya
+            // qilmaydigan facade beramiz; qolgan handlerlar asl eventni oladi.
+            if (src.indexOf("stopPropagation") >= 0 && typeof Proxy === "function") {
+              arg = new Proxy(ev, {
+                get: function (target, prop) {
+                  if (prop === "stopPropagation" || prop === "stopImmediatePropagation") {
+                    return function () { stopped = true; };
+                  }
+                  var value = target[prop];
+                  return typeof value === "function" ? value.bind(target) : value;
+                },
+              });
+            }
+            if (fn.call(node, arg) === false) { if (ev.preventDefault) ev.preventDefault(); stopped = true; }
           } catch (e) {
             try { console.error("[inline-shim] " + attr + " xatosi:", e); } catch (_) {}
           }
@@ -80,7 +95,6 @@
       if (stopped) break;
       node = node.parentNode;
     }
-    ev.stopPropagation = origStop;
   }
 
   BUBBLING.forEach(function (type) {

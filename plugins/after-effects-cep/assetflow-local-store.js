@@ -13,6 +13,7 @@ const AssetFlowStore = (() => {
   let db = null;
   const blobUrls = new Map();
   let useDisk = false;
+  let diskAttempted = false;
   let fs = null;
   let pathLib = null;
   let dataRoot = "";
@@ -25,7 +26,8 @@ const AssetFlowStore = (() => {
   }
 
   function initDiskBackend() {
-    if (useDisk || typeof window === "undefined" || !window.__adobe_cep__) return useDisk;
+    if (useDisk || diskAttempted || typeof window === "undefined" || !window.__adobe_cep__) return useDisk;
+    diskAttempted = true;
     try {
       fs = require("fs");
       pathLib = require("path");

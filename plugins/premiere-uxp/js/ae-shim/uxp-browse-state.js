@@ -103,11 +103,15 @@
     if (!event || event.isTrusted !== false) userTouched = true;
     if (restored) scheduleSave();
   }
-  var sc = document.querySelector(".scroll-area"); if (sc) sc.addEventListener("scroll", touched, { passive: true });
+  // Premiere 26.2 UXP `.scroll-area` uchun foydalanuvchi qimirlatmasa ham
+  // render kadrida `scroll` chiqaradi. Listener host dispatcherida blank
+  // exception storm va ~70% CPU keltirib chiqardi. ScrollTop davriy `save`
+  // snapshotida baribir saqlanadi; boshqa boshqaruvlar touched()ni uyg'otadi.
   document.addEventListener("click", function (event) { touched(event); });
   document.addEventListener("input", touched);
   document.addEventListener("change", touched);
-  window.addEventListener("beforeunload", save);
-  document.addEventListener("visibilitychange", function () { if (document.hidden) save(); });
+  // UXP lifecycle hodisalari brauzerdagidek bir martalik emas; ayrim host
+  // buildlarida visibility/beforeunload dispatcher'i render bilan birga yuradi.
+  // Davriy snapshot va foydalanuvchi inputlari saqlash uchun yetarli.
   setInterval(save, 5000);
 })();

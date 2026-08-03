@@ -12,6 +12,10 @@
 (function () {
   "use strict";
 
+  // Portlangan umumiy UI UXP'ning brauzerdan farqli hodisa yuzasini tanisin.
+  // Xususan, Premiere 26 `scroll` hodisasini har kadrda qayta yuborishi mumkin.
+  window.__FF_UXP_RUNTIME = true;
+
   var native = typeof require === "function" ? require : null;
   var cache = {};
 

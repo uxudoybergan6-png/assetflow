@@ -27,7 +27,9 @@
     raf(function () {
       raf(function () {                 // layout joylashishi uchun 2 kadr (§3)
         pending = false;
-        sweep(document.body);
+        try { sweep(document.body); } catch (e) {
+          try { console.warn("[media-fix] sweep:", e); } catch (_) {}
+        }
       });
     });
   }
@@ -165,12 +167,30 @@
   }
 
   // Panel kengligi o'zgarganda nisbatlar qayta hisoblansin.
+  //
+  // UXP'da ResizeObserver callback ichida media width/height'ini yozish yana
+  // o'sha observerni uyg'otadi. Imzosiz callback klassik feedback loop hosil
+  // qilib, Premiere hostida har kadrda `Uncaught JS Exception` va yuqori CPU
+  // keltirib chiqargan. Faqat BODY qutisi HAQIQATAN o'zgarganda qayta o'lchaymiz.
   try {
     if (typeof ResizeObserver === "function") {
+      var lastBodyBox = "";
+      try {
+        var initialBodyRect = document.body.getBoundingClientRect();
+        lastBodyBox = Math.round(initialBodyRect.width) + "x" + Math.round(initialBodyRect.height);
+      } catch (_) {}
       new ResizeObserver(function () {
-        var list = document.querySelectorAll("img, video");
-        for (var i = 0; i < list.length; i++) unsize(list[i]);
-        schedule();
+        try {
+          var bodyRect = document.body.getBoundingClientRect();
+          var nextBodyBox = Math.round(bodyRect.width) + "x" + Math.round(bodyRect.height);
+          if (nextBodyBox === lastBodyBox) return;
+          lastBodyBox = nextBodyBox; // uslub yozishdan OLDIN — qayta kirishga qarshi
+          var list = document.querySelectorAll("img, video");
+          for (var i = 0; i < list.length; i++) unsize(list[i]);
+          schedule();
+        } catch (e) {
+          try { console.warn("[media-fix] resize:", e); } catch (_) {}
+        }
       }).observe(document.body);
     }
   } catch (e) { /* ixtiyoriy */ }

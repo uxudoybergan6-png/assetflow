@@ -1,13 +1,15 @@
-# Session report — 2026-08-03 (Premiere UXP production deploy)
+# Session report — 2026-08-04 (Premiere UXP 0.1.2)
 
-- Writable path: plugin-data → plugin-temp → native tmp; UXP 26.2 uchun `path` shim qo'shildi.
-- P0: repaint/indexedDB/transform/clipboard va dev-package byte-guardlar tayyor.
-- P1: `.prproj` upload + neutral music/SFX `app=pr` katalog filtri tuzatildi.
-- P2/P3: `.mogrt`, `.prproj importSequences`, media bundle, async `cep.fs` picker/Base64 ulandi.
-- P4/P5: `app=pr` updater, `.ccx` landing, crash-log, app analytics va browse restore tayyor.
-- Test: DB/API build; installer 262/262; public 137/137; release 110/110; updater 118/118.
-- CCX: 65 fayl, 783.9 KB; SHA-256 `ab42a001aec3795175d2a47ba9c5fb4bad8796d71b7a4067d2a6b9013491d8a0`.
-- Jonli: MOGRT saqlandi; Premiere 26.2.2 quit/relaunch; docked panel render; boot xatosi 0.
-- Deploy: `c09e563` main; Cloud Run `30828591927` + CI `30828593547` PASS; DB/storage `ok`.
-- Production: `app=pr` 2 neutral SFX; webda `.ccx` CTA/qo'llanma jonli; reliz `not_published`.
-- Qolgan tashqi darvoza: CCX/admin publish, native PR kontent, login import/AI va Windows beta.
+- `getSystemPath`: faqat writable plugin-data/plugin-temp/native temp; kontrakt PASS.
+- Premiere 26.2 fetch: `Content-Length`da stream yakunlanadi; final MP3 160,958 bayt.
+- Import bridge: insertion bin/root fallback + rasmiy 4-parametrli `importFiles` + bir retry.
+- UXP layout: exception-loop bergan 7 legacy shim productiondan chiqarildi.
+- Katalog/detail: oddiy UXP kartalari, native Import listener, statik animation/transition.
+- Jonli E2E: production login → SFX download → usage → Project panel import PASS.
+- Test importi `Undo` qilindi; test loyiha yana asl 3 element bilan qoldi.
+- UXP log barqaror: 10 soniyada `Uncaught JS Exception` 35→35 (delta 0).
+- Testlar: package 59/59; installer 262/262; updater 118/118; release 110/110.
+- Qo'shimcha: marketplace 100/100; public 137/137; Windows CI 169/169; host-shim PASS.
+- CCX: 58 fayl, 763.6 KB; byte-verify va `git diff --check` PASS.
+- SHA-256: `677dd2bd39b80b711c236b614987d817ff5b2bdc39de495b48d6e476f6bb5bb1`.
+- Keyingi operatsion qadam: commit/CI o'tgach production `pr` reliz kanaliga publish.

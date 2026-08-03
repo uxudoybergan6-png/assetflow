@@ -1768,6 +1768,20 @@ function transformJs(code) {
   // `grid-column` ma'nosiz: spacer butun qator o'rniga bitta ustunga tushardi.
   out = out.replace(/grid-column:\s*1\s*\/\s*-1/g, () => { stats.gridColumn++; return "flex:0 0 100%"; });
 
+  // Premiere UXP'da ResizeObserver layout yozuvlari bilan feedback loop hosil
+  // qiladi; spike'dagi kuzatuvchilarga tayanmaslik qoidasiga mos ravishda
+  // portda uni o'chiramiz. Mavjud `resize` hodisasi + dastlabki fit yetarli.
+  out = out.replace(/if\s*\(\s*window\.ResizeObserver\s*\)/g,
+    "if (false && window.ResizeObserver)");
+
+  // FFCMS vizual muharriri faqat brauzerdagi `?ffcms=1` iframe uchun. Uning
+  // har-kadr overlay joylash loop'i UXP paketiga umuman kerak emas va host
+  // callback dispatcherida blank exception storm hosil qilishi mumkin.
+  out = out.replace(
+    /\(function loop\(\) \{ if \(selected\) place\(\); requestAnimationFrame\(loop\); \}\)\(\);/g,
+    "/* FFCMS frame loop UXP portida o'chirilgan. */",
+  );
+
   // JS shablonlari ichidagi SVG ikonalari ham ildizdan meros olmaydi.
   out = svgInheritAttrs(out);
   // Inline `style="…"` / `cssText='…'` — CSS o'tishi ularga tegmaydi.
@@ -2042,15 +2056,28 @@ function main() {
   const LATE_SHIMS = [
     "js/ae-shim/uxp-copy-late.js",   // afCopyText → UXP buferi (FAQAT UXP)
     "js/ae-shim/uxp-account-events.js", // login/Google → native UXP click (inline onclick emas)
-    "js/ae-shim/uxp-browse-state.js", // pane/qidiruv/filtr/scroll tiklash (FAQAT UXP)
-    "js/ae-shim/uxp-error-report.js", // global error/rejection → mavjud /api/logs (FAQAT UXP)
+    "js/ae-shim/uxp-import-events.js", // detail Import → native UXP async click
   ];
 
-  const tags = [
-    ...SHIMS,
+  // Premiere 26 UXP throws blank host-side exceptions while these legacy
+  // layout scanners walk the live catalog DOM.  The ported CSS already has
+  // deterministic flex fallbacks, so keep the scanners out of production.
+  // (The compatibility APIs remain in source for isolated diagnostics.)
+  const HOST_UNSAFE_LAYOUT_SHIMS = new Set([
+    "js/ae-shim/gap-text.js",
+    "js/ae-shim/autofill.js",
+    "js/ae-shim/button-box.js",
+    "js/ae-shim/media-fix.js",
+    "js/ae-shim/pill-radius.js",
+    "js/ae-shim/uxp-mmc.js",
+    "js/ae-shim/xform-center.js",
+  ]);
+  const tagPaths = [
+    ...SHIMS.filter((p) => !HOST_UNSAFE_LAYOUT_SHIMS.has(p)),
     ...order.filter((p) => p !== "js/ae-shim/csinterface-shim.js"),
     ...LATE_SHIMS,
-  ]
+  ];
+  const tags = tagPaths
     .map((p) => `    <script src="${p.startsWith("ae-src/") ? "ported/" + p : p}"></script>`)
     .join("\n");
 

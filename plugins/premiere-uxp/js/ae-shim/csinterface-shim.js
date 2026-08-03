@@ -191,8 +191,23 @@
       }
       var root = null;
       try { root = await p.getRootItem(); } catch (e) { root = null; }
+      var target = null;
+      try { target = await p.getInsertionBin(); } catch (e) { target = null; }
+      if (!target) target = root;
       var ok = false;
-      try { ok = await p.importFiles([filePath], true, root); } catch (e) {
+      try {
+        // Adobe Premiere UXP reference: barcha 4 parametr aniq beriladi.
+        // Joriy insertion bin ProjectItem; u bo'lmasa root xavfsiz fallback.
+        var pending = p.importFiles([filePath], true, target, false);
+        ok = await pending;
+        // UXP download adapteri yakuniy faylni publish qilganidan keyin ham
+        // Premiere media importer qisqa muddat `false` qaytarishi mumkin.
+        // Birinchi urinish muvaffaqiyatsiz bo'lsagina bitta settle+retry.
+        if (!ok) {
+          await new Promise(function (resolve) { setTimeout(resolve, 1200); });
+          ok = await p.importFiles([filePath], true, target, false);
+        }
+      } catch (e) {
         return fail("Import failed: " + String((e && e.message) || e));
       }
       if (!ok) return fail("Premiere rejected the import: " + filePath);

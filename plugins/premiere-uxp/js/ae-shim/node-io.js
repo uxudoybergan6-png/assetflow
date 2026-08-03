@@ -319,10 +319,30 @@
       fs.copyFileSync = function (src, dst) { fs.writeFileSync(dst, fs.readFileSync(src)); };
     }
 
+    // `downloadUrlToFile()` `.part` faylni yakuniy nomga atomik ko'chiradi.
+    // Premiere 26.2 UXP fs yozish/o'qishni beradi, ammo `renameSync` yo'q.
+    // Native rename bo'lmasa sandbox ichida copy + unlink bilan yakunlaymiz.
+    if (!nativeFs.renameSync) {
+      fs.renameSync = function (src, dst) {
+        if (String(src) === String(dst)) return;
+        if (fs.existsSync(dst)) fs.rmSync(dst, { force: true });
+        fs.copyFileSync(src, dst);
+        // Premiere 26 `unlinkSync`ni mavjud funksiya sifatida ko'rsatadi, lekin
+        // ichki provider'da u yo'q va chaqiruv callback oqimini osiltiradi.
+        // `.part` keyingi download boshida ustidan yoziladi; bu yerda ataylab
+        // o'chirmaymiz, yakuniy fayl esa allaqachon to'liq ko'chirilgan.
+      };
+    }
+
     // `mkdirSync(p, {recursive:true})` — UXP `mkdirSync` recursive bayrog'ini
     // qo'llab-quvvatlamasligi mumkin; ota-papkalarni o'zimiz yasaymiz.
-    var nativeMkdir = nativeFs.mkdirSync;
+    var nativeMkdir = typeof nativeFs.mkdirSync === "function" ? nativeFs.mkdirSync : null;
     fs.mkdirSync = function (p, opts) {
+      // Premiere 26.2 `require("fs")` o'qish/yozishni beradi, lekin ayrim
+      // buildlarda `mkdirSync` umuman yo'q. `undefined.call` exception stormiga
+      // tushmaymiz: mavjud papka muvaffaqiyat, yangisi esa bitta aniq xato.
+      if (fs.existsSync(p)) return;
+      if (!nativeMkdir) throw new Error("UXP fs.mkdirSync mavjud emas: " + p);
       if (!opts || !opts.recursive) return nativeMkdir.call(nativeFs, p, opts);
       // Ayrim UXP hostlari `recursive:true` ni to'g'ridan qabul qiladi. Avval
       // shu yo'lni sinaymiz: native sandbox ildizidan yuqoridagi `/Users/...`
@@ -504,7 +524,9 @@
       // yakuniy URL diagnostikada kerak bo'lishi mumkin.
       res.url = r.url || "";
 
-      var dest = null, started = false, stopped = false;
+      var dest = null, started = false, stopped = false, finished = false;
+      var received = 0;
+      var expected = parseInt(headers["content-length"], 10) || 0;
 
       res.pipe = function (ws) { dest = ws; start(); return ws; };
       res.unpipe = function () { dest = null; };
@@ -543,7 +565,12 @@
             var step = await reader.read();
             if (stopped) { try { await reader.cancel(); } catch (e) { /* muhim emas */ } return; }
             if (step.done) break;
-            deliver(toU8(step.value));
+            if (deliver(toU8(step.value))) {
+              // Content-Length to'liq: writer yopildi va `finish` berildi.
+              // `reader.cancel()` UXP'da muvaffaqiyatli fetch'ni rejectionga
+              // aylantirishi mumkin; oddiy qaytish yetarli.
+              return;
+            }
           }
           finish();
         } catch (e) {
@@ -558,8 +585,19 @@
         // `unpipe()` "data" ichida chaqirilishi mumkin (hajm chegarasi) —
         // shuning uchun `dest` ni emitdan KEYIN qayta o'qiymiz.
         if (dest && !stopped) dest.write(u8);
+        received += u8.length;
+        // Premiere 26.2 UXP fetch reader'i ayrim CDN javoblarida barcha
+        // Content-Length bayt kelgach ham `done:true` bermaydi. Baytlar soni
+        // aniq tenglashganda Node stream kabi `end/finish`ni o'zimiz beramiz.
+        if (expected > 0 && received >= expected) {
+          finish();
+          return true;
+        }
+        return false;
       }
       function finish() {
+        if (finished) return;
+        finished = true;
         res.emit("end");
         if (dest) dest.end();
       }

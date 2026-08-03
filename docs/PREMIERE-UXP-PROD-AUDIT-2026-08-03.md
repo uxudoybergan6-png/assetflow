@@ -18,6 +18,14 @@
 > darvozalar: CCX'ni admin reliz kanalida publish qilish, Premiere-native `.mogrt/.prproj`,
 > login ortidagi import/AI smoke va Windows beta.
 
+> **2026-08-04 v0.1.2 yakuniy tekshiruv:** production email login, SFX katalog/detail,
+> himoyalangan download, usage gate va Premiere Project paneliga haqiqiy MP3 importi jonli
+> o'tdi. UXP fetch adapteri `Content-Length` bilan deterministik yopiladi; import bridge
+> Adobe'ning 4-parametrli `Project.importFiles` chaqiruvini ishlatadi. Host exception bergan
+> layout skanerlari ishlab chiqarish script-orderidan chiqarildi; 10 soniyalik faol panel
+> kuzatuvida yangi `Uncaught JS Exception` yo'q. `0.1.2` CCX 58 fayl/763.6 KB, byte-verify
+> PASS, SHA-256 `677dd2bd39b80b711c236b614987d817ff5b2bdc39de495b48d6e476f6bb5bb1`.
+
 ---
 
 ## 1. XULOSA (bitta jumla)

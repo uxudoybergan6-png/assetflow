@@ -4737,9 +4737,90 @@ body {
    aniq o'lchamni `ae-media-fix.js` ish vaqtida beradi. */
 img, video { flex: none; }
 
-/* UXP'da animatsiya yo'q (§11): aylanuvchi spinnerlar qotib qoladi.
-   Ularni statik nuqta ko'rinishida qoldiramiz, "muzlagan" ko'rinmasin. */
-.anim-bar, .anim-pulse { opacity: .55; }
+/* Premiere 26 UXP `animation`/`transition` declarationlarini qisman qabul
+   qiladi, lekin paint tick'ida bo'sh host exception chiqaradi. Spike'da
+   animatsiya API'lari ishlamasligi tasdiqlangan; shuning uchun UXP portida
+   barcha harakat deterministik ravishda statik. Holat o'zgarishlari JS/CSS
+   klasslari orqali darhol ko'rinadi. */
+* {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* UXP'da animatsiya yo'q (§11): katalogning previewsiz kartalaridagi cheksiz
+   keyframe har bir frame'da renderer exception chiqargan. Ularni statik, ammo
+   mazmunli ekvalayzer/nuqta ko'rinishida qoldiramiz. */
+.anim-bar { height: 20px; opacity: .55; animation: none !important; }
+.anim-bar:nth-child(2), .anim-bar:nth-child(4) { height: 30px; }
+.anim-pulse { opacity: .55; animation: none !important; }
+
+/* Premiere 26 gorizontal `scrollLeft != 0` holatini frame-loopka aylantiradi.
+   UXP'da tab va chiplar scroll o'rniga o'raladi: hammasi ko'rinadi, event yo'q. */
+#afTabs, #afCatChips {
+  flex-wrap: wrap;
+  overflow-x: hidden;
+  scroll-behavior: auto;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+#afTabs .af-tab {
+  flex: 1 0 28%;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+#afTabs > .af-tab:nth-child(4) { margin-left: 0; }
+
+/* AE kartasidagi video-hover + murakkab SVG qatlami Premiere rendererida
+   frame-loop qiladi. UXP kartasi yengil, ammo barcha asosiy metadata va CTA'ni
+   saqlaydi; ikki ustunli katalogda barqaror chiziladi. */
+.ff-uxp-card {
+  flex: 1 0 42%;
+  min-width: 0;
+  padding: 11px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  color: var(--text);
+  background-color: var(--surface-2);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.ff-uxp-card { font-size: 10px; font-weight: 700; line-height: 1.35; }
+
+/* Detail ham UXP-safe: eski hero gradient/psevdo qatlamlari CTA'ning vizual
+   joyi bilan hitbox'ini ajratib yuborardi. Metadata + import amali qoladi. */
+#packDetail .pd3-hero,
+#packDetail .pd3-sim,
+#packDetail .pd3-fade,
+#packDetail .pd3-favbtn { display: none !important; }
+#packDetail .pd3-scroll,
+#packDetail .pd3-main,
+#packDetail .pd3-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+#packDetail .pd3-body { padding: 12px; }
+#packDetail .pd3-cta { display: flex; position: static; margin-top: 12px; }
+#packDetail #importSceneBtn {
+  display: flex !important;
+  position: static !important;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto !important;
+  color: #080808;
+  background-color: var(--accent, #d7ff20);
+  border-radius: 8px;
+}
+#packDetail #importSceneBtn svg { display: none !important; }
 
 /* `backdrop-filter` qo'llanmaydi — shisha panellar shaffof bo'lib o'qilmay
    qolardi; port uni olib tashladi, o'rniga qattiq fon beramiz. */

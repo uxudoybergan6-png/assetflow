@@ -30,8 +30,7 @@
   "lateShims": [
     "js/ae-shim/uxp-copy-late.js",
     "js/ae-shim/uxp-account-events.js",
-    "js/ae-shim/uxp-browse-state.js",
-    "js/ae-shim/uxp-error-report.js"
+    "js/ae-shim/uxp-import-events.js"
   ],
   "order": [
     "ported/ae-inline-01.js",

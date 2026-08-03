@@ -106,9 +106,19 @@
     return (term.v / 100) * size;
   }
 
+  function setMarginPx(el, prop, value, force) {
+    var next = value + "px";
+    // Premiere UXP bir xil inline qiymatni qayta yozishni ham paint mutation
+    // deb qabul qiladi. Davriy kalibrlash redundant yozsa, dispatcher hech
+    // qachon tinchimaydi; faqat qiymat o'zgarganda DOM'ga tegamiz.
+    if (!force && el.style.getPropertyValue(prop) === next) return false;
+    el.style.setProperty(prop, next);
+    return true;
+  }
+
   var applying = false;
 
-  function apply() {
+  function apply(force) {
     var list = window.__AF_XFC;
     if (!list || !list.length || applying) return;
     applying = true;
@@ -129,15 +139,15 @@
           if (!cs || (cs.position !== "absolute" && cs.position !== "fixed")) { stat.skip++; continue; }
           var b = baseMargin(el);
           if (!on) {
-            el.style.setProperty("margin-left", b.l + "px");
-            el.style.setProperty("margin-top", b.t + "px");
+            setMarginPx(el, "margin-left", b.l, force);
+            setMarginPx(el, "margin-top", b.t, force);
             continue;
           }
           var rect = el.getBoundingClientRect();
           if (!rect.width && !rect.height) { stat.skip++; continue; }   // hali chizilmagan
-          el.style.setProperty("margin-left", (b.l + offsetPx(r.x, rect.width)) + "px");
-          el.style.setProperty("margin-top", (b.t + offsetPx(r.y, rect.height)) + "px");
-          stat.set++;
+          var changed = setMarginPx(el, "margin-left", b.l + offsetPx(r.x, rect.width), force);
+          changed = setMarginPx(el, "margin-top", b.t + offsetPx(r.y, rect.height), force) || changed;
+          if (changed) stat.set++;
         }
       }
     } catch (e) {
@@ -163,9 +173,9 @@
     setTimeout(apply, 250);
     setTimeout(apply, 1200);
     window.addEventListener("resize", function () { setTimeout(apply, 60); });
-    // Modal/menyu/karta KEYIN yaratiladi. `MutationObserver` UXP'da otilmaydi
-    // (spike §2) — bosish + sekin taymer yagona ishonchli yo'l. Ro'yxat kichik
-    // (o'nlab selektor), shu bois arzon.
+    // Modal/menyu/karta KEYIN yaratiladi. MutationObserver UXP'da otilmaydi;
+    // click + sekin kalibrlash qoladi, lekin `apply()` bir xil qiymatni qayta
+    // yozmaydi (yuqoridagi setMarginPx guard).
     document.addEventListener("click", function () { setTimeout(apply, 60); }, true);
     setInterval(apply, 1500);
   }

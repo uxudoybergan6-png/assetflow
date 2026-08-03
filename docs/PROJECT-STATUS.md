@@ -2,6 +2,21 @@
 
 ---
 
+# §-7. 2026-08-04 PREMIERE UXP 0.1.2 — jonli import va stabil runtime
+
+- Premiere 26.2.2 ichida production login → Sound Effects → `Industrial Alarm Bell`
+  → download → `Project.importFiles()` oqimi boshidan oxirigacha o'tdi; MP3 Project
+  panelida 4-element bo'lib paydo bo'ldi, testdan keyin `Undo` bilan olib tashlandi.
+- `getSystemPath()` faqat yoziladigan plugin-data/plugin-temp/native temp qaytaradi;
+  host-shim testi writable path, `.prproj`, media import va `cep.fs`ni tasdiqladi.
+- Premiere 26.2 fetch reader `done:true` bermaydigan CDN oqimi `Content-Length` bilan
+  yakunlanadi; `.part` → final copy va rasmiy 4-parametrli `importFiles` bridge ishlaydi.
+- Hostda exception loop bergan 7 legacy layout shimi production script-orderdan chiqarildi;
+  UXP kartalari/detail soddalashtirildi, animatsiya/transition o'chirildi. Jonli log 10 soniyada
+  `Uncaught JS Exception` 35→35: yangi xato yo'q.
+- `0.1.2` CCX: 58 fayl, 763.6 KB, SHA-256
+  `677dd2bd39b80b711c236b614987d817ff5b2bdc39de495b48d6e476f6bb5bb1`; byte-verify PASS.
+
 ## §-6. 2026-08-03 PREMIERE UXP — release candidate productionga deploy qilindi
 
 - `plugins/premiere-uxp/` qayta tiklangan: AE panelining generativ 1:1 porti, UXP repaint/

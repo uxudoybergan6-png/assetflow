@@ -99,7 +99,7 @@ const FORBIDDEN_NAME = [/\.map$/i, /(^|\/)\.env/i, /(^|\/)\.DS_Store$/i, /(^|\/)
  * boshqa shim ichiga ko'chirса).
  */
 const DEV_FILE = [/(^|\/)uxp-diag\.js$/i];
-const REQUIRED_RUNTIME = ["js/ae-shim/uxp-account-events.js"];
+const REQUIRED_RUNTIME = ["js/ae-shim/uxp-account-events.js", "js/ae-shim/uxp-import-events.js"];
 /** Diag oynasining o'ziga xos, boshqa hech qayerda uchramaydigan imzolari. */
 const DEV_MARK = [
   ["__ffT1", "diag T1/T2/T3 hodisa zondi"],

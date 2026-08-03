@@ -5674,7 +5674,36 @@ async function importPackFileToAE(pack){
   if(pack?.serverTemplateId&&typeof AssetFlowCatalog!=='undefined'){
     try{
       showProgress(0,'Preparing…');
-      importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
+      const fileName=pack.fileName||'template.aep';
+      let delivered=false,resolveDelivered=null;
+      const deliveredTask=new Promise(resolve=>{ resolveDelivered=resolve; });
+      const path=require('path'),os=require('os');
+      const ext=path.extname(fileName)||'.aep';
+      const baseDir=AssetFlowCatalog.downloadDir()||os.tmpdir();
+      const expectedPath=path.join(baseDir,`assetflow_${pack.serverTemplateId}${ext}`);
+      const downloadOpts=packDownloadOpts(pack);
+      const progressUi=downloadOpts.onProgress;
+      downloadOpts.onProgress=(done,total)=>{
+        const expectedBytes=Number(total)||Number(pack.fileSize)||0;
+        if(!delivered&&expectedBytes>0&&done>=expectedBytes){
+          delivered=true;
+          // `res.emit("data")` progressni `dest.write(lastChunk)` dan oldin
+          // yuboradi. Timer oxirgi chunk + yakuniy rename/copy'ga navbat beradi.
+          setTimeout(()=>resolveDelivered(expectedPath),2500);
+        }
+        // UXP repaint/layout xatosi bayt oqimini uzmasin.
+        try{ progressUi(done,total); }catch(e){}
+      };
+      const downloadTask=AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,fileName,downloadOpts);
+      if(window.__FF_UXP_RUNTIME&&packIsRawMedia(pack)){
+        const guardedDownload=downloadTask.catch((e)=>{
+          // Barcha e'lon qilingan bayt kelgan bo'lsa, Premiere UXP'ning kech
+          // stream-cleanup rejection'i to'liq faylni yaroqsiz qilmaydi.
+          if(delivered)return deliveredTask;
+          throw e;
+        });
+        importPath=await Promise.race([guardedDownload,deliveredTask]);
+      }else importPath=await downloadTask;
     }catch(e){
       hideProgress();
       if(e&&e.cancelled) return '';   // foydalanuvchi bekor qildi — toast onAfCancel'da
@@ -5697,7 +5726,13 @@ async function importPackFileToAE(pack){
   // ham shu nuqtadan o'tadi). 403 — limit tugadi: import qilinmaydi.
   if(pack?.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
     try{
-      await AssetFlowAccount.recordImport(pack.serverTemplateId);
+      const usageRequest=AssetFlowAccount.recordImport(pack.serverTemplateId);
+      await (window.__FF_UXP_RUNTIME
+        ? Promise.race([
+            usageRequest,
+            new Promise((_,reject)=>setTimeout(()=>reject(new Error('Import usage request timed out')),10000))
+          ])
+        : usageRequest);
       if(typeof refreshAccountUi==='function') refreshAccountUi();
     }catch(usageErr){
       if(usageErr&&usageErr.status===403){
@@ -5907,6 +5942,17 @@ function orientLabel(o){
 }
 
 function renderCard(a,i,showDl){
+  if(window.__FF_UXP_RUNTIME){
+    const uxpPack=packs[a.n];
+    const uxpNoPack=!!(uxpPack&&uxpPack.server&&uxpPack.hasPack===false);
+    const uxpDownloaded=window.downloaded.has(a.n);
+    const uxpBadge=uxpNoPack?'PACK KUTILMOQDA':uxpDownloaded?'YUKLANGAN':a.isPro?'PRO':'FREE';
+    // Premiere 26 rendererida nested media/SVG/interactive-card daraxti paint
+    // exception loop'ini boshlaydi. Bitta plain-text node barqaror; native UXP
+    // listener `data-ff-pack` orqali detail'ni ochadi.
+    return '<div class="ff-uxp-card" data-ff-pack="'+escHtml(a.n)+'">'
+      +escHtml(a.displayName||a.n)+' · '+escHtml(uxpBadge)+'</div>';
+  }
   const dled=window.downloaded.has(a.n);
   const hasPreview=a.thumb||a.preview;
   const pack=packs[a.n];
@@ -6320,6 +6366,10 @@ function afRefreshStrip(el){
 // Aktiv pill'ni strip ichida ko'rinadigan qilib markazlashtiradi (sahifa scroll'iga TEGMAYDI).
 function afScrollActiveStripIntoView(el){
   if(!el)return;
+  // Premiere UXP 26 non-zero gorizontal scroll holatini har kadrda qayta
+  // dispatch qiladi va host-side exception sikliga tushadi. UXP override'da
+  // lentalar o'raladi, shuning uchun scroll kerak emas.
+  if(window.__FF_UXP_RUNTIME){ try{el.scrollLeft=0;}catch(e){} return; }
   const a=el.querySelector('.active,.is-on');
   if(!a)return;
   if(el.scrollWidth<=el.clientWidth+2)return;
@@ -6332,9 +6382,17 @@ function afScrollActiveStripIntoView(el){
 // Strip'ni bir marta simlaydi: wheel→gorizontal, sudrab scroll, scroll'da fade yangilash.
 function afInitScrollStrip(el){
   if(!el||el.__afStrip)return; el.__afStrip=true;
+  if(window.__FF_UXP_RUNTIME){
+    try{el.scrollLeft=0;}catch(e){}
+    afRefreshStrip(el);
+    return;
+  }
   el.addEventListener('wheel',function(e){
     if(el.scrollWidth<=el.clientWidth+2)return;
-    if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){ el.scrollLeft+=e.deltaY; e.preventDefault(); }
+    if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){
+      el.scrollLeft+=e.deltaY;
+      e.preventDefault();
+    }
   },{passive:false});
   let down=false,sx=0,sl=0,moved=false;
   el.addEventListener('pointerdown',function(e){ down=true;moved=false;sx=e.clientX;sl=el.scrollLeft; });
@@ -6526,12 +6584,16 @@ function catalogFilters(){
 // Filtr/nav/qidiruv/sort o'zgarganda serverdan 1-sahifani qayta oladi (refreshBrowse
 // ichida render() chaqiriladi). AI nav'da server so'rov shart emas.
 function reloadServerBrowse(){
-  if(currentNav==='ai'||typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.refreshBrowse){ render(); return; }
-  AssetFlowCatalog.refreshBrowse(catalogFilters(),{reset:true}).catch(()=>{ render(); });
+  if(currentNav==='ai'||typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.refreshBrowse){ render(); return Promise.resolve(); }
+  return AssetFlowCatalog.refreshBrowse(catalogFilters(),{reset:true}).catch(()=>{ render(); });
 }
 
 function getFiltered(){
   return assets.filter(a=>{
+    // Server natijasi `?app=` + joriy nav/filtr bilan allaqachon tekshirilgan.
+    // Dasturdan mustaqil stock (LUT/music/SFX) tarixiy DB'da `templateApp=ae`
+    // bo'lishi mumkin; uni klientda qayta app-filtrlash Premiere'da yo'qotadi.
+    if(a.server) return true;
     // FAZA 5 (§11) — AE plagin FAQAT After Effects: dasturi belgilangan va AE bo'lmagan shablonlar chiqmaydi
     // (server ?app=ae filtridan tashqari klient zaxirasi). Belgilanmagan (bo'sh) → AE deb qabul qilinadi.
     if(a.templateApp&&String(a.templateApp).toLowerCase()!=='ae')return false;
@@ -6539,7 +6601,6 @@ function getFiltered(){
     // res/qidiruv, BUTUN baza bo'yicha) → qayta filtrlamaymiz. Aks holda serverning
     // description-mos yoki boshqa-mezon natijasi bu yerda yo'qolardi. Faqat LOKAL
     // (upload/downloaded) itemlar mijoz tomonida filtrlanadi (ular sahifalanmaydi).
-    if(a.server) return true;
     if(a.nav!==currentNav)return false;
     if(currentSub!=='all'&&a.cat!==currentSub)return false;
     if(currentNav!=='luts'&&currentOrient!=='all'&&a.orient!==currentOrient)return false;
@@ -6623,7 +6684,14 @@ function updatePackFooter(){
   const pack=packs[currentPackName];
   const canImport=packCanAeImport(pack);
   if(label) label.textContent=canImport?'':'No pack (.aep) available for this template yet';
-  if(btn) btn.disabled=!canImport;
+  if(btn){
+    btn.disabled=!canImport;
+    // UXP portida statik <button disabled> → <div role="button" disabled>.
+    // Div'ning `.disabled=false` yozuvi atributni aks ettirmaydi; atribut qolsa
+    // UXP click'ni umuman yubormaydi. Native buttonda ham bu aniq sync xavfsiz.
+    if(canImport){ btn.removeAttribute('disabled'); btn.removeAttribute('aria-disabled'); }
+    else{ btn.setAttribute('disabled',''); btn.setAttribute('aria-disabled','true'); }
+  }
   if(footBtn){
     footBtn.disabled=!canImport;
     footBtn.textContent=canImport?'Import':'No pack';
@@ -6778,7 +6846,7 @@ function pd3ToggleFav(){}
 window.pd3ToggleFav=pd3ToggleFav;
 
 /* "Hammasini import" — mavjud downloadAll (butun pack) */
-function pd3ImportAll(){ if(currentPackName) downloadAll(currentPackName); }
+function pd3ImportAll(){ if(currentPackName) return downloadAll(currentPackName); }
 window.pd3ImportAll=pd3ImportAll;
 
 /* P1: katalog shabloni → loyihaga qo'shish (server shablon idsi kerak — lokal demo'da yo'q) */
@@ -7782,7 +7850,11 @@ window.afSetPaneCtx=afSetPaneCtx;
 function applyNavSwitch(tab,opts){
   // AI Tools — alohida sahifa (browse chrome yashiriladi, #aiPage ko'rsatiladi).
   // Mavjud video/motion/graphics/luts yo'llari pastda o'zgarishsiz qoladi.
-  document.documentElement.classList.remove('home-mode'); // har nav Home'dan chiqadi
+  // Premiere UXP'da Home'ni bo'sh katalog renderidan OLDIN yashirish qora,
+  // qayta chizilmaydigan oraliq qoldiradi. UXP Home→catalog yo'lida ma'lumotni
+  // avval yashirin sahifaga chizamiz, keyin bitta class almashish bilan o'tamiz.
+  const __uxpHomeStage=!!(window.__FF_UXP_RUNTIME&&document.documentElement.classList.contains('home-mode')&&tab!=='ai');
+  if(!__uxpHomeStage)document.documentElement.classList.remove('home-mode'); // har nav Home'dan chiqadi
   document.documentElement.classList.remove('lib-mode'); // SC_12: doimiy seg'dan katalogga qaytishда lib ham yopiladi
   const isAi=tab==='ai';
   document.documentElement.classList.toggle('ai-mode',isAi);
@@ -7816,7 +7888,18 @@ function applyNavSwitch(tab,opts){
   // sanog'iga tayanardi (endi nav server tomonda filtrlanadi, to'liq sanoq yo'q).
   // SC_38 — boot'da katalog ALLAQACHON aynan shu filtrlar bilan yuklangan (bootPlugin
   // refreshBrowse'i) → noReload bilan takroriy server so'rovsiz faqat render qilinadi.
-  if(opts&&opts.noReload){ render(); return; }
+  if(opts&&opts.noReload){
+    if(__uxpHomeStage)document.documentElement.classList.remove('home-mode');
+    render(); return;
+  }
+  if(__uxpHomeStage){
+    reloadServerBrowse().then(function(){
+      document.documentElement.classList.remove('home-mode');
+      render();
+      if(typeof syncPillarSeg==='function')syncPillarSeg();
+    });
+    return;
+  }
   reloadServerBrowse();
 }
 
@@ -9761,18 +9844,35 @@ function runSearch(){
   const sc=document.querySelector('.scroll-area');
   if(!sc)return;
   let __scRaf=0;
+  function refreshScrolledGrid(){
+    try{ if(typeof updateGridWindow==='function') updateGridWindow(); }catch(e){}
+    // Load-more faqat assets browse'da (favorites/downloaded/AI emas)
+    if(currentPage!=='assets'||currentNav==='ai')return;
+    if(typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.browseHasMore)return;
+    if(!AssetFlowCatalog.browseHasMore()||AssetFlowCatalog.isBrowseLoading())return;
+    if((sc.scrollHeight-(sc.scrollTop+sc.clientHeight))<700){
+      AssetFlowCatalog.loadMoreBrowse(catalogFilters()).catch(function(){});
+    }
+  }
+  // Premiere UXP 26 `scroll` hodisasini joy o'zgarmasa ham har kadrda yuboradi.
+  // Event+rAF zanjiri CPU/exception bo'roniga aylanmasligi uchun faqat UXP'da
+  // haqiqiy scrollTop o'zgarishini sekin polling bilan kuzatamiz. CEP/brauzerda
+  // esa mavjud rAF-throttle yo'li o'zgarishsiz qoladi.
+  if(window.__FF_UXP_RUNTIME){
+    let __lastScrollTop=-1;
+    setInterval(function(){
+      const next=Math.round(Number(sc.scrollTop)||0);
+      if(next===__lastScrollTop)return;
+      __lastScrollTop=next;
+      refreshScrolledGrid();
+    },400);
+    return;
+  }
   sc.addEventListener('scroll',function(){
     if(__scRaf)return;
     __scRaf=requestAnimationFrame(function(){
       __scRaf=0;
-      try{ if(typeof updateGridWindow==='function') updateGridWindow(); }catch(e){}
-      // Load-more faqat assets browse'da (favorites/downloaded/AI emas)
-      if(currentPage!=='assets'||currentNav==='ai')return;
-      if(typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.browseHasMore)return;
-      if(!AssetFlowCatalog.browseHasMore()||AssetFlowCatalog.isBrowseLoading())return;
-      if((sc.scrollHeight-(sc.scrollTop+sc.clientHeight))<700){
-        AssetFlowCatalog.loadMoreBrowse(catalogFilters()).catch(function(){});
-      }
+      refreshScrolledGrid();
     });
   },{passive:true});
 })();
