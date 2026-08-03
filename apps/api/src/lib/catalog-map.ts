@@ -253,6 +253,19 @@ function publicExternalId(v: string | null): string | null {
   return v && v.startsWith("gen:") ? v : null;
 }
 
+/** Eski AI-stock qatorlarida `nav=video`, `templateType=ai-stock`, haqiqiy
+ *  katalog pill'i esa `stockType`da turadi. Ommaviy javobda shu tarixiy tafsilot
+ *  sizmasin — barcha klient bitta kanonik nav ko'rsin. */
+function publicCatalogNav(t: TemplateRow): string {
+  const stockNav: Record<string, string> = {
+    graphics: "graphics",
+    "motion-graphics": "motion",
+    music: "music",
+    sfx: "sfx",
+  };
+  return (t.stockType && stockNav[t.stockType]) || t.nav;
+}
+
 /** Karta uchun umumiy maydonlar (list + detail bir xil karta ko'rsatadi). */
 function cardBase(t: TemplateRow, a: Awaited<ReturnType<typeof resolveCatalogAssets>>) {
   return {
@@ -260,7 +273,7 @@ function cardBase(t: TemplateRow, a: Awaited<ReturnType<typeof resolveCatalogAss
     externalId: publicExternalId(t.externalId),
     name: t.name,
     description: t.description,
-    nav: t.nav,
+    nav: publicCatalogNav(t),
     cat: t.cat,
     catLabel: t.catLabel,
     orient: t.orient,

@@ -2041,6 +2041,7 @@ function main() {
   // e'lon qiladigan global'ni almashtirish uchun (oldin qo'yilsa AE bosib ketadi).
   const LATE_SHIMS = [
     "js/ae-shim/uxp-copy-late.js",   // afCopyText → UXP buferi (FAQAT UXP)
+    "js/ae-shim/uxp-account-events.js", // login/Google → native UXP click (inline onclick emas)
     "js/ae-shim/uxp-browse-state.js", // pane/qidiruv/filtr/scroll tiklash (FAQAT UXP)
     "js/ae-shim/uxp-error-report.js", // global error/rejection → mavjud /api/logs (FAQAT UXP)
   ];

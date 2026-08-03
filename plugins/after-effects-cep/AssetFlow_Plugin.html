@@ -10714,6 +10714,7 @@ async function accountLogin(){
       render();
     }
   }catch(e){
+    try{ console.error('[accountLogin] failed',e&&e.stack?e.stack:e); }catch(_){}
     showToast(friendlyError(e),'error');
   }
 }

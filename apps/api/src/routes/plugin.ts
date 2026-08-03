@@ -277,7 +277,14 @@ function buildCatalogWhere(query: Request["query"]): Prisma.ContributorTemplateW
   // templateType — BIRLASHGAN pill kaliti (video-templates | luts | graphics |
   // motion-graphics | music | sfx). Har asset O'Z pillida (P1 step 30/32).
   const types = csvParam(query.templateType);
-  if (types.length) and.push({ templateType: { in: types } });
+  if (types.length) {
+    // Eski AI-stock ingest `templateType=ai-stock`, haqiqiy pill'ni esa
+    // `stockType`da saqlagan. Katalog kontrakti tarixiy DB shakliga bog'lanmasin.
+    const stockAliases = types.filter((t) => ["graphics", "motion-graphics", "music", "sfx"].includes(t));
+    and.push(stockAliases.length
+      ? { OR: [{ templateType: { in: types } }, { stockType: { in: stockAliases } }] }
+      : { templateType: { in: types } });
+  }
 
   // kind — 'template' | 'stock' (ixtiyoriy — masalan barcha stockni ko'rsatish).
   const kinds = csvParam(query.kind);

@@ -99,6 +99,7 @@ const FORBIDDEN_NAME = [/\.map$/i, /(^|\/)\.env/i, /(^|\/)\.DS_Store$/i, /(^|\/)
  * boshqa shim ichiga ko'chirса).
  */
 const DEV_FILE = [/(^|\/)uxp-diag\.js$/i];
+const REQUIRED_RUNTIME = ["js/ae-shim/uxp-account-events.js"];
 /** Diag oynasining o'ziga xos, boshqa hech qayerda uchramaydigan imzolari. */
 const DEV_MARK = [
   ["__ffT1", "diag T1/T2/T3 hodisa zondi"],
@@ -180,6 +181,9 @@ function verify(file) {
     if (pre) errs.push(`taqiqlangan papka: ${e.name}`);
     if (FORBIDDEN_NAME.some((r) => r.test(e.name))) errs.push(`taqiqlangan fayl: ${e.name}`);
     if (DEV_FILE.some((r) => r.test(e.name))) errs.push(`dev instrumenti: ${e.name}`);
+  }
+  for (const required of REQUIRED_RUNTIME) {
+    if (!names.has(required)) errs.push(`majburiy runtime fayli yo'q: ${required}`);
   }
 
   const text = new Map();

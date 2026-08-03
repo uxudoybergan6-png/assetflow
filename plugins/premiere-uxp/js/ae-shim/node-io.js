@@ -324,13 +324,27 @@
     var nativeMkdir = nativeFs.mkdirSync;
     fs.mkdirSync = function (p, opts) {
       if (!opts || !opts.recursive) return nativeMkdir.call(nativeFs, p, opts);
+      // Ayrim UXP hostlari `recursive:true` ni to'g'ridan qabul qiladi. Avval
+      // shu yo'lni sinaymiz: native sandbox ildizidan yuqoridagi `/Users/...`
+      // segmentlarini bittalab mkdir qilish ko'pincha rad etiladi.
+      try {
+        nativeMkdir.call(nativeFs, p, { recursive: true });
+        return;
+      } catch (directErr) {
+        if (fs.existsSync(p)) return; // EEXIST — muvaffaqiyat
+      }
       var parts = String(p).split("/");
       var cur = parts[0] === "" ? "/" : "";
+      var lastErr = null;
       for (var i = 0; i < parts.length; i++) {
         if (!parts[i]) continue;
         cur = cur === "/" || cur === "" ? cur + parts[i] : cur + "/" + parts[i];
-        try { nativeMkdir.call(nativeFs, cur); } catch (e) { /* mavjud — davom */ }
+        try { nativeMkdir.call(nativeFs, cur); }
+        catch (e) { if (!fs.existsSync(cur)) lastErr = e; }
       }
+      // Oldingi kod har qanday xatoni yutib `useDisk=true` qoldirardi; keyingi
+      // `writeFileSync` esa "No such file or directory" bilan loginni buzardi.
+      if (!fs.existsSync(p)) throw lastErr || new Error("Papka yaratilmadi: " + p);
     };
 
     /*
