@@ -38,6 +38,54 @@ const cleanAspect = (a?: string): string | undefined =>
 const cleanSize = (s?: string): string | undefined =>
   s && ["1K", "2K", "4K"].includes(s) ? s : undefined;
 
+export function buildVertexImageTextRequest(
+  modelId: string,
+  prompt: string,
+  opts: { aspectRatio?: string; imageSize?: string }
+) {
+  const ar = cleanAspect(opts.aspectRatio);
+  const sz = cleanSize(opts.imageSize);
+  if (isImagen(modelId)) {
+    return {
+      kind: "imagen" as const,
+      request: {
+        model: modelId,
+        prompt,
+        config: { numberOfImages: 1, aspectRatio: ar, ...(sz ? { imageSize: sz } : {}) },
+      },
+    };
+  }
+  const imageConfig = { ...(ar ? { aspectRatio: ar } : {}), ...(sz ? { imageSize: sz } : {}) };
+  return {
+    kind: "gemini" as const,
+    request: {
+      model: modelId,
+      contents: prompt,
+      config: { responseModalities: ["IMAGE"], ...(Object.keys(imageConfig).length ? { imageConfig } : {}) },
+    },
+  };
+}
+
+export function buildVertexImageEditRequest(
+  modelId: string,
+  prompt: string,
+  inlines: Array<{ data: string; mimeType: string }>,
+  opts: { aspectRatio?: string; imageSize?: string }
+) {
+  const reqParts: Array<{ inlineData: { data: string; mimeType: string } } | { text: string }> = inlines.map(
+    (inl) => ({ inlineData: { data: inl.data, mimeType: inl.mimeType } })
+  );
+  reqParts.push({ text: prompt });
+  const ar = cleanAspect(opts.aspectRatio);
+  const sz = cleanSize(opts.imageSize);
+  const imageConfig = { ...(ar ? { aspectRatio: ar } : {}), ...(sz ? { imageSize: sz } : {}) };
+  return {
+    model: modelId,
+    contents: [{ role: "user", parts: reqParts }],
+    config: { responseModalities: ["IMAGE"], ...(Object.keys(imageConfig).length ? { imageConfig } : {}) },
+  };
+}
+
 async function refToInline(refUrl: string): Promise<{ data: string; mimeType: string } | null> {
   const m = /^data:([^;]+);base64,([\s\S]*)$/.exec(refUrl);
   if (m) return { data: m[2], mimeType: m[1] || "image/png" };
@@ -62,25 +110,15 @@ export async function vertexImage(
   if (!isVertexImageConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
     const client = getClient(locationFor(modelId));
-    const ar = cleanAspect(opts.aspectRatio);
-    const sz = cleanSize(opts.imageSize);
-    if (isImagen(modelId)) {
-      const r = await client.models.generateImages({
-        model: modelId,
-        prompt,
-        config: { numberOfImages: 1, aspectRatio: ar, ...(sz ? { imageSize: sz } : {}) },
-      });
+    const built = buildVertexImageTextRequest(modelId, prompt, opts);
+    if (built.kind === "imagen") {
+      const r = await client.models.generateImages(built.request);
       const b64 = r.generatedImages?.[0]?.image?.imageBytes;
       if (!b64) return { ok: false, error: "Imagen: no image was returned (may have been blocked by the safety filter)" };
       return { ok: true, data: Buffer.from(b64, "base64") };
     }
     // Nano Banana (gemini image) — aspectRatio + imageSize imageConfig orqali (SDK ImageConfig)
-    const imageConfig = { ...(ar ? { aspectRatio: ar } : {}), ...(sz ? { imageSize: sz } : {}) };
-    const r = await client.models.generateContent({
-      model: modelId,
-      contents: prompt,
-      config: { responseModalities: ["IMAGE"], ...(Object.keys(imageConfig).length ? { imageConfig } : {}) },
-    });
+    const r = await client.models.generateContent(built.request);
     const parts = r.candidates?.[0]?.content?.parts ?? [];
     const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
     if (!b64) return { ok: false, error: "Nano Banana: no image was returned" };
@@ -130,20 +168,14 @@ export async function vertexImageEdit(
     if (!urls.length) return { ok: false, error: "No reference image" };
     // Barcha referenslarni inline (base64) ga — TARTIB saqlanadi (@imgN mapping).
     const inlines = await Promise.all(urls.map((u) => refToInline(u)));
-    const reqParts: Array<{ inlineData: { data: string; mimeType: string } } | { text: string }> = [];
+    const ready: Array<{ data: string; mimeType: string }> = [];
     for (const inl of inlines) {
       if (!inl) return { ok: false, error: "Reference image failed to load" };
-      reqParts.push({ inlineData: { data: inl.data, mimeType: inl.mimeType } });
+      ready.push({ data: inl.data, mimeType: inl.mimeType });
     }
-    reqParts.push({ text: prompt });
-    const ar = cleanAspect(opts.aspectRatio);
-    const sz = cleanSize(opts.imageSize);
-    const imageConfig = { ...(ar ? { aspectRatio: ar } : {}), ...(sz ? { imageSize: sz } : {}) };
-    const r = await getClient(locationFor(modelId)).models.generateContent({
-      model: modelId,
-      contents: [{ role: "user", parts: reqParts }],
-      config: { responseModalities: ["IMAGE"], ...(Object.keys(imageConfig).length ? { imageConfig } : {}) },
-    });
+    const r = await getClient(locationFor(modelId)).models.generateContent(
+      buildVertexImageEditRequest(modelId, prompt, ready, opts)
+    );
     const parts = r.candidates?.[0]?.content?.parts ?? [];
     const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
     if (!b64) return { ok: false, error: "Nano Banana Edit: no image was returned" };

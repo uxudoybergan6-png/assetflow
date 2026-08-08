@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 // KALIT AJRATISH (Bosqich 1 #4 · FAZA 2 H6): cost-quote imzosi AUTH tokenidan ALOHIDA kalit
 // bilan imzolanadi. Ilgari JWT_SECRET ham auth token, ham cost-quote uchun ishlatilardi — u
@@ -33,24 +34,38 @@ function stableStringify(value: unknown): string {
 }
 
 /** modelId + mode + params bo'yicha barqaror hash (quote'ni so'rovga bog'lash uchun).
- *  `referenceUrl` HASHDAN chiqariladi: u narxga ta'sir qilmaydi va katta (data-URI/URL)
- *  bo'lishi mumkin. Shu tufayli cost-quote (referencesiz) va /gen (reference bilan)
- *  bir xil hash beradi — aks holda reference qo'shilsa BAD_QUOTE bo'lardi. */
+ * Reference qiymatlari narx paramsidan ajratiladi, lekin alohida SHA-256 manifest hash bilan
+ * imzoga bog'lanadi. Demak quote'dan keyin reference almashtirilsa BAD_QUOTE chiqadi. */
 export function genParamsHash(
   modelId: number,
   mode: string,
   params: Record<string, unknown>
 ): string {
   const priced = { ...(params || {}) };
-  delete priced.referenceUrl;
-  delete priced.referenceUrls; // KO'P referens (GPT Image 2 Edit @imgN) — narxga ta'sir qilmaydi, data-og'ir.
-  delete priced.referenceEndUrl; // End kadr ham narxga ta'sir qilmaydi (referenceUrl kabi)
-  // QB-2: Magnific reference kanallari — narxga ta'sir qilmaydi, data-og'ir (base64).
-  // Hashdan chiqarilmasa cost-quote (referencesiz) va /gen (reference bilan) ph'i farq qiladi
-  // → har gen 400 BAD_QUOTE. Shu sabab DOIM o'chiriladi (mavjud bo'lmasa no-op).
-  delete priced.styleReference;
-  delete priced.structureReference;
-  return stableStringify({ modelId, mode, params: priced });
+  const referenceKeys = [
+    "referenceUrl",
+    "referenceUrls",
+    "referenceEndUrl",
+    "imageUrls",
+    "videoUrls",
+    "audioUrls",
+    "savedReferenceIds",
+    "styleReference",
+    "structureReference",
+  ] as const;
+  const references: Record<string, unknown> = {};
+  for (const key of referenceKeys) {
+    if (priced[key] != null) references[key] = priced[key];
+    delete priced[key];
+  }
+  // Reference narxga ta'sir qilmaydi, ammo quote'dan keyin reference almashtirilmasligi kerak.
+  // Katta URL/data-URI'ni JWT payloadiga yozmaymiz: canonical manifestning SHA-256 digestigina
+  // params hashga kiradi. Scalar va multimodal kanallar endi bir xil semantikada.
+  const referenceManifestHash = crypto
+    .createHash("sha256")
+    .update(stableStringify(references))
+    .digest("hex");
+  return stableStringify({ modelId, mode, params: priced, referenceManifestHash });
 }
 
 export type CostQuote = {

@@ -20,7 +20,7 @@ const AssetFlowCatalog = (() => {
   }
 
   function catalogHeaders() {
-    const h = { Accept: "application/json" };
+    const h = { Accept: "application/json", "X-FF-App": hostTemplateApp() };
     if (typeof AssetFlowAccount !== "undefined") {
       Object.assign(h, AssetFlowAccount.authHeaders());
     }
@@ -29,11 +29,12 @@ const AssetFlowCatalog = (() => {
 
   /** Pack/MOGRT yuklab olish uchun Authorization header (gate'langan route) */
   function downloadHeaders() {
+    const h = { "X-FF-App": hostTemplateApp() };
     if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.authHeaders) {
-      const h = AssetFlowAccount.authHeaders();
-      if (h && h.Authorization) return h;
+      const auth = AssetFlowAccount.authHeaders();
+      if (auth && auth.Authorization) h.Authorization = auth.Authorization;
     }
-    return null;
+    return h;
   }
 
   /** 30s timeout bilan fetch — Render cold start cheksiz osilib qolmasin */
@@ -198,9 +199,24 @@ const AssetFlowCatalog = (() => {
   let browseSig = "";
 
   const BROWSE_FILTER_KEYS = ["templateType", "cat", "orient", "res", "q", "sort"];
+  function hostTemplateApp(forced) {
+    const requested = String(forced || "").toLowerCase();
+    if (requested === "pr" || requested === "ae") return requested;
+    try {
+      const globalApp = String((typeof window !== "undefined" && window.AF_TEMPLATE_APP) || "").toLowerCase();
+      if (globalApp === "pr" || globalApp === "ae") return globalApp;
+    } catch {}
+    try {
+      const env = typeof CSInterface !== "undefined" ? new CSInterface().getHostEnvironment() : null;
+      const id = String((env && (env.appName || env.appId)) || "AEFT").toUpperCase();
+      return id === "PPRO" || id.indexOf("PREMIERE") >= 0 ? "pr" : "ae";
+    } catch {
+      return "ae";
+    }
+  }
   function browseQueryStr(filters, cursor) {
     const p = new URLSearchParams();
-    p.set("app", "ae"); // AE plagin FAQAT After Effects shablonlari (§11)
+    p.set("app", hostTemplateApp()); // dual-host CEP: AE → ae, Premiere → pr
     p.set("take", "48");
     const f = filters || {};
     BROWSE_FILTER_KEYS.forEach((k) => {
@@ -298,11 +314,26 @@ const AssetFlowCatalog = (() => {
   }
 
   async function fetchFeatured(limit = 6) {
-    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/featured?limit=${limit}`, {
+    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/featured?limit=${limit}&app=${hostTemplateApp()}`, {
       headers: catalogHeaders(),
     });
     if (!res.ok) throw new Error(`Featured HTTP ${res.status}`);
     return res.json();
+  }
+
+  /** Home javonlari uchun katalogni browse holatiga tegmasdan ixcham yuklaydi. */
+  async function fetchHomeShelf(templateType, limit = 6) {
+    const take = Math.max(1, Math.min(12, Number(limit) || 6));
+    const p = new URLSearchParams();
+    p.set("app", hostTemplateApp());
+    p.set("take", String(take));
+    if (templateType) p.set("templateType", String(templateType));
+    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/catalog?${p.toString()}`, {
+      headers: catalogHeaders(),
+    });
+    if (!res.ok) throw new Error(`Home shelf HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data && data.items) ? data.items : [];
   }
 
   /** Featured shablonlarni server assetlarida `nw` (NEW/Featured) bilan belgilash */
@@ -860,7 +891,7 @@ const AssetFlowCatalog = (() => {
   /** Tanlangan .mogrt elementni import uchun .aep ga tayyorlaydi */
   async function extractMogrtItem(templateId, mogrtPath) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Import only works inside After Effects");
+      throw new Error("Import requires the FrameFlow Adobe extension");
     }
     const fs = require("fs");
     const path = require("path");
@@ -869,6 +900,7 @@ const AssetFlowCatalog = (() => {
     if (!mogrtPath || !fs.existsSync(mogrtPath)) {
       throw new Error("MOGRT file not found — please re-download the pack.");
     }
+    if (hostTemplateApp() === "pr") return mogrtPath;
     const baseDir = downloadDir() || os.tmpdir();
     return extractMogrtFileToAep(
       fs, path, NodeBuffer, baseDir, templateId, mogrtPath
@@ -1218,7 +1250,7 @@ const AssetFlowCatalog = (() => {
    */
   async function downloadSceneMogrt(templateId, scene, opts) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Import only works inside After Effects");
+      throw new Error("Import requires the FrameFlow Adobe extension");
     }
     if (!scene || !scene.mogrtUrl) {
       throw new Error("Scene has no MOGRT URL");
@@ -1252,6 +1284,7 @@ const AssetFlowCatalog = (() => {
       await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || sceneSha || "");
       _freshDownload = true;
     }
+    if (hostTemplateApp(opts && opts.hostApp) === "pr") return out;
     const result = await extractMogrtFileToAep(
       fs, path, NodeBuffer, baseDir, templateId, out
     );
@@ -1264,13 +1297,15 @@ const AssetFlowCatalog = (() => {
 
   async function downloadPackToTemp(templateId, fileName, opts) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Import only works inside After Effects");
+      throw new Error("Import requires the FrameFlow Adobe extension");
     }
     const fs = require("fs");
     const path = require("path");
     const os = require("os");
     const { Buffer: NodeBuffer } = require("buffer");
     const ext = path.extname(fileName || "") || ".aep";
+    const extLower = ext.toLowerCase();
+    const templateApp = hostTemplateApp(opts && opts.hostApp);
     const baseDir = downloadDir() || os.tmpdir();
     const out = path.join(baseDir, `assetflow_${templateId}${ext}`);
     const meta = findServerPackMeta(templateId);
@@ -1278,7 +1313,7 @@ const AssetFlowCatalog = (() => {
     const onProgress = opts && opts.onProgress;
 
     // ZIP bo'lsa — unzip papkasini tekshiramiz (kesh)
-    if (ext.toLowerCase() === ".zip") {
+    if (extLower === ".zip") {
       const cacheDir = unzipDirFor(fs, path, baseDir, templateId, meta.name); // P9: nom bilan
       // QA-FIX #7: pack serverда yangilangan bo'lsa (fileSize o'zgargan) eski
       // ochilgan keshni tashlab, yangisini yuklab olamiz.
@@ -1288,6 +1323,19 @@ const AssetFlowCatalog = (() => {
         } catch {}
       }
       if (fs.existsSync(cacheDir)) {
+        if (templateApp === "pr") {
+          const projects = findAllFilesByExtInDir(fs, path, cacheDir, [".prproj"]);
+          if (projects.length === 1) return projects[0];
+          if (projects.length > 1) {
+            throw new Error("This pack contains multiple Premiere projects. Choose a project in Contributor Studio before importing.");
+          }
+          const nativeMogrts = findAllFilesByExtInDir(fs, path, cacheDir, [".mogrt"]);
+          if (nativeMogrts.length === 1) return nativeMogrts[0];
+          if (nativeMogrts.length > 1) throw mogrtPackError(mogrtItemsFromDir(fs, path, cacheDir));
+          if (findAepInDir(fs, path, cacheDir)) {
+            throw new Error("This is an After Effects project pack and cannot be imported into Premiere Pro.");
+          }
+        }
         const cached = findAepInDir(fs, path, cacheDir);
         if (cached) return cached;
         // .aep yo'q — ochilgan papkadan kengaytma bo'yicha topamiz (papka nomi muhim emas)
@@ -1308,10 +1356,16 @@ const AssetFlowCatalog = (() => {
         }
       }
     } else if (
-      ext.toLowerCase() !== ".mogrt" &&
+      extLower !== ".mogrt" &&
       cacheValid(fs, out, expectedSize, opts && opts.expectedSha256)
     ) {
-      // .mogrt bu yerdan o'tmaydi — kesh bo'lsa ham har import yangi extract oladi
+      if (templateApp === "pr" && extLower === ".aep") {
+        throw new Error("This is an After Effects project pack and cannot be imported into Premiere Pro.");
+      }
+      if (templateApp === "ae" && extLower === ".prproj") {
+        throw new Error("This is a Premiere Pro project pack and cannot be imported into After Effects.");
+      }
+      // .mogrt bu yerdan o'tmaydi — AE kesh bo'lsa ham har import yangi extract oladi
       return out;
     }
 
@@ -1364,7 +1418,7 @@ const AssetFlowCatalog = (() => {
     const _record = async () => { void _needRecord; };
 
     // AE can’t import .zip directly. If pack is a zip, extract and return first .aep inside.
-    if (ext.toLowerCase() === ".zip") {
+    if (extLower === ".zip") {
       const dir = unzipDirFor(fs, path, baseDir, templateId, meta.name); // P9: nom bilan
       try {
         fs.mkdirSync(dir, { recursive: true });
@@ -1398,6 +1452,19 @@ const AssetFlowCatalog = (() => {
         fs.rmSync(out, { force: true });
         fs.rmSync(sha256Sidecar(out), { force: true });
       } catch {}
+      if (templateApp === "pr") {
+        const projects = findAllFilesByExtInDir(fs, path, dir, [".prproj"]);
+        if (projects.length === 1) { await _record(); return projects[0]; }
+        if (projects.length > 1) {
+          throw new Error("This pack contains multiple Premiere projects. Choose a project in Contributor Studio before importing.");
+        }
+        const nativeMogrts = findAllFilesByExtInDir(fs, path, dir, [".mogrt"]);
+        if (nativeMogrts.length === 1) { await _record(); return nativeMogrts[0]; }
+        if (nativeMogrts.length > 1) throw mogrtPackError(mogrtItemsFromDir(fs, path, dir));
+        if (findAepInDir(fs, path, dir)) {
+          throw new Error("This is an After Effects project pack and cannot be imported into Premiere Pro.");
+        }
+      }
       const aep = findAepInDir(fs, path, dir);
       if (aep) { await _record(); return aep; }
       // .aep yo’q — zip entry yo’llari bo’yicha .mogrt’larni topamiz
@@ -1428,7 +1495,8 @@ const AssetFlowCatalog = (() => {
 
     // .mogrt — to’g’ridan yuklangan yakka fayl: extract (unikal papka,
     // .mogrt’ning o’zi kesh bo’lib qoladi, qayta yuklab olinmaydi).
-    if (ext.toLowerCase() === ".mogrt") {
+    if (extLower === ".mogrt") {
+      if (templateApp === "pr") { await _record(); return out; }
       const r = await extractMogrtFileToAep(
         fs, path, NodeBuffer, baseDir, templateId, out
       );
@@ -1436,6 +1504,12 @@ const AssetFlowCatalog = (() => {
       return r;
     }
 
+    if (templateApp === "pr" && extLower === ".aep") {
+      throw new Error("This is an After Effects project pack and cannot be imported into Premiere Pro.");
+    }
+    if (templateApp === "ae" && extLower === ".prproj") {
+      throw new Error("This is a Premiere Pro project pack and cannot be imported into After Effects.");
+    }
     await _record();
     return out;
   }
@@ -1676,6 +1750,7 @@ const AssetFlowCatalog = (() => {
     resolveMissingFonts,
     fetchCatalog,
     fetchFeatured,
+    fetchHomeShelf,
     refreshFeatured,
     refreshBrowse,
     loadMoreBrowse,

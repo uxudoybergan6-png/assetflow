@@ -114,7 +114,9 @@ export function buildKlingVideoRequest(
     if (refs.startUrl) contents.push({ type: "first_frame", url: refs.startUrl });
     if (model.endFrame && refs.endUrl) contents.push({ type: "last_frame", url: refs.endUrl });
     for (const u of arr(refs.imageUrls)) contents.push({ type: "refer_image", url: u });
-    const vids = arr(refs.videoUrls).slice(0, 1); // Omni: maks 1 referens video
+    // Limit canonical route/processor gate'da tekshiriladi. Builder ortiqcha referensni jim
+    // kesmasin — bypass qilingan eski job bo'lsa provider aniq xato qaytarsin.
+    const vids = arr(refs.videoUrls);
     for (const u of vids) contents.push({ type: "feature_video", url: u });
     // feature_video bilan native audio qo'llanmaydi → audio "off"; aspect faqat frame/video yo'q bo'lsa.
     const hasFrameOrVideo = Boolean(refs.startUrl) || vids.length > 0;
@@ -259,6 +261,33 @@ export async function klingVideoUrlToBuffer(url: string): Promise<OrResult<Buffe
   return klingDownloadUrl(url, "video");
 }
 
+export function buildKlingImageRequest(
+  model: GenModel,
+  p: KlingImageParams
+): { submitPath: string; queryPath: string; body: Record<string, unknown> } {
+  const kind: KlingImageKind = model.klingKind === "omni-image" ? "omni-image" : "image";
+  const resolution = klingImageResolution(p.resolution);
+  const aspect = klingImageAspect(p.aspect);
+  const refs = (p.imageUrls || []).filter((u) => typeof u === "string" && u.length > 0);
+  const body: Record<string, unknown> = {
+    model_name: kind === "omni-image" ? "kling-v3-omni" : "kling-v3",
+    prompt: p.prompt,
+    resolution,
+    n: 1,
+    watermark_info: { enabled: false },
+  };
+  if (aspect) body.aspect_ratio = aspect;
+  if (refs.length) {
+    if (kind === "omni-image") body.image_list = refs.map((u) => ({ image: u }));
+    else body.image = refs[0];
+  }
+  return {
+    submitPath: kind === "omni-image" ? "/v1/images/omni-image" : "/v1/images/generations",
+    queryPath: kind === "omni-image" ? "/v1/images/omni-image/" : "/v1/images/generations/",
+    body,
+  };
+}
+
 /**
  * Kling rasm generatsiyasi — bitta rasm chiqishi (n=1; count>1 caller mapLimit bilan). Submit → poll →
  * download. image: /v1/images/generations (model_name kling-v3, single `image` ref). omni-image:
@@ -269,24 +298,8 @@ export async function klingImage(
   p: KlingImageParams
 ): Promise<OrResult<Buffer[]>> {
   if (!isKlingConfigured()) return NOT_CONFIGURED;
-  const kind: KlingImageKind = model.klingKind === "omni-image" ? "omni-image" : "image";
-  const resolution = klingImageResolution(p.resolution);
-  const aspect = klingImageAspect(p.aspect);
-  const refs = (p.imageUrls || []).filter((u) => typeof u === "string" && u.length > 0);
-
-  const submitPath = kind === "omni-image" ? "/v1/images/omni-image" : "/v1/images/generations";
-  const body: Record<string, unknown> = {
-    model_name: kind === "omni-image" ? "kling-v3-omni" : "kling-v3",
-    prompt: p.prompt,
-    resolution,
-    n: 1,
-    watermark_info: { enabled: false }, // ⚠️ BIZDA HAR DOIM false
-  };
-  if (aspect) body.aspect_ratio = aspect;
-  if (refs.length) {
-    if (kind === "omni-image") body.image_list = refs.map((u) => ({ image: u }));
-    else body.image = refs[0]; // base image gen: bitta referens rasm
-  }
+  const request = buildKlingImageRequest(model, p);
+  const { submitPath, queryPath, body } = request;
 
   // Submit (1302/1303 → qisqa backoff).
   let taskId = "";
@@ -310,7 +323,6 @@ export async function klingImage(
   if (!taskId) return { ok: false, error: "kling: image rate limit — please try again shortly" };
 
   // Poll (GET .../{id}); status "succeed" (video "succeeded"'dan farqli!).
-  const queryPath = kind === "omni-image" ? "/v1/images/omni-image/" : "/v1/images/generations/";
   for (let i = 0; i < 100; i++) {
     await sleep(i < 4 ? 1500 : 3000); // ~5 daqiqagacha
     let res: Response;

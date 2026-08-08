@@ -54,6 +54,7 @@ import {
   artifactName,
   artifactPath,
   declaredPluginVersion,
+  declaredPackageVersion,
   flavorVersion,
   getFlavor,
   matchesSecretPattern,
@@ -123,7 +124,7 @@ const FABRICATED_CLAIM_PATTERNS = [
 ];
 
 /** Manifest HostList'da E'LON QILINMAGAN mahsulotlar listing matnida va'da qilinmaydi. */
-const HOST_PRODUCT_NAMES = { AEFT: ["After Effects"] };
+const HOST_PRODUCT_NAMES = { AEFT: ["After Effects"], PPRO: ["Premiere Pro"] };
 const OTHER_PRODUCT_NAMES = [
   "Premiere Pro",
   "DaVinci Resolve",
@@ -258,8 +259,8 @@ export function auditManifestSource(report, { xml: overrideXml = null } = {}) {
     report.check(`manifest ${flag} ishlatmaydi`, !xml.includes(flag), "manifestda topildi");
   }
   report.check(
-    `versiya sinxron: manifest ${version} = manifest.admin ${flavorVersion("admin")} = AF_PLUGIN_VERSION ${declared}`,
-    version === flavorVersion("admin") && version === declared
+    `versiya sinxron: manifest ${version} = manifest.admin ${flavorVersion("admin")} = AF_PLUGIN_VERSION ${declared} = package ${declaredPackageVersion()}`,
+    version === flavorVersion("admin") && version === declared && version === declaredPackageVersion()
   );
   report.check(
     `manifest ExtensionBundleVersion semver shaklida (${version})`,

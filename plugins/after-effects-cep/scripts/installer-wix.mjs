@@ -221,14 +221,14 @@ export function buildWxsSource({ version, payloadFiles, installDirName = "com.fr
   return `<?xml version="1.0" encoding="utf-8"?>
 <!-- FrameFlow mijoz paneli — PER-USER MSI. Manba ro'yxati: scripts/package-flavors.mjs -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="FrameFlow for After Effects"
+  <Package Name="FrameFlow for After Effects and Premiere Pro"
            Manufacturer="FrameFlow"
            Version="${version}"
            UpgradeCode="${UPGRADE_CODE}"
            Scope="perUser"
            Compressed="yes"
            InstallerVersion="500">
-    <SummaryInformation Description="FrameFlow panel for Adobe After Effects"/>
+    <SummaryInformation Description="FrameFlow panel for Adobe After Effects and Premiere Pro"/>
     <MajorUpgrade DowngradeErrorMessage="A newer version of FrameFlow is already installed."/>
     <MediaTemplate EmbedCab="yes"/>
     <Property Id="ARPNOMODIFY" Value="1"/>

@@ -39,6 +39,54 @@ function getClient(): GoogleGenAI {
 
 export type VertexVideoJob = { operationName: string };
 
+export type VertexVideoRequest = {
+  model: string;
+  prompt: string;
+  image?: { imageBytes: string; mimeType: string };
+  config: {
+    aspectRatio?: string;
+    durationSeconds?: number;
+    generateAudio?: boolean;
+    resolution?: string;
+    lastFrame?: { imageBytes: string; mimeType: string };
+    outputGcsUri: string;
+  };
+};
+
+/** Provider requestini tarmoqsiz tekshirish uchun yagona pure builder. */
+export function buildVertexVideoRequest(
+  modelId: string,
+  prompt: string,
+  opts: {
+    imageBase64?: string;
+    imageMimeType?: string;
+    endImageBase64?: string;
+    endImageMimeType?: string;
+    aspectRatio?: string;
+    durationSeconds?: number;
+    generateAudio?: boolean;
+    resolution?: string;
+  }
+): VertexVideoRequest {
+  return {
+    model: modelId,
+    prompt,
+    image: opts.imageBase64
+      ? { imageBytes: opts.imageBase64, mimeType: opts.imageMimeType || "image/png" }
+      : undefined,
+    config: {
+      aspectRatio: opts.aspectRatio,
+      durationSeconds: opts.durationSeconds,
+      generateAudio: opts.generateAudio,
+      resolution: opts.resolution,
+      lastFrame: opts.endImageBase64
+        ? { imageBytes: opts.endImageBase64, mimeType: opts.endImageMimeType || "image/png" }
+        : undefined,
+      outputGcsUri: `gs://${OUTPUT_BUCKET}/vertex-video-tmp/`,
+    },
+  };
+}
+
 /** Video generatsiya boshlaydi (Veo, predictLongRunning). Referens — boshlang'ich kadr (base64). */
 export async function vertexSubmitVideo(
   modelId: string,
@@ -56,25 +104,7 @@ export async function vertexSubmitVideo(
 ): Promise<OrResult<VertexVideoJob>> {
   if (!isVertexConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   try {
-    const op = await getClient().models.generateVideos({
-      model: modelId,
-      prompt,
-      image: opts.imageBase64
-        ? { imageBytes: opts.imageBase64, mimeType: opts.imageMimeType || "image/png" }
-        : undefined,
-      config: {
-        aspectRatio: opts.aspectRatio,
-        durationSeconds: opts.durationSeconds,
-        generateAudio: opts.generateAudio,
-        resolution: opts.resolution,
-        // YAKUNIY kadr interpolatsiya (SDK GenerateVideosConfig.lastFrame). "Only supported for i2v" —
-        // start image ham berilishi shart (runVertexVideo guard qiladi).
-        lastFrame: opts.endImageBase64
-          ? { imageBytes: opts.endImageBase64, mimeType: opts.endImageMimeType || "image/png" }
-          : undefined,
-        outputGcsUri: `gs://${OUTPUT_BUCKET}/vertex-video-tmp/`,
-      },
-    });
+    const op = await getClient().models.generateVideos(buildVertexVideoRequest(modelId, prompt, opts));
     if (!op.name) return { ok: false, error: "Vertex: operation name was not returned" };
     return { ok: true, data: { operationName: op.name } };
   } catch (e) {

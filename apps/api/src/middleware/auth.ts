@@ -12,10 +12,19 @@ export interface AuthPayload {
   totpEnabled?: boolean;
 }
 
+export interface PluginTokenSession {
+  token: string;
+  issuedAt: Date;
+  createdAt: Date;
+  expiresAt: Date;
+  refreshAt: Date;
+}
+
 declare global {
   namespace Express {
     interface Request {
       user?: AuthPayload;
+      pluginToken?: PluginTokenSession;
     }
   }
 }
@@ -56,6 +65,7 @@ export async function requireAuth(
   });
 
   if (pluginToken && pluginToken.expiresAt > new Date()) {
+    const refreshAt = new Date(pluginToken.expiresAt.getTime() - 48 * 60 * 60 * 1000);
     if (isBlocked(pluginToken.user)) {
       res.status(403).json({ error: "Account is blocked", code: "ACCOUNT_BLOCKED" });
       return;
@@ -65,6 +75,13 @@ export async function requireAuth(
       email: pluginToken.user.email,
       role: pluginToken.user.role,
       totpEnabled: pluginToken.user.totpEnabled,
+    };
+    req.pluginToken = {
+      token: token,
+      issuedAt: pluginToken.createdAt,
+      createdAt: pluginToken.createdAt,
+      expiresAt: pluginToken.expiresAt,
+      refreshAt,
     };
     next();
     return;

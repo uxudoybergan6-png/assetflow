@@ -3,6 +3,7 @@
   <Extension Id="com.frameflow.panel">
     <HostList>
       <Host Name="AEFT" Port="8098"/>
+      <Host Name="PPRO" Port="8099"/>
     </HostList>
   </Extension>
 </ExtensionList>

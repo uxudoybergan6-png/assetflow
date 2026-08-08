@@ -5,10 +5,10 @@
      Flavor manbai: scripts/package-flavors.mjs · hujjat: docs/RELEASE-ARCHITECTURE.md -->
 <ExtensionManifest Version="7.0"
   ExtensionBundleId="com.frameflow.internal.admin"
-  ExtensionBundleVersion="1.1.1"
+  ExtensionBundleVersion="1.2.0"
   ExtensionBundleName="FrameFlow Admin (Internal)">
   <ExtensionList>
-    <Extension Id="com.frameflow.admin" Version="1.1.1"/>
+    <Extension Id="com.frameflow.admin" Version="1.2.0"/>
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>

@@ -1,4 +1,4 @@
-# AssetFlow — After Effects CEP
+# FrameFlow — After Effects + Premiere Pro CEP
 
 Browse panel: tasdiqlangan shablonlar katalogi (Free/Pro obunachilar).
 
@@ -19,6 +19,8 @@ Buyruqlar, imzolash qoidalari va xavfsizlik modeli: **`docs/RELEASE-ARCHITECTURE
 bash scripts/build-zxp.sh --unsigned            # mijoz QA arxivi
 bash scripts/build-zxp.sh --admin --unsigned    # ichki Admin QA arxivi
 node scripts/test-package-security.mjs          # paket xavfsizlik regressiya testi
+node scripts/test-premiere-cep-host.mjs         # Premiere adapter qat'iy kontrakti
+node scripts/test-premiere-cep-integration.mjs  # panel → resolver → host oqimi
 ```
 
 ## API
@@ -37,9 +39,29 @@ Tizim loglari: `POST /api/logs` (Admin, Contributor, plugin `assetflow-log.js`).
 | `assetflow-local-store.js` | Lokal katalog / cache |
 | `assetflow-client.js` | API ulanish |
 | `assetflow-log.js` | Markaziy loglar |
-| `jsx/host.jsx` | ExtendScript (import) |
-| `CSXS/manifest.xml` | CEP manifest — MIJOZ (`com.frameflow.panel`) |
+| `jsx/host-bootstrap.jsx` | AE/PPRO hostini tanlaydigan bootstrap |
+| `jsx/host.jsx` | After Effects ExtendScript adapteri |
+| `jsx/host-premiere.jsx` | Premiere Pro ExtendScript adapteri |
+| `CSXS/manifest.xml` | Dual-host CEP manifest — MIJOZ (`com.frameflow.panel`) |
 | `CSXS/manifest.admin.xml` | CEP manifest — ICHKI Admin (`com.frameflow.admin`) |
 | `scripts/package-flavors.mjs` | flavor'lar yagona manbai (build + install + test) |
 
 Eski minimal stub (`index.html`, `js/app.js`) saqlanmagan — to‘liq AssetFlow demo plugin bilan almashtirildi.
+
+O'rnatilgach Adobe hostini to'liq qayta ishga tushiring: AE yoki Premiere Pro →
+`Window → Extensions → FrameFlow`. Ikkala host aynan bir HTML/CSS va bir xil hisob/sessiyani ishlatadi.
+
+## Premiere capability va support holati
+
+- Native `.mogrt` aktiv sequence CTI nuqtasiga `Sequence.importMGT()` bilan yuboriladi.
+- Direct/ZIP `.prproj` yuklanadi, lekin yopiq project ichidagi sequence ID'larni CEP ishonchli
+  aniqlay olmagani uchun FrameFlow soxta import success bermaydi: faylni ko'rsatadi va Premiere
+  `File → Import` oqimini ishlatishni aytadi.
+- Premiere Publisher panel ichida o'chirilgan; publish Contributor Studio orqali bajariladi.
+- Remove faqat FrameFlow import javobida saqlangan barqaror item ID'lariga tegadi; eski nom
+  bo'yicha keng delete qilinmaydi.
+- Release artefakti manual Premiere va AE smoke tasdig'isiz production-ready deb belgilanmaydi.
+
+CEP/ExtendScript support muddati Adobe hujjatlarida 2026-yil sentabrgacha ko'rsatilgan.
+Shu sabab bu dual-host CEP qisqa muddatli compatibility yo'li; Premiere versiya matritsasi har
+relizda qo'lda tekshiriladi, uzoq muddatli host migratsiyasi esa alohida loyiha hisoblanadi.

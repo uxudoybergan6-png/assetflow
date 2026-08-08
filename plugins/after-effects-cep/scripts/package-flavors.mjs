@@ -25,6 +25,8 @@ export const DIST_DIR = path.join(REPO_ROOT, "dist/zxp");
  *  + css/tokens.css url() shriftlari). Glob YO'Q — nima ketayotgani ko'rinib tursin. */
 const CUSTOMER_FILES = [
   "AssetFlow_Plugin.html",
+  "frameflow-create-workspace.js",
+  "assetflow-uxp-bridge.js",
   "assetflow-account.js",
   "assetflow-catalog.js",
   "assetflow-client.js",
@@ -35,6 +37,8 @@ const CUSTOMER_FILES = [
   "assetflow-secret-store.js",
   "assetflow-zip.js",
   "js/CSInterface.js",
+  "jsx/host-bootstrap.jsx",
+  "jsx/host-premiere.jsx",
   "jsx/host.jsx",
   "css/tokens.css",
   "css/styles.css",
@@ -72,7 +76,11 @@ const CEF_PARAMS = [
 
 /** Qo'llab-quvvatlanadigan host — manifest AYNAN shuni e'lon qiladi. Marketing/listing
  *  matni bundan TASHQARI hech qanday ilovani va'da qila olmaydi. */
-const HOSTS = [{ name: "AEFT", version: "[22.0,99.9]" }];
+const CUSTOMER_HOSTS = [
+  { name: "AEFT", version: "[22.0,99.9]" },
+  { name: "PPRO", version: "[22.0,99.9]" },
+];
+const ADMIN_HOSTS = [{ name: "AEFT", version: "[22.0,99.9]" }];
 const REQUIRED_RUNTIME = { name: "CSXS", version: "11.0" };
 
 export const FLAVORS = {
@@ -87,9 +95,9 @@ export const FLAVORS = {
     extensionId: "com.frameflow.panel",
     mainPath: "./AssetFlow_Plugin.html",
     mainHtml: "AssetFlow_Plugin.html",
-    scriptPath: "./jsx/host.jsx",
+    scriptPath: "./jsx/host-bootstrap.jsx",
     menuLabel: "FrameFlow",
-    hosts: HOSTS,
+    hosts: CUSTOMER_HOSTS,
     requiredRuntime: REQUIRED_RUNTIME,
     cefParams: CEF_PARAMS,
     installDirName: "com.frameflow",
@@ -109,7 +117,7 @@ export const FLAVORS = {
     mainHtml: "AssetFlow_Admin.html",
     scriptPath: "./jsx/host.jsx",
     menuLabel: "FrameFlow Admin",
-    hosts: HOSTS,
+    hosts: ADMIN_HOSTS,
     requiredRuntime: REQUIRED_RUNTIME,
     cefParams: CEF_PARAMS,
     installDirName: "com.frameflow.internal.admin",
@@ -197,6 +205,16 @@ export function declaredPluginVersion() {
   const html = readFileSync(path.join(PLUGIN_SRC, "AssetFlow_Plugin.html"), "utf8");
   const m = html.match(/window\.AF_PLUGIN_VERSION\s*=\s*['"]([^'"]+)['"]/);
   return m ? m[1] : null;
+}
+
+/** Workspace package.json versiyasi ham release bundle bilan drift qilmasin. */
+export function declaredPackageVersion() {
+  try {
+    const pkg = JSON.parse(readFileSync(path.join(PLUGIN_SRC, "package.json"), "utf8"));
+    return pkg.version || null;
+  } catch {
+    return null;
+  }
 }
 
 /** files[] ni {from, to} juftliklariga ochadi. `from` — PLUGIN_SRC'ga nisbatan,

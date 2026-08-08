@@ -2958,25 +2958,6 @@
   }
   window.afSessionPicker=function(mode){
     if(!SPICK_DEST[mode]){ if(typeof window.axGo==='function')window.axGo('launcher'); return; }
-    // Premiere 26.2 UXP populated picker'ni va uning `New session` o'tishini
-    // ayrim panel kompozitsiyalarida qora kadrga muzlatadi. Asosiy generatorni
-    // bloklamaymiz: UXP launcher yangi workspace'ga to'g'ridan kiradi; mavjud
-    // sessiyalar My Library/Account orqali ochiq qoladi. Premiere oqimi o'zgarmaydi.
-    if(window.__FFNodeIO){
-      spickMode=mode;
-      // Xuddi shu tool ichidagi ‹ tugma ham afSessionPicker'ni chaqiradi.
-      // Picker'ni chetlab o'tuvchi eski UXP shoxi tool'ni o'ziga qayta ochib,
-      // view klassini off/on qilardi va qora kadr berardi. Launcher'dan kirish
-      // = yangi workspace; workspace ichidagi back = AI launcher.
-      var uxpCur=document.querySelector('.axroot .view.on');
-      if(uxpCur&&uxpCur.id==='v-'+SPICK_DEST[mode]){
-        if(typeof window.afNavTab==='function')window.afNavTab('ai');
-        else if(typeof window.axGo==='function')window.axGo('launcher');
-        return;
-      }
-      spickEnter(mode,null);
-      return;
-    }
     spickMode=mode;
     var decide=function(){
       var list=(sp.sessions||[]).filter(function(s){ return spickMatch(mode,s); });
@@ -3018,7 +2999,7 @@
    Panel imtiyoz KO'TARMAYDI va Premiere ichida hech narsa o'rnatmaydi.
    Nosozlikda faqat tasdiqlangan installer/yuklab olish sahifasi taklif qilinadi —
    extension papkasini qo'lda almashtirish maslahati BERILMAYDI. */
-window.AF_PLUGIN_VERSION="0.1.5"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
+window.AF_PLUGIN_VERSION="0.1.6"; // CSXS/manifest.xml ExtensionBundleVersion bilan SINXRON tuting (docs/PLUGIN-UPDATE-CHAIN.md)
 (function(){
   function $(id){return document.getElementById(id);}
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
@@ -3364,7 +3345,8 @@ window.AF_PLUGIN_VERSION="0.1.5"; // CSXS/manifest.xml ExtensionBundleVersion bi
     closePops();
     // Composer view'lari uchun shared .scroll'ni qat'iy flex-ustun rejimiga o'tkazamiz (dock pinlanadi).
     var ax=document.querySelector('.axroot'), ap=document.getElementById('aiPage');
-    var toolLayout=!!VIEWS[id];
+    var composerLayout=!!VIEWS[id];
+    var toolLayout=composerLayout;
     // Premiere 26.2 UXP `axws-tool` balandlik/flex zanjirini o'chirib-yoqishda
     // keyingi generatorni qora kompozitor kadrida qoldiradi. Hatto birinchi
     // launcher→composer o'tishidagi ilk toggle ham populated history bilan shu
@@ -3381,12 +3363,39 @@ window.AF_PLUGIN_VERSION="0.1.5"; // CSXS/manifest.xml ExtensionBundleVersion bi
     // talab qiladi, shuning uchun VIEWS guard'idan oldin bajariladi.
     if(window.__FFNodeIO){
       var uxpView=document.getElementById('v-'+id);
+      // Premiere 26.2 UXP `display:none` picker'dan composer flex-view'ga
+      // o'tganda CSS animation/flex qatlamini ba'zan umuman paint qilmaydi.
+      // DOM va API sog'lom qoladi, lekin panel tanasi qora. Composerning o'zida
+      // final ko'rinish xossalarini inline mahkamlaymiz; root opacity/display
+      // flip YO'Q (u Settings kabi sog'lom view'larni keyin qora qilardi).
+      if(composerLayout&&uxpView){
+        uxpView.style.setProperty('display','flex');
+        uxpView.style.setProperty('flex-direction','column');
+        uxpView.style.setProperty('flex','1 1 auto');
+        uxpView.style.setProperty('min-height','0');
+        uxpView.style.setProperty('opacity','1');
+        uxpView.style.setProperty('visibility','visible');
+        uxpView.style.setProperty('transform','none');
+        uxpView.style.setProperty('animation','none');
+      }
       var uxpReflow=function(){ try{ if(uxpView&&uxpView.isConnected!==false)return uxpView.getBoundingClientRect().height; }catch(e){} return 0; };
       uxpReflow();
-      setTimeout(function(){
-        uxpReflow();
-        try{ if(window.FFRepaint&&uxpView)window.FFRepaint.kick(uxpView); }catch(e){}
-      },300);
+      if(composerLayout){
+        setTimeout(function(){
+          try{
+            // Jonli zond: view 1008×698, bar/stage/dock ham non-zero bo'lganda
+            // paint barqaror bo'ldi. UXP faqat ota view o'qilsa ba'zan bolalarni
+            // keyingi kadrgacha chizmaydi — to'rtta aniq tugun bilan cheklaymiz.
+            ['.axws','.axws-viewbar','.axws-stage','.axws-dock'].forEach(function(_sel){
+              var _el=uxpView&&uxpView.querySelector(_sel); if(_el)_el.getBoundingClientRect();
+            });
+          }catch(e){}
+        },80);
+      }
+      // Delayed opacity repaint made a healthy view disappear about 300 ms after
+      // navigation in Premiere 26.2. A second layout read is sufficient and does
+      // not mutate paint state.
+      setTimeout(uxpReflow,300);
     }
     var cfg=VIEWS[id]; if(!cfg)return;
     ensureObserver(cfg);

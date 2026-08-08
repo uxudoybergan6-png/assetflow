@@ -24,21 +24,12 @@ import {
 } from "../lib/plugin-profile.js";
 import { isStorageOverQuota, getUserUsedBytes, storageQuotaBytes } from "../lib/storage-quota.js";
 import { isOpenRouterConfigured, orImageToPrompt } from "../lib/ai/openrouter.js";
-import { isElevenLabsConfigured } from "../lib/ai/elevenlabs.js";
 import { GEN_REF_UPLOAD_LIMITS, MAX_REF_UPLOAD_BYTES } from "../lib/upload-limits.js";
-import { isFalConfigured } from "../lib/ai/fal.js";
-import { isByteplusConfigured } from "../lib/ai/byteplus.js";
-import { isKlingConfigured } from "../lib/ai/kling.js";
-import { isTopazConfigured } from "../lib/ai/topaz.js";
 import {
   isVertexEnhanceConfigured,
   vertexEnhancePrompt,
   vertexEnhanceJson,
 } from "../lib/ai/vertex-enhance.js";
-import { isVertexConfigured } from "../lib/ai/vertex.js";
-import { isVertexOmniConfigured } from "../lib/ai/vertex-omni.js";
-import { isVertexImageConfigured } from "../lib/ai/vertex-image.js";
-import { isGoogleTtsConfigured } from "../lib/ai/google-tts.js";
 import { deriveVideoUpscaleParams, canonicalizeUpscaleParams } from "../lib/video-upscale.js";
 import {
   optimizeVideoReferenceForUpload,
@@ -62,10 +53,7 @@ import {
   getModelById,
   isModelEnabled,
   getReferenceMode,
-  modelAcceptsReference,
-  firstReferenceModel,
   getRefKind,
-  modelSupportsEndFrame,
   modelPolicyStrictness,
   suggestLenientAlternative,
   suggestRealFaceAlternative,
@@ -93,6 +81,17 @@ import { validateMentionIntegrity } from "../lib/enhance-mentions.js";
 import { moderateContent, collectImageRefUrls } from "../lib/moderation.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { measuredEtaSeconds, fallbackEtaSeconds } from "../lib/gen-eta.js";
+import {
+  genCatalogVersion,
+  providerConfigurationSnapshot,
+  resolveModelAvailability,
+} from "../lib/gen-provider-availability.js";
+import {
+  normalizeAndValidateGenParams,
+  validateSavedReferenceMetadata,
+  type GenParamError,
+  type ReferenceManifest,
+} from "../lib/gen-param-validation.js";
 
 export const studioGenRouter = Router();
 
@@ -578,14 +577,11 @@ studioGenRouter.get("/downloads", async (req: Request, res: Response) => {
 
 /** GET /gen/health — AI sozlamalari holati (faqat boolean — kalitlar QAYTARILMAYDI). */
 studioGenRouter.get("/gen/health", (_req: Request, res: Response) => {
+  const providerStatus = providerConfigurationSnapshot();
   res.json({
-    openrouter: isOpenRouterConfigured(),
+    ...providerStatus,
     s3: isS3Configured(),
-    freepik: Boolean(process.env.FREEPIK_API_KEY),
-    elevenlabs: isElevenLabsConfigured(),
-    fal: isFalConfigured(),
-    byteplus: isByteplusConfigured(), // BATCH5 — ModelArk (Seedance)
-    kling: isKlingConfigured(), // R4_02 — Kling 3.0 (direct API)
+    catalogVersion: genCatalogVersion(),
   });
 });
 
@@ -860,52 +856,37 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
   // Picker ham quote/gen bilan bir xil DB narxi va enabled holatini ko'rsatsin.
   // Aks holda katalogdagi ✦N bilan imzolangan quote o'rtasida yashirin farq chiqadi.
   const catalogModels = await resolveCatalogModels(base);
+  const providerStatus = providerConfigurationSnapshot();
+  const withAvailability = catalogModels.map((model) => ({
+    model,
+    availability: resolveModelAvailability(model, providerStatus),
+  }));
   // #141 (PX4) — etaSec: O'LCHANGAN mediana (oxirgi 7 kun tarixi), ma'lumot yetmasa
   // feature bo'yicha zaxira. Klient "≈ 1–2 min" qattiq matni o'rniga shuni ko'rsatadi.
   const eta = await measuredEtaSeconds();
   res.json({
     // refKind'ni HAR modelga qo'shamiz (So'nggi-grid "Referens" model-aware bo'lishi uchun).
     // P30 (29c) — policyStrictness ham (klient "qattiq siyosat" ogohlantirishi + boshqa-model taklifi uchun).
-    models: catalogModels.map((m) => ({
+    models: withAvailability.filter((x) => x.availability.available).map(({ model: m, availability }) => ({
       ...m,
+      ...availability,
       refKind: getRefKind(m),
+      refMode: getReferenceMode(m),
       policyStrictness: modelPolicyStrictness(m),
       etaSec: eta[m.id] ?? fallbackEtaSeconds(m),
       etaMeasured: eta[m.id] != null,
     })),
-    configured: isOpenRouterConfigured(),
+    unavailableModels: withAvailability.filter((x) => !x.availability.available).map(({ model, availability }) => ({
+      id: model.id,
+      mode: model.mode,
+      label: model.label,
+      ...availability,
+    })),
+    configured: withAvailability.some((x) => x.availability.available),
+    providerStatus,
+    catalogVersion: genCatalogVersion(catalogModels),
   });
 });
-
-/** Provayder sozlanganmi (API kalit / Google ADC bor). YAGONA MANBA — `/gen` guard'i va `/gen/ops`
- *  ro'yxati ikkalasi shu funksiyaga tayanadi. Ilgari `/gen/ops` faqat katalog `enabled` bayrog'iga
- *  qarardi: kalitsiz provayder op'i UI'da ko'rinib, bosilganda `/gen` 503 qaytarardi — foydalanuvchi
- *  uchun "bosdim, hech narsa bo'lmadi" (audit D11/D11.a: TOPAZ_API_KEY production'da yo'q edi,
- *  lekin Upscale tugmalari ko'rinardi). Sozlanmagan provayder endi ro'yxatga umuman tushmaydi. */
-function isProviderConfigured(provider: GenModel["provider"]): boolean {
-  switch (provider) {
-    case "elevenlabs":
-      return isElevenLabsConfigured();
-    case "fal":
-      return isFalConfigured();
-    case "byteplus":
-      return isByteplusConfigured();
-    case "kling":
-      return isKlingConfigured();
-    case "topaz": // R4_08 — Topaz enhance/upscale op'lari (TOPAZ_API_KEY)
-      return isTopazConfigured();
-    case "vertex":
-      return isVertexConfigured();
-    case "vertex-omni":
-      return isVertexOmniConfigured();
-    case "vertex-image":
-      return isVertexImageConfigured();
-    case "google-tts":
-      return isGoogleTtsConfigured();
-    default:
-      return isOpenRouterConfigured();
-  }
-}
 
 /** R4_08 — GET /gen/ops: YOQILGAN enhance/upscale OPERATSIYALARI (opType). Composer picker'idan
  *  filtrlangan (generativ model emas) — bu ro'yxat gen/library kartalaridagi "Use ▾ → Upscale /
@@ -913,7 +894,8 @@ function isProviderConfigured(provider: GenModel["provider"]): boolean {
  *  (o'chirilgan/entitlement yo'q op umuman ko'rinmaydi). Katalog `enabled` + provayder sozlamasi
  *  IKKALASI shart (D11.a) — kalitsiz op ko'rinsa, bosilganda 503 bo'lardi. */
 studioGenRouter.get("/gen/ops", (_req: Request, res: Response) => {
-  const ops = GEN_MODELS.filter((m) => m.opType && m.enabled !== false && isProviderConfigured(m.provider)).map((m) => ({
+  const providerStatus = providerConfigurationSnapshot();
+  const ops = GEN_MODELS.filter((m) => m.opType && resolveModelAvailability(m, providerStatus).available).map((m) => ({
     id: m.id,
     opType: m.opType,
     mode: m.mode,
@@ -925,7 +907,7 @@ studioGenRouter.get("/gen/ops", (_req: Request, res: Response) => {
     // video-upscale 2×/4× faktorni qo'llaydi (video-upscale.ts params.factor); rasm op'lari yo'q.
     supportsFactor: m.feature === "video-upscale",
   }));
-  res.json({ ops });
+  res.json({ ops, providerStatus, catalogVersion: genCatalogVersion() });
 });
 
 // params hajmi cheklanadi — z.record(z.any()) cheksiz; ulkan obyekt DB'ga yoziladi + har quote/gen'da
@@ -950,6 +932,110 @@ const preflightSchema = z.object({
   modelId: z.number().int().optional(),
   params: boundedParams.optional(),
 });
+
+function sendParamValidationError(res: Response, errors: GenParamError[]): void {
+  const first = errors[0];
+  res.status(400).json({
+    error: first?.message || "Invalid model parameters",
+    code: first?.code || "PARAM_INVALID",
+    field: first?.field || null,
+    errors,
+  });
+}
+
+async function validateReferenceOwnershipAndMetadata(
+  userId: string,
+  model: GenModel,
+  manifest: ReferenceManifest
+): Promise<GenParamError[]> {
+  const errors: GenParamError[] = [];
+  if (manifest.savedReferenceIds.length) {
+    const rows = await prisma.savedReference.findMany({
+      where: { userId, id: { in: manifest.savedReferenceIds } },
+      select: { id: true, kind: true, contentType: true, sizeBytes: true, url: true },
+    });
+    if (rows.length !== manifest.savedReferenceIds.length) {
+      errors.push({
+        code: "PARAM_INVALID",
+        field: "savedReferenceIds",
+        message: "One or more references are missing or do not belong to this account",
+      });
+    } else {
+      errors.push(...validateSavedReferenceMetadata(model, rows));
+    }
+  }
+
+  const urlEntries: Array<{ url: string; kind: "image" | "video" | "audio" }> = [
+    ...(manifest.startUrl ? [{ url: manifest.startUrl, kind: "image" as const }] : []),
+    ...(manifest.endUrl ? [{ url: manifest.endUrl, kind: "image" as const }] : []),
+    ...manifest.imageUrls.map((url) => ({ url, kind: "image" as const })),
+    ...manifest.videoUrls.map((url) => ({ url, kind: "video" as const })),
+    ...manifest.audioUrls.map((url) => ({ url, kind: "audio" as const })),
+  ];
+  const checkedKeys = new Set<string>();
+  const directMetadata: Array<{
+    id: string;
+    kind: string;
+    contentType: string | null;
+    sizeBytes: number | null;
+    url: string;
+  }> = [];
+  for (const entry of urlEntries) {
+    const { url } = entry;
+    const key = gcsKeyFromUrl(url);
+    if (!key) {
+      const data = /^data:([^;,]+);base64,([\s\S]+)$/i.exec(url);
+      if (data) {
+        directMetadata.push({
+          id: `inline-${entry.kind}`,
+          kind: entry.kind,
+          contentType: data[1],
+          sizeBytes: Math.floor((data[2].length * 3) / 4),
+          url,
+        });
+      }
+      continue;
+    }
+    const owned =
+      key.startsWith(`gen/${userId}/`) ||
+      key.startsWith(`gen-refs/${userId}/`) ||
+      key.startsWith(`gen-ref-src/${userId}/`);
+    const protectedGenKey =
+      key.startsWith("gen/") || key.startsWith("gen-refs/") || key.startsWith("gen-ref-src/");
+    if (protectedGenKey && !owned) {
+      errors.push({
+        code: "PARAM_INVALID",
+        field: "references",
+        message: "A reference does not belong to this account",
+      });
+      break;
+    }
+    if (owned && !checkedKeys.has(key)) {
+      checkedKeys.add(key);
+      const meta = await getS3ObjectMeta(key);
+      if (meta.sizeBytes == null) {
+        errors.push({
+          code: "PARAM_INVALID",
+          field: "references",
+          message: "A reference is missing from storage — upload or select it again",
+        });
+        continue;
+      }
+      directMetadata.push({
+        id: key,
+        kind: entry.kind,
+        contentType: meta.contentType,
+        sizeBytes: meta.sizeBytes,
+        url,
+      });
+    }
+  }
+  if (directMetadata.length) {
+    errors.push(...validateSavedReferenceMetadata(model, directMetadata));
+  }
+  return errors;
+}
+
 studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
   const p = quoteSchema.safeParse(req.body);
   if (!p.success) {
@@ -961,7 +1047,16 @@ studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
     res.status(400).json({ error: "Unknown or disabled model" });
     return;
   }
-  const params = (p.data.params ?? {}) as Record<string, unknown>;
+  const availability = resolveModelAvailability(model);
+  if (!availability.available) {
+    res.status(503).json({
+      error: availability.unavailableReason,
+      code: availability.unavailableCode,
+      modelId: model.id,
+    });
+    return;
+  }
+  let params = { ...((p.data.params ?? {}) as Record<string, unknown>) };
   // BATCH4 #2 — video-upscale: tier/soniya SERVER'da aniqlanadi (manba meta × faktor) va params'ga
   // yoziladi → imzo shu qiymatlarni qamraydi; klient narx-belgilovchi paramni soxtalay olmaydi.
   // computeGenCost formulasi O'ZGARMAGAN (perSec[resolution] × duration mavjud yo'li).
@@ -975,6 +1070,21 @@ studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
     canonicalizeUpscaleParams(params, d);
     upscaleInfo = { resolution: d.resolution, duration: d.duration, fpsDoubled: d.fpsDoubled, source: d.meta };
   }
+  const normalized = normalizeAndValidateGenParams(model, params);
+  if (!normalized.ok) {
+    sendParamValidationError(res, normalized.errors);
+    return;
+  }
+  const refErrors = await validateReferenceOwnershipAndMetadata(
+    req.user!.userId,
+    model,
+    normalized.referenceManifest
+  );
+  if (refErrors.length) {
+    sendParamValidationError(res, refErrors);
+    return;
+  }
+  params = normalized.canonicalParams;
   // NARX DVIGATELI (Bosqich 3.4): narx DB'dan (ModelPricing) — qator yo'q bo'lsa statik
   // gen-models.ts qiymatiga qaytadi. computeGenCost + imzo O'ZGARMAYDI (nusxaga qo'llanadi).
   // M7 (#41): DB `enabled:false` → model o'chirilgan, quote berilmaydi.
@@ -993,7 +1103,8 @@ studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
     signature,
     feature: model.feature,
     // video-upscale: klient /gen'ga AYNAN shu paramsni qaytaradi (imzo mosligi) + UI ma'lumoti
-    ...(upscaleInfo ? { pricedParams: params, upscale: upscaleInfo } : {}),
+    pricedParams: params,
+    ...(upscaleInfo ? { upscale: upscaleInfo } : {}),
   });
 });
 
@@ -1005,10 +1116,36 @@ studioGenRouter.post("/gen/preflight-safety", async (req: Request, res: Response
     return;
   }
   const model = p.data.modelId ? getModelById(p.data.modelId) : null;
+  let params = (p.data.params ?? {}) as Record<string, unknown>;
+  if (model) {
+    const availability = resolveModelAvailability(model);
+    if (!availability.available || model.mode !== p.data.mode) {
+      res.status(503).json({
+        error: availability.unavailableReason || "Unknown model",
+        code: availability.unavailableCode || "MODEL_UNAVAILABLE",
+      });
+      return;
+    }
+    const normalized = normalizeAndValidateGenParams(model, params);
+    if (!normalized.ok) {
+      sendParamValidationError(res, normalized.errors);
+      return;
+    }
+    const refErrors = await validateReferenceOwnershipAndMetadata(
+      req.user!.userId,
+      model,
+      normalized.referenceManifest
+    );
+    if (refErrors.length) {
+      sendParamValidationError(res, refErrors);
+      return;
+    }
+    params = normalized.canonicalParams;
+  }
   const result = preflightSafetyCheck({
     mode: p.data.mode,
     prompt: p.data.prompt,
-    params: (p.data.params ?? {}) as Record<string, unknown>,
+    params,
     modelLabel: model?.label,
   });
   res.json(result);
@@ -1337,7 +1474,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     return;
   }
   const { sessionId, mode, prompt, modelId, price, costQuoteSignature, idempotencyKey } = p.data;
-  const params = (p.data.params ?? {}) as Record<string, unknown>;
+  let params = { ...((p.data.params ?? {}) as Record<string, unknown>) };
 
   // Idempotent QAYTA-URINISH: shu kalit bilan job ALLAQACHON yaratilган bo'lsa — o'shani qaytaramiz
   // (yangi job YO'Q, kredit IKKINCHI marta yechilMAYDI). Ketma-ket retry (javob yo'qolgan) shu yerda
@@ -1372,11 +1509,15 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; fal → FAL_KEY; vertex* → Google ADC;
   // aks holda OpenRouter). AUDIT FIX: vertex modellari ilgari OpenRouter kalitiga bog'lanib qolardi —
   // OPENROUTER_API_KEY olib tashlansa barcha Google modellar 503 bo'lardi.
-  // D11.a — `/gen/ops` bilan BIR XIL funksiya (isProviderConfigured): ro'yxat va guard ajralib
+  // D11.a — `/gen/ops` bilan BIR XIL availability resolver: ro'yxat va guard ajralib
   // qolmasin, aks holda ko'rinadigan-lekin-ishlamaydigan op qaytadi.
-  const configured = isProviderConfigured(model.provider);
-  if (!configured) {
-    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
+  const availability = resolveModelAvailability(model);
+  if (!availability.available) {
+    res.status(503).json({
+      error: availability.unavailableReason,
+      code: availability.unavailableCode,
+      modelId: model.id,
+    });
     return;
   }
 
@@ -1392,6 +1533,22 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     canonicalizeUpscaleParams(params, d);
   }
 
+  const normalized = normalizeAndValidateGenParams(model, params);
+  if (!normalized.ok) {
+    sendParamValidationError(res, normalized.errors);
+    return;
+  }
+  const refErrors = await validateReferenceOwnershipAndMetadata(
+    req.user!.userId,
+    model,
+    normalized.referenceManifest
+  );
+  if (refErrors.length) {
+    sendParamValidationError(res, refErrors);
+    return;
+  }
+  params = normalized.canonicalParams;
+
   // BATCH4 #4 — per-belgi narxli voice (Chirp) uchun QAT'IY matn cap — KREDITDAN OLDIN.
   // Flat kredit narxi maxChars worst-case'idan ≥2× marja bilan tanlangan; cap'siz uzun matn
   // narxdan past sotilardi. Formula/HMAC/consume'ga tegilmaydi — bu faqat kirish validatsiyasi.
@@ -1405,43 +1562,6 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
       error: `Text is too long for "${model.label}" — max ${model.maxChars} characters per generation (yours: ${prompt.length}). Split it into parts.`,
       code: "VOICE_TEXT_TOO_LONG",
       maxChars: model.maxChars,
-    });
-    return;
-  }
-
-  // Reference validatsiyasi (G2) — KREDITDAN OLDIN. Reference biriktirilgan, lekin model
-  // qabul qilmasa: aniq xato + qo'llaydigan model tavsiyasi (kredit yechilmaydi).
-  const refList = Array.isArray(params.referenceUrls) ? params.referenceUrls : [];
-  const hasRef =
-    (typeof params.referenceUrl === "string" && params.referenceUrl.length > 0) || refList.length > 0;
-  // refMode='required' — referenssiz gen bloklanadi (KREDITDAN OLDIN; aniq xato).
-  if (model.refMode === "required" && !hasRef) {
-    res.status(400).json({
-      error: `"${model.label}" requires a reference — add at least 1 image`,
-      code: "REFERENCE_REQUIRED",
-    });
-    return;
-  }
-  // Yakuniy kadr FAQAT boshlang'ich kadr bilan (Veo SDK: lastFrame i2v-only; processor aks holda
-  // uni indamay tashlab yuborardi — foydalanuvchi to'lab "end"siz video olardi). KREDITDAN OLDIN.
-  const hasStartRef = typeof params.referenceUrl === "string" && params.referenceUrl.length > 0;
-  const hasEndRef = typeof params.referenceEndUrl === "string" && params.referenceEndUrl.length > 0;
-  if (hasEndRef && modelSupportsEndFrame(model) && !hasStartRef) {
-    res.status(400).json({
-      error: "End frame only works together with a start frame — add a start frame too",
-      code: "END_FRAME_REQUIRES_START",
-    });
-    return;
-  }
-  if (hasRef && !modelAcceptsReference(model)) {
-    const rec = firstReferenceModel(mode);
-    res.status(400).json({
-      error: rec
-        ? `"${model.label}" does not accept a reference — choose "${rec.label}" instead`
-        : `"${model.label}" does not accept a reference`,
-      code: "REFERENCE_NOT_SUPPORTED",
-      referenceMode: getReferenceMode(model),
-      recommendedModelId: rec?.id ?? null,
     });
     return;
   }

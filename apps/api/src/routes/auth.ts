@@ -750,14 +750,28 @@ authRouter.post("/2fa/disable", requireAuth, twofaLimiter, async (req, res) => {
  *  `PluginToken` qatorlari — ular ATAYLAB tegilmaydi, aks holda brauzerda chiqish AE'dagi
  *  ishni ham uzib qo'yardi (plagin chiqishi o'z yo'liga ega). */
 authRouter.post("/logout", requireAuth, async (req, res) => {
-  await prisma.user
-    .update({
-      where: { id: req.user!.userId },
-      data: { tokenVersion: { increment: 1 } },
-    })
-    .catch(() => null); // klient baribir sessiyani tozalaydi — bu yo'l hech qachon yiqilmasin
+  await revokeWebSession(req.user!.userId).catch(() => null); // klient baribir sessiyani tozalaydi — bu yo'l hech qachon yiqilmasin
   res.json({ ok: true });
 });
+
+type AuthUserRepository = {
+  user: {
+    update: (args: {
+      where: { id: string };
+      data: { tokenVersion: { increment: number } };
+    }) => Promise<unknown>;
+  };
+};
+
+export async function revokeWebSession(
+  userId: string,
+  db: AuthUserRepository | typeof prisma = prisma
+) {
+  return db.user.update({
+    where: { id: userId },
+    data: { tokenVersion: { increment: 1 } },
+  });
+}
 
 authRouter.get("/me", requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({

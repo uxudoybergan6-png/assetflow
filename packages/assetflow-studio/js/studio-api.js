@@ -63,9 +63,23 @@ const StudioApi = (() => {
     }, 1200);
   }
 
+  function shouldClearSessionForResponse(status, code) {
+    if (status !== 401 && status !== 403) return false;
+    return (
+      code === "TOKEN_EXPIRED" ||
+      code === "TOKEN_INVALID" ||
+      code === "TOKEN_REVOKED" ||
+      code === "NO_TOKEN" ||
+      code === "ACCOUNT_BLOCKED" ||
+      code === "ACCOUNT_INACTIVE"
+    );
+  }
+
   async function request(path, options = {}) {
     const headers = { ...(options.headers || {}) };
-    if (options.body && !(options.body instanceof FormData)) {
+    const bodyIsFormData =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
+    if (options.body && !bodyIsFormData) {
       headers["Content-Type"] = "application/json";
     }
     const t = token();
@@ -74,12 +88,11 @@ const StudioApi = (() => {
     const fetchOpts = {
       ...options,
       headers,
-      body:
-        options.body instanceof FormData
-          ? options.body
-          : options.body
-            ? JSON.stringify(options.body)
-            : undefined,
+      body: bodyIsFormData
+        ? options.body
+        : options.body
+          ? JSON.stringify(options.body)
+          : undefined,
     };
     // Tarmoq xatosida qayta urinish — Render free-tarif "cold start" (uyqudan uyg'onish)
     // birinchi so'rovni uzishi mumkin. 3 urinish (1.5s, 3s backoff). Network-throw = server
@@ -113,16 +126,17 @@ const StudioApi = (() => {
     }
 
     if (!res.ok) {
-      // Global 401: token yuborilgan bo'lsa — sessiya tugagan, login'ga qaytaramiz.
-      if (res.status === 401 && t) {
+      const code = data?.code;
+      if (t && shouldClearSessionForResponse(res.status, code)) {
         handleExpiredSession();
       }
       const err = new Error(
-        res.status === 401
+        res.status === 401 || res.status === 403
           ? data?.error || data?.message || "Session expired — please sign in again"
           : data?.error || data?.message || `HTTP ${res.status}`
       );
       err.status = res.status;
+      err.code = code;
       err.data = data;
       throw err;
     }

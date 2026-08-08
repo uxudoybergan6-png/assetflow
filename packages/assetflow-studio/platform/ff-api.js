@@ -48,6 +48,18 @@
   // Cold-start uchun sabrli backoff (ms) — jami ~12s + har urinishda timeout.
   function backoffMs(a) { return [1500, 3500, 7000, 10000][a] || 10000; }
 
+  function shouldClearSessionForResponse(status, code) {
+    if (status !== 401 && status !== 403) return false;
+    return (
+      code === "TOKEN_EXPIRED" ||
+      code === "TOKEN_INVALID" ||
+      code === "TOKEN_REVOKED" ||
+      code === "NO_TOKEN" ||
+      code === "ACCOUNT_BLOCKED" ||
+      code === "ACCOUNT_INACTIVE"
+    );
+  }
+
   /**
    * So'rov. opts: { method, body(obyekt), auth:false, idempotencyKey, idempotent, timeout }.
    * Muvaffaqiyatsiz HTTP → Error{status, code, data}. Tarmoq uzilishi/timeout → Error('NETWORK').
@@ -97,19 +109,15 @@
     }
     var data = null;
     try { data = await res.json(); } catch (e) { data = null; }
-    // P8 #4 + P29 (29b) — sessiyani FAQAT server token O'LGANINI AYTGANDA tozalaymiz.
-    // requireAuth (yagona sessiya-o'lim manbai) HAR DOIM aniq `code` yuboradi (TOKEN_EXPIRED/
-    // INVALID/REVOKED/NO_TOKEN). Ilgari KODSIZ 401 ham "sessiya o'lgan" deb sanardi → marshrut/
-    // ruxsat 401'i (masalan kodsiz `Unauthorized`) foydalanuvchini #landing'da ham logout qilardi.
-    // Endi FAQAT aniq token-o'lim kodlari tozalaydi; boshqa 401'lar (kodsiz yoki ruxsat) oddiy xato.
-    if (res.status === 401 && t && opts.auth !== false) {
-      var code401 = data && data.code;
-      var sessionDead = code401 === "TOKEN_EXPIRED" || code401 === "TOKEN_INVALID" || code401 === "TOKEN_REVOKED" || code401 === "NO_TOKEN";
-      if (sessionDead) {
-        clearSession();
-        try { window.dispatchEvent(new CustomEvent("ff-auth-expired")); } catch (e) {}
-      }
-    }
+  // P8 #4 + P29 (29b) — sessiyani FAQAT server token O'LGANINI AYTGANDA tozalaymiz.
+  // requireAuth (yagona sessiya-o'lim manbai) HAR DOIM aniq `code` yuboradi
+  // (TOKEN_EXPIRED/INVALID/REVOKED/NO_TOKEN), lekin WEB JWT sessiyasida ACCOUNT_BLOCKED/
+  // ACCOUNT_INACTIVE uchun 403 ham tozalash kerak.
+  var code = data && data.code;
+  if (t && opts.auth !== false && shouldClearSessionForResponse(res.status, code)) {
+    clearSession();
+    try { window.dispatchEvent(new CustomEvent("ff-auth-expired")); } catch (e) {}
+  }
     if (!res.ok) {
       var err = new Error((data && data.error) || "Server error (HTTP " + res.status + ")");
       err.status = res.status;

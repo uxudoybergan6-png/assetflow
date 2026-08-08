@@ -1,4 +1,235 @@
-> **STATUS:** ⚠️ Quyidagi eski §0-§8 bloklarining ayrim infra/AI/brend faktlari eskirgan. Joriy Premiere holati uchun avval **«§-9 · 2026-08-04 PREMIERE UXP 0.1.5»** blokini o'qing; u oldingi Premiere bloklarini bekor qiladi.
+> **STATUS:** ⚠️ Quyidagi eski bloklarning ayrim infra/AI/brend faktlari eskirgan. AI model zanjiri
+> uchun avval **«§-15 · 2026-08-07 AI MODEL CHAIN HARDENING»**, Premiere UI uchun keyin §-14 ni o'qing.
+
+# §-15. 2026-08-07 AI MODEL CHAIN HARDENING — LOCAL CODE + AUTOMATED QA
+
+- Provider availability endi exhaustive va fail-closed: `/gen/models`, `/gen/ops`, quote va `/gen`
+  aynan bitta resolverdan foydalanadi. Provider sozlanmagan model selectable katalogdan chiqariladi;
+  safe `unavailableModels`, `providerStatus` va `catalogVersion` qaytariladi.
+- Bitta canonical model-param/reference validatori barcha Image/Video/Voice/SFX settinglari,
+  start/end frame, image/video/audio/saved reference, format, per-item/total size va limitlarni quote
+  hamda creditdan oldingi generate darvozasida bir xil tekshiradi. Provider runnerlaridagi jim `slice()`
+  olib tashlandi; unsupported/ortiqcha reference aniq code bilan rad etiladi.
+- Signed quote endi canonical priced params bilan birga reference manifest hashiga bog'langan:
+  quote olgandan keyin reference o'zgarsa stale quote qabul qilinmaydi.
+- Actual Web builder, actual umumiy AE/PR CEP controller va API canonicalizer parity matritsasi 44
+  model variantida teng; mavjud Create va session composer oqimi saqlandi.
+- Enabled katalogdagi 24 entryning 24/24 provider adapter request contracti qoplandi. Build katalogi:
+  51 entry, 24 enabled, 0 invariant muammo.
+- Reference security/lifecycle gate: user ownership, storage prefix, MIME, item/total size, signed URL
+  refresh, TTL renewal, linked-reference retention va generation/session orphan cleanup testlangan.
+- Yakuniy QA: Create 12/12, responsive 103/103, Premiere host 18/18 + integration 19/19,
+  package 59/59, Marketplace 100/100, installers 262/262, release contract 110/110 — PASS;
+  monorepo build va `git diff --check` toza.
+- Customer QA ZIP: `dist/zxp/frameflow-plugin-v1.2.0-unsigned.zip` — 844469 bayt,
+  SHA-256 `d02793ccc22ea7ffbc53efddcda0b4866fcdfa20ec137ae09d4d343c69629f8b`.
+- Customer macOS QA PKG: `dist/installers/frameflow-plugin-1.2.0-mac-unsigned.pkg` — 840741 bayt,
+  SHA-256 `a3ce797baa9b8616d9aa25ce35d0ea21297c9416f7a6e1cb08fe22b00b26c4f6`.
+- Umumiy CEP `com.frameflow` AE/PR uchun per-user qayta o'rnatildi; prefs saqlandi, Adobe ochilmadi.
+- Production hali eski build: `api.getframeflow.app` health sog'lom, ammo Kling false bo'lsa ham eski
+  katalog/quote uni beradi. Deploy taqiqlangani uchun lokal fix productionga chiqarilmadi. Signed ZXP,
+  real provider canary va qo'lda AE+Premiere smoke tashqi release blocker bo'lib qoladi.
+- Eski session Image/Video/Audio composer sozlamalari panel resize'da endi ikkinchi qatorga tushmaydi:
+  bitta qatorda qoladi, o'ta tor panelda lokal gorizontal scroll ishlaydi. Clear ikonasi inset-safe 14px
+  SVG bilan almashtirildi; AE va Premiere umumiy CEP DOM/CSS'i bir xil qoladi.
+
+---
+
+# §-14. 2026-08-05 FRAMEFLOW PREMIERE — FINAL CREATE WORKSPACE + AUTOMATED QA
+
+- AEFT va PPRO aynan bitta `AssetFlow_Plugin.html`, DOM, CSS va `frameflow-create-workspace.js`
+  controllerini ishlatadi; Premiere-only layout/CSS fork qo'shilmadi.
+- Create kirishi real unified composer: New Session'da sahifaning pastki dockida, ochilgan eski session'da
+  natijalardan keyingi sticky dockda aynan bitta DOM ko'chib ishlaydi; eski session ID submit payloadga
+  uzatiladi va engine aynan shu sessionni davom ettiradi.
+- Image/Video/Voiceover/SFX katta prompt-usti tablari olib tashlandi; mode almashtirish prompt pastidagi
+  ixcham selector menyusida. Auto-grow prompt, quick shortlist → searchable/provider-filtered All Models,
+  capability settings, Enhance va server quote saqlandi.
+- Submit dedupe/stale+expired quote guard'dan keyin mavjud signed image/video/audio handlerini chaqiradi;
+  active workspace gallery + sticky composer, Sessions/Projects va refund/poll oqimi saqlandi.
+- `+` File/Project/Timeline/current-frame/Library secure pickerlariga delegatsiya qiladi; model almashganda
+  capability validation va reference projection mavjud, yaroqsiz state jimgina charge qilmaydi.
+- Global Activity local active-job registry + server history, cancel/retry/open-session bilan ishlaydi;
+  audio job recovery va account-scoped active-session pointer qo'shildi.
+- Lokal browser QA: 320×600, 380×720, 600×900, 1000×900; page overflow 0, modal bounds/focus/Escape,
+  quick picker, Voiceover disclosure va Activity click PASS. AE/PR shared parity static gate PASS.
+- Automated: Create 10/10, responsive 103/103, package 59/59, marketplace QA 67/67 + mutation 100/100,
+  updater 118/118, Premiere adapter 18/18 + integration 19/19, host shim va CEP↔UXP bridge PASS.
+- API build PASS: 51 model (24 enabled), BytePlus mention va Seedream size validation PASS.
+- Customer QA ZIP: `dist/zxp/frameflow-plugin-v1.2.0-unsigned.zip` — 843769 bayt,
+  SHA-256 `5c130a1c5b3708a93f84f225fb6b78713c01de6cd3347d97617a50053a38d9ea`.
+- Companion CCX: `dist/uxp/frameflow-premiere-host-v1.0.0.ccx` — 14312 bayt,
+  SHA-256 `e76f08a2810270a25cb7c442b08f75300c9788ea40208c2d846695ed8ed57885`.
+- CEP build `2026-08-05 08:56 · ea7a8d6` va companion 1.0.0 per-user o'rnatildi; muhim
+  source→installed fayllar byte-hash mos (HTML'da faqat kutilgan build stamp farqi), prefs saqlandi.
+- Tashqi blocker: valid signed ZXP/owner metadata yo'q; PPRO 26.2 uchun companion hali alohida External
+  install. Adobe tasdiqlagan single-install dependency, clean-profile install/update/uninstall va manual
+  Premiere+AE smoke bajarilmaguncha holat `code-complete + automated QA complete`, Marketplace-ready emas.
+
+---
+
+# §-13. 2026-08-05 PREMIERE HYBRID — CEP UI + ko'rinmas UXP host companion
+
+- AE/PR bir xil CEP HTML/CSS/auth/catalog/AI/Sessions/Projects sirtini ishlatadi;
+  Premiere hybrid host funksiyalari jonli ishlashi foydalanuvchi tomonidan tasdiqlandi.
+- Home Artlist uslubidagi professional discovery IA'ga o'tdi: `Home · Create · Browse`, universal
+  asset qidiruvi, `Sessions`, `Music` va `Popular LUTs` javonlari.
+  Real javonlar kanonik API'dan mustaqil yuklanadi va bo'sh turlar yashiriladi;
+  eski server CMS copy'si production Home matnlarini qayta yozmaydi. Home referens kompozitsiyasida
+  4 real AI tool (`Image/Video/Voiceover/SFX`) kartasi, to'liq kenglikdagi slim asset search va
+  `Explore featured models` gorizontal carousel'i
+  `/api/studio/gen/models`dagi real enabled image/video modellaridan tuziladi; hardcoded demo model
+  yo'q, karta `Create`ni ochib aynan shu modelni tanlaydi. Tartib `Search → AI toolkit → Models →
+  Footage of the week → Sessions → Music/LUT discovery → Video Templates demo`. `Explore featured assets`,
+  `Recent creations` va Home'dagi `Sound effects` javoni keyingi yangi blok uchun olib tashlandi;
+  AI Sound FX generatori saqlandi. AI copy shu ritmga mos. Home greeting va takroriy
+  `Open Create` olib tashlangan; `FREE` implicit,
+  faqat `PRO` badge ko'rinadi; asset ↗ affordance hover/focusda chiqadi. Birinchi AI qatori
+  Artlist referens kompozitsiyasiga o'tdi: tashqi karta `7:5`, 20–30px yumaloq ramka va
+  13–19px responsive insetda; panoramik media kartaning katta pastki qismini egallaydi,
+  yumshoq pastki rim glow/soya, ixcham bold title
+  va doimiy yuqori-o'ng ↗ affordance bor. ↗ title flex oqimidan chiqarilib karta insetiga
+  absolute mahkamlangan; uzun `AI Voiceover/Sound FX` matni uni ramkadan itarmaydi.
+  Image/Video markaziy aylana ikonlari yo'q.
+  `Create with leading AI tools ✦` 21px/760 bold. Tepada
+  katta banner emas, `Find the right asset` + aniq search copy'li compact editorial hero bor;
+  nozik purple edge/glow qora sahifaga focal point beradi. To'rtta AI tool kartasi hech qachon
+  wrap bo'lmaydi: bitta flex qatorda, har biri kamida 210px; keng panelda teng kengayadi, tor
+  panelda horizontal scroll + snap bilan proporsiyasini saqlaydi. Tor panelda model carousel'i
+  kabi chap/o'ng arrow va page dot'lar paydo bo'ladi; tugmalar smooth page scroll/wrap qiladi,
+  keng panelda barcha 4 karta sig'sa boshqaruvlar avtomatik yashirinadi. Model, Footage, Sessions va
+  discovery kartalari ham fixed footprint + horizontal overflow bilan buzilmaydi.
+- Discovery'da real `motion-graphics` katalogidan `Footage of the week` carousel bor. Kartalar
+  featured-model kartalari bilan aynan bir xil `4:5` footprint (`176–230px`); hover/focusda
+  flex-basis animatsiyasi bilan `16:9`ga kengayadi va mavjud
+  `previewUrl` lazy-load bo'lib muted loop o'ynaydi, chiqishda pause/reset qilinadi. Carousel
+  4.8 soniyada o'zi siljiydi, hover/focusda pauza va `prefers-reduced-motion`da autoplay yo'q;
+  arrows/dots ham bor. Hover preview model kartasi balandligini saqlaydi; 16:9 nisbati saqlanadi.
+  Productionda 5 footage'ning 5/5 thumb va 5/5 preview'i tasdiqlandi.
+- Video-template katalogi hozir bo'sh bo'lgani uchun Home oxirida foydalanuvchi so'ragan vaqtinchalik
+  `Video templates picked for you` demo javoni bor: 4 ta media-first 16:9 karta, play affordance,
+  title va bir qator tavsif. Keng panelda yonma-yon, tor panelda bitta gorizontal scroll/snap qator;
+  kartalar soxta import qilmaydi, faqat haqiqiy `Video Templates` Browse bo'limini ochadi.
+- Artlist Image/Video Generator foydalanuvchining jonli Chrome akkaunti orqali audit qilindi: composer promptni alohida katta yozuv
+  zonasi qiladi, ikkilamchi boshqaruvlarni progressive disclosure bilan ixchamlaydi va uzun model
+  katalogini katta searchable modalga chiqaradi. Shu naqsh Image va Video workspace'ga ko'chirildi:
+  prompt 68–74px minimal balandlikda, boshqaruvlar wrap qiladi, ≤520px panelda model nomi to'liq
+  alohida qator oladi; eski `kc1…kc6` 64px siqish/DOM'ni overflow'ga ko'chirish ishlamaydi.
+  Enhance/Clear ikonka-only, Generate+narx saqlangan. Image/Video model picker 720px gacha markaziy
+  blur modal, qidiruv, katta o'qiladigan qator va aniq close bilan ochiladi; model/API/quote/job
+  handlerlari o'zgarmagan. 2026-08-05 real `Nano Banana 2 · 16:9 · 2K · 1 image` testi
+  muvaffaqiyatli bajarildi: server quote `130` kredit, balans `7,500 → 7,370`, natija taxminan
+  27 soniyada `processing → completed` bo'ldi. Brauzerning sanitizatsiyalangan Network auditida
+  same-origin tRPC oqimi tasdiqlandi: `modelRouter.getCostQuote` → imzolangan quote →
+  `userGenerationRouter.createUserGeneration` → session generation query → wallet refresh.
+- PPRO 26.2.2 native CEP `evalScript()` ishlamasa `afEvalScript()` avtomatik
+  `AF_UXP_BRIDGE`ga o'tadi; AE va CEP scripting sog'lom Premiere versiyalarida native yo'l saqlanadi.
+- `com.frameflow.premiere.host` UXP companion `hostUIContext.hideFromMenu:true`: Premiere
+  startupda avtomatik yuklaydi, UXP Plugins menyusida/panel sifatida ko'rinmaydi.
+- IPC loopback tarmog'i emas: `/tmp/com.frameflow.premiere.host-bridge` mode-0700 mailbox,
+  har CEP sessiyasiga 256-bit secret, qat'iy protocol/id/size tekshiruvi; UXP arbitrary JS eval qilmaydi.
+- Native UXP host qatlami MOGRT, PRPROJ sequence, footage/media import, Project footage,
+  Timeline clip/current-frame, work area, project tree, reveal va capabilities'ni qoplaydi.
+- Premiere UXP 26.2 Project-panel selection API bermaydi: `getSelectedProjectReference()`
+  taxmin qilmay fail-closed; foydalanuvchi ishlaydigan Project footage ro'yxatidan tanlaydi.
+- Testlar: UXP host shim PASS; authenticated CEP↔UXP mailbox PASS; Premiere CEP adapter
+  18/18; integration 19/19; package 59/59; marketplace 100/100; installer 262/262;
+  updater 118/118; responsive va `git diff --check` PASS.
+- CEP QA: `dist/zxp/frameflow-plugin-v1.2.0-unsigned.zip` — 830199 bayt,
+  SHA-256 `30e523ba97c50fa9048bf9d65155af631a78ce7a958776551cfa547b5f2b3a4b`.
+- Companion CCX: `dist/uxp/frameflow-premiere-host-v1.0.0.ccx` — 14312 bayt,
+  SHA-256 `a59cd2d9c3ef70cf6a26c7221fe3e5813ba60805307df7d4ee8cebda33bfeb8d`.
+- CEP build `2026-08-05 00:45 · ea7a8d6` va UXP companion 1.0.0 per-user o'rnatildi;
+  registry/payload diskdan tekshirildi. Premiere o'rnatmadan oldin ochiq bo'lgani uchun yangi
+  companion'ni yuklash va jonli import smoke uchun foydalanuvchi uni qo'lda to'liq qayta ochadi.
+- Computer Use faqat foydalanuvchi ruxsati bilan Chrome'dagi Artlist auditida ishlatildi;
+  Adobe/Premiere boshqarilmadi, yakuniy Premiere restart/smoke foydalanuvchiga qoldirildi.
+
+---
+
+# §-12. 2026-08-04 PREMIERE CEP PRODUCTION IMPLEMENTATION — host bridge blok sababi isbotlandi
+
+- Dual-host CEP saqlandi: AE va Premiere bitta `AssetFlow_Plugin.html`, CSS, auth, AI,
+  Sessions/Projects va writable `assetflow-data` zanjiridan foydalanadi; UXP runtime emas.
+- Host-aware resolver tuzatildi: AE MOGRT→AEP oqimi saqlandi; Premiere direct/ZIP/single/
+  multi MOGRT native `.mogrt`; ZIP `.prproj` va footage-only bundle taniladi; wrong-host
+  `.aep` Premiere'da fail-closed.
+- Premiere adapter `importMGT(path, String(position.ticks), ...)` va media insertda ticks-string
+  ishlatadi. `.prproj` hech qachon `importFiles()`ga tushmaydi: yopiq project sequence ID'lari
+  ishonchli olinmagani uchun download/reveal + `File → Import` manual fallback qaytadi.
+- `getHostCapabilities()` ikkala adapterda bor. PPRO Publisher `false`/Studio-only; unsaved
+  project `documentID` bilan saved deb belgilanmaydi.
+- Remove ID-only: Project/Timeline item ID'lari prefsda saqlanadi; Premiere rollback qo'shildi;
+  AE va PR'da eski nom bo'yicha keng delete o'chirildi — bir xil nomli user itemiga tegmaydi.
+- Request host metadata: catalog/featured/download, usage import/download, heartbeat, updater
+  va loglarda `app=pr` yoki `X-FF-App: pr`; local-store hodisasi AEFT+PPRO'ga dispatch.
+- Premiere copy qatlami static va keyin yaratiladigan dinamik UI'ni qamraydi: Library `Use`, AI
+  result actions, Project/Timeline reference picker, toast/confirm/title/placeholderlarda AE-only
+  matnlar PR semantikasiga o'tadi. Headerda `Premiere Pro`/`Pr` edition belgisi bor; PR'da
+  ishlamaydigan Comp/Bin default-import preference yashirilgan. Project panelga kirib Timeline'ga
+  qo'shilmagan media endi xato emas, aniq partial-success sifatida ko'rsatiladi.
+- Yangi integration test 19/19: resolver fixture'lari, host-call inventory, PRPROJ, wrong-host,
+  request capture va dual-host sync. Strict adapter 18/18, package 59/59, marketplace QA
+  67/67 + mutation 100/100, responsive PASS.
+- PR boot default `video-templates` bo'sh bo'lsa `motion/graphics/luts/music/sfx` ichidan birinchi
+  bo'sh bo'lmagan bo'limga o'tadi. Host bridge health va oxirgi JS runtime xatolari lokal diagnostikaga
+  yoziladi; simultaneous AE/PR debug portlari 8098/8099 qilib ajratildi.
+- Jonli PPRO 26.2.2 CDP smoke: panel/API ishlaydi, lekin native `evalScript('1+1')` ham
+  `EvalScript error.` qaytaradi. Bu FrameFlow JSX funksiyasi emas, Premiere CEP scripting-engine
+  holati; Adobe'ning ma'lum Adobe Stock panel regressiyasi bilan aynan mos. Barcha host chaqiruvlari
+  endi buni `premiere_script_engine_unavailable` deb bir xil va aniq ko'rsatadi.
+- QA artefakti unsigned: `dist/zxp/frameflow-plugin-v1.2.0-unsigned.zip` (818255 bayt,
+  SHA-256 `3231bbdc03f35de289396b6c5ca975b434fe596e3137f1d826da5366fb18fd33`); signed ZXP yo'q.
+- Yangilangan customer CEP `~/Library/Application Support/Adobe/CEP/extensions/com.frameflow`
+  papkasiga o'rnatildi; build `2026-08-04 13:42 · ea7a8d6`, 45/45 fayl diskdan tasdiqlandi.
+- Computer Use ishlatilmadi, Adobe ilovalari ochilmadi/yopilmadi. Host funksiyalarini smoke qilishdan
+  oldin Adobe Stock panelini yopib Premiere'ni to'liq qayta ochish shart; hozir production-ready emas.
+- Audit/prompt: `docs/PREMIERE-CEP-PROD-AUDIT-2026-08-04.md` va
+  `docs/PREMIERE-CEP-PROD-SYSTEM-PROMPT.md`.
+
+---
+
+# §-11. 2026-08-04 DUAL-HOST CEP 1.2.0 — AE paneli bevosita Premiere'ga o'tkazildi
+
+- Premiere UXP porti rad etildi: uning CSS/layout rendererida pill va kartalar buzilgan.
+  Joriy yo'l — AE bilan aynan bitta `AssetFlow_Plugin.html` ishlatadigan CEP panel.
+- `com.frameflow.panel` manifesti `AEFT + PPRO`; host bootstrap AE uchun `host.jsx`,
+  Premiere uchun `host-premiere.jsx` yuklaydi. UI/CSS/network/auth/session kodi umumiy.
+- Premiere adapter: media → Project/Timeline, MOGRT → playhead, footage bundle,
+  `.prproj` import, Project/Timeline reference, work area va current-frame PNG eksport.
+- Katalog hostdan avtomatik `app=ae|pr` yuboradi; featured ham host bo'yicha filtrlanadi.
+- Lokal meta/prefs/blob/Sessions extension papkasidan doimiy yoziladigan
+  `Application Support/AssetFlow/assetflow-data` ga ko'chadi; legacy data bir marta migratsiya qilinadi.
+- UXP dev o'rnatma registr/papkadan olib tashlandi. CEP 1.2.0
+  `~/Library/Application Support/Adobe/CEP/extensions/com.frameflow` ga o'rnatildi;
+  eski token/favorites saqlandi. Adobe ilovalari avtomatik ochilmadi/yopilmadi.
+- CLI isbot: Premiere host adapter 18/18, package-security 59/59,
+  marketplace-preflight 100/100 va responsive kontrakt PASS.
+- Foydalanuvchi Computer Use'ni taqiqlagan; Premiere ichidagi yakuniy ochib-ko'rish
+  avtomatlashtirilmagan. Ko'rinishi uchun Premiere'ni to'liq qayta ishga tushirish kerak.
+
+---
+
+# §-10. 2026-08-04 PREMIERE UXP 0.1.6 — Sessions va composer paint zanjiri tuzatildi
+
+- Premiere UI alohida qayta yozilmaydi: AE `AssetFlow_Plugin.html` yagona manba,
+  `ae-port.mjs` host adapterlari bilan UXP paketini avtomatik chiqaradi.
+- AI launcher’da `Tools · Sessions · Projects` doim ko‘rinadi; server sessiya picker’i
+  Premiere’da ham AE bilan bir xil ishlaydi, UXP-only bypass olib tashlandi.
+- View ochilgandan 300 ms keyingi `opacity` repaint olib tashlandi: u sog‘lom
+  Settings/Sessions view’ini qora/bo‘sh kadrga aylantirib, elementlar yo‘qolgandek ko‘rsatgan.
+- Picker → Image/Video/Audio composer o‘tishida Premiere ba’zan butun ota zanjirni `0×0`
+  paint qilgan. Composer layout renderdan oldin inline mahkamlanadi, bounded child-layout
+  barrier ishlaydi; boshqa view’ga qaytganda inline xossalar tozalanadi (ustma-ust view yo‘q).
+- Production seed hisobida `/gen/sessions` 200 va 40/40 sessiya generatsiyali: ma’lumot
+  o‘chmagan, muammo UI navigatsiya/paint qatlamida bo‘lgan.
+- Premiere Pro 26.2.2 jonli QA: Image, Video, Audio composer, composer↔picker,
+  Settings, Sessions va Projects PASS; final logda FrameFlow runtime error/rejection 0 ta.
+  Original loyiha o‘rniga alohida QA backup ishlatildi.
+- API build 51/24, release 110/110, host/session parity, responsive, CCX byte-verify
+  va buzilgan ZIP salbiy testi PASS. 0.1.6: 60 fayl, 791065 bayt, SHA-256
+  `c248f57718579d9e28fdd4ec0d803a48e35aecf222f1a6feb373bc2832062a06`.
+- Dev o‘rnatma final 0.1.6 buildga yangilandi.
 
 ---
 

@@ -377,6 +377,25 @@ export type ByteplusImageParams = {
   aspect?: string; // nisbat ("16:9" ...) — tier bilan birga aniq piksel size'ga aylanadi (§8 jadval)
 };
 
+/** Seedream provider body builderi — production va contract test bitta payloaddan foydalanadi. */
+export function buildByteplusImageBody(
+  model: string,
+  p: ByteplusImageParams
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model,
+    prompt: p.prompt,
+    response_format: "url",
+    watermark: false,
+  };
+  if (!SEEDREAM_NO_OUTPUT_FORMAT.has(model)) body.output_format = "png";
+  const refs = (p.imageUrls || []).filter((u) => typeof u === "string" && u.length > 0);
+  if (refs.length) body.image = refs.length === 1 ? refs[0] : refs;
+  const size = seedreamSize(model, p.size, p.aspect);
+  if (size) body.size = size;
+  return body;
+}
+
 /**
  * Seedream rasm generatsiyasi. v1: bitta rasm chiqishi (sequential_image_generation
  * ISHLATILMAYDI — kelajak faza). 429 → qisqa backoff bilan qayta urinish; baribir limit
@@ -393,17 +412,7 @@ export async function byteplusImage(
   p: ByteplusImageParams
 ): Promise<ByteplusImageResult> {
   if (!isByteplusConfigured()) return NOT_CONFIGURED;
-  const body: Record<string, unknown> = {
-    model,
-    prompt: p.prompt,
-    response_format: "url",
-    watermark: false, // ⚠️ BIZDA HAR DOIM false
-  };
-  if (!SEEDREAM_NO_OUTPUT_FORMAT.has(model)) body.output_format = "png"; // 4.5 bu param'ni rad etadi
-  const refs = (p.imageUrls || []).filter((u) => typeof u === "string" && u.length > 0);
-  if (refs.length) body.image = refs.length === 1 ? refs[0] : refs; // string | string[] (docs §8)
-  const size = seedreamSize(model, p.size, p.aspect); // nisbat bo'lsa aniq piksel, aks holda tier
-  if (size) body.size = size;
+  const body = buildByteplusImageBody(model, p);
   const backoffMs = [0, 2000, 5000];
   for (let attempt = 0; attempt < backoffMs.length; attempt++) {
     if (backoffMs[attempt]) await sleep(backoffMs[attempt]);

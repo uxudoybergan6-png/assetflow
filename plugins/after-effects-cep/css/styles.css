@@ -267,34 +267,94 @@
    ============================================================ */
 /* A · SAHIFA — SC_07: to'liq-bo'y flex ustun; qolgan bo'shliq seksiyalar ORASIGA
    taqsimlanadi (space-between), oxirida qora bo'shliq qolmaydi. */
-.fhome{min-height:100%;padding:16px 16px 28px;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(circle at 82% 0%,var(--accent-soft),transparent 30%),var(--bg-deep)}
+.fhome{min-height:100%;padding:20px 18px 32px;background:var(--bg-deep)}
 /* SC_07: min-height:100% ishlashi uchun balandlik zanjiri (scroll-area → homePage → homeMain) */
 html.home-mode #homePage{display:flex!important;flex-direction:column;min-height:100%}
 #homeMain{display:flex;flex-direction:column;flex:1;min-height:0}
 #homeMain>.fhome{flex:1}
 /* B · TOPLINE — SC_07: salom endi ODDIY jumla (mono-caps mikromatn emas), balans dublikati o'chirildi */
-.fhome-top{min-height:30px;margin-bottom:10px;display:flex;align-items:center}
-.fhome-greet{min-width:0;color:var(--text-2);font:500 14px/1.3 var(--font-sans);letter-spacing:0;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fhome-greet strong{color:var(--text);font-weight:650}
+.fhome-top{min-height:20px;margin-bottom:14px;display:flex;align-items:center}
+.fhome-greet{min-width:0;color:var(--muted);font:500 12px/1.3 var(--font-sans);letter-spacing:0;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhome-greet strong{color:var(--text-2);font-weight:600}
 /* C · HERO — SC_07: panel bo'yi bilan o'sadi (klamp); qisqa panellar pastdagi media query'larda ixcham */
-.fhome-hero{height:clamp(260px,38vh,460px);margin-bottom:16px;padding:16px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:18px;display:flex;align-items:flex-end;flex:none}
-.fhome-hero-art{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(135deg,#101a35 0%,#5b3d83 47%,#e5695b 100%);background-size:cover;background-position:center;transition:transform .32s var(--ease)}
+.fhome-hero{height:auto;margin:0;padding:18px;position:relative;overflow:hidden;border:1px solid var(--hair);border-radius:12px;background:var(--surface);display:block}
+.fhome-hero-art{display:none}
 /* SC_04: CMS hero media (img/video) — art ichida cover; hero :after skrimi USTIDA turadi,
    copy (z-index:3) va chip (z-index:2) esa undan ham yuqorida — kontrast saqlanadi */
 .fhome-hero-art .af-cms-media{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:cover}
-.fhome-hero:hover .fhome-hero-art{transform:scale(1.025)}
-.fhome-hero:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(4,5,9,.9),rgba(4,5,9,.55) 52%,rgba(4,5,9,.06)),linear-gradient(0deg,rgba(4,5,9,.8),transparent 60%)}
-.fhome-hero-chip{position:absolute;top:14px;right:14px;z-index:2;padding:6px 8px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(4,5,9,.62);color:#fff;font:700 7px/1 var(--font-mono);letter-spacing:.06em;white-space:nowrap}
-.fhome-hero-copy{position:relative;z-index:3;max-width:330px;color:#fff}
+.fhome-hero:hover .fhome-hero-art{transform:none}
+.fhome-hero:after{display:none}
+.fhome-hero-chip{display:none!important}
+.fhome-legacy-hooks{display:none!important}
+.fhome-hero-copy{position:relative;z-index:1;max-width:none;color:var(--text)}
 .fhome-kick{margin:0 0 8px;color:var(--accent);font:750 8px/1 var(--font-mono);letter-spacing:.13em;text-transform:uppercase}
-.fhome-hero-copy h1{margin:0;font:650 30px/.95 var(--font-display);letter-spacing:-.055em}
-.fhome-sub{margin:9px 0 0;color:rgba(255,255,255,.72);font:400 10px/1.5 var(--font-sans)}
+.fhome-hero-copy h1{margin:0;font:600 18px/1.2 var(--font-display);letter-spacing:-.025em}
+.fhome-sub{margin:5px 0 0;color:var(--muted);font:400 11px/1.45 var(--font-sans)}
 /* SC_50: hero prompt-first input */
-.fhome-heroprompt{position:relative;z-index:3;margin-top:14px;display:flex;align-items:center;gap:7px;background:rgba(5,6,10,.5);border:1px solid rgba(255,255,255,.22);border-radius:11px;padding:4px 4px 4px 12px;max-width:340px}
-.fhome-heroprompt input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#fff;font:500 12px/1 var(--font-sans);padding:8px 0}
-.fhome-heroprompt input::placeholder{color:rgba(255,255,255,.55)}
-.fhome-heroprompt-go{flex:none;width:32px;height:32px;border:0;border-radius:8px;background:var(--grad);color:var(--on-accent);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px var(--glow)}
-.fhome-heroprompt-go:hover{filter:brightness(1.08)}
+.fhome-heroprompt{position:relative;z-index:1;margin-top:14px;display:flex;align-items:center;gap:7px;background:var(--bg-deep);border:1px solid var(--border);border-radius:9px;padding:3px 3px 3px 11px;max-width:none}
+.fhome-heroprompt:focus-within{border-color:var(--muted-2)}
+.fhome-heroprompt input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:var(--text);font:500 12px/1 var(--font-sans);padding:8px 0}
+.fhome-heroprompt input::placeholder{color:var(--muted)}
+.fhome-heroprompt-go{flex:none;width:30px;height:30px;border:0;border-radius:7px;background:var(--text);color:var(--bg-deep);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:none}
+.fhome-heroprompt-go:hover{background:var(--text-2)}
+/* Artlist-inspired AI launcher: generous framed cards with one clear affordance. */
+.fhome-tools-hd{margin-top:18px!important;margin-bottom:12px!important}
+.fhome-tools-hd h2{color:var(--text);font-size:21px;font-weight:760;line-height:1.14;letter-spacing:-.028em}
+.fhome-tools-hd h2 span{display:inline-block;margin-left:4px;color:var(--text);font-size:14px;vertical-align:3px}
+.fhome-toolwrap{position:relative}
+.fhome-toolgrid{display:flex;gap:clamp(10px,1.2vw,16px);overflow-x:auto;padding:1px 1px 8px;scroll-snap-type:x proximity;scroll-behavior:smooth;scrollbar-width:none}
+.fhome-toolgrid::-webkit-scrollbar{display:none}
+.fhome-toolcard{--tool-inset:clamp(13px,1.4vw,19px);position:relative;isolation:isolate;display:flex;flex-direction:column;aspect-ratio:7/5;min-width:0;padding:var(--tool-inset);border:1px solid rgba(255,255,255,.22);border-radius:clamp(20px,2.1vw,30px);background-color:#0b0b0c;background-image:linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,0) 52%,rgba(255,255,255,.03));box-shadow:inset 0 1px 0 rgba(255,255,255,.065),inset 0 -1px 0 rgba(255,255,255,.12),inset 0 -22px 38px rgba(255,255,255,.026),0 16px 34px rgba(0,0,0,.4);color:var(--text);text-align:left;cursor:pointer;transition:border-color var(--motion-fast) var(--ease),box-shadow var(--motion-fast) var(--ease),background-color var(--motion-fast) var(--ease)}
+.fhome-toolgrid .fhome-toolcard{flex:1 0 210px;scroll-snap-align:start}
+.fhome-toolcard:after{content:'';position:absolute;z-index:-1;right:9%;bottom:-1px;width:66%;height:24px;border-radius:0 0 24px 24px;background:radial-gradient(ellipse at 62% 100%,rgba(255,255,255,.12),rgba(255,255,255,0) 68%);pointer-events:none}
+.fhome-toolcard:hover,.fhome-toolcard:focus{outline:0;border-color:rgba(255,255,255,.32);background-color:#0e0e0f;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 -1px 0 rgba(255,255,255,.14),inset 0 -20px 34px rgba(255,255,255,.03),0 17px 36px rgba(0,0,0,.46)}
+.fhome-toolcard:focus-visible{border-color:rgba(255,255,255,.42);box-shadow:0 0 0 2px var(--accent-soft),0 16px 34px rgba(0,0,0,.42)}
+.fhome-toolhead{display:flex;align-items:center;min-width:0;padding-right:clamp(27px,2.2vw,33px);margin:0 0 clamp(12px,1.25vw,18px)}
+.fhome-toolhead b{min-width:0;flex:1;font:700 clamp(15px,1.5vw,20px)/1.12 var(--font-sans);letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fhome-toolopen{position:absolute;z-index:2;top:var(--tool-inset);right:var(--tool-inset);width:clamp(21px,1.9vw,27px);height:clamp(21px,1.9vw,27px);display:flex;align-items:center;justify-content:center;color:#fff}
+.fhome-toolopen svg{display:block;width:100%;height:100%}
+.fhome-toolmedia{position:relative;display:flex;flex:1;min-height:0;width:100%;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.05);border-radius:clamp(11px,1.1vw,16px);overflow:hidden;background-color:var(--surface-3);background-size:cover;background-position:center;box-shadow:0 9px 22px rgba(0,0,0,.3)}
+.fhome-toolmedia:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 48%,rgba(4,5,8,.34))}
+.fhome-toolmedia.audio{background:linear-gradient(135deg,var(--surface-3),var(--surface-2))}
+.fhome-toolmedia.audio:after{background:radial-gradient(circle at 50% 50%,var(--accent-soft),transparent 68%)}
+.fhome-toolarrow{position:absolute;z-index:5;top:50%;width:30px;height:46px;margin-top:-27px;padding:0;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(8,9,12,.86);box-shadow:0 8px 22px rgba(0,0,0,.4);color:#fff;font:500 24px/1 var(--font-sans);cursor:pointer}
+.fhome-toolarrow:hover{border-color:rgba(255,255,255,.34);background:rgba(24,25,29,.96)}
+.fhome-toolprev{left:8px}.fhome-toolnext{right:8px}
+.fhome-tooldots{height:7px;margin:3px 0 10px;display:flex;align-items:center;justify-content:center;gap:5px}
+.fhome-tooldot{width:5px;height:5px;margin:0;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.22);cursor:pointer;transition:width var(--motion-fast) var(--ease),background var(--motion-fast) var(--ease)}
+.fhome-tooldot.active{width:14px;background:rgba(255,255,255,.9)}
+.fhome-wave{position:relative;z-index:1;height:42px;display:flex;align-items:center;gap:3px;color:#fff}
+.fhome-wave i{display:block;width:3px;border-radius:3px;background:currentColor}
+.fhome-wave i:nth-child(1),.fhome-wave i:nth-child(9){height:10px}.fhome-wave i:nth-child(2),.fhome-wave i:nth-child(8){height:18px}.fhome-wave i:nth-child(3),.fhome-wave i:nth-child(7){height:27px}.fhome-wave i:nth-child(4),.fhome-wave i:nth-child(6){height:35px}.fhome-wave i:nth-child(5){height:22px}
+@media (max-width:559px){.fhome-tools-hd h2{font-size:18px}.fhome-toolcard{--tool-inset:12px;padding:var(--tool-inset);border-radius:19px}.fhome-toolhead{padding-right:25px;margin-bottom:10px}.fhome-toolhead b{font-size:14px}.fhome-toolopen{width:20px;height:20px}.fhome-toolmedia{border-radius:10px}}
+/* Real Studio model katalogi: Artlist uslubidagi katta, sokin gorizontal carousel. */
+.fhome-modelwrap{position:relative}
+.fhome-modelrail{display:flex;gap:10px;overflow-x:auto;padding:1px 1px 6px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.fhome-modelrail::-webkit-scrollbar{display:none}
+.fhome-modelcard{position:relative;flex:0 0 clamp(176px,25vw,230px);aspect-ratio:4/5;margin:0;padding:0;overflow:hidden;scroll-snap-align:start;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:var(--surface);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 10px 26px rgba(0,0,0,.26);color:#fff;text-align:left;cursor:pointer;transition:border-color var(--motion-fast) var(--ease),box-shadow var(--motion-fast) var(--ease)}
+.fhome-modelcard:hover,.fhome-modelcard:focus{outline:0;border-color:rgba(255,255,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 14px 32px rgba(0,0,0,.34)}
+.fhome-modelcard:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft),0 14px 32px rgba(0,0,0,.34)}
+.fhome-modelmedia{position:absolute;inset:0;background-color:var(--surface-2);background-position:center;background-size:cover}
+.fhome-modelveil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,5,8,.08) 30%,rgba(4,5,8,.26) 58%,rgba(4,5,8,.94) 100%)}
+.fhome-modeltype{position:absolute;z-index:2;left:10px;top:10px;padding:4px 6px;border:1px solid rgba(255,255,255,.18);border-radius:5px;background:rgba(5,6,9,.7);font:700 6.5px/1 var(--font-mono);letter-spacing:.08em}
+.fhome-modelcopy{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:28px 12px 12px}
+.fhome-modelcopy b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:650 12px/1.18 var(--font-sans);text-shadow:0 1px 5px rgba(0,0,0,.7)}
+.fhome-modelcopy small{display:-webkit-box;margin-top:5px;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:rgba(255,255,255,.72);font:450 8px/1.3 var(--font-sans)}
+.fhome-modelopen{position:absolute;z-index:3;right:10px;top:10px;width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.2);border-radius:7px;background:rgba(4,5,8,.58);font:600 13px/1 var(--font-sans);opacity:0;transition:opacity var(--motion-fast) var(--ease)}
+.fhome-modelcard:hover .fhome-modelopen,.fhome-modelcard:focus .fhome-modelopen{opacity:1}
+.fhome-modelnext{position:absolute;z-index:4;right:8px;top:50%;width:30px;height:44px;margin-top:-25px;border:1px solid rgba(255,255,255,.17);border-radius:9px;background:rgba(5,6,9,.78);box-shadow:0 7px 20px rgba(0,0,0,.35);color:#fff;font:400 22px/1 var(--font-sans);cursor:pointer}
+.fhome-modelnext:hover{background:rgba(24,25,29,.94)}
+.fhome-modeldots{min-height:7px;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:5px}
+.fhome-modeldot{width:5px;height:5px;margin:0;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.22);cursor:pointer;transition:width var(--motion-fast) var(--ease),background var(--motion-fast) var(--ease)}
+.fhome-modeldot.active{width:14px;background:rgba(255,255,255,.9)}
+@media (max-width:460px){.fhome-modelcard{flex-basis:156px}.fhome-modelcopy b{font-size:10.5px}}
+/* Compact editorial hero: Home'ga bitta aniq focal point beradi, katta marketing banner emas. */
+html.home-mode .fhome-hero{margin:0 0 2px;padding:13px 14px 14px;border:1px solid rgba(255,255,255,.11);border-radius:13px;background-color:var(--surface);background-image:radial-gradient(circle at 100% 0,rgba(192,89,255,.11),transparent 38%),linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0));box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 10px 28px rgba(0,0,0,.22);overflow:hidden}
+html.home-mode .fhome-hero:before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:2px;border-radius:0 2px 2px 0;background:linear-gradient(180deg,rgba(232,121,249,.82),rgba(168,85,247,.34))}
+html.home-mode .fhome-hero-copy{max-width:none}
+html.home-mode .fhome-hero-copy h1{display:block;font:600 15px/1.15 var(--font-display);letter-spacing:-.02em}
+html.home-mode .fhome-sub{display:block;margin-top:3px;font:400 9px/1.3 var(--font-sans);color:var(--muted)}
+html.home-mode .fhome-heroprompt{margin-top:10px;max-width:none;background:var(--bg-deep);border-radius:9px}
 /* SC_52: admin-kuratsiya rellslari — sanksiyalangan uzluksiz marquee (faqat transform) */
 .fhome-rail{overflow:hidden;position:relative;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent)}
 .fhome-rail-track{display:flex;gap:16px;width:max-content;will-change:transform}
@@ -310,8 +370,8 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 /* SC_50: Continue a session — so'nggi sessiya kartalari */
 .fhome-sessrow{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
 .fhome-sessrow::-webkit-scrollbar{width:0;height:0}
-.fhome-sesscard{flex:0 0 auto;width:172px;border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:var(--surface-2);cursor:pointer;transition:border-color .15s,transform .12s}
-.fhome-sesscard:hover{border-color:var(--border);transform:translateY(-2px)}
+.fhome-sesscard{flex:0 0 auto;width:156px;border:1px solid var(--hair);border-radius:10px;overflow:hidden;background:var(--surface);cursor:pointer;transition:border-color .15s}
+.fhome-sesscard:hover{border-color:var(--muted-2);transform:none}
 .fhome-sesscard .sc-thumb{aspect-ratio:16/10;background:var(--surface-3) center/cover no-repeat;position:relative}
 .fhome-sesscard .sc-glyph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px}
 .fhome-sesscard .sc-meta{padding:9px 11px}
@@ -339,72 +399,128 @@ html.home-mode #homePage{display:flex!important;flex-direction:column;min-height
 .fhome-btn-stock{display:inline-flex;align-items:center;justify-content:center;min-height:36px;margin-left:7px;padding:9px 13px;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:rgba(5,6,10,.58);color:#fff;font:700 10px/1 var(--font-sans);white-space:nowrap;cursor:pointer}
 .fhome-btn-ai:hover,.fhome-btn-stock:hover{filter:brightness(1.06)}
 /* D · SECTION HEADER */
-.fhome-sechd{margin:16px 2px 9px;display:flex;align-items:baseline}
-.fhome-sechd h2{min-width:0;margin:0;color:var(--text);font:650 14px/1.15 var(--font-display);letter-spacing:-.02em}
+.fhome-sechd{margin:24px 1px 10px;display:flex;align-items:baseline}
+.fhome-sechd h2{min-width:0;margin:0;color:var(--text-2);font:600 11px/1.2 var(--font-sans);letter-spacing:0}
 .fhome-browse{margin-left:auto;padding:0;border:0;background:transparent;color:var(--accent);font:700 10px/1.2 var(--font-sans);white-space:nowrap;cursor:pointer}
 .fhome-browse:hover{text-decoration:underline}
 /* E · "JUMP BACK IN" STRIP — SC_07: oxirgi 6 gen, KATTA havodor kafelka.
    ("Start your next project" action kartalari o'chirildi — hero CTA dublikatlari edi.) */
-.fhome-recent{display:flex;gap:16px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.fhome-recent{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
 .fhome-recent::-webkit-scrollbar{width:0;height:0}
-.fhome-rcard{flex:0 0 auto;width:200px;padding:0;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+.fhome-rcard{flex:0 0 auto;width:154px;color:var(--text);text-align:left;cursor:pointer}
 .fhome-rcard:focus{outline:0}
-.fhome-rmedia{display:block;height:150px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:14px;background-color:var(--surface-2);background-size:cover;background-position:center;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
-.fhome-rcard:hover .fhome-rmedia{transform:translateY(-2px);border-color:var(--accent)}
+.fhome-rmedia{display:block;width:100%;height:auto;aspect-ratio:16/10;position:relative;overflow:hidden;border-radius:8px;background-color:var(--surface);background-size:cover;background-position:center}
+.fhome-rcard:hover .fhome-rmedia{transform:none}
 .fhome-rmedia.aud{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-2),var(--surface-3))}
-.fhome-rplay{position:absolute;left:10px;bottom:8px;color:#fff;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
-.fhome-raud{color:var(--muted);font-size:22px}
-.fhome-rmeta{display:flex;align-items:baseline;gap:8px;margin:8px 2px 0;min-width:0}
-.fhome-rmeta b{font:650 10.5px/1.3 var(--font-sans);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fhome-rmeta i{margin-left:auto;font:400 9px/1.3 var(--font-sans);font-style:normal;color:var(--muted);white-space:nowrap}
-/* F · FRESH JAVONI — SC_07: ko'p-qatorli KATTA kartalar grid'i (bir qatorli strip emas) */
-.fhome-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
-.fhome-tcard{width:auto;min-width:0;margin:0;padding:0;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer}
+.fhome-rplay{position:absolute;z-index:3;left:8px;top:8px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(4,5,8,.62);color:#fff;font-size:8px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.fhome-raud{position:relative;z-index:2;color:var(--muted);font-size:22px}
+/* F · PROFESSIONAL ASSET CARDS — real panelda 3 ta ixcham ustun; Artlist kabi
+   media birinchi, undan keyin title + category/author iyerarxiyasi. */
+.fhome-shelf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 10px}
+@media (min-width:460px){.fhome-shelf{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1120px){.fhome-shelf{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 12px}}
+@media (min-width:1440px){.fhome-shelf{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.fhome-discovery-sec{margin-top:24px}
+.fhome-discovery-sec .fhome-sechd{margin-top:0}
+.fhome-discovery-sec .fhome-shelf{display:flex;gap:10px;overflow-x:auto;padding-bottom:5px;scrollbar-width:none}
+.fhome-discovery-sec .fhome-shelf::-webkit-scrollbar{display:none}
+.fhome-discovery-sec .fhome-tcard{flex:0 0 172px}
+.fhome-tcard{width:auto;min-width:0;margin:0;padding:4px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background-color:var(--surface);background-image:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.008));box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 8px 22px rgba(0,0,0,.24);color:var(--text);text-align:left;cursor:pointer;transition:border-color var(--motion-fast) var(--ease),box-shadow var(--motion-fast) var(--ease)}
 .fhome-tcard:focus{outline:0}
-.fhome-tmedia{display:block;aspect-ratio:16/9;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:14px;background-color:var(--surface-2);background-size:cover;background-position:center;transition:transform var(--motion-fast) var(--ease),border-color var(--motion-fast) var(--ease)}
-.fhome-tcard:hover .fhome-tmedia,.fhome-tcard:focus .fhome-tmedia{transform:translateY(-2px);border-color:var(--accent)}
-.fhome-tbadge{position:absolute;top:8px;left:8px;padding:4px 7px;border-radius:999px;background:rgba(4,5,8,.7);color:#fff;font:700 7px/1 var(--font-mono);letter-spacing:.07em}
+.fhome-tcard:focus-visible{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft),0 10px 26px rgba(0,0,0,.3)}
+.fhome-tmedia{display:block;aspect-ratio:16/10;position:relative;overflow:hidden;border:0;border-radius:8px;background-color:var(--surface);background-size:cover;background-position:center}
+.fhome-featured .fhome-tmedia{aspect-ratio:16/10}
+.fhome-featured .fhome-tmedia.fhome-o-vertical,.fhome-featured .fhome-tmedia.fhome-o-square{aspect-ratio:16/10;background-position:center}
+.fhome-tveil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,5,8,.02) 30%,rgba(4,5,8,.15) 52%,rgba(4,5,8,.92) 100%);opacity:.92;transition:opacity var(--motion-fast) var(--ease)}
+.fhome-tcard:hover,.fhome-tcard:focus{border-color:rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 11px 28px rgba(0,0,0,.3)}
+.fhome-tcard:hover .fhome-tmedia,.fhome-tcard:focus .fhome-tmedia{transform:none}
+.fhome-tcard:hover .fhome-tveil,.fhome-tcard:focus .fhome-tveil{opacity:1}
+.fhome-tbadge{position:absolute;z-index:3;top:8px;left:8px;padding:3px 6px;border:1px solid rgba(255,255,255,.18);border-radius:5px;background:rgba(4,5,8,.68);color:#fff;font:700 6.5px/1 var(--font-mono);letter-spacing:.08em}
 .fhome-tbadge.pro{background:var(--accent);color:var(--on-accent)}
-/* SC_07: rezolyutsiya chipi — media ustida (matn qatori o'rniga) */
-.fhome-tres{position:absolute;right:8px;bottom:8px;padding:4px 6px;border-radius:6px;background:rgba(4,5,8,.7);color:#fff;font:700 7px/1 var(--font-mono);letter-spacing:.05em}
+.fhome-topen{position:absolute;z-index:3;right:8px;top:8px;width:24px;height:24px;border:1px solid rgba(255,255,255,.22);border-radius:7px;background:rgba(4,5,8,.58);color:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--motion-fast) var(--ease),background var(--motion-fast) var(--ease)}
+.fhome-topen svg{width:12px;height:12px}
+.fhome-tcard:hover .fhome-topen,.fhome-tcard:focus .fhome-topen{opacity:1;background:rgba(4,5,8,.82)}
 .fhome-tdur{position:absolute;right:8px;bottom:8px;padding:4px 5px;border-radius:5px;background:rgba(4,5,8,.7);color:#fff;font:700 7px/1 var(--font-mono)}
-.fhome-tcard h3{margin:9px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:650 11.5px/1.35 var(--font-sans)}
+.fhome-tcopy{position:absolute;z-index:2;left:0;right:0;bottom:0;display:block;padding:18px 8px 8px;min-width:0;color:#fff}
+.fhome-tname{display:block;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 9.5px/1.18 var(--font-sans);text-shadow:0 1px 4px rgba(0,0,0,.55)}
+/* Footage of the week: resting cards featured-model carousel bilan aynan bir xil 4:5 footprint;
+   hover/focusda shu balandlikni saqlab 16:9 ga ochiladi. */
+.fhome-footage-sec{--footage-w:clamp(176px,25vw,230px);--footage-h:calc(var(--footage-w)*1.25)}
+.fhome-footage-sec .fhome-sechd{margin-bottom:10px}
+.fhome-footage-wrap{position:relative;padding-bottom:28px}
+.fhome-footage-rail{display:flex;align-items:stretch;gap:10px;overflow-x:auto;padding:1px 1px 7px;scroll-snap-type:x proximity;scroll-behavior:smooth;scrollbar-width:none}
+.fhome-footage-rail::-webkit-scrollbar{display:none}
+.fhome-discovery-sec .fhome-footage-card{position:relative;flex:0 0 var(--footage-w);width:auto;height:var(--footage-h);margin:0;padding:0;overflow:hidden;scroll-snap-align:start;border-radius:12px;transition:flex-basis .42s cubic-bezier(.2,.72,.2,1),border-color var(--motion-fast) var(--ease),box-shadow .42s var(--ease)}
+.fhome-footage-media{position:absolute;inset:0;display:block;overflow:hidden;border-radius:inherit;background-color:var(--surface);background-position:center;background-size:cover}
+.fhome-footage-video{position:absolute;z-index:1;inset:0;width:100%;height:100%;border:0;object-fit:cover;opacity:0;transition:opacity .2s ease .1s}
+.fhome-footage-card .fhome-tveil{z-index:2}
+.fhome-footage-card .fhome-tcopy,.fhome-footage-card .fhome-topen{z-index:3}
+.fhome-footage-card.is-open .fhome-footage-video{opacity:1}
+@media (min-width:560px){
+  .fhome-discovery-sec .fhome-footage-card:hover,.fhome-discovery-sec .fhome-footage-card:focus,.fhome-discovery-sec .fhome-footage-card.is-open{flex-basis:calc(var(--footage-h)*1.7778)}
+}
+.fhome-footage-arrow{position:absolute;z-index:5;bottom:-2px;width:28px;height:28px;padding:0;border:1px solid rgba(255,255,255,.17);border-radius:999px;background:rgba(16,17,20,.94);box-shadow:0 7px 18px rgba(0,0,0,.32);color:#fff;font:400 20px/1 var(--font-sans);cursor:pointer}
+.fhome-footage-arrow:hover{border-color:rgba(255,255,255,.3);background:var(--surface-2)}
+.fhome-footage-prev{left:1px}.fhome-footage-next{right:1px}
+.fhome-footage-dots{height:7px;margin-top:-17px;display:flex;align-items:center;justify-content:center;gap:5px}
+.fhome-footage-dot{width:5px;height:5px;margin:0;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.22);cursor:pointer;transition:width var(--motion-fast) var(--ease),background var(--motion-fast) var(--ease)}
+.fhome-footage-dot.active{width:14px;background:rgba(255,255,255,.9)}
+@media (max-width:559px){.fhome-footage-sec{--footage-w:156px}.fhome-footage-wrap{padding-bottom:24px}}
+/* Video Templates demo: Artlist'ga yaqin 16:9 media-first collection row. Tor panelda
+   kartalar siqilib buzilmaydi — bitta gorizontal rail bo'lib suriladi. */
+.fhome-vtpl-sec{margin-top:26px;padding-bottom:4px}
+.fhome-vtpl-sec .fhome-sechd{margin:0 1px 11px}
+.fhome-vtpl-rail{display:flex;gap:12px;overflow-x:auto;padding:1px 1px 7px;scroll-snap-type:x proximity;scroll-behavior:smooth;scrollbar-width:none}
+.fhome-vtpl-rail::-webkit-scrollbar{display:none}
+.fhome-vtpl-card{flex:1 0 clamp(210px,22vw,340px);min-width:0;margin:0;padding:0;border:0;background:transparent;color:var(--text);text-align:left;scroll-snap-align:start;cursor:pointer}
+.fhome-vtpl-card:focus{outline:0}
+.fhome-vtpl-card:focus-visible .fhome-vtpl-media{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft),0 12px 28px rgba(0,0,0,.34)}
+.fhome-vtpl-media{position:relative;display:block;width:100%;aspect-ratio:16/9;overflow:hidden;border:1px solid rgba(255,255,255,.13);border-radius:10px;background-color:var(--surface-2);background-position:center;background-size:cover;box-shadow:0 9px 24px rgba(0,0,0,.27);transition:border-color var(--motion-fast) var(--ease),box-shadow var(--motion-fast) var(--ease)}
+.fhome-vtpl-card:hover .fhome-vtpl-media{border-color:rgba(255,255,255,.25);box-shadow:0 13px 30px rgba(0,0,0,.36)}
+.fhome-vtpl-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,5,8,.03),rgba(4,5,8,.08) 54%,rgba(4,5,8,.36))}
+.fhome-vtpl-demo{position:absolute;z-index:2;left:10px;top:10px;padding:4px 6px;border:1px solid rgba(255,255,255,.2);border-radius:5px;background:rgba(4,5,8,.7);color:#fff;font:700 6.5px/1 var(--font-mono);letter-spacing:.09em}
+.fhome-vtpl-play{position:absolute;z-index:2;left:14px;bottom:13px;width:31px;height:31px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.13);border-radius:999px;background:rgba(8,9,12,.75);color:#fff;box-shadow:0 5px 14px rgba(0,0,0,.26)}
+.fhome-vtpl-play svg{width:15px;height:15px}
+.fhome-vtpl-copy{display:block;min-width:0;padding:9px 1px 0}
+.fhome-vtpl-copy b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font:650 12px/1.2 var(--font-sans);letter-spacing:-.015em}
+.fhome-vtpl-copy small{display:-webkit-box;margin-top:4px;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:var(--muted);font:450 9.5px/1.3 var(--font-sans)}
+@media (max-width:559px){.fhome-vtpl-card{flex-basis:230px}.fhome-vtpl-copy b{font-size:11px}.fhome-vtpl-copy small{font-size:9px}}
 /* "Browse all →" ghost karta — javon oxiri */
 .fhome-tghost{display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;border:1px dashed var(--border);border-radius:14px;background:transparent;color:var(--accent);font:700 12px/1 var(--font-sans);cursor:pointer;transition:border-color var(--motion-fast) var(--ease)}
 .fhome-tghost:hover{border-color:var(--accent)}
 /* Skelet (katalog yuklanmoqda) — yangi karta o'lchamida shimmer */
 .fhome-tskel-media{display:block;aspect-ratio:16/9;border:1px solid var(--hair);border-radius:14px;background-image:linear-gradient(100deg,var(--surface-2) 38%,var(--surface-3) 50%,var(--surface-2) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
 .fhome-tskel-line{display:block;height:10px;margin:9px 2px 0;border-radius:4px;background-image:linear-gradient(100deg,var(--surface-2) 38%,var(--surface-3) 50%,var(--surface-2) 62%);background-size:220% 100%;animation:fhome-shimmer 1.4s linear infinite}
+.fhome-tskel-line.secondary{width:62%;height:7px;margin-top:5px}
 @keyframes fhome-shimmer{from{background-position:180% 0}to{background-position:-80% 0}}
 /* G · RESPONSIVE */
 /* Baland panellar: hero copy bir pog'ona kattaroq (klamp qadam) */
-@media (min-height:760px){
-  .fhome-hero-copy h1{font-size:34px}
-  .fhome-sub{font-size:11px}
-  .fhome-sechd{margin-top:22px}
-}
+@media (min-height:760px){.fhome-sechd{margin-top:24px}}
 /* Kenglik ≤340: sahifa 12px, hero H1 26px */
 @media (max-width:340px){
   .fhome{padding:12px 12px 24px}
-  .fhome-hero-copy h1{font-size:26px}
+  .fhome-hero-copy h1{font-size:17px}
   .fhome-recent{gap:12px}
-  .fhome-rcard{width:170px}
-  .fhome-rmedia{height:120px}
+  .fhome-rcard{width:146px}
+  .fhome-rmedia{height:98px}
 }
-/* Bo'y ≤620: hero 210px (bugungi ixcham xatti saqlanadi) */
-@media (max-height:620px){
-  .fhome-hero{height:210px}
-}
-/* Bo'y ≤500: hero 170px — hammasi skroll bo'ladi, hech narsa kesilmaydi.
-   Copy blok 170px ichiga sig'ishi uchun ixchamlanadi (aks holda overflow:hidden kesadi). */
+@media (max-height:620px){.fhome{padding-top:14px}.fhome-top{margin-bottom:10px}.fhome-sechd{margin-top:18px}}
 @media (max-height:500px){
-  .fhome-hero{height:170px;padding:12px 16px}
-  .fhome-kick{margin-bottom:6px}
-  .fhome-hero-copy h1{font-size:22px}
-  .fhome-sub{margin-top:6px;font-size:9px;line-height:1.4}
-  .fhome-cta{margin-top:10px}
-  .fhome-btn-ai,.fhome-btn-stock{min-height:32px;padding:7px 11px;font-size:9px}
+  .fhome{padding-top:12px}
+  .fhome-hero{padding:14px}
+  .fhome-sub{font-size:10px}
+  .fhome-heroprompt{margin-top:10px}
 }
+
+/* Home'da sync ikonkasi takroriy boshqaruv: ma'lumotlar avtomatik yuklanadi;
+   qo'lda refresh Browse/Create sahifalarida qoladi. */
+html.home-mode .af-topbar .af-tb-r>.af-tb-icon{display:none}
+html.host-premiere .af-tb-cred .hd-plan{display:none}
+
+/* Home katalog kartalari sokin qoladi: professional asset browserda hover karta
+   geometriyasini siljitmaydi, faqat border va action affordance ko'rinadi. */
+html.home-mode .axroot .fhome-tcard:hover,
+html.home-mode .axroot .fhome-tcard:active{transform:none}
 
 /* ═══ SC_51: MOTION SYSTEM — Director's motion laws (transform/opacity only, GPU-cheap) ═══
    Applied to the interaction points only; prices/errors never animate; clicks work mid-animation. */

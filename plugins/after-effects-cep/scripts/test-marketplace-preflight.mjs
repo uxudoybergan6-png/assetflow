@@ -125,13 +125,13 @@ function manifestMutation(label, mutate, expectLabel) {
 }
 
 manifestMutation(
-  "ExtensionBundleVersion drifti (1.1.1 → 9.9.9)",
-  (x) => x.replace('ExtensionBundleVersion="1.1.1"', 'ExtensionBundleVersion="9.9.9"'),
+  "ExtensionBundleVersion drifti (1.2.0 → 9.9.9)",
+  (x) => x.replace('ExtensionBundleVersion="1.2.0"', 'ExtensionBundleVersion="9.9.9"'),
   /versiya sinxron/
 );
 manifestMutation(
   "<Extension Version=> bundle versiyasidan ajradi",
-  (x) => x.replace('<Extension Id="com.frameflow.panel" Version="1.1.1"/>', '<Extension Id="com.frameflow.panel" Version="1.0.0"/>'),
+  (x) => x.replace('<Extension Id="com.frameflow.panel" Version="1.2.0"/>', '<Extension Id="com.frameflow.panel" Version="1.0.0"/>'),
   /Extension Version/
 );
 manifestMutation(
@@ -146,7 +146,7 @@ manifestMutation(
 );
 manifestMutation(
   "ichki Admin ID qo'shildi",
-  (x) => x.replace("</ExtensionList>", '  <Extension Id="com.frameflow.admin" Version="1.1.1"/>\n  </ExtensionList>'),
+  (x) => x.replace("</ExtensionList>", '  <Extension Id="com.frameflow.admin" Version="1.2.0"/>\n  </ExtensionList>'),
   /ExtensionList/
 );
 manifestMutation(
@@ -156,7 +156,7 @@ manifestMutation(
 );
 manifestMutation(
   "ScriptPath olib tashlandi",
-  (x) => x.replace("<ScriptPath>./jsx/host.jsx</ScriptPath>", ""),
+  (x) => x.replace("<ScriptPath>./jsx/host-bootstrap.jsx</ScriptPath>", ""),
   /ScriptPath/
 );
 manifestMutation(
@@ -165,8 +165,8 @@ manifestMutation(
   /Menu/
 );
 manifestMutation(
-  "HostList e'lon qilinmagan ilovaga kengaytirildi (PPRO)",
-  (x) => x.replace('<Host Name="AEFT" Version="[22.0,99.9]"/>', '<Host Name="AEFT" Version="[22.0,99.9]"/>\n      <Host Name="PPRO" Version="[22.0,99.9]"/>'),
+  "HostList e'lon qilinmagan ilovaga kengaytirildi (PHXS)",
+  (x) => x.replace('<Host Name="PPRO" Version="[22.0,99.9]"/>', '<Host Name="PPRO" Version="[22.0,99.9]"/>\n      <Host Name="PHXS" Version="[22.0,99.9]"/>'),
   /HostList/
 );
 manifestMutation(
@@ -528,12 +528,12 @@ metaCase(
   { expectFail: /narx da'vosi/ }
 );
 metaCase(
-  "manifestda yo'q mahsulot mosligi (Premiere Pro)",
+  "manifestda yo'q mahsulot mosligi (Photoshop)",
   (d) => {
     filledDoc(d);
-    d.listing.longDescription = "Works in After Effects and Premiere Pro.";
+    d.listing.longDescription = "Works in After Effects and Photoshop.";
   },
-  { expectFail: /Premiere Pro/ }
+  { expectFail: /Photoshop/ }
 );
 metaCase(
   "kalit so'zda soxta da'vo",

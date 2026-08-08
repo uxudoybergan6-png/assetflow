@@ -607,7 +607,7 @@ export function uninstallScript() {
     "",
     'echo "FrameFlow — Uninstall"',
     'echo',
-    'echo "Quit After Effects before continuing."',
+    'echo "Quit After Effects and Premiere Pro before continuing."',
     'echo',
     'if [ -d "$EXT" ]; then',
     '  echo "This will remove the FrameFlow panel:"',

@@ -5,14 +5,15 @@
      ExtensionBundleVersion AssetFlow_Plugin.html'dagi window.AF_PLUGIN_VERSION bilan SINXRON. -->
 <ExtensionManifest Version="7.0"
   ExtensionBundleId="com.frameflow"
-  ExtensionBundleVersion="1.1.1"
+  ExtensionBundleVersion="1.2.0"
   ExtensionBundleName="FrameFlow">
   <ExtensionList>
-    <Extension Id="com.frameflow.panel" Version="1.1.1"/>
+    <Extension Id="com.frameflow.panel" Version="1.2.0"/>
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
       <Host Name="AEFT" Version="[22.0,99.9]"/>
+      <Host Name="PPRO" Version="[22.0,99.9]"/>
     </HostList>
     <LocaleList>
       <Locale Code="All"/>
@@ -26,7 +27,7 @@
       <DispatchInfo>
         <Resources>
           <MainPath>./AssetFlow_Plugin.html</MainPath>
-          <ScriptPath>./jsx/host.jsx</ScriptPath>
+          <ScriptPath>./jsx/host-bootstrap.jsx</ScriptPath>
           <CEFCommandLine>
             <!-- Node/local-file mijoz oqimi uchun KERAK (import, pack yuklab olish/ochish).
                  Web-security'ni o'chiruvchi CEF bayrog'i TAQIQLANGAN (test shuni tekshiradi) —

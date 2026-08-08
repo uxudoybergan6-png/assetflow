@@ -5192,7 +5192,7 @@ function refreshAccountUi(){
   const u=typeof AssetFlowAccount!=='undefined'?AssetFlowAccount.getCachedUser():null;
   document.getElementById('accountLoginBlock').style.display=logged?'none':'block';
   document.getElementById('accountProfileBlock').style.display=logged?'block':'none';
-  // SC_28: WORKSPACE (Sessions/Projects) — faqat login bo'lganda (top-bar'dan ko'chgan)
+  // WORKSPACE shortcut — faqat login bo'lganda; asosiy yo'l AI launcher'da ko'rinadi.
   const wsBlock=document.getElementById('accountWorkspaceBlock');
   if(wsBlock)wsBlock.style.display=logged?'block':'none';
   document.getElementById('accountPlanBlock').style.display=logged?'block':'none';

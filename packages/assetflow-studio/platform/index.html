@@ -20758,7 +20758,10 @@ class Component extends DCLogic {
       if (ql) p.quality = (ql.options.indexOf(st.aiQuality) >= 0 ? st.aiQuality : ql.def);
       // P8 — ko'p-referens (maxRefs gacha); plagin shakli 1:1 (referenceUrl + referenceUrls)
       const icaps = this.refCaps('image', model);
-      const irefs = icaps.kind === 'image' ? st.refImages.slice(0, icaps.max) : [];
+      const iproj = this.projectRefs('image', model);
+      const irefs = icaps.kind === 'image'
+        ? iproj.items.filter(it => it.k === 'img' && it.active).map(it => it.url)
+        : [];
       if (irefs.length) { p.referenceUrl = irefs[0]; p.referenceUrls = irefs; }
     } else if (tool.mode === 'video') {
       // P8 — duration videoSettings deskriptoridan ('Auto' qo'llab-quvvatlanadi), def bilan
@@ -20788,16 +20791,20 @@ class Component extends DCLogic {
         // END_FRAME_REQUIRES_START: end faqat start bilan
         if (vcaps.end && st.refStartUrl && st.refEndUrl) p.referenceEndUrl = st.refEndUrl;
       } else if (vcaps.kind === 'media') {
+        const vproj = this.projectRefs('video', model);
+        const startActive = vproj.items.some(it => it.k === 'start' && it.active);
+        const endActive = vproj.items.some(it => it.k === 'end' && it.active);
         // BATCH5 #5 — media model kadr ham qo'llasa: start/end kadr media-refs BILAN birga ketadi
         // (END_FRAME_REQUIRES_START: end faqat start bilan — server 400 bermasin)
-        if (vcaps.frames && st.refStartUrl) {
+        if (vcaps.frames && st.refStartUrl && startActive) {
           p.referenceUrl = st.refStartUrl;
-          if (vcaps.end && st.refEndUrl) p.referenceEndUrl = st.refEndUrl;
+          if (vcaps.end && st.refEndUrl && endActive) p.referenceEndUrl = st.refEndUrl;
         }
-        const L = vcaps.lim;
-        if (st.refImages.length && L.image) p.imageUrls = st.refImages.slice(0, L.image);
-        if (st.refVideos.length && L.video) p.videoUrls = st.refVideos.slice(0, L.video);
-        if (st.refAudios.length && L.audio) p.audioUrls = st.refAudios.slice(0, L.audio);
+        const activeUrls = k => vproj.items.filter(it => it.k === k && it.active).map(it => it.url);
+        const imgs = activeUrls('img'), vids = activeUrls('vid'), auds = activeUrls('aud');
+        if (imgs.length) p.imageUrls = imgs;
+        if (vids.length) p.videoUrls = vids;
+        if (auds.length) p.audioUrls = auds;
       }
     } else if (tool.mode === 'voice') {
       const voices = model.voices || [];
@@ -21411,7 +21418,7 @@ class Component extends DCLogic {
   // model-mustaqil: pickModel undan HECH NARSA o'chirmaydi. Bu funksiya joriy model imkoniyatiga
   // qarab har referensni FAOL (yuboriladi) yoki NOFAOL (xira, sabab bilan turadi) deb belgilaydi.
   // Raqamlash hovuz indeksiga bog'liq — model almashsa qayta raqamlanmaydi. buildParams faqat
-  // FAOL bo'ladigan qismini (caps limiti bo'yicha slice) yuboradi — ikkovi bir manbadan.
+  // shu proyeksiyada FAOL deb belgilangan qismini yuboradi — modality va umumiy limit bir manba.
   projectRefs(mode, model) {
     const st = this.state, caps = this.refCaps(mode, model);
     const mn = (model && model.label) || 'this model';
@@ -21427,6 +21434,30 @@ class Component extends DCLogic {
     st.refImages.forEach((u, i) => items.push(mk('img', i, u, true, '@img' + (i + 1), i < imgLim, imgLim > 0 ? ('not sent — ' + mn + ' uses ' + imgLim + ' image' + (imgLim > 1 ? 's' : '')) : (mn + " doesn't accept image references"))));
     st.refVideos.forEach((u, i) => items.push(mk('vid', i, u, false, '@video' + (i + 1), i < vidLim, vidLim > 0 ? ('not sent — ' + mn + ' uses ' + vidLim + ' video' + (vidLim > 1 ? 's' : '')) : (mn + " doesn't accept video references"))));
     st.refAudios.forEach((u, i) => items.push(mk('aud', i, u, false, '@audio' + (i + 1), i < audLim, audLim > 0 ? ('not sent — ' + mn + ' uses ' + audLim + ' audio') : (mn + " doesn't accept audio references"))));
+    // Frames ham image budget va mediaRefs.total ichiga kiradi. Oldingi kod per-modality
+    // slice qilardi, lekin jami limitni oshirib server 400 berishi mumkin edi.
+    if (caps.kind === 'media') {
+      const used = { image: 0, video: 0, audio: 0 };
+      const max = {
+        image: Number(caps.lim.image) || 0,
+        video: Number(caps.lim.video) || 0,
+        audio: Number(caps.lim.audio) || 0,
+      };
+      const totalMax = Number(caps.lim.total) || (max.image + max.video + max.audio);
+      let total = 0;
+      items.forEach(it => {
+        const modality = (it.k === 'start' || it.k === 'end' || it.k === 'img') ? 'image' : (it.k === 'vid' ? 'video' : 'audio');
+        if (!it.active) return;
+        if (used[modality] >= max[modality] || total >= totalMax) {
+          it.active = false;
+          it.cls = 'va-axrefthumb dim';
+          it.reason = 'not sent — ' + mn + ' reference limit reached';
+          return;
+        }
+        used[modality] += 1;
+        total += 1;
+      });
+    }
     return { caps, items, imgLim, vidLim, audLim, framesOk, endOk };
   }
   // P13 — promptda ESLATILGAN, lekin joriy modelda NOFAOL bo'ladigan referenslar ro'yxati (pre-flight)

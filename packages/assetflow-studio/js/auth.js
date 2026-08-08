@@ -44,11 +44,9 @@ const AssetFlowAuth = (() => {
    * so'rardi. Endi `localStorage`da ham nusxa saqlanadi va yangi tab uni bir marta
    * o'ziga ko'chirib oladi.
    *
-   * Xavfsizlik: nusxa MUDDATLI (`at` + 12 soat) — XSS bilan o'g'irlangan token
-   * cheksiz yashamasin; server tokeni ham o'z muddatiga ega va muddati tugagach
-   * global 401 ishlovi ikkala qavatni ham tozalaydi (`clearSession`).
+   * Xavfsizlik: tokenning umrini server tekshiradi; sessiya davomiyligi
+   * (JWT exp) localStorage'da qo'shimcha cheklov bilan bekor bo'lmaydi.
    */
-  const PERSIST_MAX_AGE_MS = 12 * 3600 * 1000;
 
   function readStore(store) {
     try {
@@ -64,10 +62,6 @@ const AssetFlowAuth = (() => {
     if (s) return s;
     const p = readStore(localStorage);
     if (!p) return null;
-    if (!p.at || Date.now() - p.at > PERSIST_MAX_AGE_MS) {
-      clearSession();
-      return null;
-    }
     try {
       sessionStorage.setItem(KEY, JSON.stringify(p));
     } catch {

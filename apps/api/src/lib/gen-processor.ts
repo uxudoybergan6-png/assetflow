@@ -747,9 +747,15 @@ async function runFalRefVideo(
     matAll(params.videoUrls),
     matAll(params.audioUrls),
   ]);
-  const imageUrls = imageUrlsRaw.slice(0, lim.image);
-  const videoUrls = videoUrlsRaw.slice(0, lim.video);
-  const audioUrls = audioUrlsRaw.slice(0, lim.audio);
+  if (imageUrlsRaw.length > lim.image)
+    return { ok: false, error: `This model accepts at most ${lim.image} image references` };
+  if (videoUrlsRaw.length > lim.video)
+    return { ok: false, error: `This model accepts at most ${lim.video} video references` };
+  if (audioUrlsRaw.length > lim.audio)
+    return { ok: false, error: `This model accepts at most ${lim.audio} audio references` };
+  const imageUrls = imageUrlsRaw;
+  const videoUrls = videoUrlsRaw;
+  const audioUrls = audioUrlsRaw;
   // Schema: audio bo'lsa kamida 1 image/video kerak.
   if (audioUrls.length && imageUrls.length + videoUrls.length === 0) {
     return { ok: false, error: "An audio reference requires at least 1 image or video reference" };
@@ -832,6 +838,9 @@ async function runByteplusVideo(
   if (!refUrl && videoRequiresStartFrame(model)) {
     return { ok: false, error: "A start frame (referenceUrl) is required for video" };
   }
+  if (refEndUrl && !model.endFrame) {
+    return { ok: false, error: "This model does not support an end frame" };
+  }
   const matAll = async (val: unknown): Promise<string[]> => {
     const list = Array.isArray(val)
       ? (val as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
@@ -848,14 +857,21 @@ async function runByteplusVideo(
     matAll(params.videoUrls),
     matAll(params.audioUrls),
   ]);
-  const imageUrls = imageUrlsRaw.slice(0, lim.image);
-  const videoUrls = videoUrlsRaw.slice(0, lim.video);
-  const audioUrls = audioUrlsRaw.slice(0, lim.audio);
+  const imageCount = imageUrlsRaw.length + (startUrl ? 1 : 0) + (endUrl ? 1 : 0);
+  if (imageCount > lim.image)
+    return { ok: false, error: `This model accepts at most ${lim.image} image references` };
+  if (videoUrlsRaw.length > lim.video)
+    return { ok: false, error: `This model accepts at most ${lim.video} video references` };
+  if (audioUrlsRaw.length > lim.audio)
+    return { ok: false, error: `This model accepts at most ${lim.audio} audio references` };
+  const imageUrls = imageUrlsRaw;
+  const videoUrls = videoUrlsRaw;
+  const audioUrls = audioUrlsRaw;
   // Schema (docs §3): "text+audio" / "faqat audio" qo'llanmaydi — audio bo'lsa kamida 1 rasm/video.
   if (audioUrls.length && !startUrl && imageUrls.length + videoUrls.length === 0) {
     return { ok: false, error: "An audio reference requires at least 1 image or video reference" };
   }
-  if (imageUrls.length + videoUrls.length + audioUrls.length > lim.total) {
+  if (imageCount + videoUrls.length + audioUrls.length > lim.total) {
     return { ok: false, error: `Total references must be ≤${lim.total}` };
   }
   const v = resolveVideoParams(model, params);
@@ -966,6 +982,9 @@ async function runKlingVideo(
   if (!refUrl && videoRequiresStartFrame(model)) {
     return { ok: false, error: "A start frame (referenceUrl) is required for video" };
   }
+  if (refEndUrl && !model.endFrame) {
+    return { ok: false, error: "This model does not support an end frame" };
+  }
   const matAll = async (val: unknown): Promise<string[]> => {
     const list = Array.isArray(val)
       ? (val as unknown[]).filter((x): x is string => typeof x === "string" && x.length > 0)
@@ -979,8 +998,15 @@ async function runKlingVideo(
     matAll(params.imageUrls),
     matAll(params.videoUrls),
   ]);
-  const imageUrls = imageUrlsRaw.slice(0, lim.image);
-  const videoUrls = videoUrlsRaw.slice(0, lim.video);
+  const imageCount = imageUrlsRaw.length + (startUrl ? 1 : 0) + (endUrl ? 1 : 0);
+  if (imageCount > lim.image)
+    return { ok: false, error: `This model accepts at most ${lim.image} image references` };
+  if (videoUrlsRaw.length > lim.video)
+    return { ok: false, error: `This model accepts at most ${lim.video} video references` };
+  if (imageCount + videoUrlsRaw.length > lim.total)
+    return { ok: false, error: `This model accepts at most ${lim.total} total references` };
+  const imageUrls = imageUrlsRaw;
+  const videoUrls = videoUrlsRaw;
   const v = resolveVideoParams(model, params);
   const { path, body } = buildKlingVideoRequest(model, prompt, v, {
     startUrl,
@@ -1263,17 +1289,22 @@ async function runVertexOmniVideo(
     ? (params.videoUrls as unknown[]).filter((u): u is string => typeof u === "string" && u.length > 0)
     : [];
 
-  // P8 C2: mediaRefs.total ham enforce qilinadi (oldin img≤3 + vid≤2 = 5 ketishi mumkin edi).
-  const cappedImages = imageRefs.slice(0, lim.image);
+  // Defense in depth: route validator normalda buni oldin ushlaydi. Persist qilingan eski job
+  // ham ortiqcha referensni jim kesib yubormasligi kerak.
   const totalCap = typeof lim.total === "number" && lim.total > 0 ? lim.total : lim.image + lim.video;
-  const cappedVideos = videoRefs.slice(0, Math.max(0, Math.min(lim.video, totalCap - cappedImages.length)));
-  const inlines = (await Promise.all(cappedImages.map((u) => refUrlToInlineImage(u)))).filter(
+  if (imageRefs.length > lim.image)
+    return { ok: false, error: `This model accepts at most ${lim.image} image references` };
+  if (videoRefs.length > lim.video)
+    return { ok: false, error: `This model accepts at most ${lim.video} video references` };
+  if (imageRefs.length + videoRefs.length > totalCap)
+    return { ok: false, error: `This model accepts at most ${totalCap} total references` };
+  const inlines = (await Promise.all(imageRefs.map((u) => refUrlToInlineImage(u)))).filter(
     (x): x is { data: string; mimeType: string } => !!x
   );
-  const vids = (await Promise.all(cappedVideos.map((u) => videoRefToOmniInput(u)))).filter(
+  const vids = (await Promise.all(videoRefs.map((u) => videoRefToOmniInput(u)))).filter(
     (x): x is { gsUri?: string; data?: string } => !!x
   );
-  if (cappedVideos.length && vids.length < cappedVideos.length)
+  if (videoRefs.length && vids.length < videoRefs.length)
     return { ok: false, error: "Video reference is too large or failed to upload (needs gs:// or ≤15MB)" };
 
   const out = await omniGenerateVideo(model.key, prompt, {
@@ -1560,7 +1591,7 @@ export async function processGeneration(genId: string): Promise<void> {
       // farqi: Seedream'da referens IXTIYORIY (refMode 'optional') — bo'sh bo'lsa sof t2i.
       const falNeedsRef = (useFal || useByteplusImg || useKlingImg) && refMode !== "none"; // edit modeli referens talab qiladi; t2i — yo'q
       if (falNeedsRef) {
-        // P8 C3: fal yo'lida ham maxRefs server-side kesiladi.
+        // Defense in depth: ortiqcha referens hech qachon jim kesilmaydi.
         const falRefCap = typeof model.maxRefs === "number" && model.maxRefs > 0 ? model.maxRefs : undefined;
         const rawRefs: string[] = (
           Array.isArray(params.referenceUrls)
@@ -1568,7 +1599,9 @@ export async function processGeneration(genId: string): Promise<void> {
             : refUrl
               ? [refUrl]
               : []
-        ).slice(0, falRefCap);
+        );
+        if (falRefCap != null && rawRefs.length > falRefCap)
+          return void (await fail(`This model accepts at most ${falRefCap} image references`));
         if (!rawRefs.length && !((useByteplusImg || useKlingImg) && model.refMode !== "required"))
           return void (await fail("An image is required for editing — upload one via ＋"));
         // PARALLEL — referenslar bir vaqtда R2'ga (odatda plagin allaqachon public R2 URL yuboradi → no-op).
@@ -1591,7 +1624,7 @@ export async function processGeneration(genId: string): Promise<void> {
       // chiqadi → xotira ozod). mapLimit eng ko'pi IMG_CONCURRENCY ta bir vaqtda → tezlik + cheklangan
       // xotira/429 (kichik Render instance). Natija TARTIBDA (slots[i]) → @imgN/asset tartibi saqlanadi.
       // Vertex edit uchun BARCHA referenslar (Gemini ko'p rasmni birlashtiradi) — TARTIB saqlanadi.
-      // P8 C3: katalog maxRefs endi SERVER'da ham kesiladi (oldin faqat UI cheklardi).
+      // Defense in depth: katalog maxRefs route'dan chetlab o'tgan eski joblarda ham qat'iy.
       const refCap = typeof model.maxRefs === "number" && model.maxRefs > 0 ? model.maxRefs : Infinity;
       const vertexRefUrls: string[] = (
         Array.isArray(params.referenceUrls)
@@ -1599,7 +1632,9 @@ export async function processGeneration(genId: string): Promise<void> {
           : refUrl
             ? [refUrl]
             : []
-      ).slice(0, refCap === Infinity ? undefined : refCap);
+      );
+      if (vertexRefUrls.length > refCap)
+        return void (await fail(`This model accepts at most ${refCap} image references`));
       // BATCH4 #1 — upscale: manba rasm MAJBURIY (route refMode gate ham bor; bu ikkinchi to'siq).
       const isUpscale = model.feature === "image-upscale";
       if (isUpscale && !vertexRefUrls.length)

@@ -1794,6 +1794,9 @@ function removeImportedTemplate(jsonStr) {
     var compIds = cfg.compIds || [];
     var folders = cfg.folders || [];
     var comps = cfg.comps || [];
+    if (!folderIds.length && !compIds.length) {
+      return JSON.stringify({ ok: false, code: "UNSAFE_LEGACY_REMOVE", message: "This legacy import has no stable item IDs and cannot be removed safely." });
+    }
     app.beginUndoGroup("FrameFlow Remove Template");
     var removed = 0;
     var byId = 0;
@@ -1804,19 +1807,29 @@ function removeImportedTemplate(jsonStr) {
     for (i = 0; i < compIds.length; i++) {
       if (removeProjectItemById(Number(compIds[i]))) { removed++; byId++; }
     }
-    // Eski (ID'siz) yozuvlar — nom bo'yicha
-    for (i = 0; i < folders.length; i++) {
-      if (folders[i] && removeProjectFolderByName(String(folders[i]))) removed++;
-    }
-    for (i = 0; i < comps.length; i++) {
-      if (comps[i]) removed += removeCompByExactName(String(comps[i]));
-    }
+    // Nom bo'yicha keng delete ataylab o'chirilgan: bir xil nomli user itemlari saqlanadi.
+    void folders;
+    void comps;
     app.endUndoGroup();
     return JSON.stringify({ ok: true, removed: removed, byId: byId });
   } catch (e) {
     try { app.endUndoGroup(); } catch (ignoreRm) {}
     return JSON.stringify({ ok: false, message: e.toString() });
   }
+}
+
+function getHostCapabilities() {
+    return JSON.stringify({
+        ok: true,
+        host: "ae",
+        nativeMogrtImport: false,
+        projectTemplateImport: true,
+        safeRemoveById: true,
+        projectReference: true,
+        timelineReference: true,
+        currentFrameReference: true,
+        publisher: true
+    });
 }
 
 /** Foydalanuvchidan yuklab olish papkasini so'raydi */

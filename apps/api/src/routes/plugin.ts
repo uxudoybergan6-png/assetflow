@@ -1,10 +1,9 @@
 import { Router } from "express";
 import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-import os from "os";
 import bcrypt from "bcryptjs";
+import fs from "fs";
 import { z } from "zod";
+import path from "path";
 import {
   PluginAccountStatus,
   PluginPlanTier,
@@ -69,6 +68,62 @@ import {
 
 export const pluginRouter = Router();
 
+const PLUGIN_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const PLUGIN_TOKEN_RENEW_BEFORE_MS = 48 * 60 * 60 * 1000;
+
+type PluginTokenRecord = {
+  token: string;
+  createdAt: Date;
+  expiresAt: Date;
+};
+
+type PluginTokenRepository = {
+  pluginToken: {
+    create: (args: {
+      data: { userId: string; token: string; expiresAt: Date };
+    }) => Promise<PluginTokenRecord>;
+    deleteMany: (args: {
+      where: {
+        userId: string;
+        expiresAt?: { lt: Date };
+        token?: string;
+      };
+    }) => Promise<unknown>;
+    findUnique: (args: {
+      where: { token: string };
+      select: {
+        createdAt: true;
+        expiresAt: true;
+      };
+    }) => Promise<PluginTokenRecord | null>;
+  };
+};
+
+function pluginRepo(db: { pluginToken: unknown } = prisma): PluginTokenRepository {
+  return db as PluginTokenRepository;
+}
+
+export async function cleanupExpiredPluginTokens(
+  userId: string,
+  db: { pluginToken: unknown } = prisma,
+): Promise<void> {
+  await pluginRepo(db).pluginToken.deleteMany({
+    where: {
+      userId,
+      expiresAt: { lt: new Date() },
+    },
+  });
+}
+
+function serializePluginToken(row: { createdAt: Date; expiresAt: Date } | null | undefined) {
+  if (!row) return null;
+  return {
+    issuedAt: row.createdAt.toISOString(),
+    expiresAt: row.expiresAt.toISOString(),
+    refreshAt: new Date(row.expiresAt.getTime() - PLUGIN_TOKEN_RENEW_BEFORE_MS).toISOString(),
+  };
+}
+
 /** Brute-force'dan himoya: login uchun qattiq limit */
 const loginLimiter = rateLimit({
   windowMs: 60_000,
@@ -108,40 +163,71 @@ const downloadLimiter = rateLimit({
   message: "Too many downloads — please slow down and try again shortly",
 });
 
-/**
- * (#32) Device-code oqimi — fishing qattiqlashtirildi:
- *  · TTL 10 → 5 daqiqa (o'g'irlangan havolaning yashash oynasi qisqaradi);
- *  · kod entropiyasi 4 bayt (32 bit) → 8 bayt (64 bit);
- *  · kod URL'da UZATILMAYDI — foydalanuvchi uni brauzerda QO'LDA kiritadi
- *    (hujumchi `device.html?code=<o'z kodi>` havolasini yubora olmaydi);
- *  · `/device/start` uchun alohida, qattiqroq rate-limit.
- */
+/** Google device sign-in: qisqa yashovchi, bir martalik browser request.
+ *  URL'da plugin access/refresh token YO'Q. Browser `requestId + state` oladi,
+ *  CEP esa alohida `pollToken` oladi — browser history tokenni o'g'irlay olmaydi. */
 const DEVICE_CODE_TTL_MS = 5 * 60 * 1000;
+const DEVICE_AUTH_SECRET =
+  process.env.DEVICE_AUTH_SECRET ?? process.env.JWT_SECRET ?? "dev-secret-change-me";
 
-/** Crockford base32 — chalkash belgilar (I, L, O, U) yo'q: qo'lda kiritish uchun. */
-const DEVICE_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-
-/** 8 bayt (64 bit) → 13 belgi, o'qish uchun 4 lik guruhlarga bo'linadi. */
 function generateDeviceCode(): string {
-  const bytes = crypto.randomBytes(8);
-  let bits = 0n;
-  for (const b of bytes) bits = (bits << 8n) | BigInt(b);
-  let out = "";
-  for (let i = 0; i < 13; i++) {
-    out = DEVICE_CODE_ALPHABET[Number(bits & 31n)] + out;
-    bits >>= 5n;
-  }
-  return out.replace(/(.{4})(.{4})(.{4})(.)/, "$1-$2-$3-$4");
+  return crypto.randomBytes(24).toString("hex"); // 192-bit nonce
 }
 
-/** Qo'lda kiritilgan kodni saqlangan shaklga keltiradi (defis/bo'shliq, I→1, O→0). */
 function normalizeDeviceCode(raw: unknown): string {
-  return String(raw ?? "")
-    .toUpperCase()
-    .replace(/[^0-9A-Z]/g, "")
-    .replace(/[IL]/g, "1")
-    .replace(/O/g, "0")
-    .replace(/(.{4})(.{4})(.{4})(.)/, "$1-$2-$3-$4");
+  return String(raw ?? "").trim().toLowerCase().replace(/[^0-9a-f]/g, "");
+}
+
+function deviceProof(kind: "browser" | "poll", requestId: string): string {
+  return crypto
+    .createHmac("sha256", DEVICE_AUTH_SECRET)
+    .update(`${kind}:${requestId}`)
+    .digest("hex");
+}
+
+function validDeviceProof(kind: "browser" | "poll", requestId: string, proof: unknown): boolean {
+  const expected = deviceProof(kind, requestId);
+  const supplied = String(proof ?? "");
+  if (supplied.length !== expected.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
+}
+
+export function validBrowserDeviceRequest(requestId: string, state: unknown): boolean {
+  if (!/^[0-9a-f]{48}$/.test(requestId)) return false;
+  // Oddiy oqim signed state bilan keladi. "Having trouble?" ichidagi qo'lda
+  // kiritish 192-bit bir martalik requestId'ning o'ziga tayanadi.
+  return state == null || state === "" || validDeviceProof("browser", requestId, state);
+}
+
+export function validDevicePollRequest(requestId: string, pollToken: unknown): boolean {
+  return /^[0-9a-f]{48}$/.test(requestId) && validDeviceProof("poll", requestId, pollToken);
+}
+
+export function createDeviceAuthChallenge(webUrl = getWebUrl()) {
+  const requestId = generateDeviceCode();
+  const state = deviceProof("browser", requestId);
+  const pollToken = deviceProof("poll", requestId);
+  const verificationUrl = `${webUrl.replace(/\/$/, "")}/device.html`;
+  return {
+    requestId,
+    state,
+    pollToken,
+    verificationUrl,
+    // Fragment server access loglari va Referer headeriga yuborilmaydi.
+    verificationUrlComplete: `${verificationUrl}#request=${encodeURIComponent(requestId)}&state=${encodeURIComponent(state)}`,
+  };
+}
+
+export function isDeviceRequestExpired(expiresAt: Date, now = new Date()): boolean {
+  return expiresAt <= now;
+}
+
+export function deviceRequestCanIssueCredentials(
+  status: string,
+  expiresAt: Date,
+  now = new Date(),
+): boolean {
+  return status === "confirmed" && !isDeviceRequestExpired(expiresAt, now);
 }
 
 function apiPublicBase(req: { protocol: string; get: (h: string) => string | undefined }) {
@@ -845,82 +931,81 @@ pluginRouter.get("/assets/:templateId/:kind", async (req: Request, res: Response
   await serveTemplateAsset(req, res, String(req.params.templateId), kind);
 });
 
-function cepPrefsPath() {
-  return path.join(
-    os.homedir(),
-    "Library/Application Support/Adobe/CEP/extensions/com.frameflow/assetflow-data/prefs.json"
-  );
+export async function ensurePluginToken(
+  userId: string,
+  reuseExisting = false,
+  db: { pluginToken: unknown } = prisma,
+) {
+  if (reuseExisting) void reuseExisting;
+  await cleanupExpiredPluginTokens(userId, db);
+  const pluginDb = pluginRepo(db);
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + PLUGIN_TOKEN_TTL_MS);
+  return pluginDb.pluginToken.create({ data: { userId, token, expiresAt } });
 }
 
-async function ensurePluginToken(userId: string, reuseExisting = true) {
-  if (reuseExisting) {
-    const existing = await prisma.pluginToken.findFirst({
-      where: { userId, expiresAt: { gt: new Date() } },
-      orderBy: { createdAt: "desc" },
-    });
-    if (existing) return existing.token;
-  }
-  const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  await prisma.pluginToken.deleteMany({ where: { userId } });
-  await prisma.pluginToken.create({ data: { userId, token, expiresAt } });
-  return token;
+export async function revokePluginToken(
+  userId: string,
+  token: string,
+  db: { pluginToken: unknown } = prisma,
+) {
+  if (!token) return false;
+  await pluginRepo(db).pluginToken.deleteMany({
+    where: {
+      userId,
+      token,
+    },
+  });
+  return true;
 }
 
 /** CEP panel token tekshiruvi */
 pluginRouter.get("/validate", requireAuth, async (req: Request, res: Response) => {
+  const pluginToken = req.pluginToken
+    ? {
+        token: req.pluginToken.token,
+        ...serializePluginToken(req.pluginToken),
+      }
+    : null;
   res.json({
     ok: true,
     userId: req.user!.userId,
     email: req.user!.email,
     role: req.user!.role,
+    pluginToken,
   });
 });
 
 pluginRouter.post("/token", requireAuth, async (req: Request, res: Response) => {
-  const token = await ensurePluginToken(req.user!.userId, false);
-  const row = await prisma.pluginToken.findFirst({
-    where: { userId: req.user!.userId, token },
+  const tokenRow = await ensurePluginToken(req.user!.userId, false);
+  res.json({
+    token: tokenRow.token,
+    pluginToken: serializePluginToken(tokenRow),
   });
-  res.json({ token, expiresAt: row?.expiresAt?.toISOString() ?? null });
 });
 
 /** Dashboard → AE: prefs.json ga cloud ulanishni yozish (plugin formasiz) */
 pluginRouter.post("/apply-ae-prefs", requireAuth, async (req: Request, res: Response) => {
-  const apiBaseUrl = (
-    (req.body?.apiBaseUrl as string) || getPublicApiUrl(req)
-  ).replace(/\/$/, "");
+  const apiBaseUrl =
+    ((req.body?.apiBaseUrl as string) || getPublicApiUrl(req)).replace(/\/$/, "");
 
-  const pluginToken =
-    (req.body?.token as string)?.trim() ||
-    (await ensurePluginToken(req.user!.userId, true));
-
-  const prefsPath = cepPrefsPath();
-  let prefs: {
-    favorites: string[];
-    downloaded: string[];
-    client: Record<string, unknown>;
-  } = { favorites: [], downloaded: [], client: {} };
-
-  try {
-    if (fs.existsSync(prefsPath)) {
-      prefs = { ...prefs, ...JSON.parse(fs.readFileSync(prefsPath, "utf8")) };
-    }
-  } catch {
-    /* yangi fayl */
-  }
-
-  prefs.client = { apiBaseUrl, token: pluginToken };
-
-  fs.mkdirSync(path.dirname(prefsPath), { recursive: true });
-  fs.writeFileSync(prefsPath, JSON.stringify(prefs, null, 2), "utf8");
+  const incoming = (req.body?.token as string | undefined)?.trim();
+  const tokenPreview = (incoming ? incoming : "").slice(0, 8);
 
   res.json({
     ok: true,
-    prefsPath,
+    legacyDisabled: true,
     apiBaseUrl,
-    tokenPreview: `${pluginToken.slice(0, 8)}…`,
+    tokenPreview: tokenPreview ? `${tokenPreview}…` : "",
   });
+});
+
+pluginRouter.post("/logout", requireAuth, async (req: Request, res: Response) => {
+  const header = String(req.headers.authorization || "");
+  const token = header.startsWith("Bearer ") ? header.slice(7) : "";
+  await revokePluginToken(req.user!.userId, token);
+
+  res.json({ ok: true });
 });
 
 pluginRouter.get("/subscription", requireAuth, async (req: Request, res: Response) => {
@@ -1049,10 +1134,11 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
     return;
   }
 
-  const token = await ensurePluginToken(user.id, true);
+  const tokenRow = await ensurePluginToken(user.id, false);
 
   res.json({
-    token,
+    token: tokenRow.token,
+    pluginToken: serializePluginToken(tokenRow),
     user: serializePluginUser(profile),
     apiBaseUrl: getPublicApiUrl(req),
     adminUrl: getAdminUrl(),
@@ -1068,22 +1154,45 @@ pluginRouter.post("/login", loginLimiter, async (req: Request, res: Response) =>
 pluginRouter.post("/device/start", deviceStartLimiter, async (_req: Request, res: Response) => {
   await prisma.pluginDeviceCode.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 
-  const code = generateDeviceCode();
+  const challenge = createDeviceAuthChallenge();
+  const { requestId, pollToken, verificationUrl, verificationUrlComplete } = challenge;
   const expiresAt = new Date(Date.now() + DEVICE_CODE_TTL_MS);
-  await prisma.pluginDeviceCode.create({ data: { code, expiresAt } });
+  await prisma.pluginDeviceCode.create({ data: { code: requestId, expiresAt } });
 
   res.json({
-    code,
-    // (#32) Kod URL'ga QO'SHILMAYDI — foydalanuvchi uni brauzerda o'zi kiritadi.
-    verificationUrl: `${getWebUrl()}/device.html`,
+    requestId,
+    pollToken,
+    verificationUrl,
+    verificationUrlComplete,
+    // Eski klient nomi — yangi klientlar requestId ishlatadi.
+    code: requestId,
     expiresIn: DEVICE_CODE_TTL_MS / 1000,
   });
 });
 
 const deviceConfirmSchema = z.object({
-  code: z.string().min(1),
+  requestId: z.string().min(32).optional(),
+  code: z.string().min(32).optional(),
+  state: z.string().length(64).optional(),
   credential: z.string().min(10),
-});
+}).refine((value) => Boolean(value.requestId || value.code));
+
+function deviceRequestFromBody(body: { requestId?: string; code?: string }): string {
+  return normalizeDeviceCode(body.requestId || body.code);
+}
+
+export async function claimDeviceLogin(
+  rowId: string,
+  userId: string,
+  pluginToken: string,
+  db: { pluginDeviceCode: { updateMany: (args: any) => Promise<{ count: number }> } } = prisma,
+): Promise<boolean> {
+  const claimed = await db.pluginDeviceCode.updateMany({
+    where: { id: rowId, status: "pending", expiresAt: { gt: new Date() } },
+    data: { status: "confirmed", userId, pluginToken },
+  });
+  return claimed.count === 1;
+}
 
 /** 2) Brauzer (device.html): Google ID token'ni koda bog'laydi */
 pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Response) => {
@@ -1093,14 +1202,17 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
     return;
   }
 
-  const row = await prisma.pluginDeviceCode.findUnique({
-    where: { code: normalizeDeviceCode(parsed.data.code) },
-  });
+  const requestId = deviceRequestFromBody(parsed.data);
+  if (!validBrowserDeviceRequest(requestId, parsed.data.state)) {
+    res.status(400).json({ error: "This sign-in link is invalid — start again from the plugin" });
+    return;
+  }
+  const row = await prisma.pluginDeviceCode.findUnique({ where: { code: requestId } });
   if (!row) {
     res.status(404).json({ error: "Code not found" });
     return;
   }
-  if (row.expiresAt < new Date()) {
+  if (isDeviceRequestExpired(row.expiresAt)) {
     await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
     res.status(410).json({ error: "Code has expired — please try again from the plugin" });
     return;
@@ -1155,21 +1267,24 @@ pluginRouter.post("/device/confirm", loginLimiter, async (req: Request, res: Res
     return;
   }
 
-  const pluginToken = await ensurePluginToken(user.id, true);
-  await prisma.pluginDeviceCode.update({
-    where: { id: row.id },
-    data: { status: "confirmed", userId: user.id, pluginToken },
-  });
+  const pluginToken = await ensurePluginToken(user.id, false);
+  if (!(await claimDeviceLogin(row.id, user.id, pluginToken.token))) {
+    await revokePluginToken(user.id, pluginToken.token);
+    res.status(409).json({ error: "This sign-in request has already been completed" });
+    return;
+  }
 
   res.json({ ok: true, email: user.email });
 });
 
 const devicePasswordSchema = z.object({
-  code: z.string().min(1),
+  requestId: z.string().min(32).optional(),
+  code: z.string().min(32).optional(),
+  state: z.string().length(64).optional(),
   email: z.string().email(),
   password: z.string().min(1),
   totpCode: z.string().min(4).max(16).optional(),
-});
+}).refine((value) => Boolean(value.requestId || value.code));
 
 /** 2b) Brauzer (device.html): email+parol bilan koda bog'laydi (Google muqobili).
  *  Google GIS mavjud bo'lmagan/bloklangan holatda ham foydalanuvchi kira oladi.
@@ -1181,14 +1296,17 @@ pluginRouter.post("/device/confirm-password", loginLimiter, async (req: Request,
     return;
   }
 
-  const row = await prisma.pluginDeviceCode.findUnique({
-    where: { code: normalizeDeviceCode(parsed.data.code) },
-  });
+  const requestId = deviceRequestFromBody(parsed.data);
+  if (!validBrowserDeviceRequest(requestId, parsed.data.state)) {
+    res.status(400).json({ error: "This sign-in link is invalid — start again from the plugin" });
+    return;
+  }
+  const row = await prisma.pluginDeviceCode.findUnique({ where: { code: requestId } });
   if (!row) {
     res.status(404).json({ error: "Code not found" });
     return;
   }
-  if (row.expiresAt < new Date()) {
+  if (isDeviceRequestExpired(row.expiresAt)) {
     await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
     res.status(410).json({ error: "Code has expired — please try again from the plugin" });
     return;
@@ -1230,38 +1348,127 @@ pluginRouter.post("/device/confirm-password", loginLimiter, async (req: Request,
     return;
   }
 
-  const pluginToken = await ensurePluginToken(user.id, true);
-  await prisma.pluginDeviceCode.update({
-    where: { id: row.id },
-    data: { status: "confirmed", userId: user.id, pluginToken },
-  });
+  const pluginToken = await ensurePluginToken(user.id, false);
+  if (!(await claimDeviceLogin(row.id, user.id, pluginToken.token))) {
+    await revokePluginToken(user.id, pluginToken.token);
+    res.status(409).json({ error: "This sign-in request has already been completed" });
+    return;
+  }
 
   res.json({ ok: true, email: user.email });
 });
 
-/** 3) Plagin: kod holatini pollik qiladi */
-pluginRouter.get("/device/poll", deviceStatusLimiter, async (req: Request, res: Response) => {
-  const code = normalizeDeviceCode(req.query.code);
-  const row = code ? await prisma.pluginDeviceCode.findUnique({ where: { code } }) : null;
+const deviceSessionSchema = z.object({
+  requestId: z.string().min(32),
+  state: z.string().length(64).optional(),
+});
 
-  if (!row || row.expiresAt < new Date()) {
-    if (row) await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
+/** Brauzerda FrameFlow sessiyasi allaqachon bo'lsa, Google oynasisiz shu hisobni tasdiqlaydi. */
+pluginRouter.post("/device/confirm-session", loginLimiter, requireAuth, async (req: Request, res: Response) => {
+  const parsed = deviceSessionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid sign-in request" });
+    return;
+  }
+  if (req.pluginToken) {
+    res.status(403).json({ error: "A web account session is required", code: "WEB_SESSION_REQUIRED" });
+    return;
+  }
+  const requestId = normalizeDeviceCode(parsed.data.requestId);
+  if (!validBrowserDeviceRequest(requestId, parsed.data.state)) {
+    res.status(400).json({ error: "This sign-in link is invalid — start again from the plugin" });
+    return;
+  }
+  const row = await prisma.pluginDeviceCode.findUnique({ where: { code: requestId } });
+  if (!row || isDeviceRequestExpired(row.expiresAt)) {
+    if (row) await prisma.pluginDeviceCode.deleteMany({ where: { id: row.id } });
+    res.status(410).json({ error: "Sign-in request expired — start again from the plugin" });
+    return;
+  }
+  if (row.status !== "pending") {
+    res.status(409).json({ error: "This sign-in request has already been used" });
+    return;
+  }
+  const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+  if (!user) {
+    res.status(401).json({ error: "Session expired", code: "TOKEN_INVALID" });
+    return;
+  }
+  if (user.role === "ADMIN" && user.totpEnabled) {
+    res.status(401).json({ error: "This admin account requires email sign-in with its 2FA code", code: "TWO_FA_REQUIRED" });
+    return;
+  }
+  const suspended = suspensionMessage(user);
+  if (suspended) {
+    res.status(403).json({ error: suspended, code: "ACCOUNT_SUSPENDED" });
+    return;
+  }
+  const profile = await ensurePluginProfile(user.id);
+  if (profile.status !== PluginAccountStatus.ACTIVE) {
+    const blocked = profile.status === PluginAccountStatus.BLOCKED;
+    res.status(403).json({
+      error: blocked ? "Account is blocked — contact an admin" : "Account is not active",
+      code: blocked ? "ACCOUNT_BLOCKED" : "ACCOUNT_INACTIVE",
+    });
+    return;
+  }
+  const pluginToken = await ensurePluginToken(user.id, false);
+  if (!(await claimDeviceLogin(row.id, user.id, pluginToken.token))) {
+    await revokePluginToken(user.id, pluginToken.token);
+    res.status(409).json({ error: "This sign-in request has already been completed" });
+    return;
+  }
+  res.json({ ok: true, email: user.email });
+});
+
+const devicePollSchema = z.object({
+  requestId: z.string().min(32),
+  pollToken: z.string().length(64),
+});
+
+/** 3) Plagin: holatni URL loglariga sir chiqarmasdan POST bilan poll qiladi. */
+pluginRouter.post("/device/poll", deviceStatusLimiter, async (req: Request, res: Response) => {
+  const parsed = devicePollSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid sign-in request" });
+    return;
+  }
+  const requestId = normalizeDeviceCode(parsed.data.requestId);
+  if (!validDevicePollRequest(requestId, parsed.data.pollToken)) {
+    res.status(403).json({ error: "Invalid sign-in request" });
+    return;
+  }
+  const row = await prisma.pluginDeviceCode.findUnique({ where: { code: requestId } });
+
+  if (!row || isDeviceRequestExpired(row.expiresAt)) {
+    if (row) await prisma.pluginDeviceCode.deleteMany({ where: { id: row.id } });
     res.json({ status: "expired" });
     return;
   }
 
   if (row.status === "denied") {
-    await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
+    await prisma.pluginDeviceCode.deleteMany({ where: { id: row.id } });
     res.json({ status: "denied" });
     return;
   }
 
-  if (row.status === "confirmed" && row.userId && row.pluginToken) {
+  if (deviceRequestCanIssueCredentials(row.status, row.expiresAt) && row.userId && row.pluginToken) {
+    const claimed = await prisma.pluginDeviceCode.deleteMany({
+      where: { id: row.id, status: "confirmed", pluginToken: row.pluginToken },
+    });
+    if (claimed.count !== 1) {
+      res.json({ status: "expired" });
+      return;
+    }
     const profile = await ensurePluginProfile(row.userId);
-    await prisma.pluginDeviceCode.delete({ where: { id: row.id } });
+    const tokenRow = await prisma.pluginToken.findUnique({
+      where: { token: row.pluginToken },
+      select: { createdAt: true, expiresAt: true },
+    });
     res.json({
       status: "confirmed",
       token: row.pluginToken,
+      pluginToken: tokenRow ? serializePluginToken(tokenRow) : null,
       user: serializePluginUser(profile),
       apiBaseUrl: getPublicApiUrl(req),
       adminUrl: getAdminUrl(),
@@ -1270,6 +1477,25 @@ pluginRouter.get("/device/poll", deviceStatusLimiter, async (req: Request, res: 
   }
 
   res.json({ status: "pending" });
+});
+
+/** Plugin oynasi yopilsa yoki foydalanuvchi Cancel bossa, pending request darhol bekor qilinadi. */
+pluginRouter.post("/device/cancel", deviceStatusLimiter, async (req: Request, res: Response) => {
+  const parsed = devicePollSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid sign-in request" });
+    return;
+  }
+  const requestId = normalizeDeviceCode(parsed.data.requestId);
+  if (!validDevicePollRequest(requestId, parsed.data.pollToken)) {
+    res.status(403).json({ error: "Invalid sign-in request" });
+    return;
+  }
+  await prisma.pluginDeviceCode.updateMany({
+    where: { code: requestId, status: "pending", expiresAt: { gt: new Date() } },
+    data: { status: "denied" },
+  });
+  res.json({ ok: true });
 });
 
 /** Joriy foydalanuvchi + tarif + limitlar */
@@ -1285,6 +1511,7 @@ pluginRouter.get("/me", requireAuth, async (req: Request, res: Response) => {
   }
   res.json({
     user: serializePluginUser(profile),
+    pluginToken: req.pluginToken ? serializePluginToken(req.pluginToken) : null,
     apiBaseUrl: getPublicApiUrl(req),
     adminUrl: getAdminUrl(),
   });

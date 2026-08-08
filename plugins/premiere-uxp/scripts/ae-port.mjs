@@ -2075,6 +2075,7 @@ function main() {
     "js/ae-shim/uxp-account-events.js", // login/Google → native UXP click (inline onclick emas)
     "js/ae-shim/uxp-import-events.js", // detail Import → native UXP async click
     "js/ae-shim/uxp-native-events.js", // barcha inline UI amallari → element native listener
+    "js/ae-shim/uxp-error-report.js", // ushlanmagan production xatolari → redacted AssetFlowLog
   ];
 
   // Premiere 26 UXP throws blank host-side exceptions while these legacy

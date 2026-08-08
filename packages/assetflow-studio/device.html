@@ -10,6 +10,7 @@
      (platform/index.html bilan SINXRON saqla — bir xil ff-theme kaliti) -->
 <script>(function(){try{var t=localStorage.getItem('ff-theme');if(t!=='noir'&&t!=='neon'&&t!=='cold'&&t!=='light')t='noir';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','noir');}})();</script>
 <script src="/studio/js/studio-config.js"></script>
+<script src="/ff-api.js?v=dev"></script>
 <script src="https://accounts.google.com/gsi/client?hl=en" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,6 +70,12 @@ h1{font-family:"Space Grotesk",sans-serif;letter-spacing:-.035em}
 .refund-line{display:flex;gap:10px;padding:12px;border-radius:9px;background:var(--accent-soft);margin-top:16px;color:var(--text-2);font-size:11px;text-align:left;align-items:flex-start}
 .refund-line i{font-size:22px;color:var(--success);font-style:normal;line-height:1}
 .refund-line b,.refund-line span>b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
+.account-choice{margin-top:18px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);text-align:left}
+.account-choice p{margin:0 0 10px;color:var(--muted);font-size:13px;word-break:break-word}
+.account-choice b{color:var(--text)}
+.trouble{margin-top:16px;text-align:left;border-top:1px solid var(--border);padding-top:14px}
+.trouble summary{cursor:pointer;color:var(--muted);font-weight:600;text-align:center}
+.status-line{margin-top:14px;color:var(--muted);font-size:12px;min-height:18px}
 .theme-cyc{position:fixed;top:18px;right:18px;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--muted);display:grid;place-items:center;cursor:pointer;font-size:15px;z-index:5}
 .theme-cyc:hover{color:var(--text);border-color:var(--accent)}
 </style>
@@ -80,38 +87,43 @@ h1{font-family:"Space Grotesk",sans-serif;letter-spacing:-.035em}
     <a class="brand" href="/" style="justify-content:center;margin-bottom:22px"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.1 9.6V6.1h3.5"/><path d="M14.4 6.1h3.5v3.5"/><path d="M6.1 14.4v3.5h3.5"/><path d="M14.4 17.9h3.5v-3.5"/><path d="M8.9 12h4.6"/><path d="m13.4 10 2 2-2 2"/></svg></span>FrameFlow</a>
     <div class="verify-card">
       <span class="mail-icon" aria-hidden="true">↧</span>
-      <span class="kicker">AFTER EFFECTS PLUGIN</span>
-      <h1>Confirm the AE plugin.</h1>
-      <p id="deviceIntro">Enter the code shown in the After Effects plugin, then sign in to approve it.</p>
+      <span class="kicker">FRAMEFLOW ADOBE PLUGIN</span>
+      <h1>Finish signing in.</h1>
+      <p id="deviceIntro">Confirm the account you want to use in After Effects and Premiere Pro.</p>
       <p class="auth-error hidden" id="deviceError" role="alert"></p>
-      <!-- (#32) Kod URL'dan AVTOMATIK to'ldirilmaydi — fishing havolasi (device.html?code=…)
-           bilan hujumchi qurbonning tokenini ololmasin. Foydalanuvchi kodni plagindan
-           ko'chirib o'zi kiritadi = "bu kodni siz kiritdingizmi?" tasdig'i. -->
-      <div class="field">
-        <label for="deviceCodeInput">PLUGIN CODE</label>
-        <input id="deviceCodeInput" type="text" inputmode="latin" autocomplete="off"
-               spellcheck="false" placeholder="XXXX-XXXX-XXXX-X"
-               style="text-align:center;letter-spacing:.12em;font-family:'JetBrains Mono',monospace;text-transform:uppercase" required>
+      <div class="account-choice hidden" id="deviceAccountChoice">
+        <p>You are already signed in as <b id="deviceAccountEmail"></b>.</p>
+        <button type="button" class="primary" style="width:100%" id="deviceSessionBtn">Continue with this account</button>
       </div>
-      <form id="devicePasswordForm">
-        <div class="field">
-          <label for="deviceEmailInput">EMAIL</label>
-          <input id="deviceEmailInput" type="email" name="email" autocomplete="username" placeholder="you@email.com" required>
-        </div>
-        <div class="field">
-          <label for="devicePassInput">PASSWORD</label>
-          <div class="pw-wrap">
-            <input id="devicePassInput" type="password" name="password" autocomplete="current-password" placeholder="Your password" required>
-            <button type="button" class="toggle-pw" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>
-          </div>
-        </div>
-        <button type="submit" class="primary full" id="devicePasswordBtn">Sign in &amp; approve &rarr;</button>
-      </form>
-      <div class="divider auth-or"><i></i><span>OR</span><i></i></div>
+      <div class="divider auth-or"><i></i><span id="deviceOrText">OR CONTINUE WITH GOOGLE</span><i></i></div>
       <div id="deviceGoogleBtn" style="display:flex;justify-content:center;margin-top:12px"></div>
+      <p class="status-line" id="deviceStatus">Waiting for account confirmation…</p>
+      <details class="trouble" id="deviceTrouble">
+        <summary>Having trouble?</summary>
+        <div class="field" id="deviceCodeField">
+          <label for="deviceCodeInput">SECURE REQUEST CODE</label>
+          <input id="deviceCodeInput" type="text" inputmode="latin" autocomplete="off" spellcheck="false"
+                 placeholder="Paste the request code from the plugin"
+                 style="font-family:'JetBrains Mono',monospace" required>
+        </div>
+        <form id="devicePasswordForm">
+          <div class="field">
+            <label for="deviceEmailInput">EMAIL</label>
+            <input id="deviceEmailInput" type="email" name="email" autocomplete="username" placeholder="you@email.com" required>
+          </div>
+          <div class="field">
+            <label for="devicePassInput">PASSWORD</label>
+            <div class="pw-wrap">
+              <input id="devicePassInput" type="password" name="password" autocomplete="current-password" placeholder="Your password" required>
+              <button type="button" class="toggle-pw" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+          <button type="submit" class="primary full" id="devicePasswordBtn">Sign in with email</button>
+        </form>
+      </details>
       <div id="deviceDone" class="refund-line hidden">
         <i aria-hidden="true">✓</i>
-        <span><b>Confirmed — <span id="deviceEmail"></span></b>You can close this window and return to the After Effects plugin.</span>
+        <span><b>You're signed in.</b>Return to After Effects or Premiere Pro. <span id="deviceEmail" class="hidden"></span></span>
       </div>
     </div>
   </div>
@@ -130,54 +142,97 @@ function cycleTheme(){var o=['noir','neon','cold','light'];var c=document.docume
   const doneEl = document.getElementById("deviceDone");
   const formEl = document.getElementById("devicePasswordForm");
   const orEl = document.querySelector(".auth-or");
+  const troubleEl = document.getElementById("deviceTrouble");
+  const statusEl = document.getElementById("deviceStatus");
+  const choiceEl = document.getElementById("deviceAccountChoice");
+  const sessionBtn = document.getElementById("deviceSessionBtn");
+  const params = new URLSearchParams(location.hash ? location.hash.slice(1) : location.search);
+  let requestId = (params.get("request") || "").toLowerCase().replace(/[^0-9a-f]/g, "");
+  let browserState = params.get("state") || "";
+  if (requestId) {
+    try { history.replaceState(null, "", location.pathname); } catch (_) {}
+  }
 
   function showError(msg) {
     errEl.textContent = msg;
     errEl.classList.remove("hidden");
+    if (statusEl) statusEl.textContent = "Sign-in needs your attention.";
   }
 
-  /** Kiritilgan kodni server bilan bir xil shaklga keltiradi (defis, I→1, O→0). */
-  function currentCode() {
-    const raw = (codeEl?.value || "")
-      .toUpperCase()
-      .replace(/[^0-9A-Z]/g, "")
-      .replace(/[IL]/g, "1")
-      .replace(/O/g, "0");
-    return raw.replace(/(.{4})(.{4})(.{4})(.)/, "$1-$2-$3-$4");
+  function currentRequest() {
+    const manual = (codeEl?.value || "").trim();
+    if (manual) {
+      try {
+        const pastedUrl = new URL(manual);
+        requestId = (pastedUrl.searchParams.get("request") || "").toLowerCase().replace(/[^0-9a-f]/g, "");
+        browserState = pastedUrl.searchParams.get("state") || "";
+      } catch (_) {
+        requestId = manual.toLowerCase().replace(/[^0-9a-f]/g, "");
+        browserState = "";
+      }
+    }
+    return requestId;
   }
-  // Kiritilayotganda avtomatik guruhlash (o'qish oson bo'lsin).
-  codeEl?.addEventListener("input", () => {
-    const pos = codeEl.value.length === codeEl.selectionStart;
-    codeEl.value = currentCode();
-    if (pos) codeEl.setSelectionRange(codeEl.value.length, codeEl.value.length);
-  });
 
-  // SC_38: lokal dev'da (localhost:3000) hardcoded prod meta emas — bo'sh baza =
-  // nisbiy /api → dev-studio-server proxy'si (:4000). Production'da meta o'zgarishsiz qoladi.
   const apiBase = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
     ? ""
     : (window.ASSETFLOW_STUDIO && window.ASSETFLOW_STUDIO.apiUrl) || "";
   const pwBtn = document.getElementById("devicePasswordBtn");
 
   function showConfirmed(email) {
+    try { history.replaceState(null, "", location.pathname); } catch (_) {}
     introEl.classList.add("hidden");
     btnEl.classList.add("hidden");
     errEl.classList.add("hidden");
-    if (formEl) formEl.classList.add("hidden");
+    if (choiceEl) choiceEl.classList.add("hidden");
+    if (troubleEl) troubleEl.classList.add("hidden");
+    if (statusEl) statusEl.classList.add("hidden");
     if (orEl) orEl.classList.add("hidden");
-    if (codeEl) codeEl.closest(".field")?.classList.add("hidden");
     document.getElementById("deviceEmail").textContent = email || "";
     doneEl.classList.remove("hidden");
   }
 
-  // ── Email + parol bilan tasdiqlash (Google muqobili, ishonchli yo'l) ──────
+  function requestBody(extra) {
+    return Object.assign({ requestId: currentRequest(), state: browserState || undefined }, extra || {});
+  }
+
+  if (requestId && codeEl) codeEl.closest(".field")?.classList.add("hidden");
+  if (!requestId) {
+    if (troubleEl) troubleEl.open = true;
+    showError("Paste the secure request code or link shown in the plugin.");
+  }
+
+  // Mavjud web sessiyasi: hisobni ko'rsatamiz, lekin foydalanuvchi aniq tasdiqlaydi.
+  const webUser = window.FFAPI?.getUser?.();
+  const webToken = window.FFAPI?.getToken?.();
+  if (webUser && webToken && requestId) {
+    document.getElementById("deviceAccountEmail").textContent = webUser.email || webUser.name || "your account";
+    choiceEl?.classList.remove("hidden");
+    if (document.getElementById("deviceOrText")) document.getElementById("deviceOrText").textContent = "OR USE ANOTHER ACCOUNT";
+  }
+  sessionBtn?.addEventListener("click", async () => {
+    sessionBtn.disabled = true;
+    statusEl.textContent = "Confirming your account…";
+    try {
+      const data = await window.FFAPI.req("/api/plugin/device/confirm-session", {
+        method: "POST",
+        body: requestBody(),
+        idempotent: true,
+      });
+      showConfirmed(data.email);
+    } catch (e) {
+      showError(e?.message || "Could not confirm this account");
+      sessionBtn.disabled = false;
+    }
+  });
+
+  // Email/parol — faqat Having trouble? ichidagi ikkilamchi yo'l.
   if (formEl) {
     formEl.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("deviceEmailInput").value.trim();
       const password = document.getElementById("devicePassInput").value;
-      const code = currentCode();
-      if (!code) { showError("Enter the code shown in the plugin"); return; }
+      if (!currentRequest()) { showError("Paste the secure request code shown in the plugin"); return; }
       if (!email || !password) { showError("Enter your email and password"); return; }
       errEl.classList.add("hidden");
       if (pwBtn) { pwBtn.disabled = true; pwBtn.textContent = "Signing in…"; }
@@ -185,31 +240,31 @@ function cycleTheme(){var o=['noir','neon','cold','light'];var c=document.docume
         const r = await fetch(`${apiBase}/api/plugin/device/confirm-password`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, email, password }),
+          body: JSON.stringify(requestBody({ email, password })),
         });
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
           showError(data.error || "Could not sign in — please try again");
-          if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in & approve →"; }
+          if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in with email"; }
           return;
         }
         showConfirmed(data.email);
       } catch {
         showError("Network error — check your connection and try again");
-        if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in & approve →"; }
+        if (pwBtn) { pwBtn.disabled = false; pwBtn.textContent = "Sign in with email"; }
       }
     });
   }
 
   // ── Google bilan tasdiqlash ───────────────────────────────────────────────
   async function onGoogleCredential(resp) {
-    const code = currentCode();
-    if (!code) { showError("Enter the code shown in the plugin, then sign in"); return; }
+    if (!currentRequest()) { showError("Paste the secure request code shown in the plugin"); return; }
+    statusEl.textContent = "Confirming your Google account…";
     try {
       const r = await fetch(`${apiBase}/api/plugin/device/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, credential: resp.credential }),
+        body: JSON.stringify(requestBody({ credential: resp.credential })),
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) {
@@ -236,6 +291,8 @@ function cycleTheme(){var o=['noir','neon','cold','light'];var c=document.docume
       if (googleTries++ > 25) { // ~5s — GIS yuklanmadi (bloklangan/oflayn): email/parolga tayanamiz
         btnEl.classList.add("hidden");
         if (orEl) orEl.classList.add("hidden");
+        if (troubleEl) troubleEl.open = true;
+        showError("Google sign-in could not load. Use email instead.");
         return;
       }
       setTimeout(initGoogleButton, 200);

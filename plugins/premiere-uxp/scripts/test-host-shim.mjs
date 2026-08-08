@@ -11,6 +11,10 @@ const SHIM = path.resolve(HERE, "..", "js", "ae-shim", "csinterface-shim.js");
 const CEP_FS = path.resolve(HERE, "..", "js", "ae-shim", "cep-fs.js");
 const NODE_IO = path.resolve(HERE, "..", "js", "ae-shim", "node-io.js");
 const REQUIRE_SHIM = path.resolve(HERE, "..", "js", "ae-shim", "require-shim.js");
+const AE_PANEL = path.resolve(HERE, "..", "..", "after-effects-cep", "AssetFlow_Plugin.html");
+const PORTED_BODY = path.resolve(HERE, "..", "ported", "ae-body.html");
+const PORTED_CORE = path.resolve(HERE, "..", "ported", "ae-inline-05.js");
+const PORTED_SESSIONS = path.resolve(HERE, "..", "ported", "ae-inline-08.js");
 
 const calls = [];
 const source = {
@@ -20,8 +24,17 @@ const source = {
   },
   async close() { calls.push(["close-source"]); },
 };
+const activeSequence = {
+  name: "Main Timeline",
+  async getInPoint() { return { seconds: 2 }; },
+  async getOutPoint() { return { seconds: 9.5 }; },
+  async getEndTime() { return { seconds: 12 }; },
+};
 const target = {
   path: "/work/current.prproj",
+  name: "Current Project.prproj",
+  async getActiveSequence() { return activeSequence; },
+  async getSequences() { return [activeSequence]; },
   async importSequences(sourcePath, ids) {
     calls.push(["importSequences", sourcePath, Array.from(ids)]);
     return true;
@@ -83,6 +96,22 @@ assert.deepEqual(calls, [
   ["importSequences", source.path, ["seq-a", "seq-b"]],
   ["close-source"],
 ]);
+
+const capabilities = JSON.parse(await new Promise((resolve) => cs.evalScript("getHostCapabilities()", resolve)));
+assert.equal(capabilities.ok, true);
+assert.equal(capabilities.bridge, "uxp");
+assert.equal(capabilities.currentFrameReference, true);
+
+const workArea = JSON.parse(await new Promise((resolve) => cs.evalScript("getWorkAreaInfo()", resolve)));
+assert.deepEqual({ start: workArea.start, end: workArea.end, duration: workArea.duration }, { start: 2, end: 9.5, duration: 7.5 });
+
+const projectTree = JSON.parse(await new Promise((resolve) => cs.evalScript("refreshProjectPanel()", resolve)));
+assert.equal(projectTree.projectName, "Current Project");
+assert.equal(projectTree.compCount, 1);
+
+const projectSelection = JSON.parse(await new Promise((resolve) => cs.evalScript("getSelectedProjectReference()", resolve)));
+assert.equal(projectSelection.ok, false);
+assert.equal(projectSelection.code, "PROJECT_SELECTION_UNAVAILABLE");
 
 // Data folder hali boot bo'lmagan holat: writable temp, plugin folder EMAS.
 win.__FFNodeIO.dataDir = () => "";
@@ -155,4 +184,23 @@ assert.equal(pathShim.basename("/plugin/data/prefs.json", ".json"), "prefs");
 assert.equal(pathShim.extname("/plugin/data/prefs.json"), ".json");
 assert.equal(pathShim.relative("/plugin/data", "/plugin/data/blobs/a"), "blobs/a");
 
-console.log("✓ host shim: writable path + path + .prproj import + cep.fs kontraktlari o'tdi");
+// AE yagona manba → Premiere port parity: serverda saqlanadigan workspace'lar
+// yashirilmasin va UXP sessiya picker'ini ataylab chetlab o'tmasin.
+const aePanel = fs.readFileSync(AE_PANEL, "utf8");
+const portedBody = fs.readFileSync(PORTED_BODY, "utf8");
+const portedCore = fs.readFileSync(PORTED_CORE, "utf8");
+const portedSessions = fs.readFileSync(PORTED_SESSIONS, "utf8");
+for (const html of [aePanel, portedBody]) {
+  assert.match(html, /class="ai-seg ai-workspace-nav"/);
+  assert.match(html, /data-go="sessions">Sessions</);
+  assert.match(html, /data-go="projects">Projects</);
+}
+assert.doesNotMatch(aePanel, /Premiere 26\.2 UXP populated picker/);
+assert.doesNotMatch(portedSessions, /Premiere 26\.2 UXP populated picker/);
+assert.doesNotMatch(portedSessions, /FFRepaint&&uxpView/);
+assert.match(portedSessions, /uxpView\.style\.setProperty\('animation','none'\)/);
+assert.match(portedCore, /_uxpWorkspacePrepared/);
+assert.match(portedCore, /_uxpComposerTarget=\(id==='imggen'\|\|id==='vidgen'\|\|id==='audgen'\)/);
+assert.match(portedCore, /_cv\.style\.removeProperty\(_p\)/);
+
+console.log("✓ host shim: writable path + path + .prproj import + cep.fs + AE/PR session parity o'tdi");

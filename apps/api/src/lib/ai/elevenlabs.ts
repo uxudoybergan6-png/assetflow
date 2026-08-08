@@ -18,6 +18,14 @@ export type ElResult =
 
 const NOT_CONFIGURED: ElResult = { ok: false, error: "ELEVENLABS_NOT_CONFIGURED" };
 
+export function buildElevenLabsSfxRequest(prompt: string, durationSeconds?: number): Record<string, unknown> {
+  const body: Record<string, unknown> = { text: prompt, prompt_influence: 0.4 };
+  if (typeof durationSeconds === "number" && Number.isFinite(durationSeconds)) {
+    body.duration_seconds = Math.max(0.5, Math.min(22, durationSeconds));
+  }
+  return body;
+}
+
 /**
  * Matn → tovush effekti. duration 0.5–22s (berilmasa model avto tanlaydi).
  * RAW mp3 bayt qaytaradi (JSON emas) — orSpeech naqshiga o'xshash.
@@ -27,10 +35,7 @@ export async function elSoundEffects(
   durationSeconds?: number
 ): Promise<ElResult> {
   if (!isElevenLabsConfigured()) return NOT_CONFIGURED;
-  const body: Record<string, unknown> = { text: prompt, prompt_influence: 0.4 };
-  if (typeof durationSeconds === "number" && Number.isFinite(durationSeconds)) {
-    body.duration_seconds = Math.max(0.5, Math.min(22, durationSeconds));
-  }
+  const body = buildElevenLabsSfxRequest(prompt, durationSeconds);
   const res = await fetchWithTimeout(BASE + "/sound-generation?output_format=mp3_44100_128", {
     method: "POST",
     headers: { "xi-api-key": KEY, "Content-Type": "application/json" },

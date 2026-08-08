@@ -973,7 +973,7 @@
 .af-gentoast .gt-view{flex:none;padding:6px 12px;border-radius:999px;border-width:0;border-style:none;background-color:var(--accent);color:var(--on-accent);font:700 10.5px/1 var(--font-sans);cursor:pointer}
 .af-gentoast .gt-x{flex:none;width:22px;height:22px;border-radius:7px;border-width:0;border-style:none;background-color:transparent;color:var(--muted,#999);cursor:pointer;font-size:11px;padding:0}
 
-/* SC_28: SC_15 dagi top-bar Sessions/Projects tugmalari (.af-tb-sp) Account sheet WORKSPACE guruhiga ko'chdi */
+/* Sessions/Projects launcher'da ko'rinadi; Account sheet WORKSPACE qo'shimcha shortcut bo'lib qoladi. */
 /* Tor panel: brand matni yashirinadi (logo qoladi) — seg'ga joy bo'shaydi.
    SC_25: chegara 539→560 — AE ~560px docked panelда to'liq seg yorliqlari + o'ng klaster
    endi joyga sig'maydi (collision), shu sabab qisqa yorliqlar shu yerdan boshlanadi. */@media (max-width:560px){
@@ -3806,6 +3806,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 .axroot .ai-launch-t{font-weight:800;font-size:20px;letter-spacing:-.02em;color:var(--text)}
 .axroot .ai-launch-acts{display:flex}
 .axroot .ai-launch-acts.ai-launch-acts > *:nth-child(n+2){margin-left:8px}
+
+/* Workspace navigation must stay visible in both CEP and UXP. Hiding Sessions/
+   Projects inside the account sheet made persisted server data look deleted. */.axroot .ai-workspace-nav{margin:10px 0 2px;width:100%;box-sizing:border-box}
+.axroot .ai-workspace-nav .ai-seg-i{flex:1;text-align:center;padding:6px 8px}
 
 /* SC_08: .ai-launch-sub o'chirildi */
 

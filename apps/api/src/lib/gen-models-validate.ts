@@ -5,8 +5,11 @@ import {
   buildFalVideoInput,
   computeGenCost,
   resolveImageCount,
+  getRefKind,
+  getReferenceMode,
 } from "./gen-models.js";
 import { buildByteplusVideoBody, mentionTokenSelfTest, seedreamSizeSelfTest } from "./ai/byteplus.js";
+import { normalizeAndValidateGenParams } from "./gen-param-validation.js";
 
 /**
  * PROBLEM 10 — GEN_MODELS katalog validatori.
@@ -84,6 +87,29 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
 
   if (!enabledOnlyChecks) return out; // disabled model uchun chuqur tekshiruv shart emas
 
+  // Provider fail-closed availability resolver ishlashi uchun har enabled entry provider'ini
+  // aniq e'lon qilishi shart. Undefined legacy fallback faqat disabled katalogda qolishi mumkin.
+  if (!m.provider) issue(out, m, "provider", "enabled model provider'ini aniq e'lon qilishi shart");
+
+  const refKind = getRefKind(m);
+  const referenceMode = getReferenceMode(m);
+  if (refKind === "none" && referenceMode !== "none") {
+    issue(out, m, "refKind/referenceMode", `refKind='none' referenceMode='${referenceMode}' bilan mos emas`);
+  }
+  if (refKind !== "none" && referenceMode === "none" && !m.opType) {
+    issue(out, m, "refKind/referenceMode", `refKind='${refKind}' referenceMode='none' bilan mos emas`);
+  }
+  if (m.refMode === "required" && refKind === "none") {
+    issue(out, m, "refMode/refKind", "required reference modeli refKind='none' bo'la olmaydi");
+  }
+  if (m.endFrame && m.mode !== "video") issue(out, m, "endFrame", "endFrame faqat video modelda bo'ladi");
+  if (m.endFrame && refKind !== "frames" && refKind !== "media-refs") {
+    issue(out, m, "endFrame/refKind", `endFrame=true refKind='${refKind}' bilan mos emas`);
+  }
+  if (m.endFrame && m.provider === "fal" && !m.videoInput?.endFrameKey) {
+    issue(out, m, "videoInput.endFrameKey", "fal endFrame modeli provider input kalitini e'lon qilishi shart");
+  }
+
   // ── Yoqilgan model uchun mode-spetsifik talablar (UI shu maydonlardan quradi) ──
   if (m.mode === "image") {
     if (!IMAGE_DISPATCH.has(m.provider)) issue(out, m, "provider", `rasm dispatch'ida '${m.provider}' branch yo'q (gen-processor.ts)`);
@@ -147,6 +173,9 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
         if (typeof L[k] !== "number" || L[k] < 0) issue(out, m, `mediaRefs.${k}`, "manfiy bo'lmagan raqam bo'lishi shart");
       }
       if (typeof L.total === "number" && L.total < 1) issue(out, m, "mediaRefs.total", "kamida 1 bo'lishi kerak");
+      if (L.total < Math.max(L.image, L.video, L.audio)) {
+        issue(out, m, "mediaRefs.total", "har bir modality limitidan kam bo'la olmaydi");
+      }
     }
     if (m.feature === "reference-to-video" && !m.mediaRefs) {
       issue(out, m, "mediaRefs", "reference-to-video model mediaRefs limitlarini e'lon qilishi shart");
@@ -198,6 +227,35 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
       const c = computeGenCost(m, params);
       if (!(c > 0)) issue(out, m, "cost", `computeGenCost ${c} qaytardi (musbat kutiladi)`);
       if (resolveImageCount(m, { count: 1 }) < 1) issue(out, m, "count", "resolveImageCount <1 qaytardi");
+    }
+
+    // Canonical server gate: default/required-reference payload o'tishi va asosiy salbiy
+    // capability holatlari aniq kod bilan yiqilishi shart.
+    const referenceParams: Record<string, unknown> = {};
+    if (m.refMode === "required") {
+      referenceParams.referenceUrl = "https://example.invalid/start.png";
+      if (m.mode === "image") referenceParams.referenceUrls = [referenceParams.referenceUrl];
+    }
+    const canonical = normalizeAndValidateGenParams(m, referenceParams);
+    if (!canonical.ok) {
+      issue(out, m, "canonical-default", canonical.errors.map((e) => `${e.code}:${e.field}`).join(", "));
+    }
+    if (!m.endFrame) {
+      const unsupportedEnd = normalizeAndValidateGenParams(m, {
+        ...referenceParams,
+        referenceUrl: "https://example.invalid/start.png",
+        referenceEndUrl: "https://example.invalid/end.png",
+      });
+      if (!unsupportedEnd.errors.some((e) => e.code === "END_FRAME_NOT_SUPPORTED")) {
+        issue(out, m, "canonical-negative", "unsupported end-frame END_FRAME_NOT_SUPPORTED qaytarmadi");
+      }
+    }
+    if (m.mediaRefs) {
+      const tooMany = Array.from({ length: m.mediaRefs.image + 1 }, (_, i) => `https://example.invalid/i${i}.png`);
+      const over = normalizeAndValidateGenParams(m, { imageUrls: tooMany });
+      if (!over.errors.some((e) => e.code === "REFERENCE_LIMIT_EXCEEDED")) {
+        issue(out, m, "canonical-negative", "media limit+1 REFERENCE_LIMIT_EXCEEDED qaytarmadi");
+      }
     }
   } catch (e) {
     issue(out, m, "dry-run", `payload/narx dry-run xatosi: ${e instanceof Error ? e.message : String(e)}`);

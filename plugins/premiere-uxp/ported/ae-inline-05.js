@@ -790,6 +790,17 @@
     if(typeof window.axAGTeardown==='function'){ try{ window.axAGTeardown(); }catch(e){} }
     if(id==='main'||id==='home'){ if(typeof window.goHome==='function')window.goHome(); return; } // ‹ Asosiy → Home
     closeSheet();
+    // UXP composer paint yamoqlari inline yoziladi; keyingi view'da ular
+    // `.view{display:none}` ni bosib ketmasligi shart. Faqat ketayotgan
+    // composer(lar)dan yamoq xossalarini tozalaymiz, yangi target pastda qayta
+    // mahkamlanadi. Aks holda picker ustida eski composer ko'rinib qoladi.
+    if(window.__FFNodeIO){
+      ['imggen','vidgen','audgen'].forEach(function(_cid){
+        if(_cid===id)return;
+        var _cv=document.getElementById('v-'+_cid); if(!_cv)return;
+        ['display','flex-direction','flex','min-height','opacity','visibility','transform','animation'].forEach(function(_p){_cv.style.removeProperty(_p);});
+      });
+    }
     document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
     var _v=document.getElementById('v-'+id); if(!_v)return; _v.classList.add('on');document.querySelector('.axroot .scroll').scrollTop=0; // F-01: null guard — mavjud bo'lmagan view id router'ni qulatmasin
     document.querySelectorAll('.resultArea').forEach(function(r){r.innerHTML='';});
@@ -801,12 +812,21 @@
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
     // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
     var _aipbar=document.querySelector('.axroot .app > .pbar'); if(_aipbar)_aipbar.style.display=(id==='imggen'||id==='vidgen'||id==='audgen'||id==='launcher'||id==='aicat'||id==='history'||id==='settings'||id==='sessions'||id==='session'||id==='projects'||id==='project')?'none':'';
+    // Premiere UXP composer DOM'ini render/async tarix yuklashidan OLDIN qat'iy
+    // layoutga o'tkazamiz. Aks holda hidden picker → flex composer almashinuvi
+    // paytida host sog'lom DOM'ni qora paint qatlamida keshlar ekan. Premiere/CEP
+    // tartibi o'zgarmaydi; pastdagi umumiy chaqiruv UXP'da takrorlanmaydi.
+    var _uxpWorkspacePrepared=false;
+    var _uxpComposerTarget=(id==='imggen'||id==='vidgen'||id==='audgen');
+    if(window.__FFNodeIO&&_uxpComposerTarget&&typeof window.axwsAfterView==='function'){
+      try{window.axwsAfterView(id);_uxpWorkspacePrepared=true;}catch(e){}
+    }
     syncBal(); // kredit yagona manba (real aiCredits) — balTop + AI Tools ixcham header sinxron
     if(id==='imggen'&&typeof window.axIGRefresh==='function'){try{window.axIGRefresh();}catch(e){}}
     if(id==='vidgen'&&typeof window.axVGRefresh==='function'){try{window.axVGRefresh();}catch(e){}} // FIX H: video ham view ochilганда retry
     if(id==='audgen'&&typeof window.axAGRefresh==='function'){try{window.axAGRefresh();}catch(e){}} // P8: audio tool
     if((id==='sessions'||id==='projects')&&typeof window.axSPRefresh==='function'){try{window.axSPRefresh(id);}catch(e){}} // P1
-    if(typeof window.axwsAfterView==='function'){try{window.axwsAfterView(id);}catch(e){}} // #R1: workspace chrome (strip/viewbar/empty) yangilash
+    if(!_uxpWorkspacePrepared&&typeof window.axwsAfterView==='function'){try{window.axwsAfterView(id);}catch(e){}} // #R1: workspace chrome (strip/viewbar/empty) yangilash
   }
 
   // #143 (PX6): mockup davrining SOXTA narx/model mashinasi o'chirildi —

@@ -362,10 +362,13 @@
                             <div class="ai-icon" data-go="settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                           </div>
                         </div>
+                        <div class="ai-seg ai-workspace-nav" role="tablist" aria-label="AI workspace">
+                          <div role="button" tabindex="0" class="ai-seg-i is-on" role="tab" aria-selected="true">Tools</div>
+                          <div role="button" tabindex="0" class="ai-seg-i" role="tab" aria-selected="false" data-go="sessions">Sessions</div>
+                          <div role="button" tabindex="0" class="ai-seg-i" role="tab" aria-selected="false" data-go="projects">Projects</div>
+                        </div>
                         <!-- SC_08 (b): "Prompt → result → ..." explainer o'chirildi -->
-                        <!-- SC_15: Tools|Sessions|Projects sub-tab qatori OLIB TASHLANDI — Sessions/Projects
-                             endi doimiy top-bar'da (af-topbar); HISTORY strip ham o'chirildi — yagona
-                             foydalanuvchi-ishlari yuzasi = My Library (v-history ko'rinishi). -->
+                        <!-- My Library remains the generation-asset surface (v-history). -->
                         <div class="cats" id="aiCatGrid"></div>
                         <div class="ai-soontoast" id="aiSoonToast"><svg width="15" height="15" viewBox="0 0 24 24" fill="#7CC4FF"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 12 7zm1.2 10h-2.4v-6h2.4z" fill="#7CC4FF"/></svg><span>No tools yet — coming soon.</span></div>
                       </section>
@@ -1169,7 +1172,7 @@
       </div>
     </div>
 
-    <!-- SC_28: WORKSPACE — Sessions/Projects (top-bar'dan ko'chdi; mavjud afOpenAiSub yo'llari) -->
+    <!-- WORKSPACE shortcut — asosiy ko'rinadigan yo'l AI launcher'da; bu Account ichidagi zaxira yo'l. -->
     <div id="accountWorkspaceBlock" style="display:none">
       <div class="acs-lbl">WORKSPACE</div>
       <div role="button" tabindex="0" class="acs-row" onclick="closeAccountSheet();afOpenAiSub('sessions')">

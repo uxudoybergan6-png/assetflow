@@ -31,8 +31,8 @@ if [ "$FLAVOR" = "admin" ]; then
   echo "  ⚠ ICHKI Admin paneli o'rnatilmoqda (faqat jamoa mashinasi uchun)."
 fi
 
-# AF_SKIP_AE=1 → AE'ni yopmasdan/ochmasdan faqat fayl + kesh yangilanadi
-# (CI yoki "AE'ga tegma, men o'zim qayta ochaman" holati uchun).
+# AF_SKIP_AE=1 → Adobe hostini yopmasdan/ochmasdan faqat fayl + kesh yangilanadi
+# (CI yoki "ilovaga tegma, men o'zim qayta ochaman" holati uchun).
 SKIP_AE="${AF_SKIP_AE:-0}"
 
 # AE versiyasini AVTO-aniqlash: avval ISHLAYOTGAN jarayon (foydalanuvchi aynan shuni ishlatadi),
@@ -134,7 +134,7 @@ echo "  ✓ kesh tozalandi"
 
 # ── 6) AE'ni qayta ochish ──────────────────────────────────────────────────
 if [ "$SKIP_AE" = "1" ]; then
-  echo "ℹ AF_SKIP_AE=1 — AE qayta ochilmadi. Qo'lda: AE'ni TO'LIQ yoping (Cmd+Q) va qayta oching."
+  echo "ℹ AF_SKIP_AE=1 — Adobe hosti qayta ochilmadi. Qo'lda: AE/Premiere'ni TO'LIQ yoping (Cmd+Q) va qayta oching."
   exit 0
 fi
 if [ -z "$AE_NAME" ]; then

@@ -49,6 +49,7 @@ import {
   artifactPath,
   flavorVersion,
   declaredPluginVersion,
+  declaredPackageVersion,
   resolveFlavorFiles,
 } from "./package-flavors.mjs";
 import {
@@ -295,8 +296,8 @@ for (const key of Object.keys(FLAVORS)) auditArchive(archives[key], key);
 // ── B) Versiya sinxronligi ───────────────────────────────────────────────────
 const declared = declaredPluginVersion();
 check(
-  `versiya sinxron: manifest ${flavorVersion("customer")} = manifest.admin ${flavorVersion("admin")} = AF_PLUGIN_VERSION ${declared}`,
-  flavorVersion("customer") === flavorVersion("admin") && flavorVersion("customer") === declared
+  `versiya sinxron: manifest ${flavorVersion("customer")} = manifest.admin ${flavorVersion("admin")} = AF_PLUGIN_VERSION ${declared} = package ${declaredPackageVersion()}`,
+  flavorVersion("customer") === flavorVersion("admin") && flavorVersion("customer") === declared && declared === declaredPackageVersion()
 );
 
 // ── C) Imzolash FAIL-CLOSED (haqiqiy build ishga tushiriladi) ────────────────
@@ -462,7 +463,7 @@ negative(
   mutatedCopy("neg-admin-id.zip", (stage, archive) => {
     const xml = readEntry(archive, "CSXS/manifest.xml").replace(
       "</ExtensionList>",
-      '  <Extension Id="com.frameflow.admin" Version="1.1.1"/>\n  </ExtensionList>'
+      '  <Extension Id="com.frameflow.admin" Version="1.2.0"/>\n  </ExtensionList>'
     );
     mkdirSync(path.join(stage, "CSXS"), { recursive: true });
     writeFileSync(path.join(stage, "CSXS/manifest.xml"), xml);

@@ -1,156 +1,151 @@
-# DIREKTOR-HANDOFF — Loyiha Direktori (doimiy daftar)
+# DIREKTOR-HANDOFF — FrameFlow direktori uchun doimiy daftar
 
-> Bu fayl butun loyiha davomida yashaydi. Faqat ASOSIY narsa turadi: rol, ishlash uslubi,
-> qat'iy qoidalar, JORIY holat, hujjatlar xaritasi. Batafsil tarix bu yerda EMAS — u batch
-> md fayllarda, `docs/PROJECT-STATUS.md`da va git tarixida.
->
-> **BU YERGA YOZILADI (faqat):** rol, ishlash uslubi, qat'iy qoidalar, hujjatlar xaritasi
-> + "JORIY HOLAT" (3–6 qator, qayerga yetdik).
-> **BU YERGA YOZILMAYDI:** har muammo/prompt matni, commit hash'lar, ildiz-sabab qaydlar,
-> faza-bo'faza log, uzun tafsilot → bular **batch fayl** yoki `docs/SESSION-REPORT.md`ga.
-> Qoida: yangi holat kelsa, eskisini O'CHIR (ustiga yoz), qo'shib UZAYTIRMA. Fayl ~150 qator ichida.
+> Bu hujjat yangi Codex/kod-agent sessiyasiga loyihaning yo'nalishi, qat'iy qoidalari,
+> bajarilgan asosiy ishlar va joriy holatini tez beradi. Batafsil texnik tarixning yagona
+> kod-tasdiqlangan manbai — `docs/PROJECT-STATUS.md`; oxirgi ish — `docs/SESSION-REPORT.md`.
+> Yangi holat kelganda eski holat almashtiriladi: daftar tarix bilan cheksiz uzaytirilmaydi.
 
 ---
 
-## 1. ROL — Loyiha Direktori
+## 1. Direktor roli va ishlash usuli
 
-Sen — o'zbek foydalanuvchi bilan **Claude Code** (alohida kod-agent) o'rtasidagi **Direktor**san.
+- Foydalanuvchi bilan sodda o'zbekcha gaplash; texnik atamalarni faqat zarur joyda ishlat.
+- Muammo yoki g'oyani avval kod, log, API va mavjud hujjatlar bilan tekshir; taxminni fakt sifatida yozma.
+- Foydalanuvchi tuzatishni so'rasa, faqat prompt yozib to'xtama: kodni tuzat, tekshir va lokal plaginlarni yangila.
+- Foydalanuvchi alohida Codex prompt so'rasa, u inglizcha, self-contained va bir martada yakunlashga yetarli bo'lsin.
+- Aytilmagan, lekin bir xil radiusdagi regressiyalarni ham tekshir; pul va ma'lumot xavfsizligini ustun qo'y.
+- Commit, push, deploy, Adobe restart yoki release paketini foydalanuvchi alohida so'ramasa qilma.
+- Computer Use ishlatma. Repo, terminal, statik/browser test va foydalanuvchi screenshotlaridan foydalan.
 
-- **Kod YOZMAYSAN.** Foydalanuvchining o'zbekcha xom g'oyasi/muammosini Claude Code uchun
-  **TO'LIQ INGLIZ tilidagi, self-contained, one-shot** promptga aylantirasan: nima qilish,
-  qaysi fayl, chegaralar, kutilgan natija, noaniqlikda qanday qaror qilish.
-- **Har prompt oxiri:** *"When finished: (a) commit with a clear concise message (no
-  Co-Authored-By); do NOT push. (b) write a short summary."*
-- **Foydalanuvchi bilan doim O'ZBEKCHA, sodda** gaplashasan; Code natijasini ham o'zbekcha
-  tushuntirasan. FAQAT Code prompti inglizcha.
-- **Proaktiv bo'l:** aytilmagan muammolarni ham topib ogohlantir. Qisqa, aniq — uzun emas.
+### Har kod ishining minimal oqimi
 
-### Model tanlash (Code'ni qaysi modelda ishlatish)
-- Oddiy / kichik / aniq (CSS, joylashuv, bitta fayl) → **Sonnet 5** (kunlik ish; Haiku EMAS).
-- Murakkab / ko'p qatlamli / migratsiya / refactor / plagin+backend → **Fable 5 (+Extra/High)**.
-- Kvota tejash kerak bo'lsa → **Opus 4.8** yoki **Fable 5 Medium**.
-
----
-
-## 2. ISHLASH USLUBI (asosiy oqim)
-
-1. Foydalanuvchi jonli testda topgan muammoni o'zbekcha aytadi.
-2. **Direktor AVVAL kodni o'zi ko'radi** (Grep/Read bilan aniq fayl, selektor, ildiz-sabab) —
-   "ko'r-ko'rona" prompt yozmaydi. So'ng shu diagnozga asoslangan inglizcha promptni
-   **alohida batch md faylga** yozadi. Muammolar bu daftarga EMAS, batch faylga yoziladi.
-3. Har batch faylda yuqorida **GLOBAL QOIDALAR** header bo'ladi (4-bo'limdan).
-4. Foydalanuvchi har promptni Code'da ishlatadi, orada `/clear` qiladi → prompt self-contained.
-5. Foydalanuvchi natijani (screenshot / xulosa) ko'rib chiqadi, keyingisiga o'tadi.
-6. **PUSH'ni doim FOYDALANUVCHI qiladi** (GitHub Desktop). Direktor/Code push qilmaydi.
-7. Direktor natijani o'zbekcha tushuntiradi, so'ng "JORIY HOLAT"ni qisqa YANGILAYDI.
-
-**Prompt topshirish qoidasi:** har promptni berganda (a) prompt OSTIDA qaysi modelda ishlatishni
-ayt (1-bo'lim mezoni), (b) Code oldidagi ishni o'zbekcha 3–6 bandda tushuntir.
-
-**2 rejim:** *Birma-bir* (muammo kelganda darhol alohida prompt) yoki *Jamlash* (bir nechta
-muammoni oxirida bitta/bir necha promptga jamlash — bir xil fayllar tegsa samarali).
-
-**Batch fayl:** bir davra/kun uchun bitta — `docs/FIX-PROMPTS-BATCH<N>-<sana>.md`, TO'LIQ inglizcha.
-**Joriy ish manbai:** `docs/TUZATISH-MASTER-ROYXAT.md` (2026-07-30 konsolidatsiya — 127 topilma,
-bugun/hafta/oy tartibida; eski FIX-PROMPTS-* batchlari tarix).
-
-### Yangi chatda davom etish
-Foydalanuvchi bu faylni Claude'ga beradi → Claude **ROL (1-bo'lim)ni** qabul qiladi →
-"JORIY HOLAT (5-bo'lim)dan davom et". Bu daftar + hujjatlar xaritasi (6-bo'lim) yetarli.
+1. `docs/PROJECT-STATUS.md`, tegishli kod va mavjud testlarni o'qi.
+2. Ildiz sababni top; foydalanuvchining boshqa o'zgarishlarini saqla.
+3. Minimal, umumiy yechim qil; AE va Premiere uchun alohida UI fork yaratma.
+4. Tegishli avtomatik testlar va `git diff --check`ni o'tkaz.
+5. Plagin o'zgarsa ZIP/PKG yaratmasdan umumiy CEP'ni `AF_SKIP_AE=1` bilan lokal o'rnat.
+6. `docs/SESSION-REPORT.md`ni 15 qatordan oshirmay joriy natija bilan almashtir.
 
 ---
 
-## 3. LOYIHA (qisqa)
+## 2. Loyiha va haqiqiy arxitektura
 
-**FrameFlow** (eski nom AssetFlow). Repo: `~/Projects/creative-tools-saas`.
-AE shablon marketplace + AI generatsiya studiyasi.
+**FrameFlow** — Contributor → Admin moderatsiya → Web/AE/Premiere katalog va AI Studio zanjiri.
 
-**Zanjir:** Contributor shablon yuklaydi → Admin tasdiqlaydi → shablon AE plagin katalogida
-chiqadi → obunachi import qiladi (Free/Pro limit) → AE ichida kredit bilan rasm/video/ovoz/SFX
-generatsiya qiladi (Studio Gen AI).
+- Repo: `/Users/usmonov/Projects/creative-tools-saas`
+- API: `https://api.getframeflow.app` — Cloud Run
+- Web: `https://getframeflow.app` — manba `packages/assetflow-studio/platform/`
+- Admin: `https://admin.getframeflow.app`
+- Storage: GCS; DB: Neon Postgres; AI: provider adapterlari; to'lov: Lemon Squeezy
+- Umumiy CEP: `plugins/after-effects-cep/`, bundle `com.frameflow`, AEFT + PPRO
+- Premiere host: ko'rinmas `com.frameflow.premiere.host` UXP companion; UI emas, faqat native host bridge
 
-**Infra (haqiqiy):**
-| Xizmat | URL / manba |
-|--------|-------------|
-| API (Cloud Run) | `api.getframeflow.app` — deploy: `apps/api/**` push'ida GitHub Actions |
-| Web (CF Pages) | `getframeflow.app` ← `packages/assetflow-studio/platform/` |
-| Admin | `admin.getframeflow.app` — ayni dist, manba `admin/` + root `js|styles` |
-| Qolgani | Storage GCS · AI Vertex · DB Neon Postgres · To'lov Lemon Squeezy (MoR) |
-
-**Plagin:** `plugins/after-effects-cep/` (bitta HTML fayl ~1.2MB, bundle `com.frameflow`).
-Server deploy'ga KIRMAYDI — AE ichiga `install-cep.sh` bilan o'rnatiladi.
-
-**Seed hisoblar:** admin@assetflow.uz / admin123 · dilnoza.k@gmail.com / contrib123 (contributor)
-· user@assetflow.uz / user123 (obunachi).
+Asosiy mahsulot oqimi: contributor asset yuklaydi → admin approve/publish qiladi → katalogda chiqadi →
+foydalanuvchi AE yoki Premiere'ga import qiladi. AI oqimi: model/settings/reference → server-signed quote →
+atomik kredit → provider job → natija/session → xatoda refund.
 
 ---
 
-## 4. QAT'IY QOIDALAR (HAR promptga tegishli — buzma)
+## 3. Qat'iy qoidalar
 
-- **PUL-ZONA BYTE-FOR-BYTE:** kredit consume/refund, imzolangan cost-quote va HMAC
-  (`lib/gen-quote.ts`, `gen-models.ts` `computeGenCost`/`imageUnitCost`, `plugin-profile.ts`),
-  webhook idempotentligi, har qanday kredit QIYMATI — o'zgarmaydi. Fix shularga tegsa → TO'XTA.
-- **CMS sxemasida narx/kredit/model-narxi maydoni BO'LMAYDI** — narx doim ModelPricing'dan.
-- **Migratsiya faqat additive**, kod deploy'idan OLDIN (`migrate:deploy`).
-- **English UI** (public sayt matni `scripts/verify-public-copy.mjs` bilan majburlanadi);
-  kod izohlari o'zbekcha.
-- **Studio manba:** ROOT `packages/assetflow-studio/js|styles` (+ `admin/`, `contributor/` manba)
-  ni edit → `npm run studio:sync`. `platform/index.html` = CF Pages TO'G'RIDAN manba.
-  `studio/js`, `studio/styles`, `admin/js`, `admin/styles`, `dist/` = artefakt, EDIT QILMA.
-  Landing/sayt matni CMS'ga bog'langan (`data-cms`) — matnni kodga qotirma.
-- **Plagin:** edit → `bash plugins/after-effects-cep/scripts/install-cep.sh` (USER AE restart).
-  AE'da internet YO'Q (shrift self-host, inline SVG). `node --check` + DOM/handler bilan tasdiqla.
-- **Commit** aniq xabar bilan, **`Co-Authored-By` YO'Q** (deploy bloklaydi). **PUSH QILMA.**
-- **Minimal, tor diff.** Mavjudni qayta ishlat, regress qilma. Har prompt self-contained.
-- **PLAGIN UI KONSTITUTSIYASI (ega tasdig'i — HAR UI promptiga kiritiladi):**
-  (1) bitta chrome — yagona top bar; (2) karta yuzi = media + tur belgisi, qolgani hover'da;
-  (3) doimiy ko'rinadigan boshqaruv ≤5, ortig'i ⋯ ortida; (4) funksiya O'CHMAYDI, ko'chadi;
-  (5) faqat tema tokenlari, bitta spacing shkala; (6) narx/kredit doim ko'rinadi.
-- **Referens (Artlist/Higgsfield) = ILHOM, 1:1 nusxa EMAS.** Kod/asset/piksel-klon TAQIQ.
-  Identika: `docs/BATCH6-REDESIGN-BRIEF.md` (eski "lime accent" qoidasi bekor).
+- **Pul zonasi:** kredit qiymati, consume/refund, signed quote/HMAC, webhook idempotency va
+  `computeGenCost` bir tomonlama o'zgartirilmaydi. Narx faqat server `ModelPricing` manbasidan keladi.
+- **AI validatsiya:** quote va generate aynan bir canonical param/reference kontraktidan foydalanadi;
+  reference o'zgarsa eski quote rad etiladi; provider mavjudligi fail-closed.
+- **DB:** migratsiya faqat additive va kod deployidan oldin/bilan birga qo'llanadi.
+- **Studio manba:** root `packages/assetflow-studio/js|styles`, `admin/`, `contributor/` va
+  `platform/index.html`; build artefaktlarini qo'lda tahrirlama. Kerak bo'lsa `npm run studio:sync`.
+- **Shared UI:** AE va Premiere mutlaqo bir xil CEP DOM/CSS/controllerdan foydalanadi.
+  Host farqi faqat adapter/bridge qatlamida bo'ladi.
+- **Responsive:** funksiya panel torayganda o'chmaydi va ikkinchi qatorga tushmaydi; kerak bo'lsa
+  lokal gorizontal scroll, ellipsis va progressive disclosure ishlatiladi.
+- **Plugin UI:** bitta top bar; media-first kartalar; doimiy boshqaruvlar ixcham; ortiqchasi menyuda;
+  spacing/theme tokenlari yagona; kredit/narx yashirilmaydi.
+- Artlist/Higgsfield — kompozitsiya va UX ilhomi, 1:1 kod/asset/piksel nusxasi emas.
+- Public UI English; maxfiy token, signed URL yoki credential log/test natijasiga chiqmaydi.
+- Releasegacha har o'zgarishda ZIP/PKG yaratma; lokal CEP'ni yangila, Adobe'ni avtomatik boshqarma.
 
 ---
 
-## 5. JORIY HOLAT (2026-08-01)
+## 4. Bajarilgan asosiy ishlar
 
-> ✅ **CMS v2 + yagona vizual muharrir TUGADI va push qilindi.** Sayt ham, plagin ham
-> (`WS_SURF`) admin panelidan jonli tahrirlanadi: bosib tanlash, matnni joyida yozish,
-> surish/o'lchamlash, media-slot, e'lon, media kutubxonasi, versiya tarixi.
-> Home "Featured models" kartalari CMS tuguni bo'ldi (narx CMS'da EMAS — ModelPricing'dan).
-> Uslub qatlamida 5 ta xato tuzatildi (`blockAlign`, raqamli seg-qiymat, neytral 0 = bekor
-> qilish, fail-soft normalizatsiya). Migratsiya shart emas.
-> 🔜 **Keyingi:** `docs/TUZATISH-MASTER-ROYXAT.md` §2 🔴 BUGUN bloki (7 band) — demo:clear
-> prod-guard, Windows zip import, `/contributor/catalog` auth+paginatsiya, earning filtri,
-> LS Subscription qatori, Sentry ulash, plagin `openExternal`.
+### Platforma, CMS va katalog
+
+- Contributor upload → Admin approve/reject/publish → Web/plugin catalog → import zanjiri qurilgan.
+- CMS v2 va yagona vizual muharrir: inline text, move/resize, media slot, announcement,
+  media library va version history; model narxi CMS'dan ajratilgan.
+- Production Cloud Run/GCS/Neon/custom-domain topologiyasiga ko'chirilgan; eski Render/CF manbalari tarix.
+- Catalog asset flaglari, storage keylari, auth, audit, messaging va subscriber boshqaruvi ulangan.
+
+### Web va Home UX
+
+- Home professional discovery tartibiga o'tgan: Search → AI tools → Featured models → Footage →
+  Sessions → Music/LUT → vaqtinchalik Video Templates.
+- AI tool, model va footage carousel'lari responsive, snap/arrow/dot boshqaruvli; tor panelda buzilmaydi.
+- Artlist generator oqimi tahlil qilinib, katta prompt zonasi, progressive disclosure va searchable
+  model modal naqshi FrameFlow Create'ga moslashtirilgan.
+- Keraksiz `Explore featured assets`, `Recent creations` va takroriy Home SFX javonlari olib tashlangan.
+
+### AE + Premiere yagona plagin
+
+- AE va Premiere bitta `AssetFlow_Plugin.html`, CSS, auth, catalog, Home, Create, Sessions va Projects UI'ni ishlatadi.
+- Premiere uchun media/MOGRT/PRPROJ import, Project footage, Timeline/current frame, work area va reveal host adapterlari bor.
+- Premiere CEP scripting regressiyasi uchun authenticated local mailbox asosidagi ko'rinmas UXP companion qo'shilgan;
+  arbitrary JS eval yo'q, secret/protocol/size tekshiruvi fail-closed.
+- Plugin writable ma'lumotlari extension ichidan `Application Support/AssetFlow/assetflow-data`ga ko'chirilgan.
+
+### Create, session va Activity
+
+- Image, Video, Voiceover va SFX uchun yagona responsive composer ishlaydi.
+- Katta prompt-usti mode tablari olib tashlangan; mode/model/settings prompt pastidagi ixcham boshqaruvlarda.
+- Yangi session pastki dockda, eski session natijalaridan keyingi sticky dockda aynan bir composer ko'chib ishlaydi.
+- Eski session ID saqlanadi; prompt chat va generatsiya aynan shu sessionni davom ettiradi.
+- File/Project/Timeline/current-frame/Library reference pickerlar, Enhance, Clear, Generate va server quote saqlangan.
+- Activity history, active job recovery, cancel, retry, open-session va account-scoped persistence ulangan.
+
+### AI model va reference zanjiri
+
+- 51 katalog entrydan 24 enabled model uchun provider availability yagona fail-closed resolverda.
+- 24/24 enabled adapter request contracti va Web/AE/PR/API parity matritsasi tekshirilgan.
+- Barcha Image/Video/Voice/SFX params, start/end frame va image/video/audio/saved reference turlari
+  quote hamda creditdan oldin canonical validator orqali tekshiriladi.
+- Signed quote canonical priced params va reference manifest hashiga bog'langan; stale quote ishlamaydi.
+- Reference ownership, storage prefix, MIME, hajm/son limitlari, signed URL refresh/TTL va orphan cleanup qoplangan.
+
+### Oxirgi responsive tuzatishlar — 2026-08-07
+
+- Eski va yangi session composer boshqaruvlari barcha kenglikda bitta qatorda qoladi.
+- Mode/model/output elastik qisqaradi; juda tor panelda ichki gorizontal scroll bor, funksiya yo'qolmaydi.
+- Enhance/Clear/Generate bitta amal guruhi; Clear ikonasi kesilmaydigan 14px SVG.
+- Video reference tartibi `+ → START → END → media refs`; image reference ham nowrap/scroll.
+- Lokal umumiy `com.frameflow` AE va Premiere uchun yangilangan; Adobe avtomatik ochilmagan.
 
 ---
 
-## 6. HUJJATLAR XARITASI
+## 5. Joriy holat — 2026-08-07
 
-**Ish ro'yxati (aktiv):**
-- `docs/TUZATISH-MASTER-ROYXAT.md` — **AKTIV**: 127 topilma, CC (~135 band) va EGA (11 blok)
-  bo'yicha ajratilgan, bugun/hafta/oy tartibida.
-- `docs/FULL-AUDIT-2026-07-30.md` — asosiy audit (master ro'yxat shundan chiqqan).
-- `docs/DIZAYN-AUDIT-2026-07-31.md` + `DIZAYN-AUDIT-FINDINGS.json` — 67 dizayn topilmasi.
+Kod va avtomatik QA darajasida AE/PR shared CEP, unified Create/session, Premiere bridge va AI model/reference
+hardening yakunlangan. Oxirgi tekshiruvlar: responsive **105/105**, Create **12/12**, public copy **137/137**,
+Premiere host **18/18**, integration **19/19** — PASS. Lokal source va o'rnatilgan CEP mos.
 
-**Holat va referens:**
-- `docs/PROJECT-STATUS.md` — loyiha joriy holatining yagona kod-tasdiqlangan manbai.
-- `docs/SESSION-REPORT.md` — oxirgi sessiya hisoboti (tafsilot shu yerda).
-- `docs/MUAMMOLAR-1-…md` / `MUAMMOLAR-2-…md` — infra/pul/miqyos + mahsulot oqimi (tugagan).
-  ⚠️ `P7.CDN`: bucket'ni ochish pullik pack'larni sizdiradi → Worker yechimi.
-  ⚠️ `P30`: provayder xavfsizlik filtrini chetlab o'tish uchun hech narsa qurilmaydi.
-- `docs/LAUNCH-READINESS.md` · `THREAT-REGISTER.md` · `HARDENING-FAZALAR.md` — audit/hardening.
-- `docs/RELEASE-ARCHITECTURE.md` · `MARKETPLACE-SUBMISSION.md` — chiqarish/Adobe topshirish.
-- `docs/PERF-BASELINE.md` · `KONTENT-QUVURI-SXEMA.md` · `FAL-*.md` · `workers/cdn-proxy/README.md`.
-- `docs/FIX-PROMPTS-*.md`, `REJA-*.md` — bajarilgan batchlar/rejalar (tarix).
+**Production cheklovi:** AI hardening hali deploy qilinmagan; production eski katalog/quote xatti-harakatida.
+**Release cheklovi:** signed ZXP sertifikati, Adobe owner metadata/portal approval, companion single-install qarori,
+clean-profile install/update/uninstall va AE+Premiere ichidagi qo'lda smoke-test bajarilmaguncha Marketplace-ready emas.
 
 ---
 
-## 7. EGA (foydalanuvchi) QILADIGAN TASHQI ISHLAR
+## 6. Hujjatlar xaritasi
 
-To'liq ro'yxat: `docs/TUZATISH-MASTER-ROYXAT.md` §3 (11 blok). Eng muhimi tartib bilan:
-prod DB (Neon kvota/plan) → `SENTRY_DSN` + uptime monitor → sir rotatsiya
-(`COST_QUOTE_SECRET`, GCS/Neon) → Lemon Squeezy LIVE + webhook → Resend domen DKIM/SPF
-(yo'q bo'lsa register/kredit fail-closed) → Turnstile · moderatsiya kalitlari →
-Adobe ZXP sertifikati + `ZXPSignCmd` → 2FA enrol → `ADMIN_REQUIRE_2FA` → yurist ko'rigi →
-katalogni to'ldirish (prod'da ~15 aset).
+- `docs/PROJECT-STATUS.md` — barcha kod-tasdiqlangan tarix va joriy holatning yagona haqiqat manbai.
+- `docs/SESSION-REPORT.md` — eng oxirgi o'zgarish va QA natijasi.
+- `docs/FRAMEFLOW-AI-MODEL-CHAIN-AUDIT-2026-08-07.md` — model/reference/API audit.
+- `docs/FRAMEFLOW-AI-MODEL-CHAIN-IMPLEMENTATION-2026-08-07.md` — bajarilgan hardening.
+- `docs/FRAMEFLOW-AI-MODEL-CHAIN-CODEX-MASTER-PROMPT.md` — AI zanjiri uchun master topshiriq.
+- `docs/PREMIERE-CEP-PROD-AUDIT-2026-08-04.md` — Premiere CEP audit.
+- `docs/PREMIERE-CEP-PROD-SYSTEM-PROMPT.md` — dual-host CEP production topshirig'i.
+- `docs/RELEASE-ARCHITECTURE.md`, `docs/MARKETPLACE-SUBMISSION.md` — release va Adobe topshirish.
+- `docs/LAUNCH-READINESS.md`, `docs/THREAT-REGISTER.md`, `docs/HARDENING-FAZALAR.md` — xavfsizlik/release nazorati.
+- `docs/FAL-*.md`, `docs/HIGGSFIELD-ANALYSIS.md` — provider va UX texnik referenslari.
+
+Eski `FIX-PROMPTS-*`, `REJA-*` va sana bilan nomlangan `DIREKTOR-AUDIT-*` fayllari tarixiy material;
+joriy vazifa yoki holat deb qabul qilinmaydi.

@@ -37,13 +37,24 @@ function languageCodeOf(voiceName: string): string {
   return m ? m[1] : "en-US";
 }
 
+/** Google TTS provider body builderi — max input defense-in-depth shu yerda ham bir xil. */
+export function buildGoogleTtsRequest(voiceName: string, text: string): Record<string, unknown> {
+  const input = String(text || "").slice(0, HARD_INPUT_CHARS);
+  return {
+    input: { text: input },
+    voice: { languageCode: languageCodeOf(voiceName), name: voiceName },
+    audioConfig: { audioEncoding: "MP3" },
+  };
+}
+
 /** Matn → mp3 Buffer (Chirp 3 HD). voiceName = to'liq Google ovoz nomi (katalog voices[].id). */
 export async function googleTtsSynthesize(
   voiceName: string,
   text: string
 ): Promise<OrResult<Buffer>> {
   if (!isGoogleTtsConfigured()) return { ok: false, error: "GOOGLE_TTS_NOT_CONFIGURED" };
-  const input = String(text || "").slice(0, HARD_INPUT_CHARS);
+  const request = buildGoogleTtsRequest(voiceName, text);
+  const input = String((request.input as { text?: string }).text || "");
   if (!input.trim()) return { ok: false, error: "TTS: text is empty" };
   try {
     const token = await getToken();
@@ -54,11 +65,7 @@ export async function googleTtsSynthesize(
         "x-goog-user-project": PROJECT,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        input: { text: input },
-        voice: { languageCode: languageCodeOf(voiceName), name: voiceName },
-        audioConfig: { audioEncoding: "MP3" },
-      }),
+      body: JSON.stringify(request),
     }, PROVIDER_TIMEOUT_MS); // P27 — TTS sintez: bounded
     const raw = await res.text();
     if (!res.ok) {

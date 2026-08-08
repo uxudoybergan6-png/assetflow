@@ -8,11 +8,32 @@ const AssetFlowAccount = (() => {
 
   let cachedUser = null;
   let adminUrl = DEFAULT_ADMIN;
+  let activeToken = "";
+  let activeTokenMeta = null;
+  let sessionBootstrapPromise = null;
+  let refreshInProgress = null;
   // Haqiqiy sessiya shu ishga tushishda kamida bir marta tasdiqlanganmi?
   // (fetchMe/login/device-confirm muvaffaqiyati). Faqat shundan KEYIN 401/403
   // "sessiya tugadi" deb ko'rsatiladi. Bootda qolib ketgan eskirgan token 401'i
   // mehmon uchun soxta ogohlantirish chiqarmasin — jimgina tozalanadi.
   let sessionEstablished = false;
+
+  const CREDENTIAL_ACCOUNT_SHARED = "session-token";
+  const CREDENTIAL_LEGACY_ACCOUNT_AE = "session-token-ae";
+  const CREDENTIAL_LEGACY_ACCOUNT_PR = "session-token-pr";
+  const CREDENTIAL_LEGACY_SECRET_KEYS = [CREDENTIAL_LEGACY_ACCOUNT_AE, CREDENTIAL_LEGACY_ACCOUNT_PR, "ae", "pr"];
+  const CREDENTIAL_META_KEY = "pluginToken";
+  const CREDENTIAL_META_BY_HOST_KEY = "pluginTokenByHost";
+  const CREDENTIAL_SOURCE_RANK = {
+    "secret-shared": 1,
+    "secret-ae": 2,
+    "secret-pr": 2,
+    "secret-ae-legacy": 3,
+    "secret-pr-legacy": 3,
+    "prefs-token": 6,
+    "prefs-ae": 7,
+    "prefs-pr": 8,
+  };
 
   function apiBase() {
     if (typeof window !== "undefined" && window.ASSETFLOW_STUDIO?.apiUrl) {
@@ -21,6 +42,93 @@ const AssetFlowAccount = (() => {
     const c =
       typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs().client || {} : {};
     return (c.apiBaseUrl || DEFAULT_API).replace(/\/$/, "");
+  }
+
+  function hostApp() {
+    try {
+      const fromPanel = String((typeof window !== "undefined" && window.AF_TEMPLATE_APP) || "").toLowerCase();
+      if (fromPanel === "pr" || fromPanel === "ae") return fromPanel;
+      const host = typeof CSInterface !== "undefined" ? new CSInterface().getHostEnvironment() : null;
+      const id = String((host && (host.appName || host.appId)) || "AEFT").toUpperCase();
+      return id === "PPRO" || id.indexOf("PREMIERE") >= 0 ? "pr" : "ae";
+    } catch {
+      return "ae";
+    }
+  }
+
+  function tokenHost() {
+    try {
+      return hostApp();
+    } catch {
+      return "ae";
+    }
+  }
+
+  function readStoredTokens(rawClient) {
+    const raw = rawClient && typeof rawClient === "object" && !Array.isArray(rawClient) ? rawClient : {};
+    const tokens = raw && typeof raw.tokens === "object" && !Array.isArray(raw.tokens) ? raw.tokens : {};
+    const out = {};
+    for (const [k, v] of Object.entries(tokens)) {
+      const value = String(v || "").trim();
+      if (value) out[k] = value;
+    }
+    return out;
+  }
+
+  function parseTimestamp(raw) {
+    const value = String(raw || "").trim();
+    if (!value) return null;
+    const at = Date.parse(value);
+    return Number.isFinite(at) ? new Date(at) : null;
+  }
+
+  function normalizePluginTokenMeta(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const issuedAt = parseTimestamp(raw.issuedAt);
+    const expiresAt = parseTimestamp(raw.expiresAt);
+    const refreshAt = parseTimestamp(raw.refreshAt);
+    if (!issuedAt && !expiresAt && !refreshAt) return null;
+    return {
+      issuedAt: issuedAt ? issuedAt.toISOString() : "",
+      expiresAt: expiresAt ? expiresAt.toISOString() : "",
+      refreshAt: refreshAt ? refreshAt.toISOString() : "",
+    };
+  }
+
+  function parseTokenMetaFromClient(client = null) {
+    const prefs = client || (typeof AssetFlowStore === "undefined" ? {} : AssetFlowStore.loadPrefs());
+    const tokenState = (prefs && (prefs.client || prefs)) || {};
+    return normalizePluginTokenMeta(tokenState[CREDENTIAL_META_KEY]);
+  }
+
+  function isRetryableNetworkFailure(error) {
+    if (!error) return false;
+    if (error.timeout || error.name === "AbortError") return true;
+    const status = error.status || 0;
+    return status === 429 || status >= 500;
+  }
+
+  function isAuthoritativeCode(code, status) {
+    const clearCode = code === "TOKEN_EXPIRED" ||
+      code === "TOKEN_INVALID" ||
+      code === "TOKEN_REVOKED" ||
+      code === "NO_TOKEN" ||
+      code === "ACCOUNT_BLOCKED" ||
+      code === "ACCOUNT_INACTIVE";
+    return (status === 401 && clearCode) || (status === 403 && (code === "ACCOUNT_BLOCKED" || code === "ACCOUNT_INACTIVE"));
+  }
+
+  function getClientPrefs() {
+    if (typeof AssetFlowStore === "undefined") return { client: {} };
+    return AssetFlowStore.loadPrefs();
+  }
+
+  function readStoredMetaByHost() {
+    const prefs = getClientPrefs();
+    const client = (prefs && prefs.client) || {};
+    const raw = client[CREDENTIAL_META_BY_HOST_KEY];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+    return raw;
   }
 
   /**
@@ -39,63 +147,291 @@ const AssetFlowAccount = (() => {
     return null;
   }
 
-  function token() {
+  function tokenMetaFromResponse(data) {
+    return normalizePluginTokenMeta(data && data.pluginToken ? data.pluginToken : null);
+  }
+
+  function candidateSources() {
+    const store = secretStore();
+    const prefs = getClientPrefs();
+    const client = prefs && prefs.client ? prefs.client : {};
+    const candidateMetaByHost = readStoredMetaByHost();
+    const items = [];
+    const seen = new Set();
+    const add = (token, source, preferredHost) => {
+      const value = String(token || "").trim();
+      if (!value) return;
+      if (seen.has(value)) return;
+      seen.add(value);
+      const meta = normalizePluginTokenMeta(
+        candidateMetaByHost[preferredHost] || candidateMetaByHost[source]
+      ) || parseTokenMetaFromClient(client);
+      items.push({ token: value, source, preferredHost, meta });
+    };
+
+    if (store) {
+      add(store.get(CREDENTIAL_ACCOUNT_SHARED), "secret-shared", "shared");
+      add(store.get(CREDENTIAL_LEGACY_ACCOUNT_AE), "secret-ae", "ae");
+      add(store.get(CREDENTIAL_LEGACY_ACCOUNT_PR), "secret-pr", "pr");
+      add(store.get("ae"), "secret-ae-legacy", "ae");
+      add(store.get("pr"), "secret-pr-legacy", "pr");
+    }
+    add((client && client.token) || "", "prefs-token");
+    const tokens = readStoredTokens(client);
+    for (const [host, token] of Object.entries(tokens)) {
+      add(token, `prefs-${host}`, host);
+    }
+    return items;
+  }
+
+  function shouldClearLegacyTokens(candidates) {
+    return candidates.some((item) => item.source !== CREDENTIAL_ACCOUNT_SHARED);
+  }
+
+  function pickPreferredCandidate(items) {
+    if (!items.length) return null;
+    return items.reduce((best, current) =>
+      tokenCandidateIsBetter(current, best) ? current : best
+    );
+  }
+
+  function tokenCandidateIsBetter(a, b) {
+    if (!a) return false;
+    if (!b) return true;
+    const rankA = CREDENTIAL_SOURCE_RANK[a.source] || 900;
+    const rankB = CREDENTIAL_SOURCE_RANK[b.source] || 900;
+    const aIssued = a.meta?.issuedAt ? Date.parse(a.meta.issuedAt) : -1;
+    const bIssued = b.meta?.issuedAt ? Date.parse(b.meta.issuedAt) : -1;
+    const aExpires = a.meta?.expiresAt ? Date.parse(a.meta.expiresAt) : -1;
+    const bExpires = b.meta?.expiresAt ? Date.parse(b.meta.expiresAt) : -1;
+    if (rankA !== rankB) return rankA < rankB;
+    if (aIssued !== bIssued) return aIssued > bIssued;
+    if (aExpires !== bExpires) return aExpires > bExpires;
+    return (a.token || "") < (b.token || "");
+  }
+
+  function clearLegacyTokenArtifacts() {
     const store = secretStore();
     if (store) {
-      const t = (store.get() || "").trim();
-      if (t) return t;
-      // Migratsiya: eski ochiq token bo'lsa — omborga ko'chirib, prefs'dan o'chiramiz
-      const legacy = prefsToken();
-      if (legacy && store.set(legacy)) {
-        stripPrefsToken();
-        return legacy;
-      }
-      return legacy;
+      CREDENTIAL_LEGACY_SECRET_KEYS.forEach((acc) => {
+        store.clear(acc);
+      });
     }
-    return prefsToken();
-  }
-
-  function prefsToken() {
-    const c =
-      typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs().client || {} : {};
-    return (c.token || "").trim();
-  }
-
-  /** prefs.json ichidagi ochiq tokenni o'chiradi (ombor egallagach) */
-  function stripPrefsToken() {
-    try {
-      if (typeof AssetFlowStore === "undefined") return;
-      const prefs = AssetFlowStore.loadPrefs();
-      if (!prefs.client || !prefs.client.token) return;
-      prefs.client = { ...prefs.client, token: "" };
-      AssetFlowStore.savePrefs(prefs);
-    } catch {
-      /* */
-    }
-  }
-
-  function saveToken(t) {
-    const store = secretStore();
-    const stored = store ? store.set(t) : false;
-    const prefs = typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs() : { client: {} };
-    // Ombor qabul qilgan bo'lsa — diskdagi nusxa BO'SH qoladi (ochiq token yo'q)
-    prefs.client = { ...(prefs.client || {}), apiBaseUrl: apiBase(), token: stored ? "" : t };
+    const prefs = getClientPrefs();
+    const client = prefs.client || {};
+    delete client.tokens;
+    delete client[CREDENTIAL_META_BY_HOST_KEY];
     if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
+  }
+
+  function setActiveToken(tokenValue, meta = null) {
+    activeToken = String(tokenValue || "").trim();
+    activeTokenMeta = normalizePluginTokenMeta(meta);
+  }
+
+  function clearLocalTokenState(reason) {
+    const store = secretStore();
+    if (store) {
+      store.clear(CREDENTIAL_ACCOUNT_SHARED);
+      CREDENTIAL_LEGACY_SECRET_KEYS.forEach((acc) => store.clear(acc));
+    }
+    const prefs = getClientPrefs();
+    const client = prefs.client || {};
+    delete client.token;
+    delete client.tokens;
+    delete client[CREDENTIAL_META_KEY];
+    delete client[CREDENTIAL_META_BY_HOST_KEY];
+    prefs.client = client;
+    if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
+    activeToken = "";
+    activeTokenMeta = null;
+    cachedUser = null;
+  }
+
+  function writeTokenToPrefs(tokenValue, meta, keepLegacyTokens = true) {
+    const prefs = getClientPrefs();
+    const client = prefs.client || {};
+    client.apiBaseUrl = apiBase();
+    if (tokenValue) {
+      client.token = tokenValue;
+      if (meta) client[CREDENTIAL_META_KEY] = meta;
+      else delete client[CREDENTIAL_META_KEY];
+      if (!keepLegacyTokens) {
+        delete client.tokens;
+        delete client[CREDENTIAL_META_BY_HOST_KEY];
+      }
+    } else {
+      delete client.token;
+      delete client.tokens;
+      delete client[CREDENTIAL_META_KEY];
+      delete client[CREDENTIAL_META_BY_HOST_KEY];
+    }
+    if (client.tokens && !Object.keys(client.tokens).length) {
+      delete client.tokens;
+    }
+    prefs.client = client;
+    if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
+  }
+
+  function persistSharedToken(nextToken, nextMeta, clearLegacy) {
+    const tokenValue = String(nextToken || "").trim();
+    const tokenMeta = normalizePluginTokenMeta(nextMeta);
+    if (!tokenValue) {
+      return false;
+    }
+    const store = secretStore();
+    let sharedPersisted = true;
+    if (store) {
+      if (tokenValue) {
+        sharedPersisted = !!store.set(tokenValue, CREDENTIAL_ACCOUNT_SHARED);
+        if (sharedPersisted) {
+          try {
+            const persisted = String(store.get(CREDENTIAL_ACCOUNT_SHARED) || "").trim();
+            sharedPersisted = persisted === tokenValue;
+          } catch {
+            sharedPersisted = false;
+          }
+        }
+      }
+    }
+
+    const keepLegacyTokens = !store || !clearLegacy || !sharedPersisted;
+    writeTokenToPrefs(tokenValue, tokenMeta, keepLegacyTokens);
+
+    if (tokenMeta) activeTokenMeta = tokenMeta;
+    if (sharedPersisted || !store) setActiveToken(tokenValue, tokenMeta);
+
+    if (clearLegacy && sharedPersisted && store) {
+      clearLegacyTokenArtifacts();
+    }
+    return sharedPersisted;
+  }
+
+  async function validateCandidates(items, preferred) {
+    if (!items || !items.length) return { token: "", meta: null, keepExisting: false };
+    const fallback = preferred || pickPreferredCandidate(items);
+    let best = null;
+    let sawNetworkFailure = false;
+    let sawNonAuthoritativeFailure = false;
+    for (const item of items) {
+      try {
+        const data = await requestWithToken("/api/plugin/validate", { method: "GET" }, item.token, {
+          handleAuthFailure: false,
+        });
+        const nextMeta = tokenMetaFromResponse(data);
+        const candidate = { token: item.token, meta: nextMeta || item.meta || null };
+        if (tokenCandidateIsBetter(candidate, best)) best = candidate;
+      } catch (e) {
+        const status = e.status || 0;
+        const code = e.code || (e.data && e.data.code);
+        if (isRetryableNetworkFailure(e)) {
+          sawNetworkFailure = true;
+          continue;
+        }
+        if (!isAuthoritativeCode(code, status)) {
+          sawNonAuthoritativeFailure = true;
+        }
+      }
+    }
+    if (best) return { token: best.token, meta: best.meta, keepExisting: true, validated: true };
+    if ((sawNetworkFailure || sawNonAuthoritativeFailure) && fallback) {
+      return {
+        token: fallback.token,
+        meta: fallback.meta || parseTokenMetaFromClient(),
+        keepExisting: true,
+        validated: false,
+      };
+    }
+    return { token: "", meta: null, keepExisting: false, validated: false };
+  }
+
+  async function ensureSessionLoaded() {
+    if (sessionBootstrapPromise) return sessionBootstrapPromise;
+    sessionBootstrapPromise = (async () => {
+      const candidates = candidateSources();
+      if (candidates.length === 0) {
+        clearLocalTokenState("empty");
+        return;
+      }
+      const candidateByScore = pickPreferredCandidate(candidates);
+      const shouldValidate = candidates.some((item) => item.source !== CREDENTIAL_ACCOUNT_SHARED) || !candidateByScore?.meta;
+      const selected = shouldValidate
+        ? await validateCandidates(candidates, candidateByScore)
+        : {
+            token: candidateByScore ? candidateByScore.token : "",
+            meta: candidateByScore ? (candidateByScore.meta || parseTokenMetaFromClient()) : null,
+            keepExisting: true,
+            validated: false,
+          };
+      const tokenValue = String(selected.token || "").trim();
+      if (!tokenValue) {
+        clearLocalTokenState("invalid");
+        return;
+      }
+      const shouldClearLegacy = shouldClearLegacyTokens(candidates);
+      const persistResult = persistSharedToken(
+        tokenValue,
+        selected.meta,
+        shouldClearLegacy && selected.validated
+      );
+      if (!persistResult) {
+        setActiveToken(tokenValue, selected.meta || parseTokenMetaFromClient());
+        return;
+      }
+    })().finally(() => {
+      sessionBootstrapPromise = null;
+    });
+    return sessionBootstrapPromise;
+  }
+
+  function token() {
+    if (!activeToken && !sessionBootstrapPromise) {
+      const candidates = candidateSources();
+      const selected = pickPreferredCandidate(candidates);
+      if (selected && selected.token) {
+        persistSharedToken(selected.token, selected.meta || parseTokenMetaFromClient(), false);
+      }
+    }
+    if (activeToken) return activeToken;
+    const host = tokenHost();
+    const store = secretStore();
+    const direct = store ? store.get(CREDENTIAL_ACCOUNT_SHARED) : "";
+    if (direct) {
+      setActiveToken(direct);
+      return activeToken;
+    }
+    const prefs = getClientPrefs();
+    const legacy = (prefs && prefs.client && (prefs.client.token || "")).trim();
+    setActiveToken(legacy);
+    if (!activeToken) return "";
+    if (store && legacy) {
+      const wrote = store.set(activeToken, CREDENTIAL_ACCOUNT_SHARED);
+      if (wrote) {
+        const prefsToSave = getClientPrefs();
+        const client = prefsToSave.client || {};
+        client.token = activeToken;
+        delete client.tokens;
+        delete client[CREDENTIAL_META_BY_HOST_KEY];
+        if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefsToSave);
+      }
+    }
+    return activeToken;
+  }
+
+  function clearToken() {
+    clearLocalTokenState("explicit");
+  }
+
+  function saveToken(t, meta = null) {
+    const value = String(t || "").trim();
+    const normalizedMeta = normalizePluginTokenMeta(meta);
+    persistSharedToken(value, normalizedMeta, true);
     // #98 (PL-f): login'gacha yig'ilgan loglar endi yuborilishi mumkin
     try {
       if (typeof AssetFlowLog !== "undefined" && AssetFlowLog.flush) AssetFlowLog.flush();
     } catch {
       /* log hech qachon login'ni buzmasin */
     }
-  }
-
-  function clearToken() {
-    const store = secretStore();
-    if (store) store.clear();
-    const prefs = typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs() : { client: {} };
-    prefs.client = { ...(prefs.client || {}), apiBaseUrl: apiBase(), token: "" };
-    if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
-    cachedUser = null;
   }
 
   /**
@@ -113,10 +449,15 @@ const AssetFlowAccount = (() => {
     // tomonga — sign-out QILINMAYDI (faqat 401 chiqaradi).
     // P8 #4 — 401 ham endi kod bilan: FAQAT sessiya o'lgan kodlar (yoki kodsiz eski 401) tozalaydi.
     // TWO_FA_INVALID / PENDING_EXPIRED kabi 401'lar ish o'rtasida logout QILMAYDI.
-    const deadCode =
-      !code || code === "TOKEN_EXPIRED" || code === "TOKEN_INVALID" || code === "TOKEN_REVOKED" || code === "NO_TOKEN";
+    const clearCode =
+      code === "TOKEN_EXPIRED" ||
+      code === "TOKEN_INVALID" ||
+      code === "TOKEN_REVOKED" ||
+      code === "NO_TOKEN" ||
+      code === "ACCOUNT_BLOCKED" ||
+      code === "ACCOUNT_INACTIVE";
     const isAuthInvalidation =
-      (status === 401 && deadCode) ||
+      (status === 401 && clearCode) ||
       (status === 403 && (code === "ACCOUNT_BLOCKED" || code === "ACCOUNT_INACTIVE"));
     if (isAuthInvalidation && hadToken) {
       clearToken();
@@ -200,7 +541,10 @@ const AssetFlowAccount = (() => {
    */
   async function publicRequest(path, options = {}) {
     const headers = { ...(options.headers || {}) };
-    if (options.body && !(options.body instanceof FormData)) {
+    headers["X-FF-App"] = hostApp();
+    const bodyIsFormData =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
+    if (options.body && !bodyIsFormData) {
       headers["Content-Type"] = "application/json";
     }
     const res = await fetchWithTimeout(
@@ -208,12 +552,11 @@ const AssetFlowAccount = (() => {
       {
         ...options,
         headers,
-        body:
-          options.body instanceof FormData
-            ? options.body
-            : options.body
-              ? JSON.stringify(options.body)
-              : undefined,
+        body: bodyIsFormData
+          ? options.body
+          : options.body
+            ? JSON.stringify(options.body)
+            : undefined,
       },
       30000
     );
@@ -236,25 +579,34 @@ const AssetFlowAccount = (() => {
     return data;
   }
 
-  async function request(path, options = {}) {
+  function tokenNeedsRefresh(meta = null) {
+    const now = Date.now();
+    if (!meta) return false;
+    const refreshAt = Date.parse(meta.refreshAt || "") || 0;
+    const expiresAt = Date.parse(meta.expiresAt || "") || 0;
+    if (!refreshAt) return false;
+    return refreshAt <= now && now < expiresAt;
+  }
+
+  async function requestWithToken(path, options = {}, tokenValue, runtime = {}) {
     const headers = { ...(options.headers || {}) };
-    if (options.body && !(options.body instanceof FormData)) {
+    headers["X-FF-App"] = hostApp();
+    const bodyIsFormData =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
+    if (options.body && !bodyIsFormData) {
       headers["Content-Type"] = "application/json";
     }
-    const t = token();
-    if (t) headers.Authorization = `Bearer ${t}`;
+    if (tokenValue) headers.Authorization = `Bearer ${tokenValue}`;
 
-    // Fayl yuklash (FormData) uzoq davom etishi mumkin — timeout'ni uzaytiramiz
-    const timeoutMs = options.body instanceof FormData ? 180000 : 30000;
+    const timeoutMs = bodyIsFormData ? 180000 : 30000;
     const res = await fetchWithTimeout(`${apiBase()}${path}`, {
       ...options,
       headers,
-      body:
-        options.body instanceof FormData
-          ? options.body
-          : options.body
-            ? JSON.stringify(options.body)
-            : undefined,
+      body: bodyIsFormData
+        ? options.body
+        : options.body
+          ? JSON.stringify(options.body)
+          : undefined,
     }, timeoutMs);
 
     const text = await res.text();
@@ -269,11 +621,77 @@ const AssetFlowAccount = (() => {
       const err = new Error(data?.error || `HTTP ${res.status}`);
       err.status = res.status;
       err.data = data;
-      err.code = data?.code; // P20: caller'lar biznes-kodga qarab tarmoqlansin (LIMIT_REACHED va h.k.)
-      // P20: FAQAT auth-bekor (401 / 403 ACCOUNT_BLOCKED|INACTIVE) sessiyani tozalaydi — kod uzatiladi.
-      handleAuthFailure(res.status, !!t, data?.code);
+      err.code = data?.code;
+      if (runtime.handleAuthFailure !== false) {
+        handleAuthFailure(res.status, !!tokenValue, err.code);
+      }
       throw err;
     }
+    return data;
+  }
+
+  async function ensureFreshToken() {
+    if (refreshInProgress) return refreshInProgress;
+    if (!activeToken || !tokenNeedsRefresh(activeTokenMeta)) return false;
+
+    const currentToken = activeToken;
+    refreshInProgress = (async () => {
+      try {
+        const data = await requestWithToken(
+          "/api/plugin/token",
+          { method: "POST" },
+          currentToken,
+          { handleAuthFailure: false }
+        );
+        const nextToken = String(data?.token || "").trim();
+        if (!nextToken) return false;
+        const nextMeta = tokenMetaFromResponse(data);
+        const sharedPersisted = persistSharedToken(nextToken, nextMeta, true);
+        if (!sharedPersisted) return false;
+        return true;
+      } catch (e) {
+        const status = e.status || 0;
+        const code = e.code || (e.data && e.data.code);
+        if (isRetryableNetworkFailure(e)) {
+          return false;
+        }
+        if (!handleAuthFailure(status, true, code)) {
+          return false;
+        }
+        return false;
+      }
+    })().finally(() => {
+      refreshInProgress = null;
+    });
+
+    return refreshInProgress;
+  }
+
+  async function request(path, options = {}) {
+    await ensureSessionLoaded();
+    await ensureFreshToken();
+
+    const headers = { ...(options.headers || {}) };
+    const bodyIsFormData =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
+    const t = token();
+    const timeoutMs = bodyIsFormData ? 180000 : 30000;
+
+    const data = await requestWithToken(
+      path,
+      {
+        ...options,
+        body:
+          bodyIsFormData
+            ? options.body
+            : options.body
+              ? JSON.stringify(options.body)
+              : undefined,
+      },
+      t,
+      { handleAuthFailure: true }
+    );
+
     return data;
   }
 
@@ -284,11 +702,21 @@ const AssetFlowAccount = (() => {
   function persistClient(partial) {
     const prefs =
       typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs() : { client: {} };
-    prefs.client = {
-      ...(prefs.client || {}),
-      apiBaseUrl: partial.apiBaseUrl || apiBase(),
-      token: partial.token !== undefined ? partial.token : token(),
-    };
+    const nextToken = partial.token !== undefined ? String(partial.token || "") : token();
+    const client = prefs.client || {};
+    client.apiBaseUrl = partial.apiBaseUrl || apiBase();
+    if (nextToken) {
+      client.token = nextToken;
+      if (partial.meta) client[CREDENTIAL_META_KEY] = partial.meta;
+      delete client.tokens;
+      delete client[CREDENTIAL_META_BY_HOST_KEY];
+    } else {
+      delete client.token;
+      delete client.tokens;
+      delete client[CREDENTIAL_META_KEY];
+      delete client[CREDENTIAL_META_BY_HOST_KEY];
+    }
+    prefs.client = client;
     if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
   }
 
@@ -298,17 +726,24 @@ const AssetFlowAccount = (() => {
       method: "POST",
       body: { email, password },
     });
-    persistClient({
-      apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
-      token: data.token,
-    });
+    saveToken(data.token, tokenMetaFromResponse(data));
     cachedUser = data.user;
     sessionEstablished = true;
     if (data.adminUrl) adminUrl = data.adminUrl;
+    persistClient({
+      apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
+    });
     return data;
   }
 
-  function logout() {
+  async function logout() {
+    if (token()) {
+      try {
+        await request("/api/plugin/logout", { method: "POST" });
+      } catch {
+        /* local fallback */
+      }
+    }
     clearToken();
     stopDevicePolling();
   }
@@ -318,41 +753,69 @@ const AssetFlowAccount = (() => {
   // webview bloklanadi) — shu sabab bir martalik kod olib, tasdiqlashni tizim
   // brauzerida (device.html) o'tkazamiz, so'ng natijani pollik qilib olamiz.
   let devicePollTimer = null;
+  let activeDeviceRequest = null;
 
   async function startDeviceLogin() {
     // Public endpoint — token YUBORMAYMIZ (eskirgan token 401 → soxta "sessiya
     // tugadi" bo'lardi). publicRequest global ushlagichni ham chetlab o'tadi.
-    return publicRequest("/api/plugin/device/start", { method: "POST" });
+    const data = await publicRequest("/api/plugin/device/start", { method: "POST" });
+    activeDeviceRequest = {
+      requestId: data.requestId || data.code,
+      pollToken: data.pollToken,
+    };
+    return data;
   }
 
-  function stopDevicePolling() {
+  function finishDevicePolling() {
     if (devicePollTimer) {
       clearInterval(devicePollTimer);
       devicePollTimer = null;
     }
+    activeDeviceRequest = null;
   }
 
-  /** `code` bo'yicha holatni har `intervalMs`da so'raydi, terminal holatda to'xtaydi. */
-  function pollDeviceLogin(code, { onConfirmed, onExpired, onDenied, onError, intervalMs = 3000 } = {}) {
-    stopDevicePolling();
+  function stopDevicePolling(cancelRequest = true) {
+    if (devicePollTimer) {
+      clearInterval(devicePollTimer);
+      devicePollTimer = null;
+    }
+    const request = activeDeviceRequest;
+    activeDeviceRequest = null;
+    if (cancelRequest && request?.requestId && request?.pollToken) {
+      publicRequest("/api/plugin/device/cancel", {
+        method: "POST",
+        body: request,
+      }).catch(() => {});
+    }
+  }
+
+  /** Alohida pollToken bilan holatni so'raydi; browser URL bu sirni bilmaydi. */
+  function pollDeviceLogin(request, { onConfirmed, onExpired, onDenied, onError, intervalMs = 2500 } = {}) {
+    stopDevicePolling(false);
+    const requestId = request?.requestId || request?.code || request;
+    const pollToken = request?.pollToken;
+    activeDeviceRequest = { requestId, pollToken };
     devicePollTimer = setInterval(async () => {
       try {
-        const data = await publicRequest(`/api/plugin/device/poll?code=${encodeURIComponent(code)}`);
+        const data = await publicRequest("/api/plugin/device/poll", {
+          method: "POST",
+          body: { requestId, pollToken },
+        });
         if (data.status === "confirmed") {
-          stopDevicePolling();
+          finishDevicePolling();
           persistClient({
             apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
-            token: data.token,
           });
+          saveToken(data.token, tokenMetaFromResponse(data));
           cachedUser = data.user;
           sessionEstablished = true;
           if (data.adminUrl) adminUrl = data.adminUrl;
           if (onConfirmed) onConfirmed(data);
         } else if (data.status === "expired") {
-          stopDevicePolling();
+          finishDevicePolling();
           if (onExpired) onExpired();
         } else if (data.status === "denied") {
-          stopDevicePolling();
+          finishDevicePolling();
           if (onDenied) onDenied();
         }
         // "pending" — kutishda davom etamiz
@@ -363,7 +826,8 @@ const AssetFlowAccount = (() => {
   }
 
   async function fetchMe() {
-    if (!token()) return null;
+    const hadToken = !!token();
+    if (!hadToken) return null;
     try {
       const data = await request("/api/plugin/me");
       cachedUser = data.user;
@@ -371,13 +835,15 @@ const AssetFlowAccount = (() => {
       if (data.apiBaseUrl || data.adminUrl) {
         persistClient({
           apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
-          token: token(),
         });
+        saveToken(token(), tokenMetaFromResponse(data));
       }
       if (data.adminUrl) adminUrl = data.adminUrl;
       return cachedUser;
     } catch (e) {
-      if (e.status === 401 || e.status === 403) clearToken();
+      if (handleAuthFailure(e.status, hadToken, e.code || e.data?.code)) {
+        return null;
+      }
       throw e;
     }
   }
@@ -488,7 +954,7 @@ const AssetFlowAccount = (() => {
   async function heartbeat(meta = {}) {
     if (!token()) return;
     try {
-      await request("/api/plugin/heartbeat", { method: "POST", body: meta });
+      await request("/api/plugin/heartbeat", { method: "POST", body: { ...meta, app: hostApp(), host: hostApp() } });
     } catch {
       /* ignore */
     }
@@ -498,7 +964,7 @@ const AssetFlowAccount = (() => {
     if (!token()) return null;
     const data = await request("/api/plugin/usage/download", {
       method: "POST",
-      body: { templateId },
+      body: { templateId, app: hostApp() },
     });
     cachedUser = data.user;
     return cachedUser;
@@ -508,7 +974,7 @@ const AssetFlowAccount = (() => {
     if (!token()) return null;
     const data = await request("/api/plugin/usage/import", {
       method: "POST",
-      body: { templateId },
+      body: { templateId, app: hostApp() },
     });
     cachedUser = data.user;
     return cachedUser;
@@ -537,11 +1003,14 @@ const AssetFlowAccount = (() => {
 
   function authHeaders() {
     const t = token();
-    return t ? { Authorization: `Bearer ${t}` } : {};
+    const h = { "X-FF-App": hostApp() };
+    if (t) h.Authorization = `Bearer ${t}`;
+    return h;
   }
 
   return {
     apiBase,
+    hostApp,
     token,
     isLoggedIn,
     login,

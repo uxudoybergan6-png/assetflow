@@ -31,7 +31,8 @@
     "js/ae-shim/uxp-copy-late.js",
     "js/ae-shim/uxp-account-events.js",
     "js/ae-shim/uxp-import-events.js",
-    "js/ae-shim/uxp-native-events.js"
+    "js/ae-shim/uxp-native-events.js",
+    "js/ae-shim/uxp-error-report.js"
   ],
   "order": [
     "ported/ae-inline-01.js",

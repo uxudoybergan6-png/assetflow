@@ -9,6 +9,7 @@ const AssetFlowLog = (() => {
     admin: "Admin Console",
     contributor: "Contributor Studio",
     ae_plugin: "AE Plugin (Browse)",
+    pr_plugin: "Premiere Plugin (Browse)",
   };
 
   let source = "ae_plugin";
@@ -92,9 +93,10 @@ const AssetFlowLog = (() => {
 
   async function pushServer(entry, tok) {
     const base = readPrefsApi();
+    const appId = source === "pr_plugin" ? "pr" : "ae";
     const res = await fetch(`${base}/api/logs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}`, "X-FF-App": appId },
       body: JSON.stringify(entry),
     });
     if (res.status === 401 || res.status === 403) {
@@ -150,6 +152,7 @@ const AssetFlowLog = (() => {
       action: meta.action || "",
       detail: meta.detail || "",
       meta: meta.data || null,
+      hostApp: source === "pr_plugin" ? "pr" : "ae",
     };
     return append(entry);
   }
@@ -158,7 +161,7 @@ const AssetFlowLog = (() => {
     source = opts.source || "ae_plugin";
     if (opts.apiBaseUrl) apiBase = opts.apiBaseUrl;
     if (opts.syncEnabled === false) syncEnabled = false;
-    log("info", "AE Browse panel loaded", {
+    log("info", (source === "pr_plugin" ? "Premiere" : "AE") + " Browse panel loaded", {
       action: "init",
       detail: typeof IS_CEP !== "undefined" && IS_CEP ? "CEP" : "browser",
     });

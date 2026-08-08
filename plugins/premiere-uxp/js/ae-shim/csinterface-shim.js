@@ -226,6 +226,18 @@
       return jstr({ ok: true, items: items, count: items.length, truncated: items.length >= CAP });
     },
 
+    /** Premiere UXP 25.6–26.2 Project-panel selectionini o'qish API'sini
+     *  bermaydi. Ro'yxat picker'i `listProjectFootage()` orqali to'liq ishlaydi;
+     *  aynan selection so'ralganda esa boshqa klipni taxmin qilib yubormaymiz. */
+    async getSelectedProjectReference() {
+      return jstr({
+        ok: false,
+        reason: "Premiere's UXP API cannot read the Project-panel selection yet — choose the item from Project footage.",
+        code: "PROJECT_SELECTION_UNAVAILABLE",
+        recoverable: true,
+      });
+    },
+
     async getActiveTimelineVideoReference() {
       var p = await project();
       if (!p) return fail("No open Premiere Pro project");
@@ -284,6 +296,73 @@
       var f = await waitForFile(dir, name, 6000);
       if (!f) return fail("Frame export produced no file (6s)");
       return jstr({ ok: true, path: f.nativePath, name: name });
+    },
+
+    async getWorkAreaInfo() {
+      var p = await project();
+      if (!p) return fail("No open Premiere Pro project");
+      var s = await sequence(p);
+      if (!s) return fail("No sequence open — open a sequence in the Timeline");
+      var start = 0, end = 0;
+      try { var ip = await s.getInPoint(); start = Number(ip && ip.seconds) || 0; } catch (e) { start = 0; }
+      try { var op = await s.getOutPoint(); end = Number(op && op.seconds) || 0; } catch (e) { end = 0; }
+      if (!(end > start)) {
+        try { var ep = await s.getEndTime(); end = Number(ep && ep.seconds) || start; } catch (e) { end = start; }
+      }
+      return jstr({ ok: true, start: start, end: end, duration: Math.max(0, end - start), sequence: s.name || "" });
+    },
+
+    async refreshProjectPanel() {
+      var p = await project();
+      if (!p) return fail("No open Premiere Pro project");
+      var projectPath = String(p.path || "");
+      var projectName = String(p.name || projectPath.split(/[\\/]/).pop() || "Premiere Project").replace(/\.prproj$/i, "");
+      var seqs = [];
+      try { seqs = typeof p.getSequences === "function" ? await p.getSequences() : []; } catch (e) { seqs = []; }
+      var tree = [];
+      for (var i = 0; i < seqs.length; i++) {
+        var name = String((seqs[i] && seqs[i].name) || "Sequence");
+        tree.push({ name: name, path: "Sequences/" + name, type: "comp", folder: "Sequences" });
+      }
+      return jstr({
+        ok: true,
+        saved: !!projectPath,
+        projectFile: projectPath,
+        projectName: projectName,
+        compCount: tree.length,
+        folderCount: 1,
+        folders: [{ name: "Sequences", path: "Sequences" }],
+        tree: tree,
+      });
+    },
+
+    async renderSceneStillFrames() {
+      var raw = await HOST.exportTimelineFrame();
+      var frame = null;
+      try { frame = JSON.parse(raw); } catch (e) { frame = null; }
+      if (!frame || !frame.ok) return raw;
+      var p = await project(), s = await sequence(p);
+      var name = (s && s.name) || "Active Sequence";
+      return jstr({
+        ok: true,
+        results: [{ ok: true, path: frame.path, name: name, aeComp: name, width: 0, height: 0, fps: 0, durationSec: 0 }],
+      });
+    },
+
+    async getHostCapabilities() {
+      return jstr({
+        ok: true,
+        host: "pr",
+        bridge: "uxp",
+        nativeMogrtImport: true,
+        projectTemplateImport: true,
+        safeRemoveById: false,
+        projectReference: true,
+        projectSelectionReference: false,
+        timelineReference: true,
+        currentFrameReference: true,
+        publisher: false,
+      });
     },
 
     /**

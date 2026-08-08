@@ -24,7 +24,7 @@ const AssetFlowSecret = (() => {
   const SERVICE = "FrameFlow AE Plugin";
   const ACCOUNT = "session-token";
 
-  let cache = null; // null = hali o'qilmagan, "" = yo'q
+  const cache = new Map(); // account -> token
   let backend = null; // "keychain" | "dpapi" | "file" | "none"
   let warned = false;
 
@@ -79,14 +79,47 @@ const AssetFlowSecret = (() => {
     return path.join(os.homedir(), "Library", "Application Support", "AssetFlow");
   }
 
+  function normalizeHost(host) {
+    const h = String(host || "").toLowerCase();
+    if (h === "pr" || h === "ppro") return "pr";
+    if (h === "ae" || h === "aeft") return "ae";
+    return "";
+  }
+
+function accountForHost(hostOrAccount = "") {
+  const explicit = String(hostOrAccount || "");
+  if (explicit.startsWith(`${ACCOUNT}-`)) return explicit;
+  const normalized = normalizeHost(hostOrAccount);
+  if (!normalized) return ACCOUNT;
+  if (normalized === "shared") return ACCOUNT;
+  return `${ACCOUNT}-${normalized}`;
+}
+
+  function cacheGet(account) {
+    if (!cache.has(account)) return undefined;
+    return cache.get(account);
+  }
+
+  function cacheSet(account, value) {
+    cache.set(account, value);
+  }
+
+  function cacheClear(account) {
+    cache.delete(account);
+  }
+
   /** Shifrlangan/plain token fayli — platformaga mos sozlamalar papkasida */
-  function tokenFilePath() {
+  function tokenFilePath(account = ACCOUNT) {
     const path = require("path");
     const fs = require("fs");
     const dir = settingsDir();
     if (!dir) return "";
     fs.mkdirSync(dir, { recursive: true });
-    return path.join(dir, platform() === "win32" ? "session.dpapi" : "session.token");
+    const safe = account === ACCOUNT ? "session" : account;
+    return path.join(
+      dir,
+      platform() === "win32" ? `${safe}.dpapi` : `${safe}.token`
+    );
   }
 
   function detectBackend() {
@@ -115,12 +148,12 @@ const AssetFlowSecret = (() => {
 
   /* ---------- macOS Keychain ---------- */
 
-  function keychainRead() {
+  function keychainRead(account) {
     const child = require("child_process");
     try {
       const out = child.execFileSync(
         "security",
-        ["find-generic-password", "-a", ACCOUNT, "-s", SERVICE, "-w"],
+        ["find-generic-password", "-a", account, "-s", SERVICE, "-w"],
         { encoding: "utf8", timeout: 8000, stdio: ["ignore", "pipe", "ignore"] }
       );
       return String(out || "").trim();
@@ -129,20 +162,20 @@ const AssetFlowSecret = (() => {
     }
   }
 
-  function keychainWrite(value) {
+  function keychainWrite(account, value) {
     const child = require("child_process");
     // Parol STDIN'dan o'qiladi (`-w` qiymatsiz) — argv'da ko'rinmaydi.
     child.execFileSync(
-      "security",
-      ["add-generic-password", "-U", "-a", ACCOUNT, "-s", SERVICE, "-w"],
-      { input: value + "\n", timeout: 10000, stdio: ["pipe", "ignore", "ignore"] }
-    );
+        "security",
+        ["add-generic-password", "-U", "-a", account, "-s", SERVICE, "-w"],
+        { input: value + "\n", timeout: 10000, stdio: ["pipe", "ignore", "ignore"] }
+      );
   }
 
-  function keychainClear() {
+  function keychainClear(account) {
     const child = require("child_process");
     try {
-      child.execFileSync("security", ["delete-generic-password", "-a", ACCOUNT, "-s", SERVICE], {
+      child.execFileSync("security", ["delete-generic-password", "-a", account, "-s", SERVICE], {
         stdio: "ignore",
         timeout: 8000,
       });
@@ -188,16 +221,16 @@ const AssetFlowSecret = (() => {
 
   /* ---------- Fayl (0600) ---------- */
 
-  function fileRead() {
+  function fileRead(account) {
     const fs = require("fs");
-    const p = tokenFilePath();
+    const p = tokenFilePath(account);
     if (!p || !fs.existsSync(p)) return "";
     return String(fs.readFileSync(p, "utf8") || "").trim();
   }
 
-  function fileWrite(text) {
+  function fileWrite(account, text) {
     const fs = require("fs");
-    const p = tokenFilePath();
+    const p = tokenFilePath(account);
     if (!p) throw new Error("token file path unavailable");
     fs.writeFileSync(p, text, { encoding: "utf8", mode: 0o600 });
     try {
@@ -207,9 +240,9 @@ const AssetFlowSecret = (() => {
     }
   }
 
-  function fileClear() {
+  function fileClear(account) {
     const fs = require("fs");
-    const p = tokenFilePath();
+    const p = tokenFilePath(account);
     try {
       if (p && fs.existsSync(p)) fs.rmSync(p, { force: true });
     } catch {
@@ -233,36 +266,58 @@ const AssetFlowSecret = (() => {
     }
   }
 
+  function readFromBackend(account) {
+    const b = detectBackend();
+    if (b === "keychain") return keychainRead(account);
+    if (b === "dpapi") {
+      const blob = fileRead(account);
+      return blob ? dpapiUnprotect(blob) : "";
+    }
+    return fileRead(account);
+  }
+
   /** Saqlangan tokenni qaytaradi ("" — yo'q). Birinchi chaqiruvda diskdan o'qiydi. */
-  function get() {
-    if (cache != null) return cache;
-    cache = "";
-    if (!available()) return cache;
+  function get(accountOrHost = "") {
+    const account = accountForHost(accountOrHost);
+    const cached = cacheGet(account);
+    if (cached != null) return cached;
+    cacheSet(account, "");
+    if (!available()) return cacheGet(account);
     try {
-      const b = detectBackend();
-      if (b === "keychain") cache = keychainRead();
-      else if (b === "dpapi") {
-        const blob = fileRead();
-        cache = blob ? dpapiUnprotect(blob) : "";
-      } else cache = fileRead();
+      let token = readFromBackend(account);
+      if (!token && account !== ACCOUNT) {
+        const legacyToken = readFromBackend(ACCOUNT);
+        if (legacyToken) {
+          cacheSet(account, legacyToken);
+          try {
+            set(legacyToken, account);
+          } catch {
+            cacheSet(account, legacyToken);
+          }
+          return legacyToken;
+        }
+      }
+      cacheSet(account, token);
     } catch (e) {
       warnOnce(e);
-      cache = "";
+      cacheSet(account, "");
     }
-    return cache;
+    return cacheGet(account);
   }
 
   /** Tokenni saqlaydi. Muvaffaqiyatda true — aks holda chaqiruvchi prefs'ga yozadi. */
-  function set(value) {
+  function set(value, accountOrHost = "") {
+    const account = accountForHost(accountOrHost);
+    cacheSet(account, "");
     const v = String(value || "");
     if (!available()) return false;
-    if (!v) return clear();
+    if (!v) return clear(account);
     try {
       const b = detectBackend();
-      if (b === "keychain") keychainWrite(v);
-      else if (b === "dpapi") fileWrite(dpapiProtect(v));
-      else fileWrite(v);
-      cache = v;
+      if (b === "keychain") keychainWrite(account, v);
+      else if (b === "dpapi") fileWrite(account, dpapiProtect(v));
+      else fileWrite(account, v);
+      cacheSet(account, v);
       return true;
     } catch (e) {
       warnOnce(e);
@@ -270,13 +325,14 @@ const AssetFlowSecret = (() => {
     }
   }
 
-  function clear() {
-    cache = "";
+  function clear(accountOrHost = "") {
+    const account = accountForHost(accountOrHost);
+    cacheSet(account, "");
     if (!available()) return false;
     try {
       const b = detectBackend();
-      if (b === "keychain") keychainClear();
-      else fileClear();
+      if (b === "keychain") keychainClear(account);
+      else fileClear(account);
       return true;
     } catch (e) {
       warnOnce(e);
