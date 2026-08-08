@@ -10,7 +10,7 @@ assert.ok(/\.ff\s+\.va-dock\.ff-create-composer,[\s\S]*?\.ff-create-composer\{[\
 assert.ok(/@media\s*\(max-width:\s*820px\)[\s\S]*\.ff\s+\.ff-create-composer\{[\s\S]{0,140}?position:\s*static/.test(src), "mobile keeps FINAL-CREATE composer static positioning");
 
 assert.ok(/class=\"va-promptwrap ff-create-write\"/.test(src), "prompt wrap maps to FINAL-CREATE write row");
-assert.ok(/class=\"\{\{ promptCls \}\} ff-create-prompt\"/.test(src), "prompt host uses FINAL-CREATE class alongside runtime classes");
+assert.ok(/class=\"\{\{ promptCls \}\} ff-create-prompt\"[^>]*contenteditable=\"true\"[^>]*role=\"textbox\"[^>]*aria-multiline=\"true\"[^>]*aria-label=\"Generation prompt\"[^>]*aria-describedby=\"ffCreateStatus\"[^>]*tabindex=\"0\"/.test(src), "prompt host is declaratively keyboard-editable and accessible before runtime enhancement");
 assert.ok(/class=\"\{\{ promptExpCls \}\} ff-create-promptexp\"/.test(src), "prompt expand button includes FINAL-CREATE marker");
 const promptRow = src.match(/<div class=\"va-promptwrap ff-create-write\">[\s\S]*?<div class=\"va-dockrow ff-create-controls\">/);
 assert.ok(!!promptRow, "prompt-row composer wrapper exists");
@@ -25,12 +25,12 @@ assert.ok(/ff-create-model/.test(src), "model control keeps FINAL-CREATE class")
 assert.ok(/ff-create-control ff-create-settings/.test(src), "settings control keeps FINAL-CREATE class");
 assert.ok(/ff-create-enhance/.test(src), "enhance control keeps FINAL-CREATE class");
 assert.ok(/va-genwrap ff-create-actions/.test(src), "generate actions row keeps FINAL-CREATE class");
-assert.ok(/class=\"\{\{ genBtnCls \}\} ff-create-generate\"[\s\S]{0,180}\{\{ genBtnLabel \}\}[\s\S]{0,80}<span class=\"va-axcost ff-create-cost\"/.test(src), "Generate label precedes its inline cost like FINAL-CREATE");
+assert.ok(/class=\"\{\{ genBtnCls \}\} ff-create-generate\"[^>]*aria-disabled=\"\{\{ genAriaDisabled \}\}\"[\s\S]{0,180}\{\{ genBtnLabel \}\}[\s\S]{0,80}<span class=\"va-axcost ff-create-cost\"/.test(src), "Generate exposes its blocked state and keeps label before inline cost");
 assert.ok(/va-axcost ff-create-cost/.test(src), "cost indicator keeps FINAL-CREATE class");
 assert.ok(/class=\"va-set enh ff-create-enhance\"[\s\S]{0,260}><svg class=\"va-ic\"[\s\S]{0,80}<span class=\"ff-create-enhance-label\">\{\{ enhLabel \}\}<\/span>/.test(src), "Enhance keeps hideable label for icon-only control parity");
 assert.ok(/<div class=\"va-genwrap ff-create-actions\">[\s\S]{0,520}ff-create-enhance[\s\S]{0,520}ff-create-generate/.test(src), "Enhance and Generate share the FINAL-CREATE actions group in order");
 
-assert.ok(/class=\"\{\{ genStatusCls \}\}\"\>\{\{ genStatusText \}\}<\/div>/.test(src), "composer exposes FINAL-CREATE status row");
+assert.ok(/id=\"ffCreateStatus\" class=\"\{\{ genStatusCls \}\}\" aria-live=\"polite\"\>\{\{ genStatusText \}\}<\/div>/.test(src), "composer exposes an announced FINAL-CREATE status row");
 const genStatusTextDecl = src.match(/let\s+genStatusText\s*=\s*'';/);
 const genStatusClsDecl = src.match(/const genStatusCls[\s\S]*?;\n/);
 const genGateOnDecl = src.match(/const\s+genGateOn\s*=\s*[\s\S]*?;/);
@@ -47,11 +47,14 @@ const controlsRowMatch = src.match(/<div class=\"va-dockrow ff-create-controls\"
 assert.ok(!!controlsRowMatch, "controls row has actions and closes");
 const afterControlsRow = src.slice((controlsRowMatch.index || 0) + controlsRowMatch[0].length);
 const controlsRowText = src.slice(controlsRowMatch.index, (controlsRowMatch.index || 0) + controlsRowMatch[0].length);
-assert.ok(/^\s*<div class=\"\{\{ genStatusCls \}\}\">\{\{ genStatusText \}\}<\/div>/.test(afterControlsRow), "status row is immediately after controls row");
-assert.ok(!controlsRowText.includes('<div class=\"{{ genStatusCls }}\">{{ genStatusText }}</div>'), "status row is not inside ff-create-controls");
+assert.ok(/^\s*<div id=\"ffCreateStatus\" class=\"\{\{ genStatusCls \}\}\" aria-live=\"polite\">\{\{ genStatusText \}\}<\/div>/.test(afterControlsRow), "status row is immediately after controls row");
+assert.ok(!controlsRowText.includes('id=\"ffCreateStatus\"'), "status row is not inside ff-create-controls");
 assert.ok(/button data-tool=\"\{\{ t.key \}\}\" onclick=\"\{\{ onPickTool \}\}\" class=\"\{\{ t.poprowCls \}\}\" aria-selected=\"\{\{ t.popSel \}\}\"/.test(src), "mode menu rows include ff-create-mode selected binding");
 assert.ok(/const genStatusCls = 'ff-create-status'/.test(src), "web status class derivation exists");
 assert.ok(!/genStatusText\s*=\s*genGateMsg/.test(src), "dedicated gate message is not duplicated in the status row");
+assert.ok(/if \(!axIsUpscaleTool && !axPromptReady\) genStatusText = 'Write a prompt to begin';/.test(src), "empty prompt cannot claim the composer is ready");
+assert.ok(/else if \(axPromptReady && !genGateOn && model/.test(src), "Ready status requires a valid prompt");
+assert.ok(/genAriaDisabled: genBlocked \? 'true' : 'false'/.test(src), "Generate aria-disabled follows the runtime generation gate");
 
 assert.ok(/ffa-pop ff-create-refmenu/.test(src), "reference popup has FINAL-CREATE marker");
 assert.ok(/ffa-pop ff-create-modemenu/.test(src), "mode popup has FINAL-CREATE marker");
@@ -66,6 +69,8 @@ const hasCss = (selector) => {
 assert.ok(hasCss(".ff-create-composer"), "FINAL-CREATE composer CSS block exists");
 assert.ok(hasCss(".ff-create-write"), "FINAL-CREATE write-row CSS block exists");
 assert.ok(hasCss(".ff-create-prompt"), "FINAL-CREATE prompt CSS block exists");
+assert.ok(/\.ff\s+\.ff-create-prompt\{[^}]*caret-color:\s*var\(--lime\)/.test(src), "prompt has a visible text caret");
+assert.ok(/\.ff\s+\.ff-create-prompt:focus-visible\{[^}]*box-shadow:/.test(src), "prompt exposes keyboard focus visibly");
 assert.ok(hasCss(".ff-create-controls"), "FINAL-CREATE controls CSS block exists");
 assert.ok(hasCss(".ff-create-setgroup"), "FINAL-CREATE setgroup CSS block exists");
 assert.ok(hasCss(".ff-create-control"), "FINAL-CREATE control CSS block exists");

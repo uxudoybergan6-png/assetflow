@@ -15240,7 +15240,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
      kengayadi, undan keyin ICHKI scroll (tepasi hech qachon kesilmaydi) */
   .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.6;min-height:92px;max-height:60vh;overflow-y:auto;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
   .ff .ff-create-write{display:flex;align-items:flex-start;gap:8px;min-height:84px;padding:7px 2px 11px}
-  .ff .ff-create-prompt{flex:1;min-width:0;min-height:74px;max-height:32vh;resize:none;overflow:auto;padding:5px 3px;border:0;outline:none;background:transparent;color:var(--text);font:500 14px/1.55 var(--font-sans);box-sizing:border-box}
+  .ff .ff-create-prompt{flex:1;min-width:0;min-height:74px;max-height:32vh;resize:none;overflow:auto;padding:5px 3px;border:0;outline:none;background:transparent;color:var(--text);caret-color:var(--lime);font:500 14px/1.55 var(--font-sans);box-sizing:border-box}
+  .ff .ff-create-prompt:focus-visible{box-shadow:inset 0 -1px color-mix(in srgb,var(--lime) 55%,transparent)}
   .ff .ff-create-prompt::placeholder{color:var(--muted-2)}
   .ff .va-dock .prompt::placeholder{color:var(--muted2)}
   /* ===== BATCH5 #6 — Dreamina-uslub chip editor (contenteditable + atom mention pill) ===== */
@@ -17207,7 +17208,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   </span>
                 </sc-if>
                 <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}">
-                  <div class="{{ promptCls }} ff-create-prompt" data-ph="{{ promptPh }}"></div>
+                  <div class="{{ promptCls }} ff-create-prompt" data-ph="{{ promptPh }}" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Generation prompt" aria-describedby="ffCreateStatus" tabindex="0"></div>
                   <button class="{{ promptExpCls }} ff-create-promptexp" onclick="{{ toggleComposerExpand }}" title="{{ promptExpTip }}"><svg class="va-ic"><use href="#i-chev"></use></svg></button>
                 </sc-if>
               </div>
@@ -17256,10 +17257,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 </div>
                 <div class="va-genwrap ff-create-actions">
                   <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}"><span class="va-set enh ff-create-enhance" onclick="{{ improve }}" title="{{ enhLabel }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-wand"></use></svg><span class="ff-create-enhance-label">{{ enhLabel }}</span></span></sc-if>
-                  <a class="{{ genBtnCls }} ff-create-generate" onclick="{{ doGenerate }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }} <span class="va-axcost ff-create-cost"><span class="lbl">COST</span>{{ axQuote }}</span></a>
+                  <a class="{{ genBtnCls }} ff-create-generate" onclick="{{ doGenerate }}" role="button" aria-disabled="{{ genAriaDisabled }}" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }} <span class="va-axcost ff-create-cost"><span class="lbl">COST</span>{{ axQuote }}</span></a>
                 </div>
               </div>
-              <div class="{{ genStatusCls }}">{{ genStatusText }}</div>
+              <div id="ffCreateStatus" class="{{ genStatusCls }}" aria-live="polite">{{ genStatusText }}</div>
               <sc-if value="{{ genGateOn }}" hint-placeholder-val="{{ false }}"><div class="va-gengate"><svg class="va-ic"><use href="#i-bolt"></use></svg><span>{{ genGateMsg }}</span><sc-if value="{{ genGateTopup }}" hint-placeholder-val="{{ false }}"><button class="va-gategtu" onclick="{{ openCredits }}"><svg class="va-ic"><use href="#i-plus"></use></svg>Top up</button></sc-if></div></sc-if>
               <sc-if value="{{ strictPolicyNote }}" hint-placeholder-val="{{ false }}"><div class="va-policynote"><i class="ph ph-shield-check"></i><span>Strict content policy — you won't be charged if it's refused.</span></div></sc-if>
               <!-- SC_19: composer BALANCE qatori o'chirildi — doimiy header kredit chipi bor
@@ -22399,9 +22400,10 @@ class Component extends DCLogic {
       : overChars ? ('Too long — max ' + model.maxChars + ' characters (yours: ' + promptLenG + ')')
       : '';
     let genStatusText = '';
-    if (gqLoading) genStatusText = 'Loading quote…';
+    if (!axIsUpscaleTool && !axPromptReady) genStatusText = 'Write a prompt to begin';
+    else if (gqLoading) genStatusText = 'Loading quote…';
     else if (gqError) genStatusText = 'Quote error: ' + String(gqObj && gqObj.error).slice(0, 80);
-    else if (!genGateOn && model && (axIsUpscaleTool ? isUpscaleQuoteReady : isQuoteReady)) genStatusText = 'Ready';
+    else if (axPromptReady && !genGateOn && model && (axIsUpscaleTool ? isUpscaleQuoteReady : isQuoteReady)) genStatusText = 'Ready';
     const genStatusCls = 'ff-create-status' + (gqLoading ? ' loading' : (gqError ? ' err' : (genStatusText ? ' ok' : '')));
     // P30 §2 (29c) — qattiq siyosatli model tanlangan bo'lsa: KREDIT SARFLANISHIDAN OLDIN halol
     // ogohlantirish (bloklamaydi). Rad etilsa server refund qiladi (money-zona TEGILMAYDI).
@@ -23616,7 +23618,7 @@ class Component extends DCLogic {
       modelPickView, modePickHead, modelGroupsView, modelFilterView,
       modelModalOpen: this.state.modelModalOpen, modelQ: this.state.modelQ,
       modelModalEmpty: modelGroupsView.length === 0,
-      axQuote, genBtnCls, genBtnLabel, axBalNote, refHint, showRefs: aiIsCanvas && (rCaps.kind !== 'none' || refChipsView.length > 0),
+      axQuote, genBtnCls, genBtnLabel, genAriaDisabled: genBlocked ? 'true' : 'false', axBalNote, refHint, showRefs: aiIsCanvas && (rCaps.kind !== 'none' || refChipsView.length > 0),
       showPromptBar, // D11.b — Upscale/op rejimida prompt + Enhance render bo'lmaydi
       // P22 — inline "kredit yetmaydi / shart bajarilmadi" darvoza qatori (modal EMAS)
       genGateOn, genGateMsg, genGateTopup, strictPolicyNote,

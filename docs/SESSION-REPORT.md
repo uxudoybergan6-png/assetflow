@@ -1,14 +1,15 @@
 Session Report: 2026-08-08
-- Web AI Studio Create composer plugin FINAL-CREATE UI/UX tuzilmasiga moslashtirildi.
-- Count loop, reference `+`, model cost va status declaration regressiyalari tuzatildi.
-- Status controls qatoridan keyinga ko'chirildi; gate xabari statusda takrorlanmaydi.
-- Enhance plugin kabi actions guruhida Generate oldiga ko'chirildi.
-- Generate ichida label → cost tartibi, border, padding va cost spacing plugin bilan tenglashtirildi.
-- Mavjud auth, model, quote, credit, reference, generation va session handlerlari saqlandi.
-- Parity testi DOM joylashuvi, declaration tartibi, template balansi va asosiy CSS qiymatlarini tekshiradi.
-- API build, device-auth security/UI, shared session persistence, Create init va session policy PASS.
-- Parity va tahrirlangan JavaScript syntax testlari PASS.
-- `npm run studio:sync` va `git diff --check` PASS.
+- Production Web Create prompti Chrome'da jonli, kredit sarflamasdan tekshirildi.
+- Prompt fokus oldi, yozilgan matn state'ga tushdi va Generate darvozasi reaktiv yangilandi.
+- Bo'sh promptda Generate bosilishi `Write a prompt` xabarini berdi; tashqi generation yuborilmadi.
+- Asl UX regressiya: prompt bo'sh bo'lsa ham status noto'g'ri `Ready` ko'rsatardi.
+- `Ready` endi faqat prompt va quote haqiqatan tayyor bo'lganda ko'rinadi.
+- Bo'sh holat endi `Write a prompt to begin` deb aniq ko'rsatiladi.
+- Prompt declarative keyboard/textbox atributlari, ko'rinadigan caret va focus holatini oldi.
+- Generate blok holati `aria-disabled`, status esa `aria-live` bilan bog'landi.
+- Auth, model, signed quote, credit, reference, generation va session mantiqiga tegilmadi.
+- Create parity, Create init va web session policy testlari PASS.
+- Productionga yangi fix deploy qilinmadi; real pulli generation manual tekshiruvda qoladi.
 - Plugin source o'zgarmadi; shared CEP reinstall talab qilinmadi.
-- `_to_delete/` va boshqa ochiq o'zgarishlar commitga kiritilmadi.
-- Push/deploy/package va Adobe ichidagi manual verification bajarilmadi.
+- `_to_delete/` va boshqa ochiq auth/device o'zgarishlariga tegilmadi.
+- Commit, push, deploy va paket yaratilmadi.
