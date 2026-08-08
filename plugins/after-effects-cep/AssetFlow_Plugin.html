@@ -5532,6 +5532,17 @@ html.cep-mode .af-topbar{height:44px}
 <script src="app/observability/redactor.js"></script>
 <script src="app/observability/safe-log.js"></script>
 <script src="app/observability/metrics.js"></script>
+<script>
+// Local source installs are explicitly stamped by install-cep.sh and are the native
+// vNext verification channel. Unstamped marketplace/source builds stay dual-stack
+// until the signed rollout config enables them. Keep the placeholder split so the
+// installer only needs to stamp the visible build label.
+window.__FF_BUILD_GENERATION__=window.__FF_BUILD_GENERATION__||(function(){
+  var label=document.getElementById('afBuild');
+  var placeholder='__AF_'+'BUILD__';
+  return label&&label.textContent.indexOf(placeholder)<0?'legacy-free':'dual-stack';
+})();
+</script>
 <script src="app/feature-flags.js"></script>
 <script src="app/config-verifier.js"></script>
 <script src="app/config-manager.js"></script>

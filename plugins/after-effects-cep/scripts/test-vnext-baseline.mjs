@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { collectBaseline, OUT_DIR } from "./build-vnext-baseline.mjs";
 
+const pluginHtml = readFileSync(path.join(OUT_DIR, "../../plugins/after-effects-cep/AssetFlow_Plugin.html"), "utf8");
+
 const expected = collectBaseline();
 let checks = 0;
 function check(name, fn) {
@@ -28,6 +30,13 @@ check("all dual-stack V2 embedded defaults are fail-closed", () => {
   assert.equal(defaults.shellV2, false);
   assert.equal(defaults.homeV2, false);
   assert.deepEqual(defaults.generationDomainV2, { image: false, video: false, audio: false, tools: false });
+});
+check("stamped local installs activate legacy-free V2 before feature flags load", () => {
+  const generation = pluginHtml.indexOf("window.__FF_BUILD_GENERATION__=window.__FF_BUILD_GENERATION__||");
+  const flags = pluginHtml.indexOf('<script src="app/feature-flags.js"></script>');
+  assert.ok(generation >= 0 && generation < flags, "local V2 generation selector must precede feature flags");
+  assert.match(pluginHtml, /label&&label\.textContent\.indexOf\(placeholder\)<0\?'legacy-free':'dual-stack'/);
+  assert.match(pluginHtml, /placeholder='__AF_'\+'BUILD__'/, "installer placeholder must remain split");
 });
 check("shared CEP route inventory includes every current primary AI view", () => {
   for (const id of ["v-launcher", "v-imggen", "v-vidgen", "v-audgen", "v-sessions", "v-session", "v-projects", "v-project", "v-history", "v-settings"]) {

@@ -12,4 +12,4 @@ Session Report: 2026-08-09
 - Rollout metrics/decision evidence hash-chain’da saqlanadi va verify qilinadi.
 - Yakuniy `qa:plugin` 20/20; domain 24/24; V1/V2 browser 7/7 PASS.
 - Cloud Run API `b269b22` image bilan deploy qilindi; DB/storage health va read-only katalog PASS.
-- Native AE/PR, signing va ikki release/7-day soak qoladi; paket yaratilmadi, `_to_delete/`ga tegilmadi.
+- Stamped lokal CEP V2’ni default yoqadi; native AE/PR tekshiruvi qoladi, paket yaratilmadi, `_to_delete/`ga tegilmadi.

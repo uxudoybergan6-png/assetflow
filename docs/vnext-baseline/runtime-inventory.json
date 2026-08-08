@@ -9,9 +9,9 @@
   "sources": [
     {
       "path": "plugins/after-effects-cep/AssetFlow_Plugin.html",
-      "bytes": 1350029,
-      "lines": 19381,
-      "sha256": "5aa78504d940b7df2a582024d620b2aa25295068baa1585a6a45dc0b8007e917",
+      "bytes": 1350609,
+      "lines": 19392,
+      "sha256": "036011bfe6ed5b71b233cb2c4e55e60612c6eb54abe9b97f040a0f6a5be300c9",
       "addEventListener": 375,
       "setInterval": 13,
       "setTimeout": 74,
@@ -585,8 +585,8 @@
     }
   ],
   "totals": {
-    "bytes": 1740825,
-    "lines": 26251,
+    "bytes": 1741405,
+    "lines": 26262,
     "addEventListener": 402,
     "setInterval": 16,
     "setTimeout": 85,
@@ -652,7 +652,7 @@
     "app/bootstrap.js",
     "assetflow-catalog.js"
   ],
-  "inlineScriptBlocks": 9,
+  "inlineScriptBlocks": 10,
   "inlineEventAttributes": 155,
   "declaredFunctions": [
     "$",
