@@ -774,6 +774,7 @@ studioGenRouter.get(
 studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
   await cleanupExpiredSavedReferences(req.user!.userId).catch(() => {});
   const limit = Math.min(60, Math.max(1, Number(req.query.limit) || 30));
+  const cursor = Math.max(0, Number(req.query.cursor) || 0);
   // ?mode=video → faqat shu turdagi gen'lar (video tool So'nggi gridi rasm gen'larni tortmasin).
   const modeRaw = req.query.mode ? String(req.query.mode) : "";
   const mode = (GEN_MODES as readonly string[]).includes(modeRaw) ? modeRaw : "";
@@ -781,14 +782,17 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
     String(req.query.status || "") === "active"
       ? { status: { in: ["queued", "running"] } }
       : { status: "done" };
-  const items = await prisma.generation.findMany({
+  const rows = await prisma.generation.findMany({
     where: { userId: req.user!.userId, ...statusFilter, ...(mode ? { mode } : {}) },
     include: { assets: true },
     // D6 — qadalganlar DOIM birinchi. `take` bilan birga: qadalgan natija limit oynasidan
     // tashqarida eskirib qolsa ham ro'yxatga tortiladi (aynan shu kutilgan xatti-harakat).
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
-    take: limit,
+    skip: cursor,
+    take: limit + 1,
   });
+  const hasMore = rows.length > limit;
+  const items = rows.slice(0, limit);
   // Signed URL eskiradi — har asset uchun yangidan imzolaymiz. Params ref URL'lari ham
   // ("Qayta gen" tiklashi tirik referens olishi uchun — audit fix). Gen'lar bo'ylab
   // parallel — 60 gen tarixi ketma-ket hidratatsiyada sekin edi (#9).
@@ -801,7 +805,7 @@ studioGenRouter.get("/gen/history", async (req: Request, res: Response) => {
       })
     );
   }
-  res.json({ items });
+  res.json({ items, hasMore, nextCursor: hasMore ? String(cursor + items.length) : null });
 });
 
 /** GET /gen/references — vaqtinchalik saved references (10 minut TTL). */
@@ -885,7 +889,9 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
     })),
     configured: withAvailability.some((x) => x.availability.available),
     providerStatus,
-    catalogVersion: genCatalogVersion(catalogModels),
+    // Bitta deploy uchun /models?mode=*, /models va /ops AYNAN bir canonical fingerprint
+    // qaytaradi. Filterlangan picker subsetidan hash olish rollout/parity klientida soxta drift edi.
+    catalogVersion: genCatalogVersion(),
   });
 });
 
@@ -1881,7 +1887,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
 
   // Fon rejimida bajariladi (OpenRouter → R2 → GenAsset → status); frontend polling qiladi.
   processGenerationInBackground(gen.id);
-  res.status(202).json({ jobId: gen.id, status: gen.status, creditsLeft: gate.remaining });
+  res.status(202).json({ jobId: gen.id, status: gen.status, cancellable: gen.status === "queued", creditsLeft: gate.remaining });
 });
 
 /**
@@ -1908,6 +1914,7 @@ const enhanceSchema = z.object({
   format: z.enum(["text", "json"]).optional(),
   enhance_style: z.enum(["faithful", "cinematic", "creative"]).optional(),
   settings: enhanceSettingsSchema.optional(),
+  reference_kinds: z.array(z.enum(["image", "video", "audio"])).max(12).optional(),
   // VISION enhance — referens rasm PUBLIC URL'lari (@img tartibida: [0]=@img1). Ixtiyoriy.
   image_urls: z.array(z.string().min(8)).max(10).optional(),
   image_roles: z.array(enhanceRefRole).max(10).optional(),
@@ -1926,7 +1933,8 @@ const enhanceSchema = z.object({
 function enhanceModelContext(
   model: GenModel | undefined,
   mode: string,
-  settings?: z.infer<typeof enhanceSettingsSchema>
+  settings?: z.infer<typeof enhanceSettingsSchema>,
+  referenceKinds?: Array<"image" | "video" | "audio">
 ): string {
   if (!model) return ` Target output type: ${mode}.`;
   const bits = [
@@ -1948,6 +1956,7 @@ function enhanceModelContext(
   if (settings?.quality) bits.push(`selected quality: ${settings.quality}`);
   if (settings?.duration != null) bits.push(`selected duration: ${settings.duration} seconds`);
   if (typeof settings?.audio === "boolean") bits.push(`selected native audio: ${settings.audio ? "on" : "off"}`);
+  if (referenceKinds?.length) bits.push(`attached reference kinds: ${referenceKinds.join(", ")}`);
   return ` Target-model capabilities (use silently): ${bits.join("; ")}.`;
 }
 
@@ -2016,7 +2025,7 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
     " Output ONLY the final descriptive prompt as plain prose. Do NOT add any title, heading, label, " +
     "bullet list, or metadata lines such as 'Video Prompt', 'Target Model', 'Duration', 'Aspect Ratio', " +
     "'Resolution', 'Quality', or 'Native Audio' — those are controlled by the app UI, not the prompt." +
-    enhanceModelContext(model, mode, p.data.settings);
+    enhanceModelContext(model, mode, p.data.settings, p.data.reference_kinds);
   const keepRefs =
     " Preserve any @img / @image / @video / @audio references verbatim (do not rename or remove them).";
   // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.
@@ -2363,7 +2372,9 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
       };
     }
   }
-  res.json(rejection ? { ...gen, rejection } : gen);
+  const genParams = (gen.params ?? {}) as Record<string, unknown>;
+  const cancellable = gen.status === "queued" && !genParams.__providerJob;
+  res.json(rejection ? { ...gen, cancellable, rejection } : { ...gen, cancellable });
 });
 
 /** POST /gen/:jobId/cancel — #100 (PX2) UCHAYOTGAN gen'ni BEKOR QILISH.

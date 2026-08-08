@@ -1,5 +1,55 @@
-> **STATUS:** ⚠️ Quyidagi eski bloklarning ayrim infra/AI/brend faktlari eskirgan. AI model zanjiri
-> uchun avval **«§-15 · 2026-08-07 AI MODEL CHAIN HARDENING»**, Premiere UI uchun keyin §-14 ni o'qing.
+> **STATUS:** ⚠️ Quyidagi eski bloklarning ayrim infra/AI/brend faktlari eskirgan. Professional plugin
+> vNext uchun avval **«§-16 · 2026-08-09 VNEXT LOCAL FOUNDATION»**, AI model zanjiri uchun keyin §-15 ni o'qing.
+
+# §-16. 2026-08-09 FRAMEFLOW PROFESSIONAL PLUGIN VNEXT — LOCAL FOUNDATION
+
+- Wave 0 machine-readable runtime/contract/provenance/host baseline va V1+V2 real Chrome matrixi saqlandi.
+- Mustaqil recovery bootloader, signed config verifier, LKG/replay/emergency-disable precedence va
+  dual-stack default-off / legacy-free default-on build policy qo'shildi.
+- Typed/redacted log va metrics boundary prompt/token/signature/signed URLni allowlistdan tashqarida qoldiradi.
+- Account epoch, authenticated HTTP/Gen client, Model/Reference/Session/Entity/Job store, revision-aware
+  QuoteMachine, priced-params GenerationGateway va allowlisted HostCommands modul poydevori qo'shildi.
+- Default-on V2 shell Home/Create/Browse/Activity/Library/Sessions/Projects/Account IA'ni bitta responsive,
+  keyboard-friendly sirtga yig'adi; Browse/Library/Activity/Sessions/Projects real API projectionida.
+- V2 Create server model/Enhance/quote/generate/job, secure file-reference upload va existing-session
+  continuation oqimiga ulangan. Reference URL/IDlar `params` ichida quote’ga kiradi, `/gen` aynan
+  `pricedParams`ni ishlatadi, yangi session serverda yaratiladi va `{jobId}` canonical registryga tushadi.
+- Async surface epoch kech kelgan Browse/Library/Session/Project javobining boshqa route DOMiga yozishini
+  to‘sadi; account-change eventi poll/reference/session/model/entity state’ni izolyatsiya qiladi.
+- Runtime HostAdapter + ImportGateway download→host mutationni operation ID bilan single-flight qiladi;
+  timeoutda blind retry o‘rniga reconcile/`unknown_outcome` va duplicate-risk recovery ko‘rsatadi.
+- Restart recovery serverdagi active joblarni qayta registratsiya qiladi; `done` terminal holati pollerni
+  to‘xtatadi, Cancel esa faqat server `cancellable:true` qaytarganda ko‘rinadi.
+- Home tool registry server model + rollout capability kesishmasidan tuziladi; pinlar install-salted,
+  account-scoped kalitda saqlanadi va stale tool IDlar avtomatik tozalanadi.
+- Library search/filter/import/add-to-project, Project CRUD/detail/remove, typed Activity projection,
+  Account va Settings privacy/update/diagnostics amallari real client/host oqimlariga ulandi.
+- File, Adobe Project selection, Timeline current frame va Library reference manbalari canonical
+  ReferenceStore’ga ulandi; Image/Video Upscale real `/gen/ops` signed-quote gateway orqali ishlaydi.
+- Create output settings `/gen/models` capability deskriptoridan dinamik quriladi; aspect, quality,
+  count, resolution, duration, audio, bitrate va voice qiymatlari aynan quote qilingan paramsga tushadi.
+- Reference hovuzi model almashganda saqlanadi, lekin faqat joriy model qo‘llaydigan itemlar quote→gen’ga
+  proyeksiya qilinadi; video rasmlari barqaror Start/End role bilan yuboriladi va UI’da olib tashlanadi.
+- Browse V2 list→detail→Back/search-restore oqimiga va V2 ichidan compatibility importga o‘tdi;
+  legacy-free action endi shellni yopib V1 katalogiga tushmaydi.
+- Library Generations hamda Downloads & imports tablariga, server pagination metadata’siga va
+  180-card bounded DOM renderiga o‘tdi; vaqtincha unavailable pinned tool o‘z pinini yo‘qotmaydi.
+- Enhance promptni avtomatik almashtirmaydi: preview → Replace/Keep original → Undo; dirty draft route
+  chiqishida confirmation bor va raw prompt/reference localStorage’ga yozilmaydi.
+- Legacy-free emergency shell disable V1ga tushmaydi: safe V2 shell saqlanadi; boot LKG/live config’ni
+  bounded kutadi. Rollout stage qarorlari metrics/query/confidence bilan hash-chain’da saqlanadi.
+- Auth transportdagi double-JSON stringify va har requestdagi takroriy legacy validate tuzatildi.
+- Lokal aggregate QA: 20/20 command group PASS; V1 va V2 har biri 7/7 viewport PASS; domain 24/24 PASS.
+- V1/V2 real Chrome matrixi haqiqiy axe-core WCAG audit, keyboard activation, route p95-ceiling va
+  50-transition tracked resource leak gate’ini bajaradi; production dependency auditida 0 vulnerability.
+- Production read-only smoke DB/storage sog‘lomligini tasdiqladi, lekin `/gen/models` va `/gen/ops`
+  catalogVersion driftini topdi; lokal route canonical full-catalog fingerprintga tuzatildi, deploy qilinmagan.
+- Shared CEP manbadan `AF_SKIP_AE=1` bilan yangilandi; V2 app/CSS byte-match, Adobe ochilmadi.
+- Hali production-ready emas: native AE/PR smoke, PPRO single-installer qarori, imzolangan paket,
+  staged rollout va ikki release/7 kunlik legacy-free soak tashqi release gate bo'lib qoladi.
+- Ushbu ishda commit/push/deploy/package bajarilmagan; `_to_delete/` scope tashqarisida.
+
+---
 
 # §-15. 2026-08-07 AI MODEL CHAIN HARDENING — LOCAL CODE + AUTOMATED QA
 

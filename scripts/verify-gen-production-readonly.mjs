@@ -30,7 +30,7 @@ async function json(path, options = {}) {
 }
 
 const publicHealth = await json("/health");
-assert.equal(publicHealth.db, "ok", "production DB health is not ok");
+assert.equal(publicHealth.db || publicHealth.checks?.db, "ok", "production DB health is not ok");
 
 const login = await json("/api/plugin/login", {
   method: "POST",

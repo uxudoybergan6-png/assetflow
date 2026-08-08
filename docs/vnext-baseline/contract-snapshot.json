@@ -1,0 +1,326 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "path": "apps/api/src/routes/plugin.ts",
+      "bytes": 64113,
+      "lines": 1615,
+      "sha256": "a94ed853c06d515d6031643aec161a6dab7c66b5a2da68eb3528c82a1cccbdd9",
+      "addEventListener": 0,
+      "setInterval": 0,
+      "setTimeout": 0,
+      "localStorage": 0,
+      "objectUrlCreate": 0,
+      "objectUrlRevoke": 0
+    },
+    {
+      "path": "apps/api/src/routes/studio-gen.ts",
+      "bytes": 110904,
+      "lines": 2526,
+      "sha256": "7f0b1c66a30c43bce1c44475814a53decbe76b731fc09bd4bf71d9816edb4466",
+      "addEventListener": 0,
+      "setInterval": 1,
+      "setTimeout": 0,
+      "localStorage": 0,
+      "objectUrlCreate": 0,
+      "objectUrlRevoke": 0
+    },
+    {
+      "path": "plugins/after-effects-cep/assetflow-account.js",
+      "bytes": 35712,
+      "lines": 1039,
+      "sha256": "329475785dcdb154fbae2f9d0ef127186f117cbd41be156909725f5a4521a41b",
+      "addEventListener": 0,
+      "setInterval": 1,
+      "setTimeout": 1,
+      "localStorage": 0,
+      "objectUrlCreate": 0,
+      "objectUrlRevoke": 0
+    },
+    {
+      "path": "plugins/after-effects-cep/frameflow-create-workspace.js",
+      "bytes": 15186,
+      "lines": 312,
+      "sha256": "8635b5aaf80f2f922d4162d8bae9abaf71e616b73c4c984e08b6399e71cb72ad",
+      "addEventListener": 0,
+      "setInterval": 0,
+      "setTimeout": 0,
+      "localStorage": 0,
+      "objectUrlCreate": 0,
+      "objectUrlRevoke": 0
+    },
+    {
+      "path": "packages/assetflow-studio/platform/index.html",
+      "bytes": 1098812,
+      "lines": 24474,
+      "sha256": "b5350bdee60e219108e6d721f73966f60b9d4ffe6aae1609ea3bca5e25f8f070",
+      "addEventListener": 67,
+      "setInterval": 3,
+      "setTimeout": 53,
+      "localStorage": 36,
+      "objectUrlCreate": 2,
+      "objectUrlRevoke": 2
+    }
+  ],
+  "routes": {
+    "plugin": [
+      {
+        "method": "POST",
+        "path": "/api/plugin/apply-ae-prefs"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/assets/:templateId/:kind"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/assets/:templateId/mogrt/:slug"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/assets/:templateId/pack"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/assets/:templateId/scene/:key"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/assets/:templateId/scene/:key/url"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/catalog"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/catalog/:id"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/content-config"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/device/cancel"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/device/confirm-password"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/device/confirm-session"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/device/confirm"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/device/poll"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/device/start"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/favorites"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/favorites"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/featured"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/heartbeat"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/login"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/logout"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/me"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/plugin/plan"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/subscription"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/token"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/usage/download"
+      },
+      {
+        "method": "POST",
+        "path": "/api/plugin/usage/import"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/validate"
+      },
+      {
+        "method": "GET",
+        "path": "/api/plugin/version"
+      }
+    ],
+    "studio": [
+      {
+        "method": "GET",
+        "path": "/api/studio/credits"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/credits/ledger"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/downloads"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/studio/gen/:jobId"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/:jobId"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/:jobId/cancel"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/:jobId/explore"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/studio/gen/:jobId/pin"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/cost-quote"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/describe"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/explore/submissions"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/health"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/history"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/models"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/ops"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/preflight-safety"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/prompt/enhance"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/ref-upload-url"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/ref-upload"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/references"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/studio/gen/references/:id"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/sessions"
+      },
+      {
+        "method": "POST",
+        "path": "/api/studio/gen/sessions"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/studio/gen/sessions/:id"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/studio/gen/sessions/:id"
+      },
+      {
+        "method": "GET",
+        "path": "/api/studio/gen/sessions/:id/generations"
+      }
+    ]
+  },
+  "immutableInvariants": [
+    "AE and Premiere share one auth/session token and one CEP UI/controller.",
+    "Pre-auth device requests never send Authorization.",
+    "Network, 429, 5xx and non-auth 403 errors do not clear the session.",
+    "Access tokens, poll tokens, quote signatures and signed URLs never enter browser URLs or telemetry.",
+    "Generation params equal the accepted quote pricedParams.",
+    "A quote is bound to model, canonical params and reference manifest.",
+    "Credit debit is atomic and an authoritative failure refunds at most once.",
+    "Reference ownership, MIME, size, TTL, role and requiredness are server authoritative.",
+    "Catalog import requires APPROVED, published and hasPack."
+  ],
+  "canonicalGenerationStates": [
+    "draft",
+    "validating",
+    "quoting",
+    "quote_ready",
+    "submitting",
+    "queued",
+    "processing",
+    "completed",
+    "failed",
+    "canceled",
+    "refund_pending",
+    "refunded"
+  ],
+  "knownMigrationRisks": [
+    "Create facade delegates to a legacy Generate button and can cause a replacement quote.",
+    "Legacy generation engines and pollers have multiple owners.",
+    "af_active_jobs is not account scoped.",
+    "Legacy navigation has no single enter/leave/dispose lifecycle owner."
+  ]
+}

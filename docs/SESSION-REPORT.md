@@ -1,12 +1,15 @@
-Session Report: 2026-08-08
-- Adobe CEP tashqi brauzerga o'tishda URL fragmentini tashlab yuborishi root cause sifatida tasdiqlangan.
-- Device requestId va HMAC state endi query orqali uzatiladi.
-- Access token, refresh token va maxfiy pollToken browser URL'iga qo'yilmaydi.
-- Device sahifa query'ni afzal ko'radi va eski fragment linklarini fallback sifatida qabul qiladi.
-- URL o'qilgach query/history browser address baridan olib tashlanadi.
-- Normal Google oqimi bir klik, account tanlash va AE/Premiere auto-connect bo'lib qoladi.
-- Manual code va email/password faqat Having trouble ichida qoladi.
-- API build va device-auth security testi: PASS.
-- Studio device-auth UI va shared AE/Premiere session persistence testlari: PASS.
-- Studio sync va git diff check: PASS.
-- Plugin source o'zgarmadi; CEP reinstall va Adobe restart bajarilmadi.
+Session Report: 2026-08-09
+- Professional vNext lokal Wave 0–8 candidate canonical V2 shell/domain bilan implementatsiya qilindi.
+- Signed config/LKG/replay/emergency policy legacy-free’da safe V2 shellni saqlaydi.
+- Create capability settings, exact quote params, Enhance preview va dirty-draft guardga ulandi.
+- Reference pool model-aware projection, Start/End role va File/Project/Timeline/Library manbalariga ulandi.
+- Browse list/detail/Back/search restore V2 ichida ishlaydi; V1 katalogiga route escape olib tashlandi.
+- Library paged Generations hamda Downloads/imports ko‘rinishi va bounded renderga o‘tdi.
+- Runtime import operation ID/reconcile, restart job recovery va cancellable server signaliga ulandi.
+- Tool pinlari account-scoped; vaqtincha unavailable operation pinini yo‘qotmaydi.
+- Real Chrome axe/keyboard/timing/50-transition leak audit har 7 viewportda ishlaydi.
+- API build PASS; production dependency audit: 0 vulnerability.
+- Rollout metrics/decision evidence hash-chain’da saqlanadi va verify qilinadi.
+- Yakuniy `qa:plugin` 20/20; domain 24/24; V1/V2 browser 7/7 PASS.
+- Prod deploy, native AE/PR, signing va ikki release/7-day soak tashqi release gate bo‘lib qoladi.
+- Commit/push/deploy/package qilinmadi; `_to_delete/`ga tegilmadi.

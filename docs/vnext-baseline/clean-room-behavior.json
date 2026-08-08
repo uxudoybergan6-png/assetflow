@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "Higgsfield CEP 1.0.46",
+  "evidenceBoundary": "Observable tasks and interaction states only; no source, class, copy, asset, endpoint, color palette or proprietary implementation is copied.",
+  "acceptedGenericPatterns": [
+    "Continue/last generations with a New entry",
+    "Category tabs and account-scoped pinned tools",
+    "Responsive compact tool registry grid",
+    "Contextual tool header with global navigation retained",
+    "Image, Video and Audio family switcher",
+    "Generation feed with a sticky capability-driven composer",
+    "Accessible menu, dialog and popover behavior",
+    "Explicit loading, disabled, retryable error and reduced-motion states",
+    "Provider availability, version/update and host/workspace status"
+  ],
+  "rejectedPatterns": [
+    "Competitor source, sourcemap sourcesContent, class names, copy, assets, logos or endpoints",
+    "Remote marketing or unrelated marketplace surfaces",
+    "Placeholder routes and dead actions",
+    "Hover-only critical actions",
+    "User-independent global pin state",
+    "One-second debug polling",
+    "Removing all global navigation inside generation routes"
+  ]
+}

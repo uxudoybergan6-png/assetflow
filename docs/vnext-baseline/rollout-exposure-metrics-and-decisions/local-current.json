@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "chainHead": "7292722694848c21506f1bef82b6a32395c33cccdf4350d10fcb3fcf6c8f56bb",
+  "stage": "local",
+  "decision": "hold_external_gates",
+  "owner": "local-codex",
+  "utc": "2026-08-08T21:32:24.526Z",
+  "configRevision": null,
+  "signatureStatus": "unsigned-local",
+  "queryVersion": "local-qa-v5",
+  "sample": {
+    "kind": "automated-local",
+    "eligible": 0,
+    "exposed": 0
+  },
+  "metrics": {
+    "qaGroups": "20/20",
+    "domain": "24/24",
+    "browserV1": "7/7",
+    "browserV2": "7/7"
+  },
+  "confidence": {
+    "claim": "not_applicable_local",
+    "reason": "No staged user exposure denominator exists."
+  },
+  "killSwitchDrill": {
+    "dualStackTarget": "frozen_v1",
+    "legacyFreeTarget": "safe_v2_shell",
+    "result": "pass_automated"
+  },
+  "incidents": [],
+  "waivers": [],
+  "blockers": [
+    "native_adobe_smoke",
+    "signed_artifact",
+    "staged_rollout",
+    "seven_day_soak"
+  ]
+}

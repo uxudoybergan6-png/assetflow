@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "browser": "Google Chrome headless",
+  "source": "plugins/after-effects-cep/AssetFlow_Plugin.html",
+  "mode": "dual-stack V1 default-off",
+  "networkPolicy": "production API and external font requests blocked; CEP-mode guest/local layout only",
+  "screenshots": "captured in memory; hashes retained, binary images are CI artifacts rather than source files",
+  "results": [
+    {
+      "viewport": "320x400",
+      "title": "FrameFlow — After Effects",
+      "width": 320,
+      "height": 400,
+      "scrollWidth": 320,
+      "scrollHeight": 400,
+      "horizontalOverflow": false,
+      "activeViews": [],
+      "focusableCount": 7,
+      "unnamedFocusable": [],
+      "clippedElements": [],
+      "primaryIds": {
+        "ffCreateStart": true,
+        "ffCreateComposer": true,
+        "ffActivityBtn": true,
+        "hdrCred": true,
+        "hdrAva": true
+      },
+      "runtimeErrors": 0,
+      "axeViolations": [],
+      "performance": {
+        "shellUsableMs": 992.9000000059605,
+        "domContentLoadedMs": 126.10000000149012,
+        "transferBytes": 574021
+      },
+      "screenshot": {
+        "bytes": 40104,
+        "sha256": "520fbd93462f3a2c028de6b90094a329e79ad977c16fe3fc035864801de2ee18"
+      }
+    },
+    {
+      "viewport": "320x600",
+      "title": "FrameFlow — After Effects",
+      "width": 320,
+      "height": 600,
+      "scrollWidth": 320,
+      "scrollHeight": 600,
+      "horizontalOverflow": false,
+      "activeViews": [],
+      "focusableCount": 7,
+      "unnamedFocusable": [],
+      "clippedElements": [],
+      "primaryIds": {
+        "ffCreateStart": true,
+        "ffCreateComposer": true,
+        "ffActivityBtn": true,
+        "hdrCred": true,
+        "hdrAva": true
+      },
+      "runtimeErrors": 0,
+      "axeViolations": [],
+      "performance": {
+        "shellUsableMs": 901.2999999970198,
+        "domContentLoadedMs": 75.19999999552965,
+        "transferBytes": 573712
+      },
+      "screenshot": {
+        "bytes": 43719,
+        "sha256": "cfe6a2b82666ab9c7b38c894c8839ee354753153e5df4977fcc7809c3f0ef82d"
+      }
+    },
+    {
+      "viewport": "380x600",
+      "title": "FrameFlow — After Effects",
+      "width": 380,
+      "height": 600,
+      "scrollWidth": 380,
+      "scrollHeight": 600,
+      "horizontalOverflow": false,
+      "activeViews": [],
+      "focusableCount": 8,
+      "unnamedFocusable": [],
+      "clippedElements": [],
+      "primaryIds": {
+        "ffCreateStart": true,
+        "ffCreateComposer": true,
+        "ffActivityBtn": true,
+        "hdrCred": true,
+        "hdrAva": true
+      },
+      "runtimeErrors": 0,
+      "axeViolations": [],
+      "performance": {
+        "shellUsableMs": 921.6000000014901,
+        "domContentLoadedMs": 77.5,
+        "transferBytes": 573712
+      },
+      "screenshot": {
+        "bytes": 46141,
+        "sha256": "6de7f5016cb6ba93a79f5b502ec983a869f07de582f152e10d5f3b56093cbe45"
+      }
+    },
+    {
+      "viewport": "380x720",
+      "title": "FrameFlow — After Effects",
+      "width": 380,
+      "height": 720,
+      "scrollWidth": 380,
+      "scrollHeight": 720,
+      "horizontalOverflow": false,
+      "activeViews": [],
+      "focusableCount": 8,
+      "unnamedFocusable": [],
+      "clippedElements": [],
+      "primaryIds": {
+        "ffCreateStart": true,
+        "ffCreateComposer": true,
+        "ffActivityBtn": true,
+        "hdrCred": true,
+        "hdrAva": true
+      },
+      "runtimeErrors": 0,
+      "axeViolations": [],
+      "performance": {
+        "shellUsableMs": 907.2000000029802,
+        "domContentLoadedMs": 73.10000000149012,
+        "transferBytes": 573712
+      },
+      "screenshot": {
+        "bytes": 46849,
+        "sha256": "27998f61501c4b2252a80b6d5de9b512888d57622c31b0f7497bf9bead9973a4"
+      }
+    },
+    {
+      "viewport": "600x650",
+      "title": "FrameFlow — After Effects",
+      "width": 600,
+      "height": 650,
+      "scrollWidth": 600,
+      "scrollHeight": 650,
+      "horizontalOverflow": false,
+      "activeViews": [],
+      "focusableCount": 8,
+      "unnamedFocusable": [],
+      "clippedElements": [],
+      "primaryIds": {
+        "ffCreateStart": true,
+        "ffCreateComposer": true,
+        "ffActivityBtn": true,
+        "hdrCred": true,
+        "hdrAva": true
+      },
+      "runtimeErrors": 0,
+      "axeViolations": [],
+      "performance": {
+        "shellUsableMs": 901.8999999985099,
+        "domContentLoadedMs": 74.70000000298023,
+        "transferBytes": 609060
+      },
+      "screenshot": {
+        "bytes": 51550,
+        "sha256": "127599a2c16cef951875bdb609e9e309194ae8e45199fec5c69d04434952729f"
+      }
+    },
+    {
+      "viewport": "600x900",
+      "title": "FrameFlow — After Effects",
+      "width": 600,
+      "height": 900,
+      "scrollWidth": 600,
+      "scrollHeight": 900,
+      "horizontalOverflow": false,
+      "activeViews": [],
+      "focusableCount": 8,
+      "unnamedFocusable": [],
+      "clippedElements": [],
+      "primaryIds": {
+        "ffCreateStart": true,
+        "ffCreateComposer": true,
+        "ffActivityBtn": true,
+        "hdrCred": true,
+        "hdrAva": true
+      },
+      "runtimeErrors": 0,
+      "axeViolations": [],
+      "performance": {
+        "shellUsableMs": 894.1000000014901,
+        "domContentLoadedMs": 72.60000000149012,
+        "transferBytes": 609060
+      },
+      "screenshot": {
+        "bytes": 53181,
+        "sha256": "ddb4f1ccf767b4a642fb167b15f6c1cd79d4390dc1a6e9db2e62a60c7130b9b5"
+      }
+    },
+    {
+      "viewport": "1000x900",
+      "title": "FrameFlow — After Effects",
+      "width": 1000,
+      "height": 900,
+      "scrollWidth": 1000,
+      "scrollHeight": 900,
+      "horizontalOverflow": false,
+      "activeViews": [],
+      "focusableCount": 8,
+      "unnamedFocusable": [],
+      "clippedElements": [],
+      "primaryIds": {
+        "ffCreateStart": true,
+        "ffCreateComposer": true,
+        "ffActivityBtn": true,
+        "hdrCred": true,
+        "hdrAva": true
+      },
+      "runtimeErrors": 0,
+      "axeViolations": [],
+      "performance": {
+        "shellUsableMs": 889.5,
+        "domContentLoadedMs": 74.30000000447035,
+        "transferBytes": 609060
+      },
+      "screenshot": {
+        "bytes": 62172,
+        "sha256": "6582cf2e89d46000c80e89b98b647f1933af0b1f467a99c255b2520fb2cc8a33"
+      }
+    }
+  ]
+}
