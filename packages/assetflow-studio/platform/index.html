@@ -15272,6 +15272,8 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ff-create-actions{display:flex;align-items:center;gap:7px;margin-left:0;flex:0 0 auto}
 .ff .ff-create-enhance{min-width:35px;width:35px;padding:0;font-size:14px}
 .ff .ff-create-enhance{display:inline-flex;align-items:center;justify-content:center}
+.ff .ff-create-enhance.off{opacity:.45;cursor:default}
+.ff .ff-create-enhance.busy{cursor:wait}
 .ff .ff-create-enhance-label{display:none}
 .ff .ff-create-generate{height:37px;min-width:105px;padding:0 15px;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent);font:800 11px/1 var(--font-sans);cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;white-space:nowrap}
 .ff .ff-create-generate:disabled{opacity:.42;cursor:not-allowed}
@@ -17252,12 +17254,13 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Voice</div><div class="va-sgops"><sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoiceM }}" class="{{ v.setoptCls }}">{{ v.label }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showBitrate }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Bitrate</div><div class="va-sgops"><sc-for list="{{ bitrateView }}" as="z" hint-placeholder-count="2"><button data-v="{{ z.v }}" onclick="{{ onBitrateM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><div class="va-sgrow"><span class="va-sgh">Audio{{ audioLockNote }}</span><button class="{{ audioToggleCls }}" onclick="{{ toggleAudio }}" title="{{ audioLockNote }}"></button></div></sc-if>
+                    <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}"><div class="va-sgrp"><div class="va-sgh">Enhance style</div><div class="va-sgops"><sc-for list="{{ enhanceStylesView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onEnhanceStyle }}" class="{{ z.setoptCls }}" title="{{ z.tip }}">{{ z.label }}</button></sc-for></div></div></sc-if>
                   </div></sc-if>
                 </span></sc-if>
                 <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)" role="button" tabindex="0">✕ <span class="va-clr-lbl">Clear</span></span></sc-if>
                 </div>
                 <div class="va-genwrap ff-create-actions">
-                  <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}"><span class="va-set enh ff-create-enhance" onclick="{{ improve }}" title="{{ enhLabel }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-wand"></use></svg><span class="ff-create-enhance-label">{{ enhLabel }}</span></span></sc-if>
+                  <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}"><span class="{{ enhBtnCls }}" onclick="{{ improve }}" title="{{ enhLabel }}" role="button" aria-disabled="{{ enhAriaDisabled }}" tabindex="0"><svg class="va-ic"><use href="#i-wand"></use></svg><span class="ff-create-enhance-label">{{ enhLabel }}</span></span></sc-if>
                   <a class="{{ genBtnCls }} ff-create-generate" onclick="{{ doGenerate }}" role="button" aria-disabled="{{ genAriaDisabled }}" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }} <span class="va-axcost ff-create-cost"><span class="lbl">COST</span>{{ axQuote }}</span></a>
                 </div>
               </div>
@@ -18243,6 +18246,7 @@ class Component extends DCLogic {
     // [{ id, tempId, sessionId, mode, modelName, cost, startedAt }]. Har biri gridda o'z pending kartasi.
     activeJobs: [],
     enhBusy: false,
+    enhanceStyle: 'faithful', // faithful | cinematic | creative (Prompt Enhance uslubi)
     showCredits: false,
     lightbox: null,
     lbTab: 'details', // D12 — lightbox panel tab'i: 'details' | 'edit'
@@ -19110,6 +19114,7 @@ class Component extends DCLogic {
     // AI Studio kirishi: oxirgi ishlatilgan rejim (MODE pill) tiklanadi — bo'lmasa default Image.
     // _toolPersistOn tiklashdan KEYIN yoqiladi (renderdagi saqlash mount'gacha yozmasin).
     try { const lt = localStorage.getItem('ff_ai_tool'); if (lt && this.aiTools.some(t => t.key === lt) && lt !== this.state.aiTool) { this._lastToolSaved = lt; this.setState({ aiTool: lt }); } } catch (e) {}
+    try { const es = localStorage.getItem('ff_enhance_style'); if (['faithful', 'cinematic', 'creative'].indexOf(es) >= 0) this.setState({ enhanceStyle: es }); } catch (e) {}
     this._toolPersistOn = true;
     this.installChipEditor(); // #6 — birinchi render'dan keyin chip-editor mount (didUpdate ham chaqiradi)
     // Saqlangan sessiya + katalog + hash deep-link
@@ -21362,15 +21367,29 @@ class Component extends DCLogic {
     if (this.state.enhBusy && !isRetry) return;
     // P17 — bir "click" idempotency kaliti (tarmoq uzilib Retry bosilsa AYNI kalit → ikkinchi charge yo'q).
     if (!isRetry || !this._enhIdemKey) this._enhIdemKey = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : ('e' + Date.now() + Math.random().toString(16).slice(2)));
-    // §A (P1) — balans darvozasi: Enhance ✦1 kredit sarflaydi (UI-only gate; server o'zi ham hisoblaydi)
-    if (this.state.creditsLoaded && this.state.credits < 1) { this.setState({ showCredits: true }); this.toast('Enhance costs ✦1 — you are out of credits'); return; }
     const tool = this.curTool(), model = this.curModel();
-    // P28 (29a) — REFERENSlarni yubor: enhance ularni haqiqatan KO'RSIN (vision), @Image N ni
-    // taxmin qilmasin. Pool = start/end frame + rasm/video/audio (frames↔media model bo'yicha
-    // o'zaro istisno → @imgN numbering to'qnashmaydi). URL'lar = poolddagi HAQIQIY signed ref URL'lari.
-    const imgs = [this.state.refStartUrl, this.state.refEndUrl].concat(this.state.refImages || []).filter(Boolean).slice(0, 10);
-    const refOpts = { imageUrls: imgs, videoUrls: (this.state.refVideos || []).filter(Boolean).slice(0, 10), audioUrls: (this.state.refAudios || []).filter(Boolean).slice(0, 10) };
-    const nref = imgs.length + refOpts.videoUrls.length + refOpts.audioUrls.length;
+    // Faqat tanlangan model HAQIQATDA ishlatadigan referenslarni, aniq rol va barqaror @mention
+    // bilan yuboramiz. Start/end generic @img bo'lib ketmaydi; image hovuzi esa @img1 dan boshlanadi.
+    const proj = this.projectRefs(tool.mode, model);
+    const active = proj.items.filter(x => x.active);
+    const imgs = [], imageRoles = [], videos = [], videoRoles = [], audios = [], audioRoles = [];
+    active.forEach(x => {
+      if (x.k === 'start' || x.k === 'end' || x.k === 'img') {
+        imgs.push(x.url);
+        imageRoles.push(x.k === 'start' ? 'start-frame' : (x.k === 'end' ? 'end-frame' : ('image-reference-' + (+x.i + 1))));
+      } else if (x.k === 'vid') {
+        videos.push(x.url); videoRoles.push('video-reference-' + (+x.i + 1));
+      } else if (x.k === 'aud') {
+        audios.push(x.url); audioRoles.push('audio-reference-' + (+x.i + 1));
+      }
+    });
+    const gp = model ? this.buildParams(tool, model) : {};
+    const enhanceSettings = {};
+    ['aspectRatio', 'resolution', 'quality', 'duration', 'audio'].forEach(k => { if (gp[k] != null && gp[k] !== '') enhanceSettings[k] = gp[k]; });
+    const refOpts = { imageUrls: imgs.slice(0, 10), imageRoles: imageRoles.slice(0, 10), videoUrls: videos.slice(0, 10), videoRoles: videoRoles.slice(0, 10), audioUrls: audios.slice(0, 10), audioRoles: audioRoles.slice(0, 10), style: this.state.enhanceStyle || 'faithful', settings: enhanceSettings };
+    const nref = refOpts.imageUrls.length + refOpts.videoUrls.length + refOpts.audioUrls.length;
+    const enhanceCost = 1 + (refOpts.imageUrls.length ? 1 : 0) + (refOpts.videoUrls.length ? 2 : 0) + (refOpts.audioUrls.length ? 1 : 0);
+    if (this.state.creditsLoaded && this.state.credits < enhanceCost) { this.setState({ showCredits: true }); this.toast('Enhance costs ✦' + enhanceCost + ' — only ✦' + this.state.credits + ' left', 'warning'); return; }
     const undoKey = (navigator.platform && /Mac/i.test(navigator.platform)) ? '⌘Z' : 'Ctrl+Z';
     refOpts.idempotencyKey = this._enhIdemKey; // P17
     this.setState({ enhBusy: true });
@@ -21382,7 +21401,9 @@ class Component extends DCLogic {
         this.toast('Kept your prompt — the rewrite pointed a reference at the wrong image, so it was discarded');
       } else if (r && r.prompt) {
         this.setState({ aiPrompt: r.prompt }); setTimeout(() => this.afSizePromptTa(), 60); // #1 (chip-editor setValue = ⌘Z undo checkpoint)
-        this.toast('Prompt enhanced ✨' + (nref ? (' · saw ' + nref + ' reference' + (nref > 1 ? 's' : '')) : '') + ' · ' + undoKey + ' to undo');
+        const seen = typeof r.referencesUsed === 'number' ? r.referencesUsed : nref;
+        const skipped = typeof r.referencesSkipped === 'number' ? r.referencesSkipped : 0;
+        this.toast('Prompt enhanced ✨' + (seen ? (' · saw ' + seen + ' reference' + (seen > 1 ? 's' : '')) : '') + (skipped ? (' · skipped ' + skipped + ' unavailable/large') : '') + (r.creditsCharged ? (' · ✦' + r.creditsCharged) : '') + ' · ' + undoKey + ' to undo', skipped ? 'warning' : 'success');
       }
       if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
     } catch (e) {
@@ -22109,13 +22130,20 @@ class Component extends DCLogic {
     if ((countsView.length > 1) && nSel > 1) settingsBits.push('×' + nSel);
     if (showVoices && voiceVal !== '—') settingsBits.push(voiceVal);
     if (showAudio) settingsBits.push('Audio ' + (audioOn ? 'On' : 'Off'));
-    const showSettings = showSize || showRes || showQuality || (durOpts.length > 1) || (countsView.length > 1) || showVoices || showAudio || showBitrate;
+    const showPromptBar = !axIsUpscaleTool;
+    const showSettings = showPromptBar || showSize || showRes || showQuality || (durOpts.length > 1) || (countsView.length > 1) || showVoices || showAudio || showBitrate;
     // ── D11.b — Upscale/op composer'i MINIMAL: manba (＋) + faktor (⚙ x2/x4) + Generate.
     //   Prompt paneli va "Enhance" chipi render BO'LMAYDI — bu asboblar promptni provayderga
     //   yubormaydi (generate() avto-nom yozadi, 20599). Ilgari to'liq matn composer'i ochiq turardi
     //   va foydalanuvchi promptni upscale sifatiga ta'sir qiladi deb o'ylardi (yolg'on UI).
-    const showPromptBar = !axIsUpscaleTool;
     const settingsSummary = settingsBits.length ? settingsBits.join(' / ') : 'Settings';
+    const enhanceStyleMeta = {
+      faithful: { label: 'Faithful', tip: 'Clarify without inventing new content' },
+      cinematic: { label: 'Cinematic', tip: 'Add camera, lighting, pacing and atmosphere' },
+      creative: { label: 'Creative', tip: 'Add compatible creative production detail' },
+    };
+    const activeEnhanceStyle = enhanceStyleMeta[this.state.enhanceStyle] ? this.state.enhanceStyle : 'faithful';
+    const enhanceStylesView = Object.keys(enhanceStyleMeta).map(v => Object.assign(chip(v, v === activeEnhanceStyle), enhanceStyleMeta[v]));
     const audioToggleCls = 'va-swt' + (audioOn ? ' on' : '') + (audioLockedCap ? ' lock' : '');
     const audioLockNote = audioLockedCap ? ' (locked)' : '';
     const chipCls = (open) => open ? 'ffa-chip open' : 'ffa-chip';
@@ -22385,6 +22413,16 @@ class Component extends DCLogic {
     const overChars = tool.mode === 'voice' && model && model.maxChars && promptLenG > model.maxChars;
     // effPrice / gqLoading — REAKTIV IMZOLANGAN quote'dan (yuqorida hisoblangan)
     const availCredits = this.state.credits - committedCredits;
+    const enhanceProjection = this.projectRefs(tool.mode, model).items.filter(x => x.active);
+    const enhanceHasImage = enhanceProjection.some(x => x.k === 'start' || x.k === 'end' || x.k === 'img');
+    const enhanceHasVideo = enhanceProjection.some(x => x.k === 'vid');
+    const enhanceHasAudio = enhanceProjection.some(x => x.k === 'aud');
+    const enhanceCost = 1 + (enhanceHasImage ? 1 : 0) + (enhanceHasVideo ? 2 : 0) + (enhanceHasAudio ? 1 : 0);
+    const enhancePromptReady = (this.state.aiPrompt || '').trim().length >= 2;
+    const enhanceNotEnough = this.state.creditsLoaded && enhanceCost > this.state.credits;
+    const enhanceBlocked = this.state.enhBusy || !enhancePromptReady || enhanceNotEnough;
+    const enhBtnCls = 'va-set enh ff-create-enhance' + (enhanceBlocked ? ' off' : '') + (this.state.enhBusy ? ' busy' : '');
+    const enhLabel = this.state.enhBusy ? 'Enhancing…' : ('Enhance ' + (enhanceStyleMeta[activeEnhanceStyle] || enhanceStyleMeta.faithful).label + ' · ✦' + enhanceCost);
     const notEnough = this.state.creditsLoaded && effPrice != null && effPrice > availCredits;
     // Narx noma'lum bo'lsa (quote yuklanyapti va lokal taxmin ham yo'q) tugma yoqilmaydi — P22 qoidasi.
     const priceUnknown = effPrice == null || gqLoading;
@@ -23491,8 +23529,9 @@ class Component extends DCLogic {
       promptExpTip: this.state.composerExpanded ? 'Collapse' : 'Expand',
       promptExpCls: 'va-promptexp' + (this.state.composerExpanded ? ' on' : ''),
       toggleComposerExpand: (e) => { e.stopPropagation(); this.setState(st => ({ composerExpanded: !st.composerExpanded })); },
-      // §A (P1) — Enhance narxi endi ko'rinadi (✦1) — jim kredit kuyishi yo'q
-      enhLabel: this.state.enhBusy ? 'Enhancing…' : 'Enhance · ✦1',
+      // Enhance narxi referens modalitylariga mos: text=1, image=+1, video=+2, audio=+1.
+      enhLabel, enhBtnCls, enhAriaDisabled: enhanceBlocked ? 'true' : 'false', enhanceStylesView,
+      onEnhanceStyle: (e) => { e.stopPropagation(); const v = e.currentTarget.dataset.v; if (!enhanceStyleMeta[v]) return; this.setState({ enhanceStyle: v }); try { localStorage.setItem('ff_enhance_style', v); } catch (x) {} },
       aspectVal, qualityVal, countVal, resVal, durVal,
       // P16 — bitta sozlama chipi + guruhlangan popover (onSizeM/onResM/… allaqachon mavjud —
       //   qiymat o'zgarganda popover OCHIQ qoladi; onBitrateM shu maqsadda qo'shildi)

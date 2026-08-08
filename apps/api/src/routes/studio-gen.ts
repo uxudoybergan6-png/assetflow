@@ -232,7 +232,7 @@ studioGenRouter.use(
 const GEN_MODES = ["image", "voice", "video", "music", "sfx"] as const;
 
 // ── AI-helper (describe/enhance) narx + abuza nazorati ───────────────────────
-// Bu ikki endpoint pulli model chaqiradi (gpt-4o-mini / gemini-2.5-flash vision),
+// Bu ikki endpoint pulli Gemini 2.5 Flash matn/vision chaqiruvini bajaradi,
 // shu sabab /gen kabi consumeAiCredits bilan himoyalanadi. Narxlar /gen jadvaliga
 // nisbatan arzon (helper), lekin vision (rasm/video) matn-onlydan QIMMATROQ.
 const ENHANCE_COST_BASE = 1;     // faqat text
@@ -1885,27 +1885,71 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
 });
 
 /**
- * POST /gen/prompt/enhance — promptni OpenRouter/fal bilan boyitadi (dinamik kredit + kunlik cap).
+ * POST /gen/prompt/enhance — promptni Vertex Gemini bilan boyitadi (dinamik kredit + kunlik cap).
  *  format:"text" → bitta boy paragraf; format:"json" → strukturalangan prompt sxemasi.
  *  modelId berilsa — tanlangan model konteksti (duration/aspect/audio) promptga moslanadi.
  */
 const ENHANCE_PROMPT_MAX = 1999;
+const enhanceRefRole = z.string().trim().regex(
+  /^(?:start-frame|end-frame|(?:image|video|audio)-reference-(?:[1-9]|10))$/,
+  "Invalid reference role"
+);
+const enhanceSettingsSchema = z.object({
+  aspectRatio: z.string().trim().max(20).optional(),
+  resolution: z.string().trim().max(20).optional(),
+  quality: z.string().trim().max(20).optional(),
+  duration: z.union([z.string().trim().max(20), z.number().positive().max(600)]).optional(),
+  audio: z.boolean().optional(),
+}).strict();
 const enhanceSchema = z.object({
   prompt: z.string().trim().min(2).max(5000),
   mode: z.enum(GEN_MODES).optional(),
   modelId: z.number().int().optional(),
   format: z.enum(["text", "json"]).optional(),
+  enhance_style: z.enum(["faithful", "cinematic", "creative"]).optional(),
+  settings: enhanceSettingsSchema.optional(),
   // VISION enhance — referens rasm PUBLIC URL'lari (@img tartibida: [0]=@img1). Ixtiyoriy.
   image_urls: z.array(z.string().min(8)).max(10).optional(),
+  image_roles: z.array(enhanceRefRole).max(10).optional(),
   // VIDEO enhance — referens video PUBLIC URL'lari (@video tartibida: [0]=@video1). Ixtiyoriy.
   video_urls: z.array(z.string().min(8)).max(10).optional(),
+  video_roles: z.array(enhanceRefRole).max(10).optional(),
   // AUDIO enhance — referens audio PUBLIC URL'lari (@audio tartibida: [0]=@audio1). Ixtiyoriy.
   audio_urls: z.array(z.string().min(8)).max(10).optional(),
+  audio_roles: z.array(enhanceRefRole).max(10).optional(),
   references: z.array(z.string().min(8)).max(10).optional(),
   // P17 — bir "click" idempotency kaliti: cold-start'da javob yo'qolsa klient shu kalit bilan qayta
   // uriladi → server keshdan qaytaradi, IKKINCHI marta consume QILMAYDI (double-charge himoyasi).
   idempotencyKey: z.string().trim().min(8).max(80).optional(),
 });
+
+function enhanceModelContext(
+  model: GenModel | undefined,
+  mode: string,
+  settings?: z.infer<typeof enhanceSettingsSchema>
+): string {
+  if (!model) return ` Target output type: ${mode}.`;
+  const bits = [
+    `Target model: ${model.label}`,
+    `output type: ${mode}`,
+    `generation feature: ${model.feature}`,
+    `reference mode: ${getRefKind(model)}`,
+  ];
+  if (model.aspects?.length) bits.push(`supported aspect ratios: ${model.aspects.join(", ")}`);
+  if (model.resolutions?.length) bits.push(`supported resolutions: ${model.resolutions.join(", ")}`);
+  if (model.durations?.length) bits.push(`supported durations: ${model.durations.join(", ")} seconds`);
+  if (model.videoSettings?.duration.options?.length) bits.push(`supported durations: ${model.videoSettings.duration.options.join(", ")}`);
+  if (model.audio === true || model.videoSettings?.audio) bits.push("native audio is supported");
+  if (model.audio === false || model.videoSettings?.audio === false) bits.push("native audio is not supported");
+  if (model.endFrame) bits.push("start and end frames are supported");
+  if (model.maxChars) bits.push(`maximum spoken-script length: ${model.maxChars} characters`);
+  if (settings?.aspectRatio) bits.push(`selected aspect ratio: ${settings.aspectRatio}`);
+  if (settings?.resolution) bits.push(`selected resolution: ${settings.resolution}`);
+  if (settings?.quality) bits.push(`selected quality: ${settings.quality}`);
+  if (settings?.duration != null) bits.push(`selected duration: ${settings.duration} seconds`);
+  if (typeof settings?.audio === "boolean") bits.push(`selected native audio: ${settings.audio ? "on" : "off"}`);
+  return ` Target-model capabilities (use silently): ${bits.join("; ")}.`;
+}
 
 // P17 — ENHANCE idempotency keshi (in-memory, single-instance — daily-cap/rate-limit bilan bir xil
 // falsafa; YANGI JADVAL YO'Q). Bitta kalit = bitta mantiqiy "click". Kesh butun operatsiya PROMISE'ini
@@ -1935,6 +1979,9 @@ function enhanceJsonSchema(mode: string): string {
   if (mode === "sfx") {
     return `{"prompt": string, "sound": string, "environment": string, "intensity": string, "duration_hint": string}`;
   }
+  if (mode === "music") {
+    return `{"prompt": string, "genre": string, "mood": string, "tempo": string, "instruments": string[], "structure": string, "dynamics": string}`;
+  }
   // image | video | music → kinematografik sxema (Magnific uslubi)
   return (
     `{"prompt": string, "subject": string, "environment": string, "style": string, ` +
@@ -1957,8 +2004,10 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
   }
   const mode = p.data.mode || "image";
   const format = p.data.format || "text";
+  const enhanceStyle = p.data.enhance_style || "faithful";
 
-  const model = p.data.modelId ? getModelById(p.data.modelId) : undefined;
+  const requestedModel = p.data.modelId ? getModelById(p.data.modelId) : undefined;
+  const model = requestedModel && requestedModel.mode === mode ? requestedModel : undefined;
   // MUHIM: enhance FAQAT tavsifiy prompt matnini qaytarsin. Sozlamalar (model/davomiylik/nisbat/
   // sifat/audio) UI'da boshqariladi — ularni promptga META blok qilib YOZMASIN. Avval "target model:
   // ... duration options ..." kontekst berilardi va LLM uni "**Target Model:** ... **Duration:** ..."
@@ -1966,7 +2015,8 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
   const ctx =
     " Output ONLY the final descriptive prompt as plain prose. Do NOT add any title, heading, label, " +
     "bullet list, or metadata lines such as 'Video Prompt', 'Target Model', 'Duration', 'Aspect Ratio', " +
-    "'Resolution', 'Quality', or 'Native Audio' — those are controlled by the app UI, not the prompt.";
+    "'Resolution', 'Quality', or 'Native Audio' — those are controlled by the app UI, not the prompt." +
+    enhanceModelContext(model, mode, p.data.settings);
   const keepRefs =
     " Preserve any @img / @image / @video / @audio references verbatim (do not rename or remove them).";
   // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.
@@ -1997,8 +2047,16 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
   //  · Mention butunligi: chiqishda kirishda YO'Q @mention bo'lsa (renumber/ixtiro) → RAD ET,
   //    asl promptni qoldiramiz (jimgina "tuzatish" boshqa rasmga ishora qilardi — P28.3).
   const finalizeEnhanced = (rawPrompt: string, originalPrompt: string) => {
-    const trimmed = String(rawPrompt || "").trim();
+    const maxChars = mode === "voice" && model?.maxChars
+      ? Math.min(ENHANCE_PROMPT_MAX, model.maxChars)
+      : ENHANCE_PROMPT_MAX;
+    let trimmed = String(rawPrompt || "").trim();
     if (!trimmed) return { prompt: originalPrompt, mentionMismatch: false };
+    if (trimmed.length > maxChars) {
+      const clipped = trimmed.slice(0, maxChars + 1);
+      const cut = clipped.lastIndexOf(" ");
+      trimmed = clipped.slice(0, cut > Math.floor(maxChars * 0.75) ? cut : maxChars).trim();
+    }
     const integrity = validateMentionIntegrity(originalPrompt, trimmed);
     if (!integrity.ok) return { prompt: originalPrompt, mentionMismatch: true };
     return { prompt: trimmed, mentionMismatch: false };
@@ -2006,12 +2064,18 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
 
   if (format === "json") {
     let ideaForJson = p.data.prompt;
+    let referencesUsed = 0;
+    let referencesSkipped = 0;
     if (refUrls.length || videoRefUrls.length || audioRefUrls.length) {
       const enhanced = await vertexEnhancePrompt(p.data.prompt, {
         imageUrls: refUrls.length ? refUrls : undefined,
         videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
         audioUrls: audioRefUrls.length ? audioRefUrls : undefined,
+        imageRoles: p.data.image_roles,
+        videoRoles: p.data.video_roles,
+        audioRoles: p.data.audio_roles,
         mode,
+        style: enhanceStyle,
         modelContext: ctx.replace(/^\s+/, ""),
       });
       if (!enhanced.ok) {
@@ -2019,17 +2083,27 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
         return { status: 502, body: { error: enhanced.error } };
       }
       ideaForJson = enhanced.data.trim();
+      referencesUsed = enhanced.referencesUsed;
+      referencesSkipped = enhanced.referencesSkipped;
     }
+    const jsonStyleRule = enhanceStyle === "creative"
+      ? "You may add compatible production detail, but never replace the core subject, facts, identity, action or outcome. "
+      : enhanceStyle === "cinematic"
+        ? "Enrich camera, lighting, staging, pacing and atmosphere, but do not invent a new subject, action, event or story beat. "
+        : "Clarify and organize only; do not invent subjects, props, actions, facts, clothing, intensity or story events. ";
     const system =
       `You are an expert ${mode} prompt engineer for AI generation. Rewrite the user's idea into a ` +
       `clear, well-structured prompt that FAITHFULLY expresses their intent, and return it ONLY as a JSON ` +
       `object matching exactly this schema:\n` +
       `${enhanceJsonSchema(mode)}\n` +
       // P30 §1 — FAITHFUL, NOT EMBELLISHING: kirishda YO'Q subyekt/rekvizit/harakat/kiyim/ochiqlik/keskinlikni QO'SHMA.
-      `Be precise and descriptive but DO NOT invent details the user did not describe — no new subjects, props, ` +
-      `actions, clothing/nudity, or added intensity. No markdown, no commentary. The "prompt" field must be a ` +
+      `Be precise and descriptive. ${jsonStyleRule}Do not add nudity, sexual detail, graphic injury or policy-evasion wording the user did not request. ` +
+      `No markdown, no commentary. The "prompt" field must be a ` +
       `self-contained paragraph under ${ENHANCE_PROMPT_MAX} characters. ` +
-      `Write ALL output text in fluent natural ENGLISH regardless of the input language.${keepRefs}${ctx}`;
+      (mode === "voice"
+        ? `Preserve the spoken script's original language; JSON guidance fields may be English.`
+        : `Write ALL output text in fluent natural ENGLISH regardless of the input language.`) +
+      ` Enhancement style: ${enhanceStyle}.${keepRefs}${ctx}`;
     const out = await vertexEnhanceJson(system, ideaForJson);
     if (!out.ok) {
       await refundAiCredits(req.user!.userId, enhanceCost.cost);
@@ -2055,6 +2129,8 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
       mentionMismatch: settled.mentionMismatch,
       creditsLeft: gate.remaining,
       creditsCharged: enhanceCost.cost,
+      referencesUsed,
+      referencesSkipped,
     } };
   }
 
@@ -2064,7 +2140,11 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
     imageUrls: refUrls.length ? refUrls : undefined,
     videoUrls: videoRefUrls.length ? videoRefUrls : undefined,
     audioUrls: audioRefUrls.length ? audioRefUrls : undefined,
+    imageRoles: p.data.image_roles,
+    videoRoles: p.data.video_roles,
+    audioRoles: p.data.audio_roles,
     mode,
+    style: enhanceStyle,
     modelContext: ctx.replace(/^\s+/, ""),
   });
   if (!out.ok) {
@@ -2077,6 +2157,8 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
     mentionMismatch: settled.mentionMismatch,
     creditsLeft: gate.remaining,
     creditsCharged: enhanceCost.cost,
+    referencesUsed: out.referencesUsed,
+    referencesSkipped: out.referencesSkipped,
   } };
 }
 

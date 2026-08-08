@@ -273,7 +273,8 @@
       return req("/api/studio/downloads" + (cursor ? "?cursor=" + encodeURIComponent(cursor) : ""));
     },
     // P28 (29a) — enhance endi REFERENSlarni ko'radi (image/video/audio URL massivlari).
-    // opts: { imageUrls, videoUrls, audioUrls }. Orqaga moslik: opts berilmasa faqat matn.
+    // opts: { imageUrls, videoUrls, audioUrls, imageRoles, videoRoles, audioRoles, style }.
+    // Orqaga moslik: opts berilmasa faqat matn + faithful uslub.
     enhance: function (prompt, mode, modelId, opts) {
       opts = opts || {};
       // P17 — har "click" uchun BITTA idempotency kaliti (gen() bilan bir xil): req() ichki qayta
@@ -282,8 +283,13 @@
       var key = opts.idempotencyKey || uuid();
       var body = { prompt: prompt, mode: mode || undefined, modelId: modelId || undefined, idempotencyKey: key };
       if (opts.imageUrls && opts.imageUrls.length) body.image_urls = opts.imageUrls;
+      if (opts.imageRoles && opts.imageRoles.length) body.image_roles = opts.imageRoles;
       if (opts.videoUrls && opts.videoUrls.length) body.video_urls = opts.videoUrls;
+      if (opts.videoRoles && opts.videoRoles.length) body.video_roles = opts.videoRoles;
       if (opts.audioUrls && opts.audioUrls.length) body.audio_urls = opts.audioUrls;
+      if (opts.audioRoles && opts.audioRoles.length) body.audio_roles = opts.audioRoles;
+      if (opts.style) body.enhance_style = opts.style;
+      if (opts.settings) body.settings = opts.settings;
       return req("/api/studio/gen/prompt/enhance", { method: "POST", body: body, idempotencyKey: key });
     },
     // P8 — referens yuklash: kichik fayl dataUrl bilan (JSON), katta video/audio presigned PUT + srcKey

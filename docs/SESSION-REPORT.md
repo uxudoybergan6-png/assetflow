@@ -1,9 +1,12 @@
 Session Report: 2026-08-08
-- Web Create prompt maydonida fokus paytida yashil pastki chiziq paydo bo'lishi tekshirildi.
-- Root cause `.ff-create-prompt:focus-visible` inset box-shadow qoidasi edi.
-- Shu dekorativ focus box-shadow Studio source'dan olib tashlandi.
-- Prompt caret, contenteditable, klaviatura inputi va expand oqimi saqlandi.
-- Create parity testi chiziq qaytishini bloklaydigan regressiya bilan yangilandi.
-- Studio sync va Create/session regressiya testlari: PASS.
+- Web Create Prompt Enhance mode/model/reference-aware qilib yakunlandi.
+- Image, Video, Voice, SFX va Music uchun alohida prompt yo'riqnomalari qo'shildi.
+- Voice spoken-script tilini saqlaydi; boshqa generation promptlari inglizcha qaytadi.
+- Faithful, Cinematic va Creative uslublari Settings ichiga qo'shildi va eslab qolinadi.
+- Tanlangan model imkoniyatlari va joriy duration/aspect/resolution/audio Enhance'ga ichki kontekst bo'ladi.
+- Start/end/image/video/audio referens rollari aniq uzatiladi; faqat model ishlatadigan refs yuboriladi.
+- Mention qo'shish, qayta raqamlash yoki tushirib qoldirish natijani rad etadi.
+- Text/image/video/audio kombinatsiyasiga mos ✦1-✦5 narx va oldindan balans darvozasi ulandi.
+- Yuklanmagan/katta referenslar endi ishlatilgan deb ko'rsatilmaydi.
+- API build, Enhance/Create/session/device-auth regressiyalari va Studio sync: PASS.
 - Plugin source o'zgarmadi; CEP refresh talab qilinmaydi.
-- Commit, push va deploy qilinmadi.

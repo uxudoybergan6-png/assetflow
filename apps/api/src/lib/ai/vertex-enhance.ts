@@ -48,6 +48,10 @@ function getClient(): GoogleGenAI {
 }
 
 type RefKind = "image" | "video" | "audio";
+export type EnhanceStyle = "faithful" | "cinematic" | "creative";
+export type VertexEnhanceResult =
+  | { ok: true; data: string; referencesUsed: number; referencesSkipped: number }
+  | { ok: false; error: string };
 const DEFAULT_MIME: Record<RefKind, string> = {
   image: "image/png",
   video: "video/mp4",
@@ -106,34 +110,55 @@ export async function vertexEnhancePrompt(
     imageUrls?: string[];
     videoUrls?: string[];
     audioUrls?: string[];
+    imageRoles?: string[];
+    videoRoles?: string[];
+    audioRoles?: string[];
     mode?: string;
+    style?: EnhanceStyle;
     modelContext?: string;
   }
-): Promise<OrResult<string>> {
+): Promise<VertexEnhanceResult> {
   if (!isVertexEnhanceConfigured()) return { ok: false, error: "VERTEX_NOT_CONFIGURED" };
   const isHttp = (u: unknown): u is string => typeof u === "string" && /^(https?:\/\/|data:)/i.test(u);
   const imgs = (opts?.imageUrls || []).filter(isHttp);
   const vids = (opts?.videoUrls || []).filter(isHttp);
   const auds = (opts?.audioUrls || []).filter(isHttp);
-  const mode = String(opts?.mode || "image").toLowerCase() === "video" ? "video" : "image";
+  const rawMode = String(opts?.mode || "image").toLowerCase();
+  const mode = ["image", "video", "voice", "sfx", "music"].includes(rawMode) ? rawMode : "image";
+  const style: EnhanceStyle = ["faithful", "cinematic", "creative"].includes(String(opts?.style))
+    ? (opts?.style as EnhanceStyle)
+    : "faithful";
 
-  const role =
-    mode === "video"
-      ? "You are an expert AI video-generation prompt engineer."
-      : "You are an expert AI image-generation prompt engineer.";
+  const roleByMode: Record<string, string> = {
+    image: "You are an expert AI image-generation prompt engineer.",
+    video: "You are an expert AI video-generation prompt engineer and storyboard-minded director.",
+    voice: "You are an expert voiceover script editor and performance director.",
+    sfx: "You are an expert cinematic sound-effects designer.",
+    music: "You are an expert music-generation prompt engineer and arranger.",
+  };
+  const role = roleByMode[mode];
   // P30 §1 — FAITHFUL, NOT EMBELLISHING: "rich/detailed" o'rniga aniq-tavsifiy (foydalanuvchi
   // aytmagan tafsilotni QO'SHMA). Bu spurious provayder rad etishlarining asosiy sababini oldini oladi.
-  const detailHint =
-    mode === "video"
-      ? "Turn the user's idea into ONE clear, precise video prompt (subject, action, camera movement, composition, lighting, atmosphere) that stays faithful to what the user described."
-      : "Turn the user's idea into ONE clear, precise image prompt (subject, composition, lighting, style) that stays faithful to what the user described.";
+  const detailByMode: Record<string, string> = {
+    image: "Turn the user's idea into ONE clear image prompt covering subject, composition, lighting, color, material and visual style.",
+    video: "Turn the user's idea into ONE temporally coherent video prompt covering subject, action, shot progression, camera movement, physical continuity, lighting and atmosphere.",
+    voice: "Improve the spoken script for natural delivery, punctuation, pauses, emphasis and tone. Preserve its language, facts, names and intended meaning; do not translate the words that will be spoken.",
+    sfx: "Turn the request into ONE precise sound-effect prompt covering source, environment, distance, texture, timing, intensity and tail, without adding music unless requested.",
+    music: "Turn the request into ONE precise music prompt covering genre, mood, tempo, instrumentation, arrangement, dynamics and structure, without inventing lyrics unless requested.",
+  };
+  const detailHint = detailByMode[mode];
   const tokenHint =
     " If the text contains @img/@image/@video/@audio tokens, keep them EXACTLY as written — never rename or remove them.";
   // FAITHFULNESS hint — "don't ADD explicit content the user didn't ask for". Bu FILTER-EVASION EMAS
   // (Director ruling): euphemism-almashtirish (full body→full figure) OLIB TASHLANDI — u ma'noni
   // o'zgartirar va shartnomani buzardi. Faqat "aytilmagan ochiqlik/keskinlikni qo'shma" qoladi.
+  const styleHint = style === "creative"
+    ? " Creative mode: you may add compatible production detail and tasteful creative choices, but never replace the main subject, action, facts, identity or requested outcome."
+    : style === "cinematic"
+      ? " Cinematic mode: enrich camera, lighting, staging, pacing and atmosphere, but do not invent a new subject, action, event or story beat."
+      : " Faithful mode: clarify and organize only; do not invent subjects, props, actions, facts, clothing, intensity or story events.";
   const safetyHint =
-    " Faithfulness: express ONLY what the user asked for — do NOT add nudity, sexual/erotic phrasing, or body-exposure detail the user did not request, and do NOT embellish with extra props, actions, or intensity. Prefer neutral, descriptive wording and let clothing, action, camera and atmosphere carry the scene.";
+    " Express the request honestly. Do NOT add nudity, sexual/erotic phrasing, graphic injury, body-exposure detail or policy-evasion wording that the user did not request.";
   const modelContext = opts?.modelContext ? ` ${opts.modelContext}` : "";
 
   // ASSISTENT uslubi: referens + matnni birga o'qib foydalanuvchi NIYATINI tushunadi; yakuniy prompt
@@ -147,7 +172,11 @@ export async function vertexEnhancePrompt(
     "From each reference take only prompt-useful observations (subject, composition, style, materials, colors, lighting, " +
     "background, mood; for video: motion, camera, pacing, transitions; for audio: mood, rhythm, tone, instruments). " +
     "If a reference conflicts with the user's text, the user's text WINS. " +
-    `IMPORTANT: write the final prompt in fluent natural ENGLISH, regardless of the input language — translate the user's idea faithfully.${tokenHint}${safetyHint}${modelContext} ` +
+    (mode === "voice"
+      ? "IMPORTANT: preserve the language of the spoken script. "
+      : "IMPORTANT: write the final generation prompt in fluent natural ENGLISH, regardless of the input language. ") +
+    `Use the target-model context silently and never print model/settings metadata.${tokenHint}${styleHint}${safetyHint}${modelContext} ` +
+    "Before answering, silently verify that the rewrite preserves the user's intent, reference roles and supported model capabilities. " +
     "Return ONLY the final prompt — no titles, no commentary, no reference analysis, no lists, no metadata.";
 
   // 1) Barcha referenslarni PARALLEL yech (Promise.all TARTIBNI saqlaydi: rasm→video→audio, har biri
@@ -173,8 +202,14 @@ export async function vertexEnhancePrompt(
   let usedB64 = 0;
   let skipped = 0;
   for (const r of resolved) {
-    const tag = r.kind === "image" ? "img" : r.kind; // @img1 / @video1 / @audio1
-    const label = `@${tag}${r.idx + 1} (reference):`;
+    const roles = r.kind === "image" ? opts?.imageRoles : r.kind === "video" ? opts?.videoRoles : opts?.audioRoles;
+    const refRole = String(roles?.[r.idx] || `${r.kind} reference`).trim().slice(0, 40);
+    const numberedRole = /^(?:image|video|audio)-reference-(\d+)$/i.exec(refRole);
+    const mention = refRole === "start-frame" ? "@start"
+      : refRole === "end-frame" ? "@end"
+      : numberedRole ? `@${r.kind === "image" ? "img" : r.kind}${Number(numberedRole[1])}`
+      : `@${r.kind === "image" ? "img" : r.kind}${r.idx + 1}`;
+    const label = `${mention} (${refRole}):`;
     if (r.mode === "gcs") {
       // gs:// — hajm chegarasisiz (uzun/katta video). Budjetga kirmaydi.
       parts.push({ text: label });
@@ -213,7 +248,7 @@ export async function vertexEnhancePrompt(
     });
     const out = (r.text || "").trim();
     if (!out) return { ok: false, error: "Vertex enhance returned an empty response" };
-    return { ok: true, data: out };
+    return { ok: true, data: out, referencesUsed: totalRefs - missing, referencesSkipped: missing };
   } catch (e) {
     return { ok: false, error: (e as Error).message || "Vertex enhance error" };
   }

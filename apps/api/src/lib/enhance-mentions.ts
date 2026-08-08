@@ -30,17 +30,19 @@ export function parseMentionKeys(text: string): Set<MentionKey> {
 }
 
 /**
- * Chiqish prompti kirishga mos mention'lardan foydalanadimi?
- *  ok=false → chiqishda kirishda YO'Q mention bor (renumber yoki ixtiro) → qayta yozishni RAD ET.
- *  Kirishdagi mentiondan biri chiqishda TUSHIB QOLSA — bu xato emas (ref shunchaki eslatilmaydi).
+ * Chiqish prompti kirishdagi mention'larni AYNAN saqlaydimi?
+ *  ok=false → mention qo'shilgan, qayta raqamlangan YOKI tushirib qoldirilgan — qayta yozishni RAD ET.
+ *  Enhance referens bog'lanishini o'zgartirmasligi kerak; referensni ishlatmaslik qarorini generator beradi.
  */
 export function validateMentionIntegrity(
   input: string,
   output: string
-): { ok: true } | { ok: false; extraneous: MentionKey[] } {
+): { ok: true } | { ok: false; extraneous: MentionKey[]; missing: MentionKey[] } {
   const inKeys = parseMentionKeys(input);
   const outKeys = parseMentionKeys(output);
   const extraneous: MentionKey[] = [];
+  const missing: MentionKey[] = [];
   for (const k of outKeys) if (!inKeys.has(k)) extraneous.push(k);
-  return extraneous.length ? { ok: false, extraneous } : { ok: true };
+  for (const k of inKeys) if (!outKeys.has(k)) missing.push(k);
+  return extraneous.length || missing.length ? { ok: false, extraneous, missing } : { ok: true };
 }

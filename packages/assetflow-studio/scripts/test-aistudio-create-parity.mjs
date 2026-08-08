@@ -27,8 +27,11 @@ assert.ok(/ff-create-enhance/.test(src), "enhance control keeps FINAL-CREATE cla
 assert.ok(/va-genwrap ff-create-actions/.test(src), "generate actions row keeps FINAL-CREATE class");
 assert.ok(/class=\"\{\{ genBtnCls \}\} ff-create-generate\"[^>]*aria-disabled=\"\{\{ genAriaDisabled \}\}\"[\s\S]{0,180}\{\{ genBtnLabel \}\}[\s\S]{0,80}<span class=\"va-axcost ff-create-cost\"/.test(src), "Generate exposes its blocked state and keeps label before inline cost");
 assert.ok(/va-axcost ff-create-cost/.test(src), "cost indicator keeps FINAL-CREATE class");
-assert.ok(/class=\"va-set enh ff-create-enhance\"[\s\S]{0,260}><svg class=\"va-ic\"[\s\S]{0,80}<span class=\"ff-create-enhance-label\">\{\{ enhLabel \}\}<\/span>/.test(src), "Enhance keeps hideable label for icon-only control parity");
+assert.ok(/class=\"\{\{ enhBtnCls \}\}\"[^>]*aria-disabled=\"\{\{ enhAriaDisabled \}\}\"[\s\S]{0,260}><svg class=\"va-ic\"[\s\S]{0,80}<span class=\"ff-create-enhance-label\">\{\{ enhLabel \}\}<\/span>/.test(src), "Enhance exposes its real blocked state and keeps the icon-only label");
 assert.ok(/<div class=\"va-genwrap ff-create-actions\">[\s\S]{0,520}ff-create-enhance[\s\S]{0,520}ff-create-generate/.test(src), "Enhance and Generate share the FINAL-CREATE actions group in order");
+assert.ok(/class=\"va-sgh\">Enhance style<\/div>[\s\S]{0,240}enhanceStylesView/.test(src), "settings expose Faithful/Cinematic/Creative Enhance styles");
+assert.ok(/const enhanceCost = 1 \+ \(enhanceHasImage \? 1 : 0\) \+ \(enhanceHasVideo \? 2 : 0\) \+ \(enhanceHasAudio \? 1 : 0\)/.test(src), "Enhance price follows reference modalities");
+assert.ok(/enhLabel = this\.state\.enhBusy \? 'Enhancing…' : \('Enhance '[\s\S]{0,120}' · ✦' \+ enhanceCost\)/.test(src), "Enhance label shows style and exact cost");
 
 assert.ok(/id=\"ffCreateStatus\" class=\"\{\{ genStatusCls \}\}\" aria-live=\"polite\"\>\{\{ genStatusText \}\}<\/div>/.test(src), "composer exposes an announced FINAL-CREATE status row");
 const genStatusTextDecl = src.match(/let\s+genStatusText\s*=\s*'';/);
