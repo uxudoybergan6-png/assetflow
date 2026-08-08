@@ -1,14 +1,14 @@
-Session (2026-08-08): FrameFlow Create direct `goAistudio` initialization patch fixed.
-- Root cause: `this.initAistudioState(...)` calls were made but no class method existed.
-- Added local `ensureAistudioModels()` helper and wired all Create paths (`goAistudio` in both sections, `onTryTool`, `tryModel`) to:
-  - set state via shared `initAistudioState(...)` in the same patch,
-  - then preload models with auth + `!genModelsLoaded` guard outside setState.
-- `initAistudioState` is now pure (no `loadModels()` side-effect), but still preserves default tool/model selection, composer/layout reset flags, and sessions/projects continuity.
-- `packages/assetflow-studio/scripts/test-aistudio-create-init.mjs` was strengthened to assert:
-  - no `this.initAistudioState` receiver remains,
-  - both `goAistudio` handlers go through the same bootstrap,
-  - `onTryTool`/`tryModel` use the shared path.
-- Checks run: `npm run build -w apps/api`, `test-plugin-device-auth`, `test-device-auth-ui`, `test-frameflow-session-persistence`, `test-aistudio-create-init`, `test-studio-session-policy`, `node --check` on edited JS, `npm run studio:sync`, `git diff --check`.
-- Result: PASS for all required checks.
-- `_to_delete/` untouched; no plugin source changed (no CEP reinstall run).
-- Create initialization fix commitga tayyor; push/deploy/package qilinmadi.
+Session Report: 2026-08-08
+- Web AI Studio Create composer plugin FINAL-CREATE UI/UX tuzilmasiga moslashtirildi.
+- Count loop, reference `+`, model cost va status declaration regressiyalari tuzatildi.
+- Status controls qatoridan keyinga ko'chirildi; gate xabari statusda takrorlanmaydi.
+- Enhance plugin kabi actions guruhida Generate oldiga ko'chirildi.
+- Generate ichida label → cost tartibi, border, padding va cost spacing plugin bilan tenglashtirildi.
+- Mavjud auth, model, quote, credit, reference, generation va session handlerlari saqlandi.
+- Parity testi DOM joylashuvi, declaration tartibi, template balansi va asosiy CSS qiymatlarini tekshiradi.
+- API build, device-auth security/UI, shared session persistence, Create init va session policy PASS.
+- Parity va tahrirlangan JavaScript syntax testlari PASS.
+- `npm run studio:sync` va `git diff --check` PASS.
+- Plugin source o'zgarmadi; shared CEP reinstall talab qilinmadi.
+- `_to_delete/` va boshqa ochiq o'zgarishlar commitga kiritilmadi.
+- Push/deploy/package va Adobe ichidagi manual verification bajarilmadi.

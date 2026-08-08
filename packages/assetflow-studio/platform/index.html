@@ -15223,9 +15223,25 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   /* PHASE B — dock evolved into the mockup composer (bottom-docked inside the workspace) */
   /* #7 — kompakt, markazlashgan suzuvchi kompozer (chetdan-chetga emas; Artlist ilhomi) */
   .ff .va-dock{position:absolute;left:0;right:0;margin-inline:auto;width:min(920px,calc(100% - 48px));bottom:18px;z-index:20;border-radius:20px;padding:13px 14px;background:rgba(19,22,28,.82);backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 42px rgba(0,0,0,.5);container-type:inline-size;container-name:vacmp}
+.ff .va-dock.ff-create-composer,
+.ff .ff-create-composer{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:18px;
+    border-radius:24px;
+    border:1px solid rgba(255,255,255,.13);
+    padding:14px;
+    background:rgba(20,20,23,.92);
+    box-shadow:inset 0 1px rgba(255,255,255,.06),0 20px 50px rgba(0,0,0,.34);
+    max-width:min(900px,calc(100% - 44px));
+}
   /* #1 — Artlist-uslub katta prompt paneli: default ~4-5 qator, uzun prompt 60vh gacha
      kengayadi, undan keyin ICHKI scroll (tepasi hech qachon kesilmaydi) */
   .ff .va-dock .prompt{width:100%;font-size:13.5px;color:var(--text);line-height:1.6;min-height:92px;max-height:60vh;overflow-y:auto;background:none;border:0;outline:none;resize:none;font-family:inherit;padding:0;display:block}
+  .ff .ff-create-write{display:flex;align-items:flex-start;gap:8px;min-height:84px;padding:7px 2px 11px}
+  .ff .ff-create-prompt{flex:1;min-width:0;min-height:74px;max-height:32vh;resize:none;overflow:auto;padding:5px 3px;border:0;outline:none;background:transparent;color:var(--text);font:500 14px/1.55 var(--font-sans);box-sizing:border-box}
+  .ff .ff-create-prompt::placeholder{color:var(--muted-2)}
   .ff .va-dock .prompt::placeholder{color:var(--muted2)}
   /* ===== BATCH5 #6 — Dreamina-uslub chip editor (contenteditable + atom mention pill) ===== */
   .ff .va-dock .prompt.chipedit{white-space:pre-wrap;word-break:break-word;cursor:text}
@@ -15234,6 +15250,42 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .va-promptwrap{position:relative}
   .ff .va-dock .prompt.chipedit{max-height:200px;padding-right:32px}
   .ff .va-dock .prompt.chipedit.expanded{max-height:60vh}
+  .ff .ff-create-prompt.chipedit{max-height:200px;padding-right:32px}
+  .ff .ff-create-prompt.chipedit.expanded{max-height:60vh}
+  .ff .ff-create-prompt.chipedit:empty::before{content:attr(data-ph);color:var(--muted2);pointer-events:none}
+  .ff .ff-create-promptexp{position:absolute;top:0;right:0;width:26px;height:26px;border-radius:8px;background:var(--f1);border:1px solid var(--hair2);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+  .ff .ff-create-promptexp:hover{background:var(--f2);color:var(--text)}
+  .ff .ff-create-controls{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;min-width:0}
+  .ff .ff-create-setgroup{display:flex;align-items:center;gap:7px;min-width:0;flex:1 1 auto}
+  .ff .ff-create-control{min-width:0;height:35px;padding:0 11px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(255,255,255,.045);color:var(--text);font:650 10.5px/1 var(--font-sans);cursor:pointer;white-space:nowrap}
+  .ff .ff-create-modewrap{position:relative;flex:0 0 auto}
+  .ff .ff-create-modebtn{min-width:82px;text-align:left}
+  .ff .ff-create-modemenu{position:absolute;z-index:10;left:0;bottom:43px;width:174px;padding:6px;border:1px solid rgba(255,255,255,.14);border-radius:15px;background:#17181c;box-shadow:0 20px 50px rgba(0,0,0,.55)}
+  .ff .ff-create-modemenu[hidden]{display:none}
+  .ff .ff-create-mode{display:flex;width:100%;height:34px;align-items:center;padding:0 10px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:700 10.5px/1 var(--font-sans);cursor:pointer;text-align:left}
+  .ff .ff-create-mode:hover,.ff .ff-create-mode:focus-visible{background:rgba(255,255,255,.07);color:var(--text)}
+  .ff .ff-create-mode[aria-selected="true"]{background:rgba(255,255,255,.1);color:var(--text)}
+  .ff .ff-create-model{flex:1 1 190px;max-width:440px;text-align:left;overflow:hidden;text-overflow:ellipsis}
+  .ff .ff-create-settings{flex:0 1 auto;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+  .ff .ff-create-actions{display:flex;align-items:center;gap:7px;margin-left:0;flex:0 0 auto}
+.ff .ff-create-enhance{min-width:35px;width:35px;padding:0;font-size:14px}
+.ff .ff-create-enhance{display:inline-flex;align-items:center;justify-content:center}
+.ff .ff-create-enhance-label{display:none}
+.ff .ff-create-generate{height:37px;min-width:105px;padding:0 15px;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent);font:800 11px/1 var(--font-sans);cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;white-space:nowrap}
+.ff .ff-create-generate:disabled{opacity:.42;cursor:not-allowed}
+.ff .ff-create-cost{margin-left:5px;font-weight:800}
+.ff .ff-create-status{min-height:16px;margin:9px 3px 0;color:var(--muted);font:500 9.5px/1.4 var(--font-sans)}
+.ff .ff-create-status.err{color:#ff9f9f}.ff-create-status.ok{color:#b8ea75}.ff-create-status.loading{color:var(--amber,#f0a840)}
+  .ff .ff-create-setpop{min-width:238px;max-width:min(340px,calc(100vw - 40px));max-height:min(66vh,440px);padding:4px 4px 8px}
+  .ff .ff-create-setpop.mdl{min-width:300px;padding:7px}
+.ff .ff-create-refmenu{position:absolute;z-index:8;left:0;width:min(300px,calc(100% - 24px));top:calc(100% + 10px);padding:6px;border:1px solid rgba(255,255,255,.14);border-radius:15px;background:#17181c;box-shadow:0 20px 50px rgba(0,0,0,.55)}
+.ff .ff-create-refmenu[hidden]{display:none}
+.ff .ff-create-refmenu button{display:flex;width:100%;padding:9px 10px;border:0;border-radius:10px;background:transparent;color:var(--text);font:600 11px/1.25 var(--font-sans);cursor:pointer;text-align:left}
+.ff .ff-create-refmenu button:hover,.ff .ff-create-refmenu button:focus-visible{background:rgba(255,255,255,.07)}
+.ff .ff-create-add{flex:none;width:31px;height:31px;margin-top:1px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.055);color:var(--text);font-size:19px;line-height:1;cursor:pointer}
+.ff .ff-create-add:hover{color:var(--lime);border-color:var(--lime)}
+  .ff .ff-create-refwrap{position:relative;display:flex}
+  .ff .ff-create-refmenu{left:0;top:calc(100% + 10px)}
   .ff .va-promptexp{position:absolute;top:0;right:0;width:26px;height:26px;border-radius:8px;background:var(--f1);border:1px solid var(--hair2);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
   .ff .va-promptexp:hover{background:var(--f2);color:var(--text)}
   .ff .va-promptexp .va-ic{width:14px;height:14px;transition:transform .15s ease}
@@ -15318,6 +15370,22 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
      Himoyalangan (mode·Enhance·Generate) hech qachon yashirilmaydi; keng ekranда hammasi qaytadi. */
   @container vacmp (max-width:460px){ .ff .va-setgear{display:none} }
   @container vacmp (max-width:420px){ .ff .va-setgroup .va-set[data-pop="model"]{display:none} }
+  @media (max-width:520px){
+    .ff .ff-create-composer{padding:12px;border-radius:20px}
+    .ff .ff-create-controls{align-items:center;overflow-x:auto;overflow-y:hidden;padding-bottom:3px;scrollbar-width:none;-ms-overflow-style:none}
+    .ff .ff-create-controls:focus-within{overflow:visible}
+    .ff .ff-create-controls::-webkit-scrollbar{display:none}
+    .ff .ff-create-setgroup{flex:0 0 auto;min-width:270px}
+    .ff .ff-create-modewrap{flex:0 0 auto}
+    .ff .ff-create-model{flex:1 1 112px;min-width:76px;max-width:150px}
+    .ff .ff-create-settings{flex:0 1 112px;min-width:76px;max-width:130px}
+    .ff .ff-create-actions{flex:0 0 auto}
+    .ff .ff-create-generate{flex:0 0 auto}
+  }
+  @media (max-width:820px){
+    .ff .ff-create-composer{position:static;left:auto;right:auto;bottom:auto}
+  }
+  @media (prefers-reduced-motion:reduce){.ff .ff-create-composer{scroll-behavior:auto;transition:none!important;animation:none!important}}
   /* P14 — drop zonasi belgisi + gen kartasi drag affordansi */
   .ff .va-dock.va-dropon{outline:2px dashed var(--lime);outline-offset:3px;background:rgba(163,230,53,.06)}
   .ff .va-axres[draggable="true"]{cursor:grab}
@@ -17084,33 +17152,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 </div>
 
                 <!-- FLOATING DOCK (A3b — chips are the real gen params; signed quote before generate) -->
-                <div class="va-dock">
+                <div class="va-dock ff-create-composer">
               <sc-if value="{{ showRefs }}" hint-placeholder-val="{{ true }}">
-                <!-- P16 #5/#7 — referens paneli BITTA qatorda (gorizontal scroll); ＋ chapda mahkam,
-                     thumblar scroll. Ostidagi meta qatori = ixcham used/allowed ikonkalari + hint. -->
+                <!-- P16 #5/#7 — referens paneli BITTA qatorda (gorizontal scroll). -->
                 <div class="va-axrefs">
-                  <sc-if value="{{ showRefPlus }}" hint-placeholder-val="{{ true }}">
-                  <span class="va-axrefplusw" data-pop-root="ref">
-                    <button class="va-axrefplus" onclick="{{ toggleRefMenu }}" title="Add reference">＋</button>
-                    <sc-if value="{{ popRef }}" hint-placeholder-val="{{ false }}">
-                      <div class="ffa-pop" onclick="{{ stop }}" style="min-width:215px">
-                        <!-- #8 — tur tanlangach manba tanlovi: Upload / My Library -->
-                        <sc-if value="{{ refSrcOn }}" hint-placeholder-val="{{ false }}">
-                          <div class="va-refmenucap">{{ refSrcCap }}</div>
-                          <button class="va-refmenurow" onclick="{{ refSrcUpload }}"><i class="ph ph-upload-simple"></i>Upload</button>
-                          <button class="va-refmenurow" onclick="{{ refSrcLibrary }}"><i class="ph ph-squares-four"></i>My Library</button>
-                          <button class="va-refmenurow" onclick="{{ refSrcBack }}" style="color:var(--muted)"><i class="ph ph-caret-left"></i>Back</button>
-                        </sc-if>
-                        <sc-if value="{{ refSrcOff }}" hint-placeholder-val="{{ true }}">
-                          <sc-if value="{{ refMenuHasCap }}" hint-placeholder-val="{{ false }}"><div class="va-refmenucap">{{ refMenuCap }}</div></sc-if>
-                          <sc-for list="{{ refAddsView }}" as="ra" hint-placeholder-count="2">
-                            <button class="va-refmenurow" data-k="{{ ra.k }}" onclick="{{ addRefKMenu }}"><i class="ph ph-{{ ra.icon }}"></i>{{ ra.menuLabel }}</button>
-                          </sc-for>
-                        </sc-if>
-                      </div>
-                    </sc-if>
-                  </span>
-                  </sc-if>
                   <div class="va-axreftrack">
                     <sc-for list="{{ refChipsView }}" as="rc" hint-placeholder-count="0">
                       <span class="{{ rc.cls }}" style="{{ rc.thumbStyle }}" title="{{ rc.reason }}" draggable="false">
@@ -17138,19 +17183,41 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <!-- D11.b — Upscale/op rejimida prompt paneli UMUMAN render bo'lmaydi: bu asboblar
                    promptni o'qimaydi (server avto-nom yozadi). installChipEditor host yo'qligini
                    o'zi ko'taradi (20836) va asbob almashganda qayta mount qiladi. -->
-              <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}">
-              <div class="va-promptwrap">
-                <div class="{{ promptCls }}" data-ph="{{ promptPh }}"></div>
-                <button class="{{ promptExpCls }}" onclick="{{ toggleComposerExpand }}" title="{{ promptExpTip }}"><svg class="va-ic"><use href="#i-chev"></use></svg></button>
+              <div class="va-promptwrap ff-create-write">
+                <sc-if value="{{ showRefPlus }}" hint-placeholder-val="{{ false }}">
+                  <span class="va-axrefplusw ff-create-refwrap" data-pop-root="ref">
+                    <button class="va-axrefplus ff-create-add" onclick="{{ toggleRefMenu }}" title="Add reference">＋</button>
+                    <sc-if value="{{ popRef }}" hint-placeholder-val="{{ false }}">
+                      <div class="ffa-pop ff-create-refmenu" onclick="{{ stop }}" style="min-width:215px">
+                        <!-- #8 — tur tanlangach manba tanlovi: Upload / My Library -->
+                        <sc-if value="{{ refSrcOn }}" hint-placeholder-val="{{ false }}">
+                          <div class="va-refmenucap">{{ refSrcCap }}</div>
+                          <button class="va-refmenurow" onclick="{{ refSrcUpload }}"><i class="ph ph-upload-simple"></i>Upload</button>
+                          <button class="va-refmenurow" onclick="{{ refSrcLibrary }}"><i class="ph ph-squares-four"></i>My Library</button>
+                          <button class="va-refmenurow" onclick="{{ refSrcBack }}" style="color:var(--muted)"><i class="ph ph-caret-left"></i>Back</button>
+                        </sc-if>
+                        <sc-if value="{{ refSrcOff }}" hint-placeholder-val="{{ true }}">
+                          <sc-if value="{{ refMenuHasCap }}" hint-placeholder-val="{{ false }}"><div class="va-refmenucap">{{ refMenuCap }}</div></sc-if>
+                          <sc-for list="{{ refAddsView }}" as="ra" hint-placeholder-count="2">
+                            <button class="va-refmenurow" data-k="{{ ra.k }}" onclick="{{ addRefKMenu }}"><i class="ph ph-{{ ra.icon }}"></i>{{ ra.menuLabel }}</button>
+                          </sc-for>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                  </span>
+                </sc-if>
+                <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}">
+                  <div class="{{ promptCls }} ff-create-prompt" data-ph="{{ promptPh }}"></div>
+                  <button class="{{ promptExpCls }} ff-create-promptexp" onclick="{{ toggleComposerExpand }}" title="{{ promptExpTip }}"><svg class="va-ic"><use href="#i-chev"></use></svg></button>
+                </sc-if>
               </div>
-              </sc-if>
-              <div class="va-dockrow">
-                <div class="va-setgroup">
-                <span class="va-set mode" data-pop="mode" data-pop-root="mode" onclick="{{ toggleChip }}" role="button" tabindex="0"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
+              <div class="va-dockrow ff-create-controls">
+                <div class="va-setgroup ff-create-setgroup">
+                <span class="va-set mode ff-create-control ff-create-modewrap ff-create-modebtn" data-pop="mode" data-pop-root="mode" onclick="{{ toggleChip }}" role="button" tabindex="0"><svg class="va-ic"><use href="{{ toolIconRef }}"></use></svg> <b>{{ toolTitle }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popMode }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop ff-create-modemenu" onclick="{{ stop }}"><sc-for list="{{ aiToolsView }}" as="t" hint-placeholder-count="4"><button data-tool="{{ t.key }}" onclick="{{ onPickTool }}" class="{{ t.poprowCls }}" aria-selected="{{ t.popSel }}">{{ t.short }}<sc-if value="{{ t.on }}" hint-placeholder-val="{{ false }}"><svg class="va-ic" style="color:var(--lime)"><use href="#i-check"></use></svg></sc-if></button></sc-for></div></sc-if>
                 </span>
-                <span class="va-set" data-pop="model" data-pop-root="model" onclick="{{ toggleChip }}" title="{{ modelName }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop mdl" onclick="{{ stop }}">
+                <span class="va-set ff-create-control ff-create-model" data-pop="model" data-pop-root="model" onclick="{{ toggleChip }}" title="{{ modelName }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-grid"></use></svg> <b>{{ modelName }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popModel }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop mdl ff-create-setpop" onclick="{{ stop }}">
                     <div class="va-axpoph">{{ modePickHead }}</div>
                     <sc-for list="{{ modelPickView }}" as="m" hint-placeholder-count="3">
                       <button data-v="{{ m.v }}" onclick="{{ pickModel }}" class="{{ m.rowCls }}">
@@ -17164,26 +17231,35 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                 </span>
                 <!-- P16 — BITTA sozlama chipi: barcha per-model sozlamalar guruhlangan popover'da.
                      Model qo'llamaydigan qatorlar UMUMAN render bo'lmaydi (show* darvozalari). -->
-                <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ true }}"><span class="va-set va-setgear" data-pop="settings" data-pop-root="settings" onclick="{{ toggleChip }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-sliders"></use></svg> <b>{{ settingsSummary }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
-                  <sc-if value="{{ popSettings }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop va-setpop" onclick="{{ stop }}">
+                <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ true }}"><span class="va-set va-setgear ff-create-control ff-create-settings" data-pop="settings" data-pop-root="settings" onclick="{{ toggleChip }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-sliders"></use></svg> <b>{{ settingsSummary }}</b> <svg class="va-ic"><use href="#i-chev"></use></svg>
+                  <sc-if value="{{ popSettings }}" hint-placeholder-val="{{ false }}"><div class="ffa-pop va-setpop ff-create-setpop" onclick="{{ stop }}">
                     <sc-if value="{{ showSize }}" hint-placeholder-val="{{ true }}"><div class="va-sgrp"><div class="va-sgh">Aspect Ratio</div><div class="va-sgops"><sc-for list="{{ aspectsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onSizeM }}" class="{{ z.setoptCls }}"><i class="arg" style="width:{{ z.gw }};height:{{ z.gh }}"></i>{{ z.v }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showRes }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Resolution</div><div class="va-sgops"><sc-for list="{{ resView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onResM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showQuality }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">{{ qualityLabel }}</div><div class="va-sgops"><sc-for list="{{ qualityView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onQualityM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showDuration }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Duration</div><div class="va-sgops"><sc-for list="{{ durationsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onDurationM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
-                    <sc-if value="{{ showCount }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Count</div><div class="va-sgops"><sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4"><button data-v="{{ z.v }}" onclick="{{ onCountM }}" class="{{ z.setoptCls }}">×{{ z.v }}</button></sc-for></div></div></sc-if>
+                    <sc-if value="{{ showCount }}" hint-placeholder-val="{{ false }}">
+                      <div class="va-sgrp">
+                        <div class="va-sgh">Count</div>
+                        <div class="va-sgops">
+                          <sc-for list="{{ countsView }}" as="z" hint-placeholder-count="4">
+                            <button data-v="{{ z.v }}" onclick="{{ onCountM }}" class="{{ z.setoptCls }}">×{{ z.v }}</button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-if>
                     <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Voice</div><div class="va-sgops"><sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoiceM }}" class="{{ v.setoptCls }}">{{ v.label }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showBitrate }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Bitrate</div><div class="va-sgops"><sc-for list="{{ bitrateView }}" as="z" hint-placeholder-count="2"><button data-v="{{ z.v }}" onclick="{{ onBitrateM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><div class="va-sgrow"><span class="va-sgh">Audio{{ audioLockNote }}</span><button class="{{ audioToggleCls }}" onclick="{{ toggleAudio }}" title="{{ audioLockNote }}"></button></div></sc-if>
                   </div></sc-if>
                 </span></sc-if>
-                <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}"><span class="va-set enh" onclick="{{ improve }}" title="{{ enhLabel }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-wand"></use></svg> {{ enhLabel }}</span></sc-if>
                 <sc-if value="{{ hasComposerContent }}" hint-placeholder-val="{{ false }}"><span class="va-set va-clearchip" onclick="{{ clearComposer }}" title="Clear prompt &amp; references (⌘Z to undo)" role="button" tabindex="0">✕ <span class="va-clr-lbl">Clear</span></span></sc-if>
                 </div>
-                <div class="va-genwrap">
-                  <span class="va-axcost"><span class="lbl">COST</span>{{ axQuote }}</span>
-                  <a class="{{ genBtnCls }}" onclick="{{ doGenerate }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }}</a>
+                <div class="va-genwrap ff-create-actions">
+                  <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}"><span class="va-set enh ff-create-enhance" onclick="{{ improve }}" title="{{ enhLabel }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-wand"></use></svg><span class="ff-create-enhance-label">{{ enhLabel }}</span></span></sc-if>
+                  <a class="{{ genBtnCls }} ff-create-generate" onclick="{{ doGenerate }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> {{ genBtnLabel }} <span class="va-axcost ff-create-cost"><span class="lbl">COST</span>{{ axQuote }}</span></a>
                 </div>
               </div>
+              <div class="{{ genStatusCls }}">{{ genStatusText }}</div>
               <sc-if value="{{ genGateOn }}" hint-placeholder-val="{{ false }}"><div class="va-gengate"><svg class="va-ic"><use href="#i-bolt"></use></svg><span>{{ genGateMsg }}</span><sc-if value="{{ genGateTopup }}" hint-placeholder-val="{{ false }}"><button class="va-gategtu" onclick="{{ openCredits }}"><svg class="va-ic"><use href="#i-plus"></use></svg>Top up</button></sc-if></div></sc-if>
               <sc-if value="{{ strictPolicyNote }}" hint-placeholder-val="{{ false }}"><div class="va-policynote"><i class="ph ph-shield-check"></i><span>Strict content policy — you won't be charged if it's refused.</span></div></sc-if>
               <!-- SC_19: composer BALANCE qatori o'chirildi — doimiy header kredit chipi bor
@@ -21903,7 +21979,7 @@ class Component extends DCLogic {
     const nSel = genParams.count || 1;
     const costNow = this.estCost(tool, model, genParams);
     const toolDesc = { 'Rasm yaratish': 'Generate high-quality images from text', 'Video yaratish': 'Generate a short video clip from a prompt', 'Voiceover': 'Turn text into a natural-sounding voice', 'SFX': 'Generate a sound effect for your scene' }[tool.key];
-    const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag', ttabCls: on ? 'ffa-ttab on' : 'ffa-ttab', poprowCls: on ? 'ffa-poprow on' : 'ffa-poprow' }; });
+    const aiToolsView = this.aiTools.map(t => { const on = t.key === this.state.aiTool; return { ...t, on, cls: on ? 'ffa-trail on' : 'ffa-trail', tagCls: on ? 'ffm-tag on' : 'ffm-tag', ttabCls: on ? 'ffa-ttab on' : 'ffa-ttab', poprowCls: on ? 'ffa-poprow ff-create-mode on' : 'ffa-poprow ff-create-mode', popSel: on ? 'true' : 'false' }; });
     // Sozlamalar TANLANGAN MODEL deskriptoridan (aspects/count/quality/durations/resolutions/voices)
     // cls=eski option grid, rowCls=popover qatori, optCls=inline option tugma (Ovoz paneli), on=faol
     const chip = (v, on) => ({ v, on, cls: on ? 'ffa-opt on' : 'ffa-opt', rowCls: on ? 'ffa-poprow on' : 'ffa-poprow', optCls: on ? 'ffa-opt on' : 'ffa-opt', moptCls: on ? 'va-mopt on' : 'va-mopt', setoptCls: on ? 'va-setopt on' : 'va-setopt', bg: on ? 'var(--grad)' : 'var(--card2)', col: on ? '#fff' : 'var(--txt2)' });
@@ -22274,6 +22350,9 @@ class Component extends DCLogic {
     const gqObj = this.state.genQuote;
     const gqFresh = !!(gqObj && gqObj.key === gqKey && typeof gqObj.price === 'number' && !gqObj.error);
     const gqLoading = !axIsUpscaleTool && !!(gqObj && gqObj.key === gqKey && gqObj.loading && typeof gqObj.price !== 'number');
+    const gqError = !!(gqObj && gqObj.key === gqKey && gqObj.error);
+    const isQuoteReady = !!(gqObj && gqObj.key === gqKey && typeof gqObj.price === 'number' && !gqObj.error);
+    const isUpscaleQuoteReady = !!(uqV && !uqV.error && typeof uqV.price === 'number');
     // Effektiv narx: video-upscale=upVQuote; boshqasi=imzolangan quote (yangi bo'lsa) yoki lokal taxmin (costNow)
     const effPrice = axIsVUp
       ? ((uqV && !uqV.error && typeof uqV.price === 'number') ? uqV.price : null)
@@ -22319,6 +22398,11 @@ class Component extends DCLogic {
       : needSrcVideo ? 'Add the source video to upscale'
       : overChars ? ('Too long — max ' + model.maxChars + ' characters (yours: ' + promptLenG + ')')
       : '';
+    let genStatusText = '';
+    if (gqLoading) genStatusText = 'Loading quote…';
+    else if (gqError) genStatusText = 'Quote error: ' + String(gqObj && gqObj.error).slice(0, 80);
+    else if (!genGateOn && model && (axIsUpscaleTool ? isUpscaleQuoteReady : isQuoteReady)) genStatusText = 'Ready';
+    const genStatusCls = 'ff-create-status' + (gqLoading ? ' loading' : (gqError ? ' err' : (genStatusText ? ' ok' : '')));
     // P30 §2 (29c) — qattiq siyosatli model tanlangan bo'lsa: KREDIT SARFLANISHIDAN OLDIN halol
     // ogohlantirish (bloklamaydi). Rad etilsa server refund qiladi (money-zona TEGILMAYDI).
     const strictPolicyNote = axPromptReady && !genGateOn && !!(model && model.policyStrictness === 'strict');
@@ -23516,7 +23600,7 @@ class Component extends DCLogic {
           // SC_40: header ham displey nomi bilan — qo'lda nom avto-nomlashdan ustun
           : (((viewSessObj ? this.sessDisplayName(viewSessObj).slice(0, 26) : 'SESSION').toUpperCase()) + ' · ' + wsGens.length + ' GENERATIONS')),
       axShowHero, axShowLoading, axSkelList, axShowVisuals, axShowAudio, axPendVis, axPendAud, axPendVisList, axPendAudList, axVisEmpty, axAudEmpty,
-      axVisGens, axAudGens, genPct, genStatus,
+      axVisGens, axAudGens, genPct, genStatusText, genStatusCls,
       // #6 — Full/Compact ko'rinish (tanlov localStorage'da; default = full)
       axGridCls: 'va-axgrid' + (this.state.axGridView === 'compact' ? ' compact' : ''),
       // P19 — bir vaqtda faqat bitta g.menuOpen true bo'ladi; shu sabab bitta umumiy style yetarli.
