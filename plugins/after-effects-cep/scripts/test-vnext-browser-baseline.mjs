@@ -9,9 +9,10 @@ import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(SCRIPT_DIR, "../../..");
-const PLUGIN_DIR = path.join(ROOT, "plugins/after-effects-cep");
+const PLUGIN_DIR = path.resolve(process.env.FF_PLUGIN_ROOT || path.join(ROOT, "plugins/after-effects-cep"));
 const AXE_SOURCE = readFileSync(path.join(ROOT, "node_modules/axe-core/axe.min.js"), "utf8");
 const V2 = process.argv.includes("--v2");
+const INSTALLED_ACTIVATION = process.env.FF_VNEXT_USE_INSTALLED_ACTIVATION === "1";
 const OUT_FILE = path.join(ROOT, `docs/vnext-baseline/${V2 ? "browser-v2-baseline" : "browser-baseline"}.json`);
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const VIEWPORTS = [
@@ -160,7 +161,7 @@ async function main() {
     await cdp.send("Runtime.enable");
     await cdp.send("Network.enable");
     await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-      source: `window.__adobe_cep__={};window.AF_TEMPLATE_APP='ae';window.__FF_V2_TEST__=${V2};${V2 ? "window.__FF_BUILD_GENERATION__='legacy-free';" : ""}`,
+      source: `window.__adobe_cep__={};window.AF_TEMPLATE_APP='ae';window.__FF_V2_TEST__=${V2};${V2 && !INSTALLED_ACTIVATION ? "window.__FF_BUILD_GENERATION__='legacy-free';" : ""}`,
     });
     await cdp.send("Network.setBlockedURLs", { urls: ["*api.getframeflow.app*", "*googleapis.com*", "*gstatic.com*"] });
     const results = [];
