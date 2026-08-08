@@ -213,8 +213,10 @@ export function createDeviceAuthChallenge(webUrl = getWebUrl()) {
     state,
     pollToken,
     verificationUrl,
-    // Fragment server access loglari va Referer headeriga yuborilmaydi.
-    verificationUrlComplete: `${verificationUrl}#request=${encodeURIComponent(requestId)}&state=${encodeURIComponent(state)}`,
+    // CEP -> tizim brauzeri ko'prigi ayrim Adobe hostlarida URL fragmentini
+    // tashlab yuboradi. Query bir martalik, 192-bit requestId + HMAC state'ni
+    // ishonchli yetkazadi; plugin access/poll tokenlari URL'ga kirmaydi.
+    verificationUrlComplete: `${verificationUrl}?request=${encodeURIComponent(requestId)}&state=${encodeURIComponent(state)}`,
   };
 }
 

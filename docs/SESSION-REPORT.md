@@ -1,12 +1,12 @@
 Session Report: 2026-08-08
-- Web Create Prompt Enhance mode/model/reference-aware qilib yakunlandi.
-- Image, Video, Voice, SFX va Music uchun alohida prompt yo'riqnomalari qo'shildi.
-- Voice spoken-script tilini saqlaydi; boshqa generation promptlari inglizcha qaytadi.
-- Faithful, Cinematic va Creative uslublari Settings ichiga qo'shildi va eslab qolinadi.
-- Tanlangan model imkoniyatlari va joriy duration/aspect/resolution/audio Enhance'ga ichki kontekst bo'ladi.
-- Start/end/image/video/audio referens rollari aniq uzatiladi; faqat model ishlatadigan refs yuboriladi.
-- Mention qo'shish, qayta raqamlash yoki tushirib qoldirish natijani rad etadi.
-- Text/image/video/audio kombinatsiyasiga mos ✦1-✦5 narx va oldindan balans darvozasi ulandi.
-- Yuklanmagan/katta referenslar endi ishlatilgan deb ko'rsatilmaydi.
-- API build, Enhance/Create/session/device-auth regressiyalari va Studio sync: PASS.
-- Plugin source o'zgarmadi; CEP refresh talab qilinmaydi.
+- Adobe CEP tashqi brauzerga o'tishda URL fragmentini tashlab yuborishi root cause sifatida tasdiqlangan.
+- Device requestId va HMAC state endi query orqali uzatiladi.
+- Access token, refresh token va maxfiy pollToken browser URL'iga qo'yilmaydi.
+- Device sahifa query'ni afzal ko'radi va eski fragment linklarini fallback sifatida qabul qiladi.
+- URL o'qilgach query/history browser address baridan olib tashlanadi.
+- Normal Google oqimi bir klik, account tanlash va AE/Premiere auto-connect bo'lib qoladi.
+- Manual code va email/password faqat Having trouble ichida qoladi.
+- API build va device-auth security testi: PASS.
+- Studio device-auth UI va shared AE/Premiere session persistence testlari: PASS.
+- Studio sync va git diff check: PASS.
+- Plugin source o'zgarmadi; CEP reinstall va Adobe restart bajarilmadi.

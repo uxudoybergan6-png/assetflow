@@ -16,7 +16,7 @@ assert.match(first.requestId, /^[0-9a-f]{48}$/, "request nonce is 192-bit hex");
 assert.match(first.state, /^[0-9a-f]{64}$/, "browser state is signed");
 assert.match(first.pollToken, /^[0-9a-f]{64}$/, "plugin poll proof is signed");
 assert.notEqual(first.requestId, second.requestId, "requests are unique");
-assert.equal(first.verificationUrlComplete.includes("#request="), true, "one-time identifier stays in URL fragment, outside server logs");
+assert.equal(first.verificationUrlComplete.includes("?request="), true, "one-time identifier survives the CEP-to-browser handoff");
 assert.equal(first.verificationUrlComplete.includes(first.pollToken), false, "browser URL never contains poll secret");
 assert.equal(/access_token|refresh_token|pluginToken/i.test(first.verificationUrlComplete), false, "browser URL contains no session token");
 

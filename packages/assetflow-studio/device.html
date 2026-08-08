@@ -146,9 +146,13 @@ function cycleTheme(){var o=['noir','neon','cold','light'];var c=document.docume
   const statusEl = document.getElementById("deviceStatus");
   const choiceEl = document.getElementById("deviceAccountChoice");
   const sessionBtn = document.getElementById("deviceSessionBtn");
-  const params = new URLSearchParams(location.hash ? location.hash.slice(1) : location.search);
-  let requestId = (params.get("request") || "").toLowerCase().replace(/[^0-9a-f]/g, "");
-  let browserState = params.get("state") || "";
+  // Yangi CEP query ishlatadi: Adobe hostlari ba'zan #fragment'ni brauzerga
+  // o'tkazmaydi. Eski linklar buzilmasligi uchun fragment ham fallback bo'lib qoladi.
+  const queryParams = new URLSearchParams(location.search);
+  const fragmentParams = new URLSearchParams(location.hash ? location.hash.slice(1) : "");
+  let requestId = (queryParams.get("request") || fragmentParams.get("request") || "")
+    .toLowerCase().replace(/[^0-9a-f]/g, "");
+  let browserState = queryParams.get("state") || fragmentParams.get("state") || "";
   if (requestId) {
     try { history.replaceState(null, "", location.pathname); } catch (_) {}
   }
@@ -164,8 +168,10 @@ function cycleTheme(){var o=['noir','neon','cold','light'];var c=document.docume
     if (manual) {
       try {
         const pastedUrl = new URL(manual);
-        requestId = (pastedUrl.searchParams.get("request") || "").toLowerCase().replace(/[^0-9a-f]/g, "");
-        browserState = pastedUrl.searchParams.get("state") || "";
+        const pastedFragment = new URLSearchParams(pastedUrl.hash ? pastedUrl.hash.slice(1) : "");
+        requestId = (pastedUrl.searchParams.get("request") || pastedFragment.get("request") || "")
+          .toLowerCase().replace(/[^0-9a-f]/g, "");
+        browserState = pastedUrl.searchParams.get("state") || pastedFragment.get("state") || "";
       } catch (_) {
         requestId = manual.toLowerCase().replace(/[^0-9a-f]/g, "");
         browserState = "";

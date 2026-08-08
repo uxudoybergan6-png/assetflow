@@ -26,6 +26,18 @@
 5. Plagin o'zgarsa ZIP/PKG yaratmasdan umumiy CEP'ni `AF_SKIP_AE=1` bilan lokal o'rnat.
 6. `docs/SESSION-REPORT.md`ni 15 qatordan oshirmay joriy natija bilan almashtir.
 
+### Codex Spark bilan ishlash qoidasi
+
+- Spark faqat kichik va fokuslangan ishga beriladi: bitta taskda CSS, markup, handler yoki testdan bittasi.
+- Katta monolit fayl to'liq o'qilmaydi; `rg` bilan marker topilib, faqat kerakli kichik diapazon bir marta o'qiladi.
+- Eski taskning to'liq tarixi yangi taskga ko'chirilmaydi; qisqa handoff va joriy working tree yetarli.
+- Prompt ixcham bo'ladi, bir qoida takrorlanmaydi; Spark 5–10 daqiqalik auditdan keyin amaliy patchga o'tadi.
+- `Extra High` kontekst hajmini oshirmaydi; ortiqcha izlanish va takroriy o'qish kontekstni tezroq sarflashi mumkin.
+- Katta arxitektura auditi, ko'p faylli migratsiya va yakuniy integratsiya kuchliroq modelga beriladi.
+- Spark natijasi mustaqil diff va test auditisiz commit qilinmaydi.
+- Kontekst tugasa, yangi task diskdagi o'zgarishlarni saqlab, qisqa handoff orqali davom etadi.
+- `_to_delete/`, foydalanuvchi o'zgarishlari va boshqa tasklarning ochiq difflari saqlanadi.
+
 ---
 
 ## 2. Loyiha va haqiqiy arxitektura
@@ -112,6 +124,29 @@ atomik kredit → provider job → natija/session → xatoda refund.
 - Signed quote canonical priced params va reference manifest hashiga bog'langan; stale quote ishlamaydi.
 - Reference ownership, storage prefix, MIME, hajm/son limitlari, signed URL refresh/TTL va orphan cleanup qoplangan.
 
+### AE + Premiere + Web auth/session — 2026-08-08
+
+- AE va Premiere bir xil qurilmadagi bitta shared credential sessiyasidan foydalanadi; hostlar bir-birini
+  hisobdan chiqarmaydi, boshqa qurilma sessiyalari ham mustaqil yashaydi.
+- Token migratsiyasi rollback-safe: yangi shared secret yozilishi va darhol aynan o'sha qiymat qayta
+  o'qilishi tasdiqlanmaguncha eski AE/Premiere credentiallari o'chirilmaydi.
+- Generic network/401/403 holatlari tokenni jimgina tozalamaydi; faqat serverning authoritative auth
+  kodi credentialni bekor qiladi. FormData yo'q CEP runtime ham request oqimini buzmaydi.
+- Restart sessiyani saqlaydi; renewal joriy installation uchun ishlaydi; logout faqat joriy installationni
+  revoke qiladi; web logout desktop plugin sessiyalarini o'chirmaydi.
+- Webdagi sun'iy 12-soatlik local expiry olib tashlangan; sessiya muddati backend token authority bilan belgilanadi.
+- Eski `/apply-ae-prefs` orqali credential yozish oqimi bekor qilingan.
+- Google device login soddalashtirildi: plugin `Continue with Google` bosilganda browserga bir martalik
+  request avtomatik o'tadi, account tanlangach AE/Premiere o'zi ulanadi. Normal oqimda kod ko'chirish
+  yoki email/parol kiritish yo'q; ular faqat `Having trouble?` ichidagi fallback.
+- Google login ildiz sababi: Adobe CEP tashqi brauzerga o'tishda URL `#fragment`ini yo'qotishi mumkin.
+  Device request endi query orqali uzatiladi; eski fragment faqat backward-compatible fallback.
+- Xavfsizlik saqlangan: browser URL'ida access token yoki maxfiy pollToken yo'q; bir martalik requestId
+  va HMAC state ishlatiladi.
+- Auth/session behavioral testlari, device security testi va API build PASS; shared CEP lokal yangilangan.
+- Auth/session hardeningning katta qismi `afdc275` commitida. Google query-handoff source va regressiya
+  testlari yakunlangan; rollout holati GitHub Cloud Run run'i va public device sahifasi bilan tasdiqlanadi.
+
 ### Oxirgi responsive tuzatishlar — 2026-08-07
 
 - Eski va yangi session composer boshqaruvlari barcha kenglikda bitta qatorda qoladi.
@@ -122,13 +157,17 @@ atomik kredit → provider job → natija/session → xatoda refund.
 
 ---
 
-## 5. Joriy holat — 2026-08-07
+## 5. Joriy holat — 2026-08-08
 
-Kod va avtomatik QA darajasida AE/PR shared CEP, unified Create/session, Premiere bridge va AI model/reference
-hardening yakunlangan. Oxirgi tekshiruvlar: responsive **105/105**, Create **12/12**, public copy **137/137**,
-Premiere host **18/18**, integration **19/19** — PASS. Lokal source va o'rnatilgan CEP mos.
+Kod va avtomatik QA darajasida AE/PR shared CEP, unified Create/session, Premiere bridge, AI model/reference
+hardening va shared auth/session persistence yakunlangan. Google one-click device handoff lokal kodda
+tuzatilgan, testlangan, Studio sync va umumiy CEP install bajarilgan. Kuchga kirishi uchun Adobe ilovalarini
+foydalanuvchi to'liq qayta ochadi.
 
-**Production cheklovi:** AI hardening hali deploy qilinmagan; production eski katalog/quote xatti-harakatida.
+**Working tree qoidasi:** `_to_delete/` foydalanuvchining untracked papkasi — tegma, stage/commit qilma.
+
+**Production tekshiruvi:** API/Web rollout muvaffaqiyatli CI/deploy run'i va public endpoint bilan tekshiriladi;
+Adobe ichidagi haqiqiy Google account tanlash E2E oqimi foydalanuvchi tomonidan qo'lda tasdiqlanadi.
 **Release cheklovi:** signed ZXP sertifikati, Adobe owner metadata/portal approval, companion single-install qarori,
 clean-profile install/update/uninstall va AE+Premiere ichidagi qo'lda smoke-test bajarilmaguncha Marketplace-ready emas.
 

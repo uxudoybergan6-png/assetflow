@@ -5,7 +5,7 @@ const device = fs.readFileSync("packages/assetflow-studio/device.html", "utf8");
 const plugin = fs.readFileSync("plugins/after-effects-cep/AssetFlow_Plugin.html", "utf8");
 const account = fs.readFileSync("plugins/after-effects-cep/assetflow-account.js", "utf8");
 
-assert.match(device, /location\.hash[\s\S]*params\.get\("request"\)/, "browser consumes request from non-logged URL fragment");
+assert.match(device, /queryParams\.get\("request"\)[\s\S]*fragmentParams\.get\("request"\)/, "browser prefers reliable query handoff and keeps legacy fragment fallback");
 assert.match(device, /FFAPI\?\.getUser/, "existing web account is detected");
 assert.match(device, /\/api\/plugin\/device\/confirm-session/, "existing web account confirms exact device request");
 assert.match(device, /Continue with this account/, "account substitution requires explicit confirmation");
