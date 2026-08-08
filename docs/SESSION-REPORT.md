@@ -1,12 +1,14 @@
-Session (2026-08-08): Google device sign-in correction yakunlandi.
-- AE/Premiere bitta shared CEP Google oqimidan foydalanadi; session storage/renewal qayta dizayn qilinmadi.
-- Guest UI: Google asosiy CTA, email ikkilamchi, takroriy Home sign-in olib tashlandi.
-- Browser tayyor bir martalik havola bilan ochiladi; normal oqimda kod kiritish talab qilinmaydi.
-- Mavjud web sessiyasi aniq account confirmation bilan ishlaydi; Google va email fallback saqlandi.
-- 192-bit request nonce, signed browser state, alohida poll proof va 5 daqiqalik TTL qo‘shildi.
-- Confirm atomik, poll single-use; replay/cross-request/cancel/expired/denied holatlari himoyalangan.
-- URL’da plugin access/renewal yoki poll token yo‘q; poll/cancel POST body orqali ishlaydi.
-- Yangi API device-auth va CEP device-flow behavioral testlari o‘tdi.
-- Eski plugin/API/web session persistence testlari o‘tdi; API build va JS syntax toza.
-- `npm run studio:sync` bajarildi; productionga deploy qilinmadi.
-- Shared CEP lokal yangilandi, Adobe ilovalari ochilmadi; o‘rnatilgan auth fayllari manbaga byte-for-byte mos.
+Session (2026-08-08): FrameFlow Create direct `goAistudio` initialization patch fixed.
+- Root cause: `this.initAistudioState(...)` calls were made but no class method existed.
+- Added local `ensureAistudioModels()` helper and wired all Create paths (`goAistudio` in both sections, `onTryTool`, `tryModel`) to:
+  - set state via shared `initAistudioState(...)` in the same patch,
+  - then preload models with auth + `!genModelsLoaded` guard outside setState.
+- `initAistudioState` is now pure (no `loadModels()` side-effect), but still preserves default tool/model selection, composer/layout reset flags, and sessions/projects continuity.
+- `packages/assetflow-studio/scripts/test-aistudio-create-init.mjs` was strengthened to assert:
+  - no `this.initAistudioState` receiver remains,
+  - both `goAistudio` handlers go through the same bootstrap,
+  - `onTryTool`/`tryModel` use the shared path.
+- Checks run: `npm run build -w apps/api`, `test-plugin-device-auth`, `test-device-auth-ui`, `test-frameflow-session-persistence`, `test-aistudio-create-init`, `test-studio-session-policy`, `node --check` on edited JS, `npm run studio:sync`, `git diff --check`.
+- Result: PASS for all required checks.
+- `_to_delete/` untouched; no plugin source changed (no CEP reinstall run).
+- Create initialization fix commitga tayyor; push/deploy/package qilinmadi.

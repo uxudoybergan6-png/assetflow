@@ -22420,6 +22420,34 @@ class Component extends DCLogic {
     // Rejim QO'LDA almashsa referens tozalanadi (start-kadr voice/SFX da ma'nosiz)
     // BATCH4 #1 — taqqos model-KALIT bo'yicha: Image↔Upscale ham tozalaydi (limitlar farqli)
     // P13 — referens hovuzi mode almashsa ham SAQLANADI (proyeksiya render'da hisoblanadi); reset YO'Q.
+    const initAistudioState = (toolKey, modelId, st) => {
+      const s = st || this.state;
+      const base = this.aiTools.find(t => t.key === (toolKey || s.aiTool));
+      const nt = base || this.aiTools[0];
+      const mk = nt ? this.toolModelKey(nt) : 'image';
+      const list = s.genModels[mk] || [];
+      const sel = Object.assign({}, s.selModel);
+
+      if (modelId != null) sel[mk] = +modelId;
+      if (!sel[mk] && list.length) {
+        const d = list.find(m => m.isDefault) || list[0];
+        if (d) sel[mk] = d.id;
+      }
+
+      return Object.assign(this.refResetPatch(), {
+        selModel: sel,
+        aiTool: nt ? nt.key : s.aiTool,
+        aiView: 'composer',
+        aiMediaView: null,
+        useMenuOpen: false,
+        chipPop: null,
+        modelOpen: false,
+        modelModalOpen: false,
+      });
+    };
+    const ensureAistudioModels = () => {
+      if (!this.state.genModelsLoaded && window.FFAPI && FFAPI.getToken()) this.loadModels();
+    };
     const refClearIfModeChanged = () => ({});
     const q = (this.state.q || '').toLowerCase();
     // Marketplace — REAL katalog (/api/plugin/catalog)
@@ -23217,7 +23245,11 @@ class Component extends DCLogic {
       goLanding: () => this.go('landing'),
       goDashboard: () => this.go('dashboard'),
       goTemplates: () => this.go('templates'),
-      goAistudio: () => this.go('aistudio'),
+      goAistudio: () => {
+        this.setState(st => initAistudioState(null, null, st));
+        ensureAistudioModels();
+        this.go('aistudio');
+      },
       goPricing: () => this.go('pricing'),
       goPlugin: () => this.go('plugin'),
       goAccount: () => { this.go('account'); this.accTabLoad(this.state.accountTab); },
@@ -23265,7 +23297,12 @@ class Component extends DCLogic {
       onNav: (e) => this.go(e.currentTarget.dataset.screen),
       onCat: (e) => this.setState({ activeCat: e.currentTarget.dataset.cat }),
       onFaq: (e) => { const i = +e.currentTarget.dataset.idx; this.setState(st => ({ openFaq: st.openFaq === i ? -1 : i })); },
-      onTryTool: (e) => { const k = e.currentTarget.dataset.tool; this.setState(Object.assign({ aiTool: k }, refClearIfModeChanged(k))); this.go('aistudio'); },
+      onTryTool: (e) => {
+        const k = e.currentTarget.dataset.tool;
+        this.setState(st => initAistudioState(k, null, st));
+        ensureAistudioModels();
+        this.go('aistudio');
+      },
       download: () => this.downloadPlugin(),
       downloadAe: () => this.downloadAePlugin(),
       downloadTpl: () => this.downloadTemplate(),
@@ -23320,11 +23357,9 @@ class Component extends DCLogic {
         const id = +e.currentTarget.dataset.id; const mMode = e.currentTarget.dataset.mode;
         const nt = this.aiTools.find(t => t.mode === mMode);
         if (!nt) return;
+        this.setState(st => initAistudioState(nt.key, id, st));
+        ensureAistudioModels();
         this.go('aistudio');
-        this.setState(st => {
-          const sel = Object.assign({}, st.selModel); sel[mMode] = id;
-          return Object.assign(this.refResetPatch(), { selModel: sel, aiTool: nt.key, aiView: 'composer', aiMediaView: null });
-        });
       },
       shelfNext: (e) => {
         const wrap = e.currentTarget.closest('.va-shwrap');
@@ -23885,7 +23920,11 @@ class Component extends DCLogic {
       backToProjects: () => { clearTimeout(this._projItemT); this.setState({ projOpen: null, projDelArm: false, projItemArm: null }); },
       renameProject: () => { const p = this.state.projOpen; if (p) this.setState({ nameModal: { kind: 'renameProject', ctx: p.id, icon: 'pencil-simple', title: 'Rename project', cta: 'Save', ph: 'Project name', value: p.name } }); },
       deleteProject: () => this.deleteProjectArmed(),
-      goAistudio: () => this.go('aistudio'),
+      goAistudio: () => {
+        this.setState(st => initAistudioState(null, null, st));
+        ensureAistudioModels();
+        this.go('aistudio');
+      },
       openProjItem: (e) => {
         if (e.target && e.target.closest && e.target.closest('.va-projrm')) return; // remove tugmasi ustidan
         const el = e.currentTarget;
