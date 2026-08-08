@@ -43,7 +43,6 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/ff-components.css">
 <link rel="stylesheet" href="css/styles.css">
-<link rel="stylesheet" href="css/v2/frameflow-v2.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 /* Token to'plami css/tokens.css da (yagona :root). Panelga xos override pastda. */
@@ -4283,7 +4282,7 @@ html.cep-mode .af-topbar{height:44px}
                             <h1>Find the right asset</h1>
                             <p class="fhome-sub">Templates, motion graphics, music, SFX and LUTs.</p>
                             <div class="fhome-heroprompt">
-                              <input type="text" id="homeHeroPrompt" aria-label="Search templates, music, sound effects and LUTs" placeholder="Search templates, music, SFX and LUTs…" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();afHomeBrowseSubmit();}">
+                              <input type="text" id="homeHeroPrompt" placeholder="Search templates, music, SFX and LUTs…" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();afHomeBrowseSubmit();}">
                               <button type="button" class="fhome-heroprompt-go" title="Search assets" aria-label="Search assets" onclick="afHomeBrowseSubmit()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/></svg></button>
                             </div>
                           </div>
@@ -5529,47 +5528,6 @@ html.cep-mode .af-topbar{height:44px}
 </div>
 
 <script src="js/CSInterface.js"></script>
-<script src="app/observability/redactor.js"></script>
-<script src="app/observability/safe-log.js"></script>
-<script src="app/observability/metrics.js"></script>
-<script>
-// Local source installs are explicitly stamped by install-cep.sh and are the native
-// vNext verification channel. Unstamped marketplace/source builds stay dual-stack
-// until the signed rollout config enables them. Keep the placeholder split so the
-// installer only needs to stamp the visible build label.
-window.__FF_BUILD_GENERATION__=window.__FF_BUILD_GENERATION__||(function(){
-  var label=document.getElementById('afBuild');
-  var placeholder='__AF_'+'BUILD__';
-  return label&&label.textContent.indexOf(placeholder)<0?'legacy-free':'dual-stack';
-})();
-</script>
-<script src="app/feature-flags.js"></script>
-<script src="app/config-verifier.js"></script>
-<script src="app/config-manager.js"></script>
-<script src="app/bootloader.js"></script>
-<script src="app/shell/resources.js"></script>
-<script src="app/shell/router.js"></script>
-<script src="app/state/account-scope.js"></script>
-<script src="app/state/scoped-preferences.js"></script>
-<script src="app/api/account-adapter.js"></script>
-<script src="app/api/http-client.js"></script>
-<script src="app/api/gen-client.js"></script>
-<script src="app/api/workspace-client.js"></script>
-<script src="app/state/model-store.js"></script>
-<script src="app/domain/tools/tool-registry.js"></script>
-<script src="app/domain/tools/operation-gateway.js"></script>
-<script src="app/state/entity-cache.js"></script>
-<script src="app/domain/generation/reference-store.js"></script>
-<script src="app/domain/generation/session-coordinator.js"></script>
-<script src="app/domain/generation/quote-machine.js"></script>
-<script src="app/state/job-registry.js"></script>
-<script src="app/domain/generation/generation-gateway.js"></script>
-<script src="app/host/runtime-adapter.js"></script>
-<script src="app/host/commands.js"></script>
-<script src="app/domain/import/import-gateway.js"></script>
-<script src="app/state/activity-registry.js"></script>
-<script src="app/ui/v2/surfaces.js"></script>
-<script src="app/ui/v2/shell.js"></script>
 <script src="assetflow-uxp-bridge.js"></script>
 <script src="frameflow-create-workspace.js"></script>
 <script src="assetflow-env.js"></script>
@@ -5580,9 +5538,7 @@ window.__FF_BUILD_GENERATION__=window.__FF_BUILD_GENERATION__||(function(){
 <script src="assetflow-client.js"></script>
 <script src="assetflow-account.js"></script>
 <script src="assetflow-init.js"></script>
-<script src="app/bootstrap.js"></script>
 <script>
-FFVNext.bootstrap();
 const IS_CEP=typeof window.__adobe_cep__!=='undefined';
 let csInterface=null;
 if(IS_CEP){
@@ -12412,7 +12368,6 @@ function afExtVersion(){
 }
 
 async function bootPlugin(){
-  try{ FFVNext.Bootloader.start(10000); }catch(e){}
   // Build yorlig'i — shtamplanmagan bo'lsa (manbadan ishga tushirilgan) "dev".
   // Token BO'LIB yozilgan — install-cep.sh sed'i bu tekshiruvga tegmasin (faqat element shtamplanadi).
   try{
@@ -12441,7 +12396,7 @@ async function bootPlugin(){
   try{
     // BIRINCHI ekran = Asosiy (Home). Katalog cold-start (~50s) await'idan OLDIN ko'rsatamiz,
     // shunda plagin har ochilganda Home'dan boshlanadi (Shablonlar emas).
-    try{ wireHome(); goHome(); FFVNext.ready(); }catch(e){}
+    try{ wireHome(); goHome(); }catch(e){}
     if(typeof AssetFlow!=='undefined') await AssetFlow.init();
     loadUserPrefs();
     // P34 — 14+ kunlik eski extract papkalari (assetflow_mogrt_*/extract_*): fon rejimida, xatolar e'tiborsiz
@@ -12514,8 +12469,6 @@ async function bootPlugin(){
     console.error(err);
     showToast('Load error: '+(err.message||'unknown'));
     if(typeof AssetFlowLog!=='undefined') AssetFlowLog.error(err.message||'boot error',{action:'boot'});
-  }finally{
-    try{ FFVNext.ready(); }catch(e){}
   }
 }
 </script>

@@ -25,18 +25,6 @@
     "test:plugin-updater": "node plugins/after-effects-cep/scripts/test-updater-security.mjs",
     "test:plugin-responsive": "node plugins/after-effects-cep/scripts/test-panel-responsive.mjs",
     "test:plugin-create": "node plugins/after-effects-cep/scripts/test-create-workspace.mjs",
-    "baseline:vnext": "node plugins/after-effects-cep/scripts/build-vnext-baseline.mjs --write",
-    "test:vnext-baseline": "node plugins/after-effects-cep/scripts/test-vnext-baseline.mjs",
-    "test:vnext-browser": "node plugins/after-effects-cep/scripts/test-vnext-browser-baseline.mjs",
-    "test:vnext-browser:v2": "node plugins/after-effects-cep/scripts/test-vnext-browser-baseline.mjs --v2",
-    "test:vnext-domain": "node plugins/after-effects-cep/scripts/test-vnext-domain.mjs",
-    "baseline:vnext:browser": "node plugins/after-effects-cep/scripts/test-vnext-browser-baseline.mjs --write",
-    "baseline:vnext:browser:v2": "node plugins/after-effects-cep/scripts/test-vnext-browser-baseline.mjs --v2 --write",
-    "qa:plugin": "node scripts/qa-plugin.mjs",
-    "qa:plugin:release": "node scripts/qa-plugin.mjs --release-artifacts",
-    "rollout:vnext:init": "node scripts/vnext-rollout-chain.mjs init",
-    "rollout:vnext:local": "node scripts/vnext-rollout-chain.mjs local-current",
-    "rollout:vnext:verify": "node scripts/vnext-rollout-chain.mjs verify",
     "test:release-contract": "node apps/api/scripts/test-plugin-release-contract.mjs",
     "test:plugin-download-state": "node packages/assetflow-studio/scripts/test-plugin-download-state.mjs",
     "test:public-copy": "node scripts/verify-public-copy.mjs",
@@ -68,7 +56,6 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "axe-core": "^4.10.3",
     "pm2": "^7.0.3"
   }
 }

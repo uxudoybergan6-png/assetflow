@@ -30,7 +30,7 @@ async function json(path, options = {}) {
 }
 
 const publicHealth = await json("/health");
-assert.equal(publicHealth.db || publicHealth.checks?.db, "ok", "production DB health is not ok");
+assert.equal(publicHealth.db, "ok", "production DB health is not ok");
 
 const login = await json("/api/plugin/login", {
   method: "POST",
@@ -69,7 +69,7 @@ const quote = await json("/api/studio/gen/cost-quote", {
   headers: auth,
   body: JSON.stringify({ modelId: Number(quoteModel.id), mode: quoteModel.mode, params: {} }),
 });
-assert.ok(Number(quote.price) > 0 && typeof quote.signature === "string", "signed quote smoke failed");
+assert.ok(Number(quote.cost) > 0 && typeof quote.signature === "string", "signed quote smoke failed");
 
 console.log(
   `✓ production read-only — ${catalog.models.length} available, ${catalog.unavailableModels.length} unavailable, ` +

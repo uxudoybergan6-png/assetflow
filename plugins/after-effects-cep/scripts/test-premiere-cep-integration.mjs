@@ -237,12 +237,11 @@ try {
     await account.recordDownload("tpl-download");
     await account.recordImport("tpl-import");
     await account.heartbeat({ deviceLabel: "QA" });
-    const hostAwareCalls = calls.filter((call) => /\/api\/plugin\/(?:usage\/(?:download|import)|heartbeat)$/.test(String(call.url)));
-    assert.equal(hostAwareCalls.length, 3);
+    assert.equal(calls.length, 3);
     for (const call of calls) assert.equal(call.options.headers["X-FF-App"], "pr");
-    assert.deepEqual(JSON.parse(hostAwareCalls[0].options.body), { templateId: "tpl-download", app: "pr" });
-    assert.deepEqual(JSON.parse(hostAwareCalls[1].options.body), { templateId: "tpl-import", app: "pr" });
-    assert.equal(JSON.parse(hostAwareCalls[2].options.body).app, "pr");
+    assert.deepEqual(JSON.parse(calls[0].options.body), { templateId: "tpl-download", app: "pr" });
+    assert.deepEqual(JSON.parse(calls[1].options.body), { templateId: "tpl-import", app: "pr" });
+    assert.equal(JSON.parse(calls[2].options.body).app, "pr");
   });
 
   await check("updater, logs and local-store events are host-aware", () => {

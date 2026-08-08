@@ -11,7 +11,6 @@ const AssetFlowAccount = (() => {
   let activeToken = "";
   let activeTokenMeta = null;
   let sessionBootstrapPromise = null;
-  let sessionBootstrapComplete = false;
   let refreshInProgress = null;
   // Haqiqiy sessiya shu ishga tushishda kamida bir marta tasdiqlanganmi?
   // (fetchMe/login/device-confirm muvaffaqiyati). Faqat shundan KEYIN 401/403
@@ -230,16 +229,6 @@ const AssetFlowAccount = (() => {
     activeTokenMeta = normalizePluginTokenMeta(meta);
   }
 
-  function emitAccountChanged(reason) {
-    try {
-      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-        window.dispatchEvent(new CustomEvent("assetflow:account-changed", { detail: { reason: String(reason || "changed") } }));
-      }
-    } catch (_) {
-      /* account lifecycle eventi authni hech qachon buzmasin */
-    }
-  }
-
   function clearLocalTokenState(reason) {
     const store = secretStore();
     if (store) {
@@ -256,9 +245,7 @@ const AssetFlowAccount = (() => {
     if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
     activeToken = "";
     activeTokenMeta = null;
-    sessionBootstrapComplete = false;
     cachedUser = null;
-    emitAccountChanged(reason || "cleared");
   }
 
   function writeTokenToPrefs(tokenValue, meta, keepLegacyTokens = true) {
@@ -359,7 +346,6 @@ const AssetFlowAccount = (() => {
   }
 
   async function ensureSessionLoaded() {
-    if (sessionBootstrapComplete) return;
     if (sessionBootstrapPromise) return sessionBootstrapPromise;
     sessionBootstrapPromise = (async () => {
       const candidates = candidateSources();
@@ -392,10 +378,7 @@ const AssetFlowAccount = (() => {
         setActiveToken(tokenValue, selected.meta || parseTokenMetaFromClient());
         return;
       }
-    })().then((result) => {
-      sessionBootstrapComplete = true;
-      return result;
-    }).finally(() => {
+    })().finally(() => {
       sessionBootstrapPromise = null;
     });
     return sessionBootstrapPromise;
@@ -443,7 +426,6 @@ const AssetFlowAccount = (() => {
     const value = String(t || "").trim();
     const normalizedMeta = normalizePluginTokenMeta(meta);
     persistSharedToken(value, normalizedMeta, true);
-    sessionBootstrapComplete = true;
     // #98 (PL-f): login'gacha yig'ilgan loglar endi yuborilishi mumkin
     try {
       if (typeof AssetFlowLog !== "undefined" && AssetFlowLog.flush) AssetFlowLog.flush();
@@ -688,8 +670,29 @@ const AssetFlowAccount = (() => {
   async function request(path, options = {}) {
     await ensureSessionLoaded();
     await ensureFreshToken();
+
+    const headers = { ...(options.headers || {}) };
+    const bodyIsFormData =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
     const t = token();
-    return requestWithToken(path, options, t, { handleAuthFailure: true });
+    const timeoutMs = bodyIsFormData ? 180000 : 30000;
+
+    const data = await requestWithToken(
+      path,
+      {
+        ...options,
+        body:
+          bodyIsFormData
+            ? options.body
+            : options.body
+              ? JSON.stringify(options.body)
+              : undefined,
+      },
+      t,
+      { handleAuthFailure: true }
+    );
+
+    return data;
   }
 
   function isLoggedIn() {
@@ -726,7 +729,6 @@ const AssetFlowAccount = (() => {
     saveToken(data.token, tokenMetaFromResponse(data));
     cachedUser = data.user;
     sessionEstablished = true;
-    emitAccountChanged("signed_in");
     if (data.adminUrl) adminUrl = data.adminUrl;
     persistClient({
       apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
@@ -807,7 +809,6 @@ const AssetFlowAccount = (() => {
           saveToken(data.token, tokenMetaFromResponse(data));
           cachedUser = data.user;
           sessionEstablished = true;
-          emitAccountChanged("signed_in");
           if (data.adminUrl) adminUrl = data.adminUrl;
           if (onConfirmed) onConfirmed(data);
         } else if (data.status === "expired") {
@@ -831,7 +832,6 @@ const AssetFlowAccount = (() => {
       const data = await request("/api/plugin/me");
       cachedUser = data.user;
       sessionEstablished = true;
-      emitAccountChanged("restored");
       if (data.apiBaseUrl || data.adminUrl) {
         persistClient({
           apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),

@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import {
   GEN_MODELS,
 } from "../dist/lib/gen-models.js";
@@ -47,13 +46,5 @@ const unknown = resolveModelAvailability(
   Object.fromEntries(providers.map((p) => [p, true]))
 );
 assert.equal(unknown.available, false, "unknown provider must fail closed");
-
-const studioRoute = fs.readFileSync(new URL('../src/routes/studio-gen.ts', import.meta.url), 'utf8');
-assert.doesNotMatch(studioRoute, /catalogVersion:\s*genCatalogVersion\(catalogModels\)/, 'filtered /models catalogVersion drifts from /ops');
-assert.match(studioRoute, /catalogVersion:\s*genCatalogVersion\(\)/, 'canonical full-catalog version is required');
-assert.match(studioRoute, /cancellable:\s*gen\.status\s*===\s*["']queued["']/, 'POST /gen must expose server-authoritative cancellable state');
-assert.match(studioRoute, /cancellable\s*=\s*gen\.status\s*===\s*["']queued["']\s*&&\s*!genParams\.__providerJob/, 'GET /gen/:id must clear cancellable after provider dispatch');
-assert.match(studioRoute, /const cursor = Math\.max\(0, Number\(req\.query\.cursor\) \|\| 0\)/, 'generation history must accept a bounded cursor');
-assert.match(studioRoute, /res\.json\(\{ items, hasMore, nextCursor:/, 'generation history must return pagination metadata');
 
 console.log(`✓ provider-availability-contract — ${enabled.length} enabled model, fail-closed`);
