@@ -70,7 +70,7 @@ assert.ok(hasCss(".ff-create-composer"), "FINAL-CREATE composer CSS block exists
 assert.ok(hasCss(".ff-create-write"), "FINAL-CREATE write-row CSS block exists");
 assert.ok(hasCss(".ff-create-prompt"), "FINAL-CREATE prompt CSS block exists");
 assert.ok(/\.ff\s+\.ff-create-prompt\{[^}]*caret-color:\s*var\(--lime\)/.test(src), "prompt has a visible text caret");
-assert.ok(/\.ff\s+\.ff-create-prompt:focus-visible\{[^}]*box-shadow:/.test(src), "prompt exposes keyboard focus visibly");
+assert.ok(!/\.ff\s+\.ff-create-prompt:focus-visible\{[^}]*box-shadow:/.test(src), "prompt focus does not draw a stray bottom line");
 assert.ok(hasCss(".ff-create-controls"), "FINAL-CREATE controls CSS block exists");
 assert.ok(hasCss(".ff-create-setgroup"), "FINAL-CREATE setgroup CSS block exists");
 assert.ok(hasCss(".ff-create-control"), "FINAL-CREATE control CSS block exists");

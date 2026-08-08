@@ -1,15 +1,9 @@
 Session Report: 2026-08-08
-- Disaster prompt `No ... gore` sabab keyword qatlamida noto'g'ri bloklangani aniqlandi.
-- Root cause `text.includes()` inkor va mustaqil so'z chegarasini tushunmasligi edi.
-- Preflight mustaqil so'z/ibora, inglizcha va o'zbekcha inkor kontekstini hisobga oladi.
-- `no/without/avoid/non/not`, `bo'lmasin/yo'q` va taqiqlovchi ro'yxatlar false-positive bermaydi.
-- `but/except` yoki keyingi `show/include` talabi inkor sifatida yashirilmaydi.
-- `kidney/somebody` kabi ichki substringlar endi `kid/body` signali hisoblanmaydi.
-- Oddiy `explicit` va `sensual`, kattalar `shirtless` konteksti og'ir sexual hard-block emas.
-- Kattalar body + reference holati blok o'rniga ogohlantirish bilan ML/provider tekshiruviga o'tadi.
-- `child + full body` kabi kiyimli qonuniy portret CSAM deb bloklanmaydi.
-- Bola + aniq nudity/jinsiy kontekst, deepfake va haqiqiy gore qat'iy bloklanadi.
-- Foydalanuvchi yuborgan to'liq disaster prompt lokal preflight'dan o'tdi.
-- API build va yangi kontekst regressiya testi: PASS.
-- Reference moderation, parametr, ownership va upload security testlari: PASS; Studio/CEP sync talab qilinmaydi.
-- Production API deploy va real Gemini generation qo'lda tekshirilishi kerak; commit/push/deploy qilinmadi.
+- Web Create prompt maydonida fokus paytida yashil pastki chiziq paydo bo'lishi tekshirildi.
+- Root cause `.ff-create-prompt:focus-visible` inset box-shadow qoidasi edi.
+- Shu dekorativ focus box-shadow Studio source'dan olib tashlandi.
+- Prompt caret, contenteditable, klaviatura inputi va expand oqimi saqlandi.
+- Create parity testi chiziq qaytishini bloklaydigan regressiya bilan yangilandi.
+- Studio sync va Create/session regressiya testlari: PASS.
+- Plugin source o'zgarmadi; CEP refresh talab qilinmaydi.
+- Commit, push va deploy qilinmadi.
