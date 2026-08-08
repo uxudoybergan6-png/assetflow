@@ -15266,8 +15266,10 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ff-create-mode{display:flex;width:100%;height:34px;align-items:center;padding:0 10px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:700 10.5px/1 var(--font-sans);cursor:pointer;text-align:left}
   .ff .ff-create-mode:hover,.ff .ff-create-mode:focus-visible{background:rgba(255,255,255,.07);color:var(--text)}
   .ff .ff-create-mode[aria-selected="true"]{background:rgba(255,255,255,.1);color:var(--text)}
-  .ff .ff-create-model{flex:1 1 190px;max-width:440px;text-align:left;overflow:hidden;text-overflow:ellipsis}
-  .ff .ff-create-settings{flex:0 1 auto;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+  /* Popover shu control ichida render bo'ladi: parent overflow yashirsa menyu tugma
+     chegarasida kesiladi. Matnning ellipsis'i pastdagi >b qoidasida qoladi. */
+  .ff .ff-create-model{flex:1 1 190px;max-width:440px;text-align:left;overflow:visible}
+  .ff .ff-create-settings{flex:0 1 auto;max-width:260px;overflow:visible}
   .ff .ff-create-actions{display:flex;align-items:center;gap:7px;margin-left:0;flex:0 0 auto}
 .ff .ff-create-enhance{min-width:35px;width:35px;padding:0;font-size:14px}
 .ff .ff-create-enhance{display:inline-flex;align-items:center;justify-content:center}
@@ -15279,14 +15281,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 .ff .ff-create-status.err{color:#ff9f9f}.ff-create-status.ok{color:#b8ea75}.ff-create-status.loading{color:var(--amber,#f0a840)}
   .ff .ff-create-setpop{min-width:238px;max-width:min(340px,calc(100vw - 40px));max-height:min(66vh,440px);padding:4px 4px 8px}
   .ff .ff-create-setpop.mdl{min-width:300px;padding:7px}
-.ff .ff-create-refmenu{position:absolute;z-index:8;left:0;width:min(300px,calc(100% - 24px));top:calc(100% + 10px);padding:6px;border:1px solid rgba(255,255,255,.14);border-radius:15px;background:#17181c;box-shadow:0 20px 50px rgba(0,0,0,.55)}
+.ff .ff-create-refmenu{position:absolute;z-index:8;left:0;width:min(300px,calc(100% - 24px));top:calc(100% + 10px);bottom:auto;padding:6px;border:1px solid rgba(255,255,255,.14);border-radius:15px;background:#17181c;box-shadow:0 20px 50px rgba(0,0,0,.55)}
 .ff .ff-create-refmenu[hidden]{display:none}
 .ff .ff-create-refmenu button{display:flex;width:100%;padding:9px 10px;border:0;border-radius:10px;background:transparent;color:var(--text);font:600 11px/1.25 var(--font-sans);cursor:pointer;text-align:left}
 .ff .ff-create-refmenu button:hover,.ff .ff-create-refmenu button:focus-visible{background:rgba(255,255,255,.07)}
 .ff .ff-create-add{flex:none;width:31px;height:31px;margin-top:1px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.055);color:var(--text);font-size:19px;line-height:1;cursor:pointer}
 .ff .ff-create-add:hover{color:var(--lime);border-color:var(--lime)}
   .ff .ff-create-refwrap{position:relative;display:flex}
-  .ff .ff-create-refmenu{left:0;top:calc(100% + 10px)}
+  .ff .ff-create-refmenu{left:0;top:calc(100% + 10px);bottom:auto}
   .ff .va-promptexp{position:absolute;top:0;right:0;width:26px;height:26px;border-radius:8px;background:var(--f1);border:1px solid var(--hair2);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
   .ff .va-promptexp:hover{background:var(--f2);color:var(--text)}
   .ff .va-promptexp .va-ic{width:14px;height:14px;transition:transform .15s ease}

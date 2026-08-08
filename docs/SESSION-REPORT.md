@@ -1,15 +1,15 @@
 Session Report: 2026-08-08
-- Production Web Create prompti Chrome'da jonli, kredit sarflamasdan tekshirildi.
-- Prompt fokus oldi, yozilgan matn state'ga tushdi va Generate darvozasi reaktiv yangilandi.
-- Bo'sh promptda Generate bosilishi `Write a prompt` xabarini berdi; tashqi generation yuborilmadi.
-- Asl UX regressiya: prompt bo'sh bo'lsa ham status noto'g'ri `Ready` ko'rsatardi.
-- `Ready` endi faqat prompt va quote haqiqatan tayyor bo'lganda ko'rinadi.
-- Bo'sh holat endi `Write a prompt to begin` deb aniq ko'rsatiladi.
-- Prompt declarative keyboard/textbox atributlari, ko'rinadigan caret va focus holatini oldi.
-- Generate blok holati `aria-disabled`, status esa `aria-live` bilan bog'landi.
-- Auth, model, signed quote, credit, reference, generation va session mantiqiga tegilmadi.
-- Create parity, Create init va web session policy testlari PASS.
-- Productionga yangi fix deploy qilinmadi; real pulli generation manual tekshiruvda qoladi.
-- Plugin source o'zgarmadi; shared CEP reinstall talab qilinmadi.
-- `_to_delete/` va boshqa ochiq auth/device o'zgarishlariga tegilmadi.
-- Commit, push, deploy va paket yaratilmadi.
+- Production Web Create boshqaruvlari brauzerda kredit sarflamasdan tekshirildi.
+- Tool menyusi ochiladi va 4 ta funksiyani ko'rsatadi.
+- Model handleri ishlaydi va 4 modelni render qiladi, ammo ota pill `overflow:hidden` sabab menyu ko'rinmas edi.
+- Settings handleri ishlaydi va optionlarni render qiladi, ammo ayni clipping sabab menyu ko'rinmas edi.
+- Model va Settings pilllari `overflow:visible` qilindi; matn ellipsis qoidasi saqlandi.
+- `+` reference menyusida `top` va eski `bottom` birga ishlagani uchun 110px kontent 12px gacha qisqargan edi.
+- Reference menyusi `bottom:auto` bilan yagona vertikal anchorga o'tkazildi.
+- Prompt yozish, bo'sh status, Expand, Enhance/Generate gating mantiqi o'zgartirilmadi.
+- Parity testi model/settings clipping va reference anchor regressiyalarini qamraydi.
+- Auth, model API, signed quote, credit, generation va session mantiqiga tegilmadi.
+- Studio sync, API build, auth, Create, session va syntax testlarining barchasi PASS.
+- Productionda yangi fix hali yo'q; push/deploydan keyin real UI qayta tekshiriladi.
+- Plugin source o'zgarmadi; shared CEP reinstall talab qilinmaydi.
+- `_to_delete/` va ochiq auth/device o'zgarishlariga tegilmadi; commit/push/deploy qilinmadi.

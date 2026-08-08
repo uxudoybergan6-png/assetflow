@@ -77,6 +77,9 @@ assert.ok(hasCss(".ff-create-control"), "FINAL-CREATE control CSS block exists")
 assert.ok(hasCss(".ff-create-modewrap"), "FINAL-CREATE modewrap CSS block exists");
 assert.ok(hasCss(".ff-create-model"), "FINAL-CREATE model CSS block exists");
 assert.ok(hasCss(".ff-create-settings"), "FINAL-CREATE settings CSS block exists");
+assert.ok(/\.ff\s+\.ff-create-model\{[^}]*overflow:\s*visible/.test(src), "model control keeps its nested picker visible outside the pill");
+assert.ok(/\.ff\s+\.ff-create-settings\{[^}]*overflow:\s*visible/.test(src), "settings control keeps its nested picker visible outside the pill");
+assert.ok(!/\.ff\s+\.ff-create-(?:model|settings)\{[^}]*overflow:\s*hidden/.test(src), "nested model/settings pickers cannot be clipped by their parent pills");
 assert.ok(hasCss(".ff-create-actions"), "FINAL-CREATE actions CSS block exists");
 assert.ok(hasCss(".ff-create-add"), "FINAL-CREATE add button CSS block exists");
 assert.ok(hasCss(".ff-create-generate"), "FINAL-CREATE generate button CSS block exists");
@@ -88,7 +91,7 @@ assert.ok(/\.ff\s+\.ff-create-composer\{[\s\S]{0,220}border:\s*1px solid rgba\(2
 assert.ok(/\.ff\s+\.ff-create-generate\{[^}]*padding:\s*0 15px/.test(src), "Generate padding matches FINAL-CREATE");
 assert.ok(/\.ff\s+\.ff-create-cost\{[^}]*margin-left:\s*5px/.test(src), "inline cost spacing matches FINAL-CREATE");
 assert.ok(/@media\s*\(max-width:\s*520px\)[\s\S]*ff-create-composer/.test(src), "mobile FINAL-CREATE composer media query exists");
-assert.ok(/\.ff-create-refmenu\{[^}]*top:\s*calc\(100% \+ 10px\)[^}]*\}/.test(src), "reference menu anchored relative to composer wrapper");
+assert.ok(/\.ff-create-refmenu\{[^}]*top:\s*calc\(100% \+ 10px\)[^}]*bottom:\s*auto[^}]*\}/.test(src), "reference menu uses one unambiguous vertical anchor outside the add button");
 
 assert.ok(/\.ff\s+\.ff-create-enhance\{[^}]*min-width:\s*35px[^}]*width:\s*35px[^}]*\}/.test(src), "Enhance control preserves 35px icon-only width");
 
