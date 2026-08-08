@@ -1612,7 +1612,8 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   }
 
   // ── MODERATSIYA (Bosqich 2 #1) — KREDIT YECHISHDAN OLDIN (bloklangan gen'ga charge YO'Q) ──
-  // 1) Kalit-so'z (heuristik) qatlami — og'ir kategoriyalar (CSAM/deepfake/gore/jinsiy) FAIL-CLOSED.
+  // 1) Kontekstli kalit-so'z qatlami — og'ir kategoriyalar (CSAM/deepfake/gore/jinsiy) FAIL-CLOSED.
+  //    Mustaqil so'z chegarasi va aniq inkor ("no gore", "without nudity") false-positive'ni kamaytiradi.
   const preflight = preflightSafetyCheck({
     mode,
     prompt,

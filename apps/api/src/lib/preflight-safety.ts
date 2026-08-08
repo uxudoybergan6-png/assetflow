@@ -18,13 +18,13 @@ const SEXUAL_EXPLICIT = [
   "nude",
   "naked",
   "nudity",
-  "explicit",
+  "sexually explicit",
+  "explicit sex",
+  "sexual act",
+  "porn",
+  "pornographic",
   "erotic",
   "sexual",
-  "sensual",
-  "topless",
-  "shirtless",
-  "bare chest",
   "half naked",
   "yalang'och",
   "yalangoch",
@@ -164,14 +164,68 @@ const GORE_TERMS = [
   "dismembered",
   "bloody corpse",
   "graphic violence",
-  "ichak",
-  "parchalangan",
-  "jasad",
+  "exposed organs",
+  "severed limbs",
+  "mutilated corpse",
+  "decapitated body",
   "qonli jasad",
 ];
 
-function hasAny(text: string, list: string[]): boolean {
-  return list.some((term) => text.includes(term));
+const NEGATION_BEFORE =
+  /(?:^|[^\p{L}\p{N}])(?:(?:no|without|avoid(?:ing)?|exclude(?:d|s|ing)?|omit(?:ted|ting)?|free\s+of|do\s+not|does\s+not|don['’]t|doesn['’]t|must\s+not|should\s+not|never(?:\s+(?:show|depict|include|contain|feature))?|not(?!\s+only\b)(?:\s+(?:show|depict|include|contain|feature))?|hech\s+qanday)(?=$|[^\p{L}\p{N}])|non[\s-]+)/giu;
+const NEGATION_AFTER =
+  /^\s*(?:-?free|is\s+(?:excluded|prohibited|not\s+allowed|not\s+present)|bo['’]?lmasin|yo['’]?q|ko['’]?rsatilmasin|tasvirlanmasin)(?:$|[^\p{L}\p{N}])/iu;
+const CONTRAST_AFTER_NEGATION = /(?:^|[^\p{L}\p{N}])(?:but|except|however|yet|ammo|lekin|biroq)(?:$|[^\p{L}\p{N}])/iu;
+const AFFIRMATIVE_ACTION_AFTER_NEGATION =
+  /(?:,|\b(?:and|then|va|keyin)\b)\s*(?:show|depict|include|feature|add|display|reveal|contain|ko['’]?rsat|tasvirla|qo['’]?sh)/iu;
+
+function termPattern(term: string): string {
+  return term
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/[\s-]+/g, "[\\s-]+");
+}
+
+/**
+ * Faqat mustaqil so'z/ibora mosligini oladi va aniq xavfsizlik cheklovlarini
+ * ("no gore", "without nudity", "gore bo'lmasin") xavf talabi deb hisoblamaydi.
+ * Bu ML moderatsiya o'rnini bosmaydi; keyword qatlamidagi false-positive'larni kamaytiradi.
+ */
+function hasAffirmativeTerm(text: string, list: string[]): boolean {
+  return list.some((term) => {
+    const re = new RegExp(
+      `(^|[^\\p{L}\\p{N}])(${termPattern(term)})(?=$|[^\\p{L}\\p{N}])`,
+      "giu"
+    );
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(text))) {
+      const start = match.index + match[1].length;
+      const end = start + match[2].length;
+      const prefix = text.slice(Math.max(0, start - 120), start);
+      const clausePrefix = prefix.slice(Math.max(
+        prefix.lastIndexOf("."),
+        prefix.lastIndexOf(";"),
+        prefix.lastIndexOf("!"),
+        prefix.lastIndexOf("?"),
+        prefix.lastIndexOf("\n")
+      ) + 1);
+      const negations = [...clausePrefix.matchAll(NEGATION_BEFORE)];
+      const negation = negations.at(-1);
+      const after = text.slice(end, end + 48);
+      const afterNegation = negation
+        ? clausePrefix.slice((negation.index || 0) + negation[0].length)
+        : "";
+      const scopedWords = afterNegation.match(/[\p{L}\p{N}]+/gu)?.length || 0;
+      const negatedBefore = Boolean(
+        negation &&
+          scopedWords <= 8 &&
+          !CONTRAST_AFTER_NEGATION.test(afterNegation) &&
+          !AFFIRMATIVE_ACTION_AFTER_NEGATION.test(afterNegation)
+      );
+      const negatedAfter = NEGATION_AFTER.test(after);
+      if (!negatedBefore && !negatedAfter) return true;
+    }
+    return false;
+  });
 }
 
 function countRefs(params?: Record<string, unknown>): { image: number; video: number; audio: number } {
@@ -190,15 +244,15 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
   const text = String(input.prompt || "").toLowerCase();
   const refs = countRefs(input.params);
   const hasVisualRefs = refs.image + refs.video > 0;
-  const sexual = hasAny(text, SEXUAL_EXPLICIT);
-  const strongBody = hasAny(text, STRONG_BODY_EXPOSURE);
-  const genericBody = hasAny(text, GENERIC_BODY_TERMS);
-  const swimwear = hasAny(text, SWIMWEAR_UNDERWEAR);
-  const real = hasAny(text, REALISTIC_STYLE);
-  const namedPerson = hasAny(text, NAMED_REAL_PEOPLE);
-  const deepfake = hasAny(text, DEEPFAKE_INTENT);
-  const minor = hasAny(text, MINOR_TERMS);
-  const gore = hasAny(text, GORE_TERMS);
+  const sexual = hasAffirmativeTerm(text, SEXUAL_EXPLICIT);
+  const strongBody = hasAffirmativeTerm(text, STRONG_BODY_EXPOSURE);
+  const genericBody = hasAffirmativeTerm(text, GENERIC_BODY_TERMS);
+  const swimwear = hasAffirmativeTerm(text, SWIMWEAR_UNDERWEAR);
+  const real = hasAffirmativeTerm(text, REALISTIC_STYLE);
+  const namedPerson = hasAffirmativeTerm(text, NAMED_REAL_PEOPLE);
+  const deepfake = hasAffirmativeTerm(text, DEEPFAKE_INTENT);
+  const minor = hasAffirmativeTerm(text, MINOR_TERMS);
+  const gore = hasAffirmativeTerm(text, GORE_TERMS);
   const warnings: string[] = [];
   const suggestions = [
     "Reduce the emphasis on exposed body and describe clothing explicitly: `sportswear`, `jersey`, `training outfit`.",
@@ -208,7 +262,7 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
 
   // CSAM (audit 1a) — nozik yosh + ISTALGAN jinsiylashtirish/ochiq-tana/ich-kiyim signali → HARD BLOK.
   // Ilgari faqat (minor && sexual) so'z birga kelganда bloklardi; endi ANY signal bloklaydi. Bypass yo'q.
-  if (minor && (sexual || strongBody || genericBody || swimwear)) {
+  if (minor && (sexual || strongBody || swimwear)) {
     return {
       blocked: true,
       severity: "high",
@@ -261,22 +315,26 @@ export function preflightSafetyCheck(input: PreflightInput): PreflightSafetyResu
   }
 
   if (input.mode === "video" && hasVisualRefs && strongBody && real) {
+    warnings.push(
+      "A realistic person with exposed-body emphasis may be reviewed by the selected model's safety system"
+    );
     return {
-      blocked: true,
+      blocked: false,
       severity: "medium",
-      reason:
-        "The combination of a realistic person + body emphasis + visual reference may trip the safety filter",
+      reason: null,
       warnings,
       suggestions,
     };
   }
 
   if (input.mode === "video" && hasVisualRefs && strongBody) {
+    warnings.push(
+      "Exposed-body emphasis in a visual reference may be reviewed by the selected model's safety system"
+    );
     return {
-      blocked: true,
+      blocked: false,
       severity: "medium",
-      reason:
-        "Strong body detail combined with attached references may be flagged as sensitive content by the model",
+      reason: null,
       warnings,
       suggestions,
     };

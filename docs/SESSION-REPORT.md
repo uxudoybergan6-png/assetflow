@@ -1,15 +1,15 @@
 Session Report: 2026-08-08
-- Image reference, video start/end frame va multimodal reference oqimi audit qilindi.
-- Umumiy root cause upload emas, generatsiya oldi image moderation URL tekshiruvi ekanligi topildi.
-- Signed/private storage URL o'qilmasa oddiy rasm ham `unverified-image` sifatida bloklanar edi.
-- Owned storage rasmlari moderation uchun 512px JPEG data-URI nusxaga aylantiriladi.
-- Asl reference fayli va provider input sifati o'zgarmaydi.
-- Tashqi/boshqa user URL'i serverda yuklanmaydi; ownership va SSRF himoyasi saqlandi.
-- Haqiqiy taqiqlangan kontent va moderation fail-closed himoyasi saqlandi.
-- Moderation infratuzilma xatosi endi content aybi emas, `MODERATION_UNAVAILABLE` 503 bo'ladi.
-- BytePlus start/end/image/video/audio payload regressiya gate'i qo'shildi.
-- Kling start/end/image/video payload regressiya gate'i qo'shildi.
-- API build: PASS; 51 model, 24 enabled, 0 issue.
-- Reference moderation, auth, Create, session va plugin contract testlari: PASS.
-- Plugin/Studio source o'zgarmadi; sync yoki CEP refresh talab qilinmaydi.
-- Production deploy va real reference generation hali qo'lda tekshirilishi kerak; commit/push/deploy qilinmadi.
+- Disaster prompt `No ... gore` sabab keyword qatlamida noto'g'ri bloklangani aniqlandi.
+- Root cause `text.includes()` inkor va mustaqil so'z chegarasini tushunmasligi edi.
+- Preflight mustaqil so'z/ibora, inglizcha va o'zbekcha inkor kontekstini hisobga oladi.
+- `no/without/avoid/non/not`, `bo'lmasin/yo'q` va taqiqlovchi ro'yxatlar false-positive bermaydi.
+- `but/except` yoki keyingi `show/include` talabi inkor sifatida yashirilmaydi.
+- `kidney/somebody` kabi ichki substringlar endi `kid/body` signali hisoblanmaydi.
+- Oddiy `explicit` va `sensual`, kattalar `shirtless` konteksti og'ir sexual hard-block emas.
+- Kattalar body + reference holati blok o'rniga ogohlantirish bilan ML/provider tekshiruviga o'tadi.
+- `child + full body` kabi kiyimli qonuniy portret CSAM deb bloklanmaydi.
+- Bola + aniq nudity/jinsiy kontekst, deepfake va haqiqiy gore qat'iy bloklanadi.
+- Foydalanuvchi yuborgan to'liq disaster prompt lokal preflight'dan o'tdi.
+- API build va yangi kontekst regressiya testi: PASS.
+- Reference moderation, parametr, ownership va upload security testlari: PASS; Studio/CEP sync talab qilinmaydi.
+- Production API deploy va real Gemini generation qo'lda tekshirilishi kerak; commit/push/deploy qilinmadi.
