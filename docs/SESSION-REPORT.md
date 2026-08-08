@@ -1,15 +1,15 @@
 Session Report: 2026-08-08
-- Production Web Create boshqaruvlari brauzerda kredit sarflamasdan tekshirildi.
-- Tool menyusi ochiladi va 4 ta funksiyani ko'rsatadi.
-- Model handleri ishlaydi va 4 modelni render qiladi, ammo ota pill `overflow:hidden` sabab menyu ko'rinmas edi.
-- Settings handleri ishlaydi va optionlarni render qiladi, ammo ayni clipping sabab menyu ko'rinmas edi.
-- Model va Settings pilllari `overflow:visible` qilindi; matn ellipsis qoidasi saqlandi.
-- `+` reference menyusida `top` va eski `bottom` birga ishlagani uchun 110px kontent 12px gacha qisqargan edi.
-- Reference menyusi `bottom:auto` bilan yagona vertikal anchorga o'tkazildi.
-- Prompt yozish, bo'sh status, Expand, Enhance/Generate gating mantiqi o'zgartirilmadi.
-- Parity testi model/settings clipping va reference anchor regressiyalarini qamraydi.
-- Auth, model API, signed quote, credit, generation va session mantiqiga tegilmadi.
-- Studio sync, API build, auth, Create, session va syntax testlarining barchasi PASS.
-- Productionda yangi fix hali yo'q; push/deploydan keyin real UI qayta tekshiriladi.
-- Plugin source o'zgarmadi; shared CEP reinstall talab qilinmaydi.
-- `_to_delete/` va ochiq auth/device o'zgarishlariga tegilmadi; commit/push/deploy qilinmadi.
+- Image reference, video start/end frame va multimodal reference oqimi audit qilindi.
+- Umumiy root cause upload emas, generatsiya oldi image moderation URL tekshiruvi ekanligi topildi.
+- Signed/private storage URL o'qilmasa oddiy rasm ham `unverified-image` sifatida bloklanar edi.
+- Owned storage rasmlari moderation uchun 512px JPEG data-URI nusxaga aylantiriladi.
+- Asl reference fayli va provider input sifati o'zgarmaydi.
+- Tashqi/boshqa user URL'i serverda yuklanmaydi; ownership va SSRF himoyasi saqlandi.
+- Haqiqiy taqiqlangan kontent va moderation fail-closed himoyasi saqlandi.
+- Moderation infratuzilma xatosi endi content aybi emas, `MODERATION_UNAVAILABLE` 503 bo'ladi.
+- BytePlus start/end/image/video/audio payload regressiya gate'i qo'shildi.
+- Kling start/end/image/video payload regressiya gate'i qo'shildi.
+- API build: PASS; 51 model, 24 enabled, 0 issue.
+- Reference moderation, auth, Create, session va plugin contract testlari: PASS.
+- Plugin/Studio source o'zgarmadi; sync yoki CEP refresh talab qilinmaydi.
+- Production deploy va real reference generation hali qo'lda tekshirilishi kerak; commit/push/deploy qilinmadi.

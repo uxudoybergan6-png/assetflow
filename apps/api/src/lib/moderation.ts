@@ -122,6 +122,9 @@ type OmniInputPart =
 export async function moderateContent(opts: {
   text?: string;
   imageUrls?: string[];
+  /** O'z storage URL'ini moderatsiya API ishonchli o'qiydigan data-URI'ga aylantirish.
+   *  Resolver xatosida asl URL saqlanadi; haqiqiy moderatsiya gate'i hech qachon chetlab o'tilmaydi. */
+  resolveImageUrl?: (url: string) => Promise<string | null>;
 }): Promise<ModerationResult> {
   const imageUrls = (opts.imageUrls || []).filter(
     (u) => typeof u === "string" && /^https?:\/\//i.test(u)
@@ -141,7 +144,25 @@ export async function moderateContent(opts: {
   const parts: OmniInputPart[] = [];
   const text = String(opts.text || "").trim();
   if (text) parts.push({ type: "text", text: text.slice(0, 4000) });
-  for (const url of imageUrls.slice(0, 8)) {
+  const resolvedImageUrls: string[] = [];
+  for (const originalUrl of imageUrls.slice(0, 8)) {
+    let url = originalUrl;
+    if (opts.resolveImageUrl) {
+      try {
+        const resolved = await opts.resolveImageUrl(originalUrl);
+        if (resolved && (/^https?:\/\//i.test(resolved) || /^data:image\//i.test(resolved))) {
+          url = resolved;
+        }
+      } catch (e) {
+        console.warn(
+          "[moderation] reference materialization xato — asl URL ishlatiladi:",
+          e instanceof Error ? e.message : e
+        );
+      }
+    }
+    resolvedImageUrls.push(url);
+  }
+  for (const url of resolvedImageUrls) {
     parts.push({ type: "image_url", image_url: { url } });
   }
   if (!parts.length) return { ...CLEAN, configured: true };

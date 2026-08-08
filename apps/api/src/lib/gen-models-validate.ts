@@ -9,6 +9,7 @@ import {
   getReferenceMode,
 } from "./gen-models.js";
 import { buildByteplusVideoBody, mentionTokenSelfTest, seedreamSizeSelfTest } from "./ai/byteplus.js";
+import { buildKlingVideoRequest } from "./ai/kling.js";
 import { normalizeAndValidateGenParams } from "./gen-param-validation.js";
 
 /**
@@ -217,6 +218,38 @@ export function validateModel(m: GenModel, enabledOnlyChecks: boolean): ModelIss
           if (first?.text !== "use Image 2") {
             issue(out, m, "videoInput", `aralash kadr+referens mention-offset xato: "${first?.text}" (kutilgan "use Image 2")`);
           }
+        }
+        if (m.refKind === "media-refs") {
+          const mixed = buildByteplusVideoBody(m, "validator", rv, {
+            startUrl: "https://x/start.png",
+            endUrl: "https://x/end.png",
+            imageUrls: ["https://x/ref.png"],
+            videoUrls: ["https://x/ref.mp4"],
+            audioUrls: m.mediaRefs?.audio ? ["https://x/ref.mp3"] : [],
+          });
+          const roles = Array.isArray(mixed.content)
+            ? (mixed.content as Array<{ role?: string }>).map((x) => x.role).filter(Boolean)
+            : [];
+          for (const role of ["first_frame", "last_frame", "reference_image", "reference_video"]) {
+            if (!roles.includes(role)) issue(out, m, "videoInput", `BytePlus ${role} content'ga tushmadi`);
+          }
+          if (m.mediaRefs?.audio && !roles.includes("reference_audio")) {
+            issue(out, m, "videoInput", "BytePlus reference_audio content'ga tushmadi");
+          }
+        }
+      }
+      if (m.provider === "kling" && m.refKind === "media-refs") {
+        const mixed = buildKlingVideoRequest(m, "validator", rv, {
+          startUrl: "https://x/start.png",
+          endUrl: "https://x/end.png",
+          imageUrls: ["https://x/ref.png"],
+          videoUrls: ["https://x/ref.mp4"],
+        });
+        const contents = Array.isArray(mixed.body.contents)
+          ? (mixed.body.contents as Array<{ type?: string }>).map((x) => x.type)
+          : [];
+        for (const type of ["first_frame", "last_frame", "refer_image", "feature_video"]) {
+          if (!contents.includes(type)) issue(out, m, "videoInput", `Kling ${type} content'ga tushmadi`);
         }
       }
       const c = computeGenCost(m, params);

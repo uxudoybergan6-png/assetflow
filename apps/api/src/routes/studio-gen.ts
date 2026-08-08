@@ -34,6 +34,7 @@ import { deriveVideoUpscaleParams, canonicalizeUpscaleParams } from "../lib/vide
 import {
   optimizeVideoReferenceForUpload,
   extractAudioReferenceForUpload,
+  makeImageThumbFile,
 } from "../lib/optimize-preview.js";
 import {
   isS3Configured,
@@ -1036,6 +1037,39 @@ async function validateReferenceOwnershipAndMetadata(
   return errors;
 }
 
+/** Moderatsiya provayderi signed/private storage URL'ini o'zi yuklay olmasa oddiy, qonuniy
+ *  rasm ham "content could not be verified" bo'lib qolardi. O'z user'imizga tegishli rasmni
+ *  faqat MODERATSIYA uchun kichik JPEG data-URI'ga aylantiramiz. Asl reference/provider input
+ *  o'zgarmaydi. Tashqi yoki boshqa user URL'i serverda yuklab olinmaydi (SSRF/account isolation). */
+async function moderationImageDataUrl(userId: string, url: string): Promise<string | null> {
+  const key = gcsKeyFromUrl(url);
+  if (!key) return null;
+  const owned =
+    key.startsWith(`gen/${userId}/`) ||
+    key.startsWith(`gen-refs/${userId}/`) ||
+    key.startsWith(`gen-ref-src/${userId}/`);
+  if (!owned) return null;
+  const meta = await getS3ObjectMeta(key);
+  if (meta.sizeBytes == null || !/^image\//i.test(meta.contentType || "")) return null;
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "af_modref_"));
+  try {
+    const srcExt = path.extname(key).replace(/[^.a-z0-9]/gi, "").slice(0, 8) || ".img";
+    const srcPath = path.join(tmpDir, `source${srcExt}`);
+    const outPath = path.join(tmpDir, "moderation.jpg");
+    fs.writeFileSync(srcPath, await downloadS3ToBuffer(key));
+    if (!(await makeImageThumbFile(srcPath, outPath))) return null;
+    const jpg = fs.readFileSync(outPath);
+    return jpg.length ? `data:image/jpeg;base64,${jpg.toString("base64")}` : null;
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {
+      /* best effort */
+    }
+  }
+}
+
 studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
   const p = quoteSchema.safeParse(req.body);
   if (!p.success) {
@@ -1614,8 +1648,24 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   const moderation = await moderateContent({
     text: prompt,
     imageUrls: collectImageRefUrls(params),
+    resolveImageUrl: (url) => moderationImageDataUrl(req.user!.userId, url),
   });
   if (moderation.blocked) {
+    const unavailable = !moderation.ok && moderation.categories.includes("unverified-image");
+    if (unavailable) {
+      await writeAuditLog({
+        actorId: req.user!.userId,
+        action: "moderation.unavailable",
+        targetType: "generation",
+        detail: moderation.reason || "reference moderation unavailable",
+        meta: { layer: "ml", mode, modelId },
+      });
+      res.status(503).json({
+        error: "Reference safety verification is temporarily unavailable — please try again",
+        code: "MODERATION_UNAVAILABLE",
+      });
+      return;
+    }
     await noteBlockedAttempt(req.user!.userId).catch(() => {}); // P30.4 rate-limit sanog'i
     await writeAuditLog({
       actorId: req.user!.userId,
