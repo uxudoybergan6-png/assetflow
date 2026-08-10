@@ -18290,6 +18290,15 @@ window.afGallery=(function(){
     item.sessionId=e.sessionId||item.sessionId||null;item.prompt=e.prompt||item.prompt||'';item.cat=e.cat||item.cat||'image';
     item.progress=typeof e.progress==='number'?e.progress:item.progress;item.state=e.state||'active';item.statusText=e.statusText||item.statusText||'';
     if(e.jobId)item.jobId=e.jobId;if(typeof e.onCancel==='function')item.onCancel=e.onCancel;sp.sessJobs[e.key]=item;
+    // Yangi-session Generate launcher'dan boshlanadi, lekin server session id'si bir oz keyin keladi.
+    // Id kelishi bilan foydalanuvchini o'sha persistent session workspace'iga o'tkazamiz; aks holda
+    // job Activity'da ishlaydi-yu, launcherning bo'sh stage'ida pending karta ko'rinmay qoladi.
+    var launcher=$('v-launcher');
+    if(item.sessionId&&item.state!=='failed'&&launcher&&launcher.classList.contains('on')){
+      var mode=item.cat==='audio'?'voice':item.cat;
+      openSession({id:item.sessionId,mode:mode,coverMode:mode,title:item.prompt||'Session'});
+      renderSessionGrid();
+    }
     if(item.state==='failed'){
       if(item._hideTimer)clearTimeout(item._hideTimer);
       item._hideTimer=setTimeout(function(){if(sp.sessJobs[e.key]===item){delete sp.sessJobs[e.key];renderSessionGrid();}},10000);

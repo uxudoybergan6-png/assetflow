@@ -67,6 +67,7 @@ assert.match(html, /window\.afSessionGenerationDone\(sessId\)/);
 assert.match(html, /window\.afSessionJobUpdate=function\(e\)/);
 assert.match(html, /sp\.sessJobs\[e\.key\]=item/);
 assert.match(html, /pendingCard\(it,pctx\)/);
+assert.match(html, /launcher\.classList\.contains\('on'\)[\s\S]{0,260}openSession\(\{id:item\.sessionId/);
 assert.match(html, /syncSessionJob\(j,'active'\)/);
 assert.match(html, /syncVgSessionJob\(j,'active'\)/);
 assert.match(html, /syncAgSessionJob\(o\.r&&o\.r\.jobId/);

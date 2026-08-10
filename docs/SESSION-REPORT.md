@@ -1,9 +1,10 @@
 Session Report: 2026-08-10
 - Unified session gallery previously loaded only `status=done` generations.
-- Image and video engines created pending cards only in their hidden legacy Recent grids.
-- Fast provider/quota failures removed those hidden cards immediately.
+- The first pending-card fix covered an opened session but not the new-session launcher stage.
+- Activity therefore showed the live job while Create remained on an empty launcher.
 - A shared session-job bridge now carries Image, Video, Voice and SFX active jobs into the open session.
 - Pending cards appear immediately and update their progress in place.
+- When the server returns the new session id, Create now opens that persistent session automatically.
 - Successful jobs leave the pending registry and trigger the existing finished-generation refresh.
 - Failed jobs remain visible for 10 seconds as `Failed · credits refunded`.
 - Unified pending cards retain real cancel behavior through the existing generation engines.
@@ -11,5 +12,4 @@ Session Report: 2026-08-10
 - Inline JavaScript application blocks passed syntax compilation.
 - `git diff --check` passed.
 - Shared AE/Premiere CEP was refreshed locally with `AF_SKIP_AE=1`.
-- Adobe applications were not opened, closed or restarted.
-- Commit, push and production Cloud Run rollout were requested; verification follows.
+- Follow-up regressions passed; Adobe was not restarted automatically.
