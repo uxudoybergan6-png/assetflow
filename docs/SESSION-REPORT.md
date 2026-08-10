@@ -1,12 +1,15 @@
-Session Report: 2026-08-08
-- Adobe CEP tashqi brauzerga o'tishda URL fragmentini tashlab yuborishi root cause sifatida tasdiqlangan.
-- Device requestId va HMAC state endi query orqali uzatiladi.
-- Access token, refresh token va maxfiy pollToken browser URL'iga qo'yilmaydi.
-- Device sahifa query'ni afzal ko'radi va eski fragment linklarini fallback sifatida qabul qiladi.
-- URL o'qilgach query/history browser address baridan olib tashlanadi.
-- Normal Google oqimi bir klik, account tanlash va AE/Premiere auto-connect bo'lib qoladi.
-- Manual code va email/password faqat Having trouble ichida qoladi.
-- API build va device-auth security testi: PASS.
-- Studio device-auth UI va shared AE/Premiere session persistence testlari: PASS.
-- Studio sync va git diff check: PASS.
-- Plugin source o'zgarmadi; CEP reinstall va Adobe restart bajarilmadi.
+Session Report: 2026-08-10
+- Production session history showed four failed Nano Banana 2 jobs for the harmless wedding-title prompt.
+- Every failure was Google `429 RESOURCE_EXHAUSTED`; this was quota pressure, not content moderation.
+- All four 32-credit charges were fully refunded and no failed job retained assets.
+- Vertex Image now serializes multi-image batches to avoid `count=4` quota bursts.
+- Retryable Google 429/5xx/network and unexplained empty-image responses receive bounded retries.
+- Explicit IMAGE_SAFETY/content-policy responses remain non-retryable and blocked.
+- Empty image responses are no longer mislabeled as content-policy rejection.
+- CEP now reports quota exhaustion accurately and suggests waiting or choosing Seedream.
+- API build passed: 51 models, 24 enabled, 0 validation issues.
+- Provider adapter contract passed: 24/24 enabled entries.
+- Create workspace passed 13/13; responsive passed 105/105; Premiere passed 19/19.
+- vNext, shared session persistence, plugin device auth and Studio device-auth UI passed.
+- Production rollout was requested; Cloud Run workflow and public health verification follow.
+- Shared CEP was refreshed with `AF_SKIP_AE=1`; only the intentional build stamp differs from source.

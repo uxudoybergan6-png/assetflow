@@ -33,6 +33,17 @@ await check("mode routes to the selected real model catalog", async () => {
   assert.equal(c.snapshot().modelId, 3001);
 });
 
+await check("existing session remains active when switching generation modes", async () => {
+  const c = createController();
+  c.setModels("image", [imageA]);
+  c.setModels("video", [video]);
+  c.setSession("mixed-session-1");
+  c.setMode("video");
+  assert.equal(c.snapshot().sessionId, "mixed-session-1");
+  c.setMode("image");
+  assert.equal(c.snapshot().sessionId, "mixed-session-1");
+});
+
 await check("model switch atomically validates output defaults and invalidates quote", async () => {
   const c = createController();
   c.setModels("image", [imageA, imageB]);

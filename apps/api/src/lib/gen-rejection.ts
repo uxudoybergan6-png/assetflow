@@ -18,7 +18,8 @@ export type RejectionInfo = {
 // Provayderlar (Google Vertex/Imagen/Veo, BytePlus, fal) qaytaradigan kontent-rad naqshlari.
 const CONTENT_PATTERNS: Array<{ re: RegExp; category: string }> = [
   { re: /sensitive content|nsfw|nudity|sexual|explicit|erotic/i, category: "sexual" },
-  { re: /no image was returned|returned no image|image was not (returned|generated)/i, category: "content" },
+  // Sababsiz "no/empty image" kontent bloki emas: SDK/quota/provider bo'sh javobi ham shu
+  // ko'rinishda keladi. Adapter aniq safety signalini `content policy blocked` deb belgilaydi.
   { re: /content polic|usage polic|safety (system|filter|policy|settings)|responsible ai|\bRAI[_ ]?|blocklist|block[_ ]?list/i, category: "content" },
   { re: /blocked (by|for|due)|was blocked|prohibited|flagged (as|for|by)|violat\w+ .*(polic|guideline)/i, category: "content" },
   { re: /moderation (blocked|failed|rejected)|did not pass moderation/i, category: "content" },

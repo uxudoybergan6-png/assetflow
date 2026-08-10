@@ -401,7 +401,7 @@ const AssetFlowAccount = (() => {
       return activeToken;
     }
     const prefs = getClientPrefs();
-    const legacy = (prefs && prefs.client && (prefs.client.token || "")).trim();
+    const legacy = String((prefs && prefs.client && prefs.client.token) || "").trim();
     setActiveToken(legacy);
     if (!activeToken) return "";
     if (store && legacy) {
@@ -671,26 +671,8 @@ const AssetFlowAccount = (() => {
     await ensureSessionLoaded();
     await ensureFreshToken();
 
-    const headers = { ...(options.headers || {}) };
-    const bodyIsFormData =
-      typeof FormData !== "undefined" && options.body instanceof FormData;
     const t = token();
-    const timeoutMs = bodyIsFormData ? 180000 : 30000;
-
-    const data = await requestWithToken(
-      path,
-      {
-        ...options,
-        body:
-          bodyIsFormData
-            ? options.body
-            : options.body
-              ? JSON.stringify(options.body)
-              : undefined,
-      },
-      t,
-      { handleAuthFailure: true }
-    );
+    const data = await requestWithToken(path, options, t, { handleAuthFailure: true });
 
     return data;
   }

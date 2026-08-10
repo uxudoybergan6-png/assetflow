@@ -10,6 +10,7 @@ import path from 'node:path';
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const html = readFileSync(path.join(root, 'AssetFlow_Plugin.html'), 'utf8');
 const stylesCss = readFileSync(path.join(root, 'css', 'styles.css'), 'utf8');
+const vnextCss = readFileSync(path.join(root, 'css', 'frameflow-vnext.css'), 'utf8');
 
 let failures = 0;
 let passed = 0;
@@ -116,12 +117,11 @@ check('Home exposes four functional AI toolkit cards',
   html.includes("{mode:'video',title:'AI Video'") && html.includes("{mode:'voice',title:'AI Voiceover'") &&
   html.includes("{mode:'sfx',title:'AI Sound FX'") && html.includes('function fhomeOpenTool(mode)'),
   'reference-style toolkit must route to the four real generator modes');
-check('AI toolkit copy stays editorial and compact',
-  html.includes('Create with leading AI tools <span aria-hidden="true">✦</span>') &&
-  html.includes('class="fhome-toolopen"') && html.includes('M7 17 17 7M8 7h9v9') && !html.includes('class="fhome-toolsub"') &&
-  !html.includes('class="fhome-toolplay"') &&
-  stylesCss.includes('.fhome-tools-hd h2{color:var(--text);font-size:21px;font-weight:760'),
-  'tool cards should contain only title and media');
+check('vNext toolkit is focused and routes through the shared controller',
+  html.includes('id="ffxToolGrid"') && html.includes('id="ffxAllTools"') &&
+  html.includes('Five focused shortcuts for everyday Adobe work.') &&
+  html.includes('frameflow-vnext.js') && vnextCss.includes('.ffx-tool-grid{'),
+  'the approved Home needs five essential tools plus the searchable full library');
 check('AI toolkit always remains one horizontal four-card row',
   stylesCss.includes('.fhome-toolgrid{display:flex;gap:clamp(10px,1.2vw,16px);overflow-x:auto') &&
   stylesCss.includes('scroll-snap-type:x proximity;scroll-behavior:smooth;scrollbar-width:none') &&
@@ -202,19 +202,18 @@ check('featured six-pack stays three columns at the current panel width',
 check('Home search uses the available panel width',
   stylesCss.includes('html.home-mode .fhome-hero-copy{max-width:none}'),
   'later density rules must not constrain search to 340px');
-check('Home source order follows search, toolkit, models, footage, sessions, discovery, video templates',
-  html.indexOf('class="fhome-hero"') < html.indexOf('class="fhome-tools"') &&
-  html.indexOf('id="fhomeToolsHd"') < html.indexOf('id="fhomeModelsSec"') &&
-  html.indexOf('id="fhomeModelsSec"') < html.indexOf('id="fhomeFootage"') &&
-  html.indexOf('id="fhomeFootage"') < html.indexOf('id="fhomeSessSec"') &&
-  html.indexOf('id="fhomeSessSec"') < html.indexOf('id="fhomeDiscovery"') &&
-  html.indexOf('id="fhomeDiscovery"') < html.indexOf('id="fhomeVideoTemplates"'),
-  'Home sections must match the requested editorial order');
-check('Home removes redundant greeting and Create CTA',
+check('vNext Home source order follows command, sessions, project pulse and essential tools',
+  html.indexOf('class="ffx-command"') < html.indexOf('class="ffx-insights"') &&
+  html.indexOf('id="ffxSessionRail"') < html.indexOf('class="ffx-pulse"') &&
+  html.indexOf('class="ffx-pulse"') < html.indexOf('id="ffxToolGrid"') &&
+  html.indexOf('id="ffxToolGrid"') < html.indexOf('class="ffx-legacy-hooks"'),
+  'Home sections must match the approved panel-first vNext order');
+check('vNext Home keeps one primary creation CTA and hides compatibility hooks',
   html.includes('<div class="fhome-top" hidden aria-hidden="true">') &&
-  html.includes('<h2 id="fhomeToolsHd">Create with leading AI tools <span aria-hidden="true">✦</span></h2>') &&
-  !html.includes('fhome-tools-all') && !html.includes('Open Create ↗'),
-  'top Create navigation makes the extra greeting and toolkit CTA unnecessary');
+  html.includes('id="ffxStartCreate"') && html.includes('id="ffxAutoModel"') &&
+  html.includes('class="ffx-legacy-hooks" hidden aria-hidden="true"') &&
+  vnextCss.includes('.ffx-legacy-hooks{display:none!important}'),
+  'only the command center should be visible while legacy render hooks stay mounted');
 
 // ── 3b. Artlist audit: generator composer progressive disclosure ──
 check('generator composer gives the prompt a dedicated writing zone',
@@ -238,9 +237,11 @@ check('shared new-session controls also stay on one row',
   html.includes('.ff-create-controls{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;min-width:0}') &&
   html.includes('.ff-create-setgroup{display:flex;align-items:center;gap:7px;min-width:0;flex:1 1 auto}') &&
   html.includes('<div class="ff-create-setgroup">') &&
-  html.includes('.ff-create-controls{align-items:center;overflow-x:auto;overflow-y:hidden;padding-bottom:3px') &&
+  vnextCss.includes('.ff-create-controls{display:grid!important;grid-template-columns:minmax(0,1fr) auto') &&
+  vnextCss.includes('overflow:visible!important') &&
+  vnextCss.includes('.ff-create-actions{position:static!important') &&
   !html.includes('.ff-create-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}'),
-  'new and existing sessions must preserve one horizontal controls rail without hiding model or output settings');
+  'new and existing sessions must preserve one visible controls row without a hidden horizontal viewport');
 check('secondary prompt actions are icon-only',
   html.includes('.axws-genwrap .enh-lbl,.axws-genwrap .axws-clr-lbl{display:none}') &&
   html.includes('.axws-genwrap .ai-set.enhance,.axws-genwrap .axws-clear{width:36px') &&
@@ -293,8 +294,10 @@ check('model choice has quick shortlist and All Models browser',
   'two-stage model picker is required');
 check('All Models provides provider filter, details and explicit use action',
   html.includes("provider.setAttribute('aria-label','Filter provider')") &&
-  html.includes("detail.className='ff-model-detail'") && html.includes("use.textContent='Use Model'"),
-  'model browser must expose provider, detail and Use Model');
+  html.includes("detail.className='ff-model-detail'") && html.includes("use.textContent='Use Model'") &&
+  html.includes("window.matchMedia('(max-width:520px)').matches") &&
+  html.includes("if(compact){chooseModel(m);closeModal();}else drawDetail(m)"),
+  'model browser must expose provider/detail on wide panels and direct single-click selection when compact');
 check('output settings are capability-driven',
   html.includes('FrameFlowCreateWorkspace.settingOptions(m,key)') &&
   html.includes("var keys=['aspectRatio','quality','resolution','count','duration','voice','audio','bitrateMode']"),
@@ -340,10 +343,11 @@ check('modal keyboard contract traps focus and restores trigger',
   'All Models/settings/Activity must support Escape, focus trap and trigger restore');
 check('unified composer remains readable at 320px',
   html.includes('@media(max-width:520px){.ff-create-start') &&
-  html.includes('.ff-create-controls{align-items:center;overflow-x:auto;overflow-y:hidden;padding-bottom:3px') &&
-  html.includes('.ff-create-setgroup{flex:0 0 auto;min-width:270px}') &&
-  html.includes('.ff-create-model{flex:1 1 112px;min-width:76px;max-width:150px}') &&
-  html.includes('.ff-create-generate{flex:0 0 auto}') && html.includes('max-height:calc(100vh - 20px)'),
+  vnextCss.includes('@media(max-width:760px)') &&
+  vnextCss.includes('.ff-create-modebtn{min-width:62px!important;width:62px!important') &&
+  vnextCss.includes('.ff-create-model{min-width:0!important;max-width:none!important') &&
+  vnextCss.includes('.ff-create-settings{min-width:46px!important;width:46px!important') &&
+  vnextCss.includes('.ff-create-generate{min-width:86px!important') && html.includes('max-height:calc(100vh - 20px)'),
   'model, settings, Generate and modal geometry must stay inside narrow panels');
 check('new and existing session composers stay at the bottom',
   html.includes('.ff-create-start{display:flex;min-height:calc(100vh - 230px)') &&

@@ -1703,7 +1703,12 @@ export async function processGeneration(genId: string): Promise<void> {
               ? magnificImage(mModel, gen.prompt, model.imgModalities, imageConfig)
               : orImage(model.key, gen.prompt, model.imgModalities, imageConfig);
       type Slot = { ok: true; url: string; key: string | null; sizeBytes: number; thumbKey: string | null; thumbUrl: string | null; displayKey: string | null; width: number | null; height: number | null } | { ok: false; error: string };
-      const slots = await mapLimit<Slot>(count, IMG_CONCURRENCY, async (): Promise<Slot> => {
+      // Google Vertex image kvotasi parallel burstga sezgir: count=4 ni 2 tadan yuborish
+      // `429 RESOURCE_EXHAUSTED` qilib, harmless prompt batchini to'liq yiqitardi. Vertex uchun
+      // serial; boshqa provayderlarda mavjud bounded parallel saqlanadi. Adapter 429/bo'sh
+      // transient javobni ham cheklangan retry qiladi.
+      const imageConcurrency = useVertexImg ? 1 : IMG_CONCURRENCY;
+      const slots = await mapLimit<Slot>(count, imageConcurrency, async (): Promise<Slot> => {
         const out = await genOne();
         if (!out.ok) return { ok: false, error: out.error };
         const fmt = detectMediaFormat(out.data, { ext: "png", contentType: "image/png" });

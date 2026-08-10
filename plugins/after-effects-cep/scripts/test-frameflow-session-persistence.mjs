@@ -159,6 +159,13 @@ function loadAccountModule({ host = "ae", prefs, secretStore, fetchResponder }) 
   };
 }
 
+// 0) Guest/first-run preferences may contain an explicit null token.
+const guestHarness = loadAccountModule({
+  prefs: { client: { token: null } },
+  fetchResponder: mkApiResponder({}),
+});
+assert.equal(guestHarness.account.token(), "", "Null legacy token boots as a signed-out session");
+
 // 1) AE login is shared to Premiere immediately.
 const sharedPrefs = { client: {} };
 const sharedSecret = createSecretStore();

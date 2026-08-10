@@ -4013,6 +4013,7 @@ html.cep-mode .af-topbar{height:44px}
 @media(max-width:520px){.ff-create-start{min-height:calc(100vh - 205px);margin-top:8px}.ff-create-composer{padding:12px;border-radius:20px}.ff-create-controls{align-items:center;overflow-x:auto;overflow-y:hidden;padding-bottom:3px;scrollbar-width:none;-ms-overflow-style:none}.ff-create-controls:focus-within{overflow:visible}.ff-create-controls::-webkit-scrollbar{display:none}.ff-create-setgroup{flex:0 0 auto;min-width:270px}.ff-create-modewrap{flex:0 0 auto}.ff-create-model{flex:1 1 112px;min-width:76px;max-width:150px}.ff-create-settings{flex:0 1 112px;min-width:76px;max-width:130px}.ff-create-actions{flex:0 0 auto}.ff-create-generate{flex:0 0 auto}.ff-model-layout{grid-template-columns:1fr}.ff-model-list{max-height:42vh;border-right:0;border-bottom:1px solid rgba(255,255,255,.08)}.ff-model-detail{display:none}.ff-model-tools{flex-wrap:wrap}.ff-model-tools input{flex:1 0 100%}}
 @media(prefers-reduced-motion:reduce){.ff-create-composer,.ff-modal-card{scroll-behavior:auto;transition:none!important;animation:none!important}}
 </style>
+<link rel="stylesheet" href="css/frameflow-vnext.css?v=3">
 </head>
 <body>
 
@@ -4223,10 +4224,10 @@ html.cep-mode .af-topbar{height:44px}
                   <span class="af-cathead-sep" aria-hidden="true">·</span>
                   <div class="dropdown cmp-sort" id="sortDrop">
                     <button type="button" class="af-sortbtn" id="sortBtn" title="Sort" aria-label="Sort"><span id="sortLabel">RELEVANT</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-                    <div class="dd-menu" id="sortMenu">
-                      <div class="dd-item selected" data-sort="relevant">Relevant <span class="dd-check">✓</span></div>
-                      <div class="dd-item" data-sort="newest">Newest</div>
-                      <div class="dd-item" data-sort="name">Name A–Z</div>
+                    <div class="dd-menu" id="sortMenu" role="menu" aria-label="Sort templates">
+                      <button type="button" class="dd-item selected" role="menuitemradio" aria-checked="true" data-sort="relevant">Relevant <span class="dd-check">✓</span></button>
+                      <button type="button" class="dd-item" role="menuitemradio" aria-checked="false" data-sort="newest">Newest</button>
+                      <button type="button" class="dd-item" role="menuitemradio" aria-checked="false" data-sort="name">Name A–Z</button>
                     </div>
                   </div>
                 </div>
@@ -4273,60 +4274,69 @@ html.cep-mode .af-topbar{height:44px}
                          project" kartalari (hero CTA dublikatlari) va greet-balans O'CHIRILDI;
                          "Jump back in" strip qo'shildi; javon endi ko'p-qatorli katta grid. -->
                     <div id="homeMain">
-                      <div class="fhome">
-                        <div class="fhome-top" hidden aria-hidden="true">
-                          <div class="fhome-greet" id="homeGreet">Good afternoon</div>
-                        </div>
-                        <article class="fhome-hero">
-                          <div class="fhome-hero-copy">
-                            <h1>Find the right asset</h1>
-                            <p class="fhome-sub">Templates, motion graphics, music, SFX and LUTs.</p>
-                            <div class="fhome-heroprompt">
-                              <input type="text" id="homeHeroPrompt" placeholder="Search templates, music, SFX and LUTs…" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();afHomeBrowseSubmit();}">
-                              <button type="button" class="fhome-heroprompt-go" title="Search assets" aria-label="Search assets" onclick="afHomeBrowseSubmit()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/></svg></button>
-                            </div>
+                      <div class="fhome ffx-home" id="ffxHome">
+                        <div class="fhome-top" hidden aria-hidden="true"><div class="fhome-greet" id="homeGreet">Good afternoon</div></div>
+
+                        <section class="ffx-command" aria-labelledby="ffxCommandTitle">
+                          <div class="ffx-command-kicker">
+                            <span><i aria-hidden="true"></i> Creative engine online</span>
+                            <span class="ffx-host-context" id="ffxHostContext">AE · Active composition <b>CHECKING</b></span>
                           </div>
-                        </article>
-                        <section class="fhome-tools" aria-labelledby="fhomeToolsHd">
-                          <div class="fhome-sechd fhome-tools-hd">
-                            <h2 id="fhomeToolsHd">Create with leading AI tools <span aria-hidden="true">✦</span></h2>
+                          <div class="ffx-command-grid">
+                            <article class="ffx-launch-panel">
+                              <span class="ffx-eyebrow">NEW CREATIVE SESSION</span>
+                              <h1 id="ffxCommandTitle"><span>What will you</span> <em>create next?</em></h1>
+                              <p>Describe the result. FrameFlow prepares the right model and Adobe-ready output.</p>
+                              <div class="ffx-quick-modes" id="ffxQuickModes" role="tablist" aria-label="Quick creation mode">
+                                <button type="button" class="active" data-ffx-mode="image" role="tab" aria-selected="true"><span aria-hidden="true">IMG</span> Image</button>
+                                <button type="button" data-ffx-mode="video" role="tab" aria-selected="false"><span aria-hidden="true">VID</span> Video</button>
+                                <button type="button" data-ffx-mode="voice" role="tab" aria-selected="false"><span aria-hidden="true">VO</span> Voice</button>
+                                <button type="button" data-ffx-mode="sfx" role="tab" aria-selected="false"><span aria-hidden="true">SFX</span> Sound</button>
+                              </div>
+                              <div class="ffx-quick-composer">
+                                <textarea id="homeHeroPrompt" rows="3" placeholder="Describe what you want to make…" spellcheck="true"></textarea>
+                                <div class="ffx-quick-footer">
+                                  <button type="button" class="ffx-auto" id="ffxAutoModel"><span>FF</span><b>FrameFlow Auto</b><small>Best live model</small></button>
+                                  <button type="button" class="ffx-start" id="ffxStartCreate">Start creating <span>✦</span></button>
+                                </div>
+                              </div>
+                              <div class="ffx-suggestions"><span>Try</span><button type="button" data-ffx-prompt="A premium campaign image with sculpted light and controlled reflections">Campaign visual</button><button type="button" data-ffx-prompt="Turn this shot into a cinematic night sequence with subtle camera motion">Night sequence</button></div>
+                            </article>
+
+                            <aside class="ffx-showcase" aria-label="Trending templates">
+                              <div class="ffx-showcase-toolbar"><span><i aria-hidden="true"></i> TRENDING TEMPLATES</span><div><button type="button" id="ffxShowcasePrev" aria-label="Previous template">←</button><button type="button" id="ffxShowcaseNext" aria-label="Next template">→</button></div></div>
+                              <div class="ffx-showcase-stage" id="ffxShowcaseStage"></div>
+                              <div class="ffx-showcase-footer"><div class="ffx-showcase-progress" id="ffxShowcaseProgress"></div><span>Auto preview</span><button type="button" id="ffxBrowseTemplates">Browse templates ↗</button></div>
+                            </aside>
                           </div>
-                          <div class="fhome-toolwrap">
-                            <div class="fhome-toolgrid" id="homeToolGrid"></div>
-                            <button type="button" class="fhome-toolarrow fhome-toolprev" id="homeToolPrev" style="display:none" aria-label="Previous AI tools">‹</button>
-                            <button type="button" class="fhome-toolarrow fhome-toolnext" id="homeToolNext" style="display:none" aria-label="More AI tools">›</button>
-                          </div>
-                          <div class="fhome-tooldots" id="homeToolDots" style="display:none" aria-label="AI tool pages"></div>
                         </section>
-                        <section class="fhome-modelsec" id="fhomeModelsSec" style="display:none" aria-labelledby="fhomeModelsHd">
-                          <div class="fhome-sechd">
-                            <h2 id="fhomeModelsHd">Explore featured models</h2>
-                            <button type="button" class="fhome-browse" onclick="homeGo('ai')">All →</button>
-                          </div>
-                          <div class="fhome-modelwrap">
-                            <div class="fhome-modelrail" id="fhomeModelRail"></div>
-                            <button type="button" class="fhome-modelnext" id="fhomeModelNext" title="More models" aria-label="Show more models">›</button>
-                          </div>
-                          <div class="fhome-modeldots" id="fhomeModelDots" aria-label="Model carousel pages"></div>
+
+                        <div class="ffx-insights">
+                          <section class="ffx-continue" id="ffxContinueSection">
+                            <div class="ffx-section-head"><div><span class="ffx-index">01</span><h2>Continue creating</h2><p>Your latest sessions, ready where you left them.</p></div><div><button type="button" id="ffxRecentPrev" aria-label="Previous sessions">←</button><button type="button" id="ffxRecentNext" aria-label="Next sessions">→</button></div></div>
+                            <div class="ffx-session-rail" id="ffxSessionRail"></div>
+                          </section>
+                          <aside class="ffx-pulse">
+                            <div class="ffx-pulse-head"><span class="ffx-index">NOW</span><b>Project pulse</b><button type="button" id="ffxOpenActivity">View all</button></div>
+                            <div class="ffx-pulse-item"><span>▶</span><div><b id="ffxPulseTitle">No active render</b><small id="ffxPulseMeta">Your queue is clear</small><i><em id="ffxPulseProgress"></em></i></div><strong id="ffxPulseState">READY</strong></div>
+                            <div class="ffx-pulse-item"><span>…</span><div><b>Adobe project</b><small id="ffxAdobeState">Checking Adobe bridge…</small></div><strong>CHECKING</strong></div>
+                            <button type="button" class="ffx-project-open" id="ffxOpenProjects">Open active project <span>↗</span></button>
+                          </aside>
+                        </div>
+
+                        <section class="ffx-tools" aria-labelledby="ffxToolsTitle">
+                          <div class="ffx-tools-head"><div><span class="ffx-index">02</span><h2 id="ffxToolsTitle">Essential tools</h2><p>Five focused shortcuts for everyday Adobe work.</p></div><button type="button" id="ffxAllTools">All tools <span>—</span> ↗</button></div>
+                          <div class="ffx-tool-grid" id="ffxToolGrid"></div>
                         </section>
-                        <!-- Footage carousel is intentionally placed directly after featured models. -->
-                        <div class="fhome-discovery" id="fhomeFootage"></div>
-                        <!-- Legacy CMS hooks: admin konfiguratsiyasi eski hero/category ID'lariga yozsa ham
-                             xato bermaydi. Minimal Home'da bu marketing sirtlari ko'rsatilmaydi. -->
-                        <div class="fhome-legacy-hooks" hidden aria-hidden="true">
-                          <div id="homeBArt"></div>
-                          <span id="homeBModel"></span>
-                          <div id="homeCatTiles"></div>
+
+                        <!-- Existing render hooks stay mounted but invisible so catalog/model/session/CMS
+                             refresh code remains backward-compatible while the vNext Home owns presentation. -->
+                        <div class="ffx-legacy-hooks" hidden aria-hidden="true">
+                          <div id="homeToolGrid"></div><button id="homeToolPrev"></button><button id="homeToolNext"></button><div id="homeToolDots"></div>
+                          <section id="fhomeModelsSec"><h2 id="fhomeModelsHd">Models</h2><div id="fhomeModelRail"></div><button id="fhomeModelNext"></button><div id="fhomeModelDots"></div></section>
+                          <div id="fhomeFootage"></div><div id="fhomeSessSec"><h2 id="fhomeSessHd">Sessions</h2><div id="homeSessRow"></div></div><div id="fhomeDiscovery"></div><div id="fhomeVideoTemplates"></div>
+                          <div id="homeBArt"></div><span id="homeBModel"></span><div id="homeCatTiles"></div>
                         </div>
-                        <!-- SC_50: CONTINUE A SESSION — so'nggi sessiyalar (real axwsGetSessions); bo'sh bo'lsa yashirin -->
-                        <div id="fhomeSessSec" style="display:none">
-                          <div class="fhome-sechd"><h2 id="fhomeSessHd">Sessions</h2></div>
-                          <div class="fhome-sessrow" id="homeSessRow"></div>
-                        </div>
-                        <div class="fhome-discovery" id="fhomeDiscovery"></div>
-                        <!-- Video-template katalogi hali bo'sh: Home kompozitsiyasini tekshirish uchun
-                             vaqtinchalik demo javon. Kartalar faqat real Video Templates browse'ini ochadi. -->
-                        <div id="fhomeVideoTemplates"></div>
                       </div>
                     </div>
 
@@ -5345,11 +5355,11 @@ html.cep-mode .af-topbar{height:44px}
 </div>
 
 <!-- Filtrlar bottom-sheet — a2 (bo'lim · kategoriya · format · sifat · AI · saralash). Filtr mantig'i o'zgarmaydi. -->
-<div class="fsheet" id="filterSheet" onclick="if(event.target===this)closeFilterSheet()">
-  <div class="fsheet-panel" onclick="event.stopPropagation()" role="dialog" aria-label="Filters" aria-modal="true">
+<div class="fsheet" id="filterSheet" onclick="if(event.target===this)closeFilterSheet()" aria-hidden="true">
+  <div class="fsheet-panel" onclick="event.stopPropagation()" role="dialog" aria-labelledby="filterSheetTitle" aria-modal="true" tabindex="-1">
     <div class="fsheet-grip"></div>
     <div class="fsheet-head">
-      <span class="fsheet-title">Filters</span>
+      <span class="fsheet-title" id="filterSheetTitle">Filters</span>
       <button type="button" class="fsheet-reset" onclick="clearAllFilters()">Clear filters</button>
     </div>
 
@@ -5359,6 +5369,8 @@ html.cep-mode .af-topbar{height:44px}
       <button type="button" class="fsheet-segi" data-scope="motion" onclick="afFilterSheetScope('motion')">Motion</button>
       <button type="button" class="fsheet-segi" data-scope="graphics" onclick="afFilterSheetScope('graphics')">Graphics</button>
       <button type="button" class="fsheet-segi" data-scope="luts" onclick="afFilterSheetScope('luts')">LUTs</button>
+      <button type="button" class="fsheet-segi" data-scope="music" onclick="afFilterSheetScope('music')">Music</button>
+      <button type="button" class="fsheet-segi" data-scope="sfx" onclick="afFilterSheetScope('sfx')">SFX</button>
       <button type="button" class="fsheet-segi" data-scope="ai" onclick="afFilterSheetScope('ai')">AI</button>
     </div>
 
@@ -5388,8 +5400,8 @@ html.cep-mode .af-topbar{height:44px}
         </div>
       </div>
       <div class="fsheet-aicol">
-        <div class="fsheet-lbl" style="margin-bottom:0">SEPARATE AI CONTENT</div>
-        <button type="button" class="fsheet-aitoggle" id="catAiToggle" onclick="toggleCatalogAi(this)" title="Separate AI content">
+        <div class="fsheet-lbl" style="margin-bottom:0">AI-GENERATED ONLY</div>
+        <button type="button" class="fsheet-aitoggle" id="catAiToggle" onclick="toggleCatalogAi(this)" title="Show only AI-assisted catalog items" aria-pressed="false">
           <span class="fsheet-aitrack"><span class="fsheet-aiknob"></span></span>
           <span class="fsheet-aistate"><span class="fsheet-aion">On</span><span class="fsheet-aioff">Off</span></span>
         </button>
@@ -5536,7 +5548,7 @@ html.cep-mode .af-topbar{height:44px}
 <script src="assetflow-zip.js"></script>
 <script src="assetflow-local-store.js"></script>
 <script src="assetflow-client.js"></script>
-<script src="assetflow-account.js"></script>
+<script src="assetflow-account.js?v=2"></script>
 <script src="assetflow-init.js"></script>
 <script>
 const IS_CEP=typeof window.__adobe_cep__!=='undefined';
@@ -6352,6 +6364,7 @@ function renderCard(a,i,showDl){
   // role="button" + tabindex="0" + Enter/Space (delegatsiya `initDrag()` yonida).
   return`<div class="card${noPack?' no-pack':''}" role="button" tabindex="0" data-name="${escHtml(a.n)}" data-ico="${escHtml(a.i)}" data-preview="${escHtml(a.preview||'')}"
     onmouseenter="playCardPreview(this)" onmouseleave="pauseCardPreview(this)"
+    onfocusin="playCardPreview(this)" onfocusout="pauseCardPreview(this)"
     onclick="openPack('${safeName}')">
     <div class="thumb${hasPreview?' has-preview':''}" style="background:${escHtml(a.bg)}">
       <span class="ck-plan ${a.isPro?'pro':'free'}">${a.isPro?'PRO':'FREE'}</span>
@@ -6555,6 +6568,11 @@ function afGenToast(view,cost,thumb,sessId,sessMode){
     +'<button type="button" class="gt-x" title="Dismiss">✕</button>';
   d.querySelector('.gt-view').addEventListener('click',function(){
     d.remove();
+    if(sessId&&typeof window.afOpenCreateSession==='function'){
+      var found=(typeof window.axwsFindSession==='function')?window.axwsFindSession(sessId):null;
+      window.afOpenCreateSession(found||{id:sessId,mode:sessMode||(view==='vidgen'?'video':view==='audgen'?'voice':'image')});
+      return;
+    }
     afNavTab('ai');
     // SC_29: natija O'Z sessiyasiga tushgan — View o'sha sessiyani faollashtirib ochadi
     try{
@@ -6575,6 +6593,13 @@ function afGenToast(view,cost,thumb,sessId,sessMode){
 window.afGenDoneNotify=function(view,cost,thumb,sessId,sessMode){
   var cur=document.querySelector('.axroot .view.on');
   var inAi=document.documentElement.classList.contains('ai-mode');
+  try{if(sessId&&typeof window.afSessionGenerationDone==='function')window.afSessionGenerationDone(sessId);}catch(e){}
+  var unifiedSame=false;
+  try{unifiedSame=!!(sessId&&inAi&&cur&&cur.id==='v-session'&&window.afCreateWorkspace&&window.afCreateWorkspace.controller&&window.afCreateWorkspace.controller.snapshot().sessionId===sessId);}catch(e){}
+  if(unifiedSame){
+    if(typeof showToast==='function')showToast(typeof cost==='number'?('Done! ✦'+cost+' charged'):'Audio ready','success');
+    return;
+  }
   // SC_29: "joyida" faqat view HAM sessiya HAM mos bo'lsa — aks holda View'li toast (to'g'ri sessiyaga olib boradi)
   var sameSess=true;
   try{
@@ -6953,6 +6978,7 @@ function reloadServerBrowse(){
 
 function getFiltered(){
   return assets.filter(a=>{
+    if(__catAiOn&&!a.ai)return false;
     // Server natijasi `?app=` + joriy nav/filtr bilan allaqachon tekshirilgan.
     // Dasturdan mustaqil stock (LUT/music/SFX) tarixiy DB'da `templateApp=ae`
     // bo'lishi mumkin; uni klientda qayta app-filtrlash Premiere'da yo'qotadi.
@@ -7691,7 +7717,7 @@ function getGridAssets(){
 
 function shouldShowFeatured(){
   if(featuredDismissedByNav[currentNav]||currentPage!=='assets')return false;
-  if(currentSub!=='all'||currentSearch||currentOrient!=='all'||currentRes!=='all')return false;
+  if(currentSub!=='all'||currentSearch||currentOrient!=='all'||currentRes!=='all'||__catAiOn)return false;
   return getFeaturedAssets().length>0;
 }
 
@@ -7824,7 +7850,7 @@ function hasAnyAssets(){
   return Array.isArray(assets)&&assets.some(a=>a.local||a.server);
 }
 function filtersActive(){
-  return !!(currentSearch||currentSub!=='all'||currentOrient!=='all'||currentRes!=='all');
+  return !!(currentSearch||currentSub!=='all'||currentOrient!=='all'||currentRes!=='all'||__catAiOn);
 }
 /** Faol filtrlar soni (qidiruv + bo'lim + format + sifat) */
 function activeFilterCount(){
@@ -7833,6 +7859,7 @@ function activeFilterCount(){
   if(currentSub!=='all')n++;
   if(currentOrient!=='all')n++;
   if(currentRes!=='all')n++;
+  if(__catAiOn)n++;
   return n;
 }
 /** Filtr bar'da «Tozalash (N)» tugmasini ko'rsatadi/yashiradi */
@@ -7943,7 +7970,9 @@ window.retryCatalog=retryCatalog;
 /** Barcha faol filtrlarni tozalaydi (bo'lim, qidiruv, format, sifat) */
 function clearAllFilters(){
   currentSub='all';currentOrient='all';currentRes='all';currentSearch='';
+  __catAiOn=false;
   const si=document.getElementById('searchInput');if(si)si.value='';
+  const ai=document.getElementById('catAiToggle');if(ai){ai.classList.remove('on');ai.setAttribute('aria-pressed','false');}
   syncFilterDropMenu('orientMenu','all');
   syncFilterDropMenu('resMenu','all');
   updateOrientResPillLabels();
@@ -8511,19 +8540,9 @@ function fhomeToolMedia(mode,index){
   return mode==='image'?HM_GRAD.violet:mode==='video'?HM_GRAD.steel:mode==='voice'?HM_GRAD.amber:HM_GRAD.purple;
 }
 function fhomeOpenTool(mode){
+  if(typeof window.afOpenCreateDraft==='function')return window.afOpenCreateDraft({mode:mode});
   homeGo('ai');
-  setTimeout(function(){
-    if(typeof window.axGo!=='function')return;
-    if(mode==='image')window.axGo('imggen');
-    else if(mode==='video')window.axGo('vidgen');
-    else{
-      window.axGo('audgen');
-      setTimeout(function(){
-        var b=document.getElementById(mode==='voice'?'agModeVoice':'agModeSfx');
-        if(b)b.click();
-      },30);
-    }
-  },0);
+  if(typeof window.axGo==='function')window.axGo('launcher');
 }
 function fhomeToolScrollTo(rail,left){
   try{rail.scrollTo({left:left,behavior:'smooth'});}catch(e){rail.scrollLeft=left;}
@@ -8581,11 +8600,8 @@ function renderHomeTools(){
 }
 window.fhomeOpenTool=fhomeOpenTool;
 function fhomeOpenModel(mode,id){
-  fhomeOpenTool(mode);
-  setTimeout(function(){
-    var fn=mode==='image'?window.axIGSelectModel:window.axVGSelectModel;
-    if(typeof fn==='function')Promise.resolve(fn(id)).catch(function(){});
-  },120);
+  if(typeof window.afOpenCreateDraft==='function')return window.afOpenCreateDraft({mode:mode,modelId:id});
+  return fhomeOpenTool(mode);
 }
 function fhomeModelCapability(m){
   if(m.mode==='image')return (m.refMode&&m.refMode!=='none')?'Generate and edit with references':'Generate production-ready images';
@@ -8647,19 +8663,13 @@ window.addEventListener('resize',function(){
   fhomeSyncModelRail();
   var footage=document.querySelector('.fhome-footage-sec'); if(footage)fhomeSyncFootageRail(footage);
 });
-/* SC_50: hero prompt-first — matnni AI Tools yangi rasm-sessiyasiga uzatadi (kredit YECHILMAYDI;
-   foydalanuvchi Generate'ni o'zi bosadi). Mavjud yangi-sessiya (axIGSetSession(null)) + kompozer
-   to'ldirish yo'llarini qayta ishlatadi. */
+/* Home prompt-first: matn kredit yechmasdan aynan top-nav Create ishlatadigan
+   yagona FINAL-CREATE composeriga uzatiladi. */
 function afHomeHeroSubmit(){
   var inp=document.getElementById('homeHeroPrompt'); var txt=(inp&&inp.value||'').trim(); if(!txt)return;
-  try{ document.documentElement.classList.remove('home-mode'); document.documentElement.classList.add('ai-mode'); }catch(e){}
-  try{ if(typeof window.axIGSetSession==='function')window.axIGSetSession(null); }catch(e){} // yangi sessiya (kreditsiz)
-  if(typeof window.axGo==='function')window.axGo('imggen');
-  setTimeout(function(){
-    var p=document.getElementById('igPrompt');
-    if(p){ p.textContent=txt; try{ p.dispatchEvent(new Event('input',{bubbles:true})); }catch(e){} try{ p.focus(); }catch(e){} }
-    if(inp)inp.value='';
-  },70);
+  if(typeof window.afOpenCreateDraft==='function')window.afOpenCreateDraft({mode:'image',prompt:txt});
+  else{ homeGo('ai'); if(typeof window.axGo==='function')window.axGo('launcher'); }
+  if(inp)inp.value='';
 }
 window.afHomeHeroSubmit=afHomeHeroSubmit;
 /* Artlist-style Home qidiruvi: Home discovery uchun, AI generatsiya alohida Create tabida. */
@@ -8969,7 +8979,8 @@ function afCmsApply(){
     // Production Home qidiruvi aniq product copy ishlatadi; legacy CMS faqat draft preview'da.
     var hp=document.getElementById('homeHeroPrompt');
     if(hp){
-      if(__afCmsDraftMode&&h.promptPlaceholder)hp.setAttribute('placeholder',h.promptPlaceholder);
+      if(document.getElementById('ffxHome'))hp.setAttribute('placeholder','Describe what you want to make…');
+      else if(__afCmsDraftMode&&h.promptPlaceholder)hp.setAttribute('placeholder',h.promptPlaceholder);
       else hp.setAttribute('placeholder','Search templates, music, SFX and LUTs…');
     }
     var s=(c.home&&c.home.sections)||{};
@@ -10207,12 +10218,13 @@ function aiDownloadToTemp(url,ext){
   });
 }
 /* F-02 tozalash: o'lik aiRenderCards/aiInit/aiSoon olib tashlandi (aiComposer DOM'da yo'q edi). */
-// Katalog "AI kontent" toggle — vizual holat (filtr mantig'i tegilmaydi, "tez orada").
+// Katalog "AI-generated only" toggle — serverdan kelgan `ai` belgisi bo'yicha real filtr.
 let __catAiOn=false;
 function toggleCatalogAi(btn){
   __catAiOn=!__catAiOn;
   btn.classList.toggle('on',__catAiOn);
-  if(typeof showToast==='function')showToast(__catAiOn?'AI content filter — coming soon':'AI content filter turned off','info');
+  btn.setAttribute('aria-pressed',__catAiOn?'true':'false');
+  render();
 }
 // Filtrlar bottom-sheet (a2) — ochish/yopish. Filtr mantig'i (selectCategory / selectOrientFilter /
 // selectResFilter / toggleCatalogAi / selectSort / clearAllFilters) o'zgarmaydi; faqat markup ko'chdi.
@@ -10225,27 +10237,41 @@ function toggleFilterPanel(){
 function openFilterSheet(){
   const sheet=document.getElementById('filterSheet');
   if(!sheet)return;
+  window.__afFilterTrigger=document.activeElement;
   buildFilterSheetCats();
   syncFilterSheet();
   sheet.classList.add('open');
+  sheet.setAttribute('aria-hidden','false');
+  document.querySelectorAll('.af-topbar,.scroll-area').forEach(function(el){el.setAttribute('aria-hidden','true');});
   const btn=document.getElementById('filterToggleBtn');
   if(btn)btn.classList.add('active');
+  const panel=sheet.querySelector('.fsheet-panel');if(panel)panel.focus();
 }
 function closeFilterSheet(){
   const sheet=document.getElementById('filterSheet');
   if(!sheet)return;
   sheet.classList.remove('open');
+  sheet.setAttribute('aria-hidden','true');
+  document.querySelectorAll('.af-topbar,.scroll-area').forEach(function(el){el.removeAttribute('aria-hidden');});
   const btn=document.getElementById('filterToggleBtn');
   if(btn)btn.classList.remove('active');
+  const trigger=window.__afFilterTrigger;window.__afFilterTrigger=null;
+  if(trigger&&trigger.focus)try{trigger.focus();}catch(e){}
 }
 window.toggleFilterPanel=toggleFilterPanel;
 window.openFilterSheet=openFilterSheet;
 window.closeFilterSheet=closeFilterSheet;
 // Esc — ochiq bo'lsa sheet'ni yopadi
 document.addEventListener('keydown',function(e){
-  if(e.key!=='Escape')return;
   const s=document.getElementById('filterSheet');
-  if(s&&s.classList.contains('open')){ e.stopPropagation(); closeFilterSheet(); }
+  if(!s||!s.classList.contains('open'))return;
+  if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeFilterSheet();return;}
+  if(e.key!=='Tab')return;
+  const focus=s.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])');
+  if(!focus.length)return;
+  const first=focus[0],last=focus[focus.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
 });
 
 /* ===== MOGRT_PACK ko'p-fayl tanlash bottom-sheet (a4) =====
@@ -10466,7 +10492,7 @@ function syncFilterSheet(){
     r.classList.toggle('on',(r.dataset.sort||'relevant')===(currentSort||'relevant'));
   });
   const ai=document.getElementById('catAiToggle');
-  if(ai)ai.classList.toggle('on',!!(typeof __catAiOn!=='undefined'&&__catAiOn));
+  if(ai){ai.classList.toggle('on',!!(typeof __catAiOn!=='undefined'&&__catAiOn));ai.setAttribute('aria-pressed',__catAiOn?'true':'false');}
   // LUTs / Graphics — format+sifat qo'llanmaydi (applyNavSwitch is-hidden bilan bir xil)
   const hideFmt=currentNav==='luts'||currentNav==='graphics';
   const fmtSec=document.getElementById('fsheetFmtSec');if(fmtSec)fmtSec.style.display=hideFmt?'none':'';
@@ -10728,6 +10754,7 @@ function selectSort(el,key,label){
   document.getElementById('sortLabel').textContent=label||'Sort';
   document.querySelectorAll('#sortMenu .dd-item').forEach(item=>{
     item.classList.toggle('selected',item===el);
+    item.setAttribute('aria-checked',item===el?'true':'false');
   });
   closeAllDropdowns();
   reloadServerBrowse(); // P1 #15 — saralash server tomonda
@@ -11163,6 +11190,8 @@ function friendlyError(e){
   if(code==='AI_NOT_CONFIGURED')return 'AI isn’t configured yet — contact an administrator';
   if(status===429||code==='RATE_LIMITED'||/too many requests|rate.?limit/i.test(raw))
     return 'Too many requests — wait a moment and try again';
+  if(/\b429\b|RESOURCE_EXHAUSTED|quota (?:exceeded|exhausted)|DEADLINE_EXCEEDED|\bUNAVAILABLE\b/i.test(raw))
+    return 'The image service reached its current quota — your credits were refunded; try later or choose Seedream';
   // P30 §3 (29c) — HALOL xato, "soften the prompt" (evasion maslahati) OLIB TASHLANDI. Kredit
   // qaytariladi; rad etilishida handleGenRejection() boshqa-model taklifini ko'rsatadi.
   // R4_04 — Google real yuz / mashhur shaxs bloki ("restricted individuals ... Responsible AI ...
@@ -11193,6 +11222,8 @@ function friendlyError(e){
     return 'You don’t have access to that';
   if(/\b5\d\d\b|server error|ETIMEDOUT|timeout/i.test(raw))
     return 'Server isn’t responding — try again shortly (it may be waking up from sleep)';
+  if(/empty image response|no image was returned|returned no image/i.test(raw))
+    return 'The model returned no image — your credits were refunded; try again';
   if(/EvalScript error/i.test(raw))
     return 'After Effects script didn’t respond — restart AE';
   if(/redirect limit|Pack HTTP/i.test(raw))
@@ -11272,6 +11303,10 @@ function closeLoginRequired(){
 function openAccountSheet(){
   document.getElementById('accountSheet')?.classList.add('open');
   refreshAccountUi();
+  // Account ochilganda eski /me keshiga tayanib qolmaymiz. Kreditning yagona
+  // avtoritativ manbai /api/studio/credits; u header, Settings va account chiplarini
+  // bitta afSyncCredits funnel'i orqali tenglashtiradi.
+  try{ if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}); }catch(e){}
   try{updateConnStatus();}catch(e){} // SC_35: diagnostika footerini joriy holatga yangilash
 }
 function closeAccountSheet(){
@@ -11546,6 +11581,9 @@ async function refreshAccountFromApi(){
     if(delays[i])await new Promise(r=>setTimeout(r,delays[i]));
     try{
       await AssetFlowAccount.fetchMe();
+      // /me profil ma'lumotini beradi; pul balansi uchun yakuniy haqiqat /credits.
+      // Parallel generatsiya tugagan bo'lsa eski /me javobi yangi balansni bosib ketmasin.
+      if(typeof window.afRefreshCredits==='function')await window.afRefreshCredits({force:true});
       await AssetFlowAccount.heartbeat({
         deviceLabel:navigator.platform||'Mac',
         aeVersion:AF_HOST_LABEL+((AF_HOST_ENV&&AF_HOST_ENV.appVersion)?(' '+AF_HOST_ENV.appVersion):''),
@@ -11920,6 +11958,7 @@ async function manageBilling(){
 async function refreshAccountAndUi(){
   try{
     await AssetFlowAccount.fetchMe();
+    if(typeof window.afRefreshCredits==='function')await window.afRefreshCredits({force:true});
     refreshAccountUi();
     showToast('✓ Refreshed');
   }catch(e){
@@ -12529,16 +12568,28 @@ async function bootPlugin(){
   }
   // #143 (PX6): `soon()` ("Coming soon · next phase") o'chirildi — uni faqat o'lik
   // `data-soon` shoxobchasi chaqirardi; panelda bunday atributli element yo'q.
-  // Kredit — YAGONA manba: AssetFlowAccount.aiCredits (demo 606 emas). Header'lar shundan o'qiydi → bir xil qiymat.
-  function aiCredReal(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits; }catch(e){} return null; }
+  // Kredit — YAGONA manba: /credits javobi, u kelguncha AssetFlowAccount.aiCredits.
+  // Alohida UI qiymati kerak: fetchMe kechroq kelib cachedUser obyektini almashtirsa ham
+  // yangi generate/cancel/enhance balansi eski /me qiymatiga qaytib ketmasin.
+  var creditValue=null,creditAccountId='';
+  function aiCredReal(){
+    try{
+      var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
+      var uid=u&&u.id?String(u.id):'';
+      if(creditAccountId&&uid&&creditAccountId!==uid){creditValue=null;creditAccountId='';}
+      if(uid&&creditAccountId===uid&&typeof creditValue==='number'&&isFinite(creditValue))return creditValue;
+      if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits;
+    }catch(e){}
+    return null;
+  }
   // #143 (PX6): `bal()` (demo 606 / lowDemo 5 zaxirasi) o'chirildi — uni faqat mockup
   // narx mashinasi ishlatardi. Displey: real kredit yoki yuklanmaguncha '—'.
   // #25: kesh bo'sh (— ko'rinishi) + login bor → /credits'dan bir marta olamiz (60s guard).
   var balFetchAt=0;
-  function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):'—';var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();
-    if(v==null&&(Date.now()-balFetchAt>60000)&&typeof studioGet==='function'&&typeof pubAuthHeaders==='function'){
+  function syncBal(){var v=aiCredReal();var t=(v!=null)?Number(v).toLocaleString('en-US'):'—';var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();
+    if(v==null&&(Date.now()-balFetchAt>60000)&&typeof window.afRefreshCredits==='function'&&typeof pubAuthHeaders==='function'){
       try{ var h=pubAuthHeaders(); if(h&&h.Authorization){ balFetchAt=Date.now();
-        studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){});
+        window.afRefreshCredits().catch(function(){});
         // P3 (step 34) — AI Stock topshiriq holatlarini bir marta yuklaymiz (kartada "yuborilgan").
         if(!window._afExploreLoaded && typeof window.afLoadExploreSubs==='function'){ window._afExploreLoaded=true; window.afLoadExploreSubs(); }
         // R4_08 — yoqilgan Topaz enhance/upscale operatsiyalarini bir marta yuklaymiz (kartada "Use ▾").
@@ -12550,13 +12601,47 @@ async function bootPlugin(){
   function aiLeadSync(){ var v=aiCredReal(); var t='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—')+((typeof window.afPlanChipHTML==='function')?window.afPlanChipHTML():''); var a=document.getElementById('aiLeadCredL'); if(a)a.innerHTML=t; var c=document.getElementById('aiLeadCredA'); if(c)c.innerHTML=t; }
   // UMUMIY kredit sinxron — yagona manba (cached aiCredits) → BARCHA chip (balTop/balSet/aiLead/igCredit/vgCredit).
   // Har tool gen/enhance'dan keyin shuni chaqiradi → chiplar bir-biridan farq qilib qolmaydi (drift fix — audit MEDIUM).
-  window.afSyncCredits=function(v){
-    if(typeof v==='number'&&isFinite(v)){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u)u.aiCredits=v; }catch(e){} }
+  window.afSyncCredits=function(v,sourceSeq){
+    // Server refresh boshlanganidan keyin generate/cancel/enhance yangi balans bergan
+    // bo'lsa, kech kelgan eski refresh javobi uni qayta yozmasin.
+    if(sourceSeq!=null&&sourceSeq<creditAppliedSeq)return;
+    if(sourceSeq==null)creditAppliedSeq=++creditRefreshSeq;
+    else creditAppliedSeq=sourceSeq;
+    var u=null;
+    if(typeof v==='number'&&isFinite(v)){
+      try{
+        u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
+        if(u){u.aiCredits=v;creditValue=v;creditAccountId=u.id?String(u.id):'';}
+      }catch(e){}
+    }
     try{ syncBal(); }catch(e){}
     var rv=aiCredReal(); var t='<span class="cs">✦</span> '+((rv!=null)?Number(rv).toLocaleString('en-US'):'—');
     var ig=document.getElementById('igCredit'); if(ig)ig.innerHTML=t;
     var vg=document.getElementById('vgCredit'); if(vg)vg.innerHTML=t;
     var ag=document.getElementById('agCredit'); if(ag)ag.innerHTML=t; // P8: audio tool chip'i ham sinxron
+    var sb=document.getElementById('sbCredit'); if(sb)sb.textContent=(rv!=null)?Number(rv).toLocaleString('en-US'):'—';
+    // Header/Home/Library chiplarini ham aynan shu tranzaksiyada yangilaymiz.
+    // Ilgari ular faqat fetchMe/updateSidebarUser yo'lida yangilanib, Settings bilan drift qilardi.
+    if(u&&typeof setHeaderPlan==='function')setHeaderPlan(u.plan==='pro',u.planLabel||(u.plan==='pro'?'Pro':'Free'),rv);
+  };
+  // Kredit uchun yagona server refresh. Bir paytdagi Account/Settings/Refresh chaqiriqlari
+  // bitta requestni bo'lishadi; kechroq kelgan eski javob yangi balansni qayta yozmaydi.
+  var creditRefreshPromise=null,creditRefreshSeq=0,creditAppliedSeq=0,creditRefreshAt=0;
+  window.afRefreshCredits=function(opts){
+    opts=opts||{};
+    if(typeof studioGet!=='function')return Promise.resolve(null);
+    try{ if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return Promise.resolve(null); }catch(e){return Promise.resolve(null);}
+    if(creditRefreshPromise)return creditRefreshPromise;
+    if(!opts.force&&Date.now()-creditRefreshAt<5000)return Promise.resolve(null);
+    var seq=++creditRefreshSeq;
+    creditRefreshAt=Date.now();
+    creditRefreshPromise=studioGet('/api/studio/credits').then(function(d){
+      if(seq>=creditAppliedSeq&&d&&typeof d.aiCredits==='number'&&isFinite(d.aiCredits)){
+        window.afSyncCredits(d.aiCredits,seq);
+      }
+      return d||null;
+    }).finally(function(){ creditRefreshPromise=null; });
+    return creditRefreshPromise;
   };
   // D7 (#P1-plagin) — UMUMIY "kam kredit" banneri. Ilgari uchta tool (ig/vg/ag) markup'da ham
   // (bir xil 14px SVG + .lt/.ls tuzilishi, faqat id prefiksi farqli), gate kodida ham
@@ -12894,7 +12979,7 @@ async function bootPlugin(){
   // Katalog + kredit + tool recents + sessiya/loyiha keshlari birga yangilanadi.
   window.afRefreshAll=function(){
     try{ if(typeof syncServerCatalog==='function')syncServerCatalog(); }catch(e){}
-    try{ studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){}); }catch(e){}
+    try{ if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}).catch(function(){}); }catch(e){}
     try{ if(typeof window.afIgRetryRecent==='function')window.afIgRetryRecent(); }catch(e){}
     try{ if(typeof window.axVGRefresh==='function')window.axVGRefresh(); }catch(e){}
     try{ if(typeof window.axAGRefresh==='function')window.axAGRefresh(); }catch(e){}
@@ -13322,7 +13407,13 @@ async function bootPlugin(){
     document.querySelectorAll('.proc').forEach(function(p){p.classList.remove('on');p.innerHTML='';});
     if(id==='history')renderHistory('all');
     if(id==='launcher'&&typeof aiRenderHistStrip==='function')aiRenderHistStrip();
-    if(id==='settings'){ if(typeof renderLedger==='function')renderLedger(); if(typeof renderPlanLine==='function')renderPlanLine(); }
+    if(id==='settings'){
+      if(typeof renderLedger==='function')renderLedger();
+      if(typeof renderPlanLine==='function')renderPlanLine();
+      // Settings har ochilganda balans serverdan olinadi; header va karta bitta
+      // afSyncCredits yo'li orqali bir xil qiymatga o'tadi.
+      if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}).catch(function(){});
+    }
     if(typeof axAuto==='function')axAuto(id);
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
     // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
@@ -17871,7 +17962,7 @@ window.afGallery=(function(){
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
   function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
   var sp={sessions:[],sLoaded:false,sLoading:false,projects:[],pLoaded:false,pLoading:false,
-          sess:null,sessItems:[],proj:null,
+          sess:null,sessItems:[],sessLoadSeq:0,proj:null,
           sSelect:false,sSel:{},pSelect:false,pSel:{},pBusy:false}; // P11: multi-select holati (SC_34: pBusy — bulk delete jarayoni)
 
   // ── API mini-klient (ff-api.js project/session metodlari bilan 1:1) ──
@@ -18121,20 +18212,29 @@ window.afGallery=(function(){
     if(typeof window.axGo==='function')window.axGo('session');
     if(window.afCreateWorkspace&&typeof window.afCreateWorkspace.openSession==='function')window.afCreateWorkspace.openSession(s);
     var t=$('spSessTitle'); if(t){ t.textContent=(typeof window.afSessionDisplayName==='function')?window.afSessionDisplayName(s):(s.title||'Session'); if(s.title)t.title=s.title; } // SC_22
-    var m=$('spSessDetMeta'); if(m)m.textContent='Loading…';
-    var g=$('spSessGrid'); if(g)g.innerHTML='';
+    loadOpenSessionGenerations(true);
+  }
+  function loadOpenSessionGenerations(showLoading){
+    var s=sp.sess;if(!s||!s.id)return;var seq=++sp.sessLoadSeq;
+    var m=$('spSessDetMeta'),g=$('spSessGrid');if(showLoading&&m)m.textContent='Loading…';if(showLoading&&g)g.innerHTML='';
     api.sessionGens(s.id).then(function(r){
+      if(seq!==sp.sessLoadSeq||!sp.sess||sp.sess.id!==s.id)return;
       var items=((r&&r.items)||[]).map(genToItem).filter(function(x){return x.url;});
       sp.sessItems=items; renderSessionGrid();
-    }).catch(function(){ if(m)m.textContent='Could not load this session.'; });
+    }).catch(function(){if(seq!==sp.sessLoadSeq)return;if(m)m.textContent='Could not load this session.';});
   }
   function renderSessionGrid(){
     var g=$('spSessGrid'), m=$('spSessDetMeta'); if(!g)return; g.innerHTML='';
-    if(m)m.textContent=sp.sessItems.length+' generations'+(sp.sess&&sp.sess.mode?(' · '+sp.sess.mode):'');
+    if(m){var counts={image:0,video:0,audio:0};sp.sessItems.forEach(function(it){if(it.cat==='video')counts.video++;else if(it.cat==='audio'||it.cat==='sfx')counts.audio++;else counts.image++;});var parts=[];if(counts.image)parts.push(counts.image+' image');if(counts.video)parts.push(counts.video+' video');if(counts.audio)parts.push(counts.audio+' audio');m.textContent=sp.sessItems.length+' generations'+(parts.length?' · '+parts.join(' · '):'');}
     if(!sp.sessItems.length){ g.innerHTML='<div class="sp-empty">This session has no finished generations.</div>'; return; }
     var ctx=spGridCtx(sp.sessItems,renderSessionGrid);
     sp.sessItems.forEach(function(it){ if(window.afRecent&&window.afRecent.card)g.appendChild(window.afRecent.card(it,ctx)); });
   }
+  window.afSessionGenerationDone=function(sessionId){
+    sp.sLoaded=false;
+    var view=$('v-session');
+    if(sp.sess&&sp.sess.id===sessionId&&view&&view.classList.contains('on'))loadOpenSessionGenerations(false);
+  };
 
   // ── Loyihalar ──
   function loadProjects(force){
@@ -18248,7 +18348,8 @@ window.afGallery=(function(){
     // Yangi sessiya: tool sessiya keshlari tozalanadi — keyingi gen yangi sessiyada boshlanadi.
     try{ if(typeof window.afResetToolSessions==='function')window.afResetToolSessions(); }catch(e){}
     toast('New session — your next generation starts fresh','success');
-    if(typeof window.axGo==='function')window.axGo('imggen');
+    if(typeof window.afOpenCreateDraft==='function')window.afOpenCreateDraft({mode:'image'});
+    else if(typeof window.axGo==='function')window.axGo('launcher');
   });
   var lr=$('spLibRow'); if(lr)lr.addEventListener('click',function(){ if(typeof window.axGo==='function')window.axGo('history'); });
   var np=$('spNewProj'); if(np)np.addEventListener('click',function(){
@@ -18311,11 +18412,12 @@ window.afGallery=(function(){
   var SPICK_DEST={image:'imggen',video:'vidgen',audio:'audgen'};
   var spickMode=null;
   function spickMatch(mode,s){
-    var m=String((s&&s.mode)||'');
-    if(mode==='audio')return m==='voice'||m==='sfx'||m==='music'||m==='audio';
-    return m===mode;
+    return !!(s&&s.id);
   }
   function spickEnter(mode,sess){
+    var createMode=mode==='audio'?'voice':mode;
+    if(sess&&typeof window.afOpenCreateSession==='function'){window.afOpenCreateSession(sess);return;}
+    if(!sess&&typeof window.afOpenCreateDraft==='function'){window.afOpenCreateDraft({mode:createMode});return;}
     // Tool sessiyasini o'rnatish — mavjud setter/reset yo'llari (yangi API yo'q)
     window.__axwsSess=window.__axwsSess||{};
     window.__axwsSess[SPICK_DEST[mode]]=sess||null;
@@ -18329,7 +18431,7 @@ window.afGallery=(function(){
   function renderSpick(mode){
     var l=$('spickList'), meta=$('spickMeta'), ttl=$('spickTitle'); if(!l)return;
     var list=(sp.sessions||[]).filter(function(s){ return spickMatch(mode,s); });
-    if(ttl)ttl.textContent=(mode==='image'?'Image':mode==='video'?'Video':'Audio')+' sessions';
+    if(ttl)ttl.textContent='Sessions';
     if(meta)meta.textContent=list.length?(list.length+' sessions'):'';
     l.innerHTML='';
     list.forEach(function(s){
@@ -18349,7 +18451,7 @@ window.afGallery=(function(){
     });
   }
   window.afSessionPicker=function(mode){
-    if(!SPICK_DEST[mode]){ if(typeof window.axGo==='function')window.axGo('launcher'); return; }
+    if(!SPICK_DEST[mode]){ if(typeof window.afOpenCreateDraft==='function')window.afOpenCreateDraft({mode:'image'}); else if(typeof window.axGo==='function')window.axGo('launcher'); return; }
     spickMode=mode;
     var decide=function(){
       var list=(sp.sessions||[]).filter(function(s){ return spickMatch(mode,s); });
@@ -18361,7 +18463,7 @@ window.afGallery=(function(){
     if(sp.sLoaded){ decide(); return; }
     // Yuklanmoqda: picker "Loading…" bilan ochiladi; ro'yxat kelgach 0 bo'lsa avto-enter
     var l=$('spickList'); if(l)l.innerHTML='<div class="sp-empty">Loading…</div>';
-    var ttl=$('spickTitle'); if(ttl)ttl.textContent=(mode==='image'?'Image':mode==='video'?'Video':'Audio')+' sessions';
+    var ttl=$('spickTitle'); if(ttl)ttl.textContent='Sessions';
     if(typeof window.axGo==='function')window.axGo('spick');
     window.axwsEnsureSessions(function(){
       var stillHere=document.querySelector('.axroot .view.on');
@@ -18811,10 +18913,7 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
     // mode tanlash
     var mr=t.closest&&t.closest('[data-mode]');
     if(mr){ var m=mr.getAttribute('data-mode'); closePops();
-      if(m==='image'){ if(window.axGo)window.axGo('imggen'); }
-      else if(m==='video'){ if(window.axGo)window.axGo('vidgen'); }
-      else if(m==='voice'){ if(window.axGo)window.axGo('audgen'); setTimeout(function(){ var b=$('agModeVoice'); if(b)b.click(); },30); }
-      else if(m==='sfx'){ if(window.axGo)window.axGo('audgen'); setTimeout(function(){ var b=$('agModeSfx'); if(b)b.click(); },30); }
+      if((m==='image'||m==='video'||m==='voice'||m==='sfx')&&typeof window.afOpenCreateDraft==='function')window.afOpenCreateDraft({mode:m});
       // SC_17: 'upscale' mode olib tashlandi (funksiya butunlay o'chirildi)
       return; }
     // SC_18: session-strip tugmalari ([data-axws]) o'chirildi — strip yo'q.
@@ -18838,7 +18937,7 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
   function $(id){return document.getElementById(id);}
   if(!$('ffCreateStart')||!window.FrameFlowCreateWorkspace)return;
   var ctl=window.FrameFlowCreateWorkspace.createController({mode:'image'});
-  var quoteTimer=null,quick=null,modal=null,modalTrigger=null,allModels=[],modelLoadError='';
+  var quoteTimer=null,quick=null,modal=null,modalTrigger=null,allModels=[],modelLoadError='',modelLoadPromise=null;
   var modeView={image:'imggen',video:'vidgen',voice:'audgen',sfx:'audgen'};
   var placeholders={image:'Describe the image you want to create…',video:'Describe the shot, motion and camera…',voice:'Write the narration…',sfx:'Describe the sound effect…'};
   var reasonCopy={prompt_required:'Write at least two characters.',model_unavailable:'No enabled model is available for this mode.',reference_required:'This model requires a reference. Use + to add one.',audio_reference_requires_visual:'Audio reference needs at least one image or video reference.',quote_loading:'Getting a secure server quote…',quote_required:'A fresh server quote is required.',quote_expired:'The quote expired. Refreshing it now…',insufficient_credits:'Not enough credits.',missing_dispatch:'Generation could not start.'};
@@ -18891,14 +18990,17 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
     render();
   }
   function loadModels(){
+    if(modelLoadPromise)return modelLoadPromise;
     status('Loading the live model catalog…');
-    return Promise.all(['image','video','voice','sfx'].map(function(mode){
+    modelLoadPromise=Promise.all(['image','video','voice','sfx'].map(function(mode){
       return studioGet('/api/studio/gen/models?mode='+encodeURIComponent(mode)).then(function(r){
         var rows=((r&&r.models)||[]).filter(function(m){return m&&m.id!=null&&m.disabled!==true;});
         ctl.setModels(mode,rows);rows.forEach(function(m){if(!allModels.some(function(x){return String(x.id)===String(m.id)&&x.mode===mode;}))allModels.push(m);});
         return {mode:mode,ok:true};
       }).catch(function(e){return {mode:mode,ok:false,error:e};});
-    })).then(function(results){var usable=!!current().model;if(usable){modelLoadError='';scheduleQuote();}else{var bad=results.filter(function(x){return !x.ok;})[0];modelLoadError=((bad&&typeof friendlyError==='function')?friendlyError(bad.error):'No enabled models are available')+' — use Refresh to try again.';}render();});
+    })).then(function(results){var usable=!!current().model;if(usable){modelLoadError='';scheduleQuote();}else{var bad=results.filter(function(x){return !x.ok;})[0];modelLoadError=((bad&&typeof friendlyError==='function')?friendlyError(bad.error):'No enabled models are available')+' — use Refresh to try again.';}render();return results;});
+    modelLoadPromise.then(function(){modelLoadPromise=null;},function(){modelLoadPromise=null;});
+    return modelLoadPromise;
   }
   function closeQuick(){if(quick&&quick.parentNode)quick.parentNode.removeChild(quick);quick=null;}
   function openQuick(){
@@ -18913,6 +19015,7 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
     modal=document.createElement('div');modal.className='ff-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label',title);
     var card=document.createElement('div');card.className='ff-modal-card';
     var head=document.createElement('div');head.className='ff-modal-head';var strong=document.createElement('strong');strong.textContent=title;var close=document.createElement('button');close.type='button';close.className='ff-modal-close';close.textContent='×';close.setAttribute('aria-label','Close');close.addEventListener('click',closeModal);head.appendChild(strong);head.appendChild(close);card.appendChild(head);modal.appendChild(card);document.body.appendChild(modal);
+    var app=$('demoStage');if(app){app.setAttribute('aria-hidden','true');try{app.inert=true;}catch(e){}}
     modal.addEventListener('mousedown',function(e){if(e.target===modal)closeModal();});
     modal.addEventListener('keydown',trapModal);
     setTimeout(function(){close.focus();},0);return card;
@@ -18921,7 +19024,7 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
     if(e.key==='Escape'){e.preventDefault();closeModal();return;}
     if(e.key!=='Tab')return;var focus=modal.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])');if(!focus.length)return;var first=focus[0],last=focus[focus.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
   }
-  function closeModal(){if(!modal)return;var old=modal;modal=null;if(old.parentNode)old.parentNode.removeChild(old);if(modalTrigger&&modalTrigger.focus)try{modalTrigger.focus();}catch(e){}modalTrigger=null;}
+  function closeModal(){if(!modal)return;var old=modal;modal=null;if(old.parentNode)old.parentNode.removeChild(old);var app=$('demoStage');if(app){app.removeAttribute('aria-hidden');try{app.inert=false;}catch(e){}}if(modalTrigger&&modalTrigger.focus)try{modalTrigger.focus();}catch(e){}modalTrigger=null;}
   function modelMeta(m){
     var bits=[providerLabel(m),escText(m.mode)];var refs=window.FrameFlowCreateWorkspace.referenceLimits(m);if(refs.kinds.length)bits.push('Inputs: '+refs.kinds.join(', '));
     var defs=window.FrameFlowCreateWorkspace.modelDefaults(m);var sum=[];Object.keys(defs).forEach(function(k){if(defs[k]!=null)sum.push(k+': '+defs[k]);});if(sum.length)bits.push(sum.join(' · '));if(typeof m.cost==='number')bits.push('From ✦'+m.cost);return bits;
@@ -18939,13 +19042,19 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
     var prov=['All providers'];allModels.forEach(function(m){var p=providerLabel(m);if(prov.indexOf(p)<0)prov.push(p);});prov.forEach(function(p){var o=document.createElement('option');o.value=p==='All providers'?'':p;o.textContent=p;provider.appendChild(o);});
     var picked=null;
     function drawDetail(m){picked=m;detail.innerHTML='';if(!m)return;var h=document.createElement('h3');h.textContent=modelLabel(m);var p=document.createElement('p');p.textContent=escText(m.description||m.desc||'Capabilities are supplied by the live FrameFlow model catalog.');var meta=document.createElement('div');meta.className='ff-model-meta';modelMeta(m).forEach(function(v){var x=document.createElement('span');x.textContent=v;meta.appendChild(x);});var use=document.createElement('button');use.type='button';use.className='ff-model-use';use.textContent='Use Model';use.addEventListener('click',function(){chooseModel(m);closeModal();});detail.appendChild(h);detail.appendChild(p);detail.appendChild(meta);detail.appendChild(use);}
-    function draw(){var s=current(),needle=q.value.trim().toLowerCase(),pf=provider.value;list.innerHTML='';var rows=allModels.filter(function(m){return m.mode===s.mode&&(!needle||modelLabel(m).toLowerCase().indexOf(needle)>=0||providerLabel(m).toLowerCase().indexOf(needle)>=0)&&(!pf||providerLabel(m)===pf);});rows.forEach(function(m){var b=document.createElement('button');b.type='button';b.className='ff-model-row';b.setAttribute('aria-selected',String(m.id)===String(s.modelId)?'true':'false');var n=document.createElement('b');n.textContent=modelLabel(m);var sub=document.createElement('small');sub.textContent=providerLabel(m)+(typeof m.cost==='number'?' · from ✦'+m.cost:'');b.appendChild(n);b.appendChild(sub);b.addEventListener('click',function(){drawDetail(m);});b.addEventListener('dblclick',function(){chooseModel(m);closeModal();});list.appendChild(b);});if(!rows.length){var empty=document.createElement('div');empty.className='ff-create-status';empty.textContent='No matching enabled models.';list.appendChild(empty);drawDetail(null);}else if(!picked||rows.indexOf(picked)<0)drawDetail(rows.filter(function(m){return String(m.id)===String(s.modelId);})[0]||rows[0]);}
+    function draw(){var s=current(),needle=q.value.trim().toLowerCase(),pf=provider.value;list.innerHTML='';var rows=allModels.filter(function(m){return m.mode===s.mode&&(!needle||modelLabel(m).toLowerCase().indexOf(needle)>=0||providerLabel(m).toLowerCase().indexOf(needle)>=0)&&(!pf||providerLabel(m)===pf);});rows.forEach(function(m){var b=document.createElement('button');b.type='button';b.className='ff-model-row';b.setAttribute('aria-selected',String(m.id)===String(s.modelId)?'true':'false');var n=document.createElement('b');n.textContent=modelLabel(m);var sub=document.createElement('small');sub.textContent=providerLabel(m)+(typeof m.cost==='number'?' · from ✦'+m.cost:'');b.appendChild(n);b.appendChild(sub);b.addEventListener('click',function(){var compact=false;try{compact=!!(window.matchMedia&&window.matchMedia('(max-width:520px)').matches);}catch(e){}if(compact){chooseModel(m);closeModal();}else drawDetail(m);});list.appendChild(b);});if(!rows.length){var empty=document.createElement('div');empty.className='ff-create-status';empty.textContent='No matching enabled models.';list.appendChild(empty);drawDetail(null);}else if(!picked||rows.indexOf(picked)<0)drawDetail(rows.filter(function(m){return String(m.id)===String(s.modelId);})[0]||rows[0]);}
     q.addEventListener('input',draw);provider.addEventListener('change',draw);draw();setTimeout(function(){q.focus();},0);
   }
   function openSettings(){
     var s=current(),m=s.model;if(!m)return;var card=modalShell('Output settings',$('ffCreateSettings'));var body=document.createElement('div');body.className='ff-model-detail';card.appendChild(body);
     var keys=['aspectRatio','quality','resolution','count','duration','voice','audio','bitrateMode'];
-    keys.forEach(function(key){var opts=window.FrameFlowCreateWorkspace.settingOptions(m,key);if(!opts.length)return;var sec=document.createElement('div');sec.style.marginBottom='14px';var lab=document.createElement('p');lab.textContent=key.replace(/([A-Z])/g,' $1').replace(/^./,function(c){return c.toUpperCase();});lab.style.margin='0 0 7px';var row=document.createElement('div');row.className='ff-model-meta';opts.forEach(function(v){var b=document.createElement('button');b.type='button';b.className='ff-create-control';b.textContent=key==='audio'?(v?'On':'Off'):String(v)+(key==='duration'?'s':'');if(String(s.settings[key])===String(v))b.style.borderColor='var(--accent)';b.addEventListener('click',function(){ctl.setSetting(key,v);closeModal();scheduleQuote();render();});row.appendChild(b);});sec.appendChild(lab);sec.appendChild(row);body.appendChild(sec);});
+    keys.forEach(function(key){
+      var opts=window.FrameFlowCreateWorkspace.settingOptions(m,key);if(!opts.length)return;
+      var sec=document.createElement('div');sec.style.marginBottom='14px';var lab=document.createElement('p');lab.textContent=key.replace(/([A-Z])/g,' $1').replace(/^./,function(c){return c.toUpperCase();});lab.style.margin='0 0 7px';var row=document.createElement('div');row.className='ff-model-meta ff-settings-options';
+      function syncRow(){var value=current().settings[key];Array.prototype.forEach.call(row.querySelectorAll('button'),function(x){var on=String(x.getAttribute('data-setting-value'))===String(value);x.classList.toggle('is-selected',on);x.setAttribute('aria-pressed',on?'true':'false');});}
+      opts.forEach(function(v){var b=document.createElement('button');b.type='button';b.className='ff-create-control';b.textContent=key==='audio'?(v?'On':'Off'):String(v)+(key==='duration'?'s':'');b.setAttribute('data-setting-value',String(v));b.addEventListener('click',function(){if(!ctl.setSetting(key,v)){status('This setting is not available for the selected model.','err');return;}syncRow();scheduleQuote();render();});row.appendChild(b);});
+      syncRow();sec.appendChild(lab);sec.appendChild(row);body.appendChild(sec);
+    });
     if(!body.children.length){var p=document.createElement('p');p.textContent='This model exposes no adjustable output settings.';body.appendChild(p);}
   }
   function applyDraft(payload){
@@ -18960,7 +19069,6 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
       if(payload.mode==='video'&&window.axVGNewSession)window.axVGNewSession();
       if((payload.mode==='voice'||payload.mode==='sfx')&&window.axAGNewSession)window.axAGNewSession();
     }
-    if(window.axGo)window.axGo(view);
     return Promise.resolve(apply(payload)).then(function(){
       var id=payload.mode==='image'?'igGen':payload.mode==='video'?'vgGen':'agGen',btn=$(id);
       if(!btn||btn.disabled)throw new Error('Check the prompt, reference and credit requirements in the composer.');
@@ -18979,8 +19087,9 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
   function delegateReference(source){
     var s=current();if(s.mode==='voice'||s.mode==='sfx'){status('Audio models do not accept visual references.','err');return;}
     var view=modeView[s.mode],apply=s.mode==='image'?window.axIGApplyDraft:window.axVGApplyDraft,addId=s.mode==='image'?'igRefAdd':'vgRefAdd';
+    if(s.sessionId){if(s.mode==='image'&&window.axIGSetSession)window.axIGSetSession(s.sessionId);else if(s.mode==='video'&&window.axVGSetSession)window.axVGSetSession(s.sessionId);}
     if(window.axGo)window.axGo(view);
-    Promise.resolve(apply({mode:s.mode,prompt:s.prompt,modelId:s.modelId,params:s.settings})).then(function(){var add=$(addId);if(add)add.click();setTimeout(function(){var prefix=s.mode==='image'?'ig':'vg';var id=prefix+'Src'+(source==='file'?'File':source==='project'?'Proj':source==='timeline'?'Tl':'Lib');var target=$(id);if(target)target.click();},60);}).catch(function(e){status((e&&e.message)||'Reference picker could not open.','err');});
+    Promise.resolve(apply({mode:s.mode,prompt:s.prompt,modelId:s.modelId,params:s.settings})).then(function(){var add=$(addId);if(!add)throw new Error('Reference controls are unavailable.');add.click();var prefix=s.mode==='image'?'ig':'vg';var id=prefix+'Src'+(source==='file'?'File':source==='project'?'Proj':source==='timeline'?'Tl':'Lib');var target=$(id);if(!target)throw new Error('The selected reference source is unavailable.');target.click();}).catch(function(e){status((e&&e.message)||'Reference picker could not open.','err');});
   }
   function activityCount(){var rows=[];try{rows=window.afJobStore?window.afJobStore.list():[];}catch(e){}var n=rows.length,b=$('ffActivityCount');if(b){b.hidden=!n;b.textContent=String(n);}return rows;}
   function openActivity(){
@@ -18988,8 +19097,8 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
     function row(item,statusText){
       var el=document.createElement('div');el.className='ff-activity-item';var txt=document.createElement('span'),title=document.createElement('b'),sub=document.createElement('small');title.textContent=item.prompt||item.title||'Generation';sub.textContent=statusText;txt.appendChild(title);txt.appendChild(sub);el.appendChild(txt);
       if(item.jobId){var cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',function(){cancel.disabled=true;studioPost('/api/studio/gen/'+encodeURIComponent(item.jobId)+'/cancel',{}).then(function(r){if(window.afJobStore)window.afJobStore.remove(item.jobId);if(r&&typeof r.creditsLeft==='number'&&window.afSyncCredits)window.afSyncCredits(r.creditsLeft);el.remove();activityCount();}).catch(function(e){cancel.disabled=false;sub.textContent=(e&&e.code==='GENERATION_DISPATCHED')?'Already processing at the provider · open the session to follow it':'Could not cancel · try again';});});el.appendChild(cancel);}
-      if(item.canRetry){var retry=document.createElement('button');retry.type='button';retry.textContent='Retry';retry.addEventListener('click',function(){closeModal();afNavTab('ai');if(window.axGo)window.axGo('launcher');if(item.mode&&['image','video','voice','sfx'].indexOf(item.mode)>=0)ctl.setMode(item.mode);ctl.setPrompt(item.prompt||'');if(item.modelId!=null)ctl.selectModel(item.modelId);scheduleQuote();render();});el.appendChild(retry);}
-      if(item.sid){var open=document.createElement('button');open.type='button';open.textContent='Open session';open.addEventListener('click',function(){closeModal();afNavTab('ai');var view=item.tool||((item.mode==='video')?'vidgen':(item.mode==='image')?'imggen':'audgen');if(view==='imggen'&&window.axIGSetSession)window.axIGSetSession(item.sid);else if(view==='vidgen'&&window.axVGSetSession)window.axVGSetSession(item.sid);else if(window.axAGSetSession)window.axAGSetSession(item.mode||'voice',item.sid);if(window.axGo)window.axGo(view);});el.appendChild(open);}
+      if(item.canRetry){var retry=document.createElement('button');retry.type='button';retry.textContent='Retry';retry.addEventListener('click',function(){closeModal();openDraft({mode:item.mode,prompt:item.prompt||'',modelId:item.modelId});});el.appendChild(retry);}
+      if(item.sid){var open=document.createElement('button');open.type='button';open.textContent='Open session';open.addEventListener('click',function(){closeModal();openCreateSession({id:item.sid,mode:item.mode||'image'});});el.appendChild(open);}
       list.appendChild(el);
     }
     active.forEach(function(item){row(item,'Processing · '+(item.cat||item.tool||'generation'));});
@@ -19003,11 +19112,35 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
     else if(view==='session'){mount('ffCreateSessionSlot');render();}
   }
   function openExistingSession(session){
-    session=session||{};var mode=String(session.mode||'image').toLowerCase();
+    session=session||{};var mode=String(session.coverMode||session.mode||'image').toLowerCase();
     if(mode==='audio'||mode==='music')mode='voice';if(['image','video','voice','sfx'].indexOf(mode)<0)mode='image';
     ctl.setMode(mode);ctl.setSession(session.id||null);ctl.setPrompt('');mount('ffCreateSessionSlot');scheduleQuote();render();
   }
-  document.querySelectorAll('[data-ff-mode]').forEach(function(b){b.addEventListener('click',function(){closeQuick();var before=current();var changed=ctl.setMode(b.getAttribute('data-ff-mode'));if(changed&&before.sessionId)ctl.setSession(null);closeModeMenu();scheduleQuote();render();});});
+  function normalizeCreateMode(mode){mode=String(mode||'image').toLowerCase();if(mode==='audio'||mode==='music')mode='voice';return ['image','video','voice','sfx'].indexOf(mode)>=0?mode:'image';}
+  function applyOpenDraft(payload){
+    payload=payload||{};var mode=normalizeCreateMode(payload.mode),modelId=payload.modelId;
+    ctl.setSession(null);ctl.setMode(mode);ctl.setPrompt(payload.prompt||'');mount('ffCreateLauncherSlot');
+    var selected=modelId==null||ctl.selectModel(modelId);scheduleQuote();render();
+    var promptEl=$('ffCreatePrompt');if(promptEl)setTimeout(function(){try{promptEl.focus();}catch(e){}},0);
+    return selected;
+  }
+  function openDraft(payload){
+    payload=payload||{};
+    if(typeof window.afNavTab==='function')window.afNavTab('ai');
+    else if(typeof window.axGo==='function')window.axGo('launcher');
+    var selected=applyOpenDraft(payload);
+    if(payload.modelId!=null&&!selected){
+      return Promise.resolve(modelLoadPromise||loadModels()).then(function(){applyOpenDraft(payload);return current();});
+    }
+    return Promise.resolve(current());
+  }
+  function openCreateSession(session){
+    if(typeof window.afNavTab==='function')window.afNavTab('ai');
+    if(typeof window.axwsOpenSession==='function'){window.axwsOpenSession(session);return current();}
+    if(typeof window.axGo==='function')window.axGo('session');
+    openExistingSession(session);return current();
+  }
+  document.querySelectorAll('[data-ff-mode]').forEach(function(b){b.addEventListener('click',function(){closeQuick();ctl.setMode(b.getAttribute('data-ff-mode'));closeModeMenu();scheduleQuote();render();});});
   var prompt=$('ffCreatePrompt');if(prompt){prompt.addEventListener('input',function(){ctl.setPrompt(prompt.value);render();});prompt.addEventListener('keydown',function(e){if(e.isComposing)return;if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();generate();}});}
   $('ffCreateModel').addEventListener('click',function(e){e.stopPropagation();openQuick();});$('ffCreateSettings').addEventListener('click',openSettings);$('ffCreateGenerate').addEventListener('click',generate);$('ffCreateEnhance').addEventListener('click',enhance);
   $('ffCreateMode').addEventListener('click',function(e){e.stopPropagation();var menu=$('ffCreateModeMenu'),on=menu.hidden;menu.hidden=!on;$('ffCreateMode').setAttribute('aria-expanded',on?'true':'false');});
@@ -19015,7 +19148,9 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
   document.querySelectorAll('[data-ff-ref]').forEach(function(b){b.addEventListener('click',function(){$('ffCreateRefMenu').hidden=true;$('ffCreateAdd').setAttribute('aria-expanded','false');delegateReference(b.getAttribute('data-ff-ref'));});});
   document.addEventListener('click',function(e){if(!e.target.closest||(!e.target.closest('#ffCreateRefMenu')&&!e.target.closest('#ffCreateAdd')&&!e.target.closest('#ffCreateModel')&&!e.target.closest('#ffCreateModeMenu')&&!e.target.closest('#ffCreateMode')&&!e.target.closest('.ff-create-composer > .ff-create-refmenu'))){var m=$('ffCreateRefMenu');if(m)m.hidden=true;closeModeMenu();closeQuick();}});
   if($('ffActivityBtn'))$('ffActivityBtn').addEventListener('click',openActivity);setInterval(activityCount,1500);setInterval(render,5000);
-  window.afCreateWorkspace={controller:ctl,openModels:openModels,openActivity:openActivity,refreshModels:loadModels,mountForView:mountForView,openSession:openExistingSession};
+  window.afCreateWorkspace={controller:ctl,openModels:openModels,openActivity:openActivity,refreshModels:loadModels,mountForView:mountForView,openDraft:openDraft,openSession:openExistingSession};
+  window.afOpenCreateDraft=openDraft;
+  window.afOpenCreateSession=openCreateSession;
   loadModels();render();activityCount();
 })();
 
@@ -19340,5 +19475,6 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
   });
 })();
 </script>
+<script src="frameflow-vnext.js?v=3"></script>
 </body>
 </html>

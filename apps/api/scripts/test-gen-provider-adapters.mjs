@@ -15,17 +15,47 @@ import {
 import {
   buildVertexImageEditRequest,
   buildVertexImageTextRequest,
+  extractVertexImageResponse,
+  isRetryableVertexImageError,
 } from "../dist/lib/ai/vertex-image.js";
 import { buildVertexVideoRequest } from "../dist/lib/ai/vertex.js";
 import { buildVertexOmniBody } from "../dist/lib/ai/vertex-omni.js";
 import { buildGoogleTtsRequest } from "../dist/lib/ai/google-tts.js";
 import { buildElevenLabsSfxRequest } from "../dist/lib/ai/elevenlabs.js";
+import { classifyGenRejection } from "../dist/lib/gen-rejection.js";
 
 const enabled = GEN_MODELS.filter((m) => m.enabled !== false);
 const covered = new Set();
 let checks = 0;
 const ref = "https://assets.example.invalid/start.png";
 const end = "https://assets.example.invalid/end.png";
+
+const vertexOk = extractVertexImageResponse({
+  candidates: [{ content: { parts: [{ inlineData: { data: "aW1hZ2U=" } }] } }],
+});
+assert.equal(vertexOk.ok, true, "Vertex inline image is extracted");
+assert.equal(vertexOk.ok && vertexOk.data.toString(), "image", "Vertex inline bytes are preserved");
+const imagenOk = extractVertexImageResponse({ generatedImages: [{ image: { imageBytes: "aW1hZ2U=" } }] });
+assert.equal(imagenOk.ok, true, "Imagen generated image is extracted");
+assert.equal(imagenOk.ok && imagenOk.data.toString(), "image", "Imagen bytes are preserved");
+const vertexEmpty = extractVertexImageResponse({ candidates: [{ finishReason: "STOP" }] });
+assert.equal(vertexEmpty.ok, false, "Vertex empty response fails");
+assert.equal(!vertexEmpty.ok && vertexEmpty.retryable, true, "Vertex unexplained empty response is retryable");
+const vertexSafety = extractVertexImageResponse({ candidates: [{ finishReason: "IMAGE_SAFETY" }] });
+assert.equal(vertexSafety.ok, false, "Vertex safety response fails");
+assert.equal(!vertexSafety.ok && vertexSafety.retryable, false, "Vertex safety response is not retried");
+assert.equal(isRetryableVertexImageError(new Error("429 RESOURCE_EXHAUSTED")), true, "Vertex quota errors retry");
+assert.equal(isRetryableVertexImageError(new Error("400 invalid argument")), false, "Vertex bad requests do not retry");
+assert.equal(
+  classifyGenRejection("Nano Banana: empty image response (STOP)", { provider: "vertex-image" }).isContent,
+  false,
+  "unexplained empty image is not mislabeled as content rejection"
+);
+assert.equal(
+  classifyGenRejection("Nano Banana: content policy blocked the image (IMAGE_SAFETY)", { provider: "vertex-image" }).isContent,
+  true,
+  "explicit Vertex safety response remains a content rejection"
+);
 
 function canonical(model, extra = {}) {
   const required = model.feature === "video-upscale"

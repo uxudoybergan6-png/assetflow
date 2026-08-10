@@ -38,6 +38,117 @@ const cleanAspect = (a?: string): string | undefined =>
 const cleanSize = (s?: string): string | undefined =>
   s && ["1K", "2K", "4K"].includes(s) ? s : undefined;
 
+type VertexImageResult = OrResult<Buffer> & { retryable?: boolean };
+
+function vertexErrorText(error: unknown): string {
+  if (error instanceof Error) return error.message || error.name;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error || "Vertex image error");
+  }
+}
+
+/** Google SDK quota/transient xatolari foydalanuvchi kontenti rad etilgani EMAS. */
+export function isRetryableVertexImageError(error: unknown): boolean {
+  const raw = vertexErrorText(error);
+  return /\b429\b|RESOURCE_EXHAUSTED|quota (?:exceeded|exhausted)|rate.?limit|\b500\b|\b502\b|\b503\b|\b504\b|UNAVAILABLE|DEADLINE_EXCEEDED|ETIMEDOUT|ECONNRESET|socket hang up|network/i.test(raw);
+}
+
+function responseTextParts(response: unknown): string[] {
+  const root = response && typeof response === "object" ? (response as Record<string, unknown>) : {};
+  const promptFeedback = root.promptFeedback && typeof root.promptFeedback === "object"
+    ? (root.promptFeedback as Record<string, unknown>)
+    : {};
+  const candidates = Array.isArray(root.candidates) ? root.candidates : [];
+  const first = candidates[0] && typeof candidates[0] === "object"
+    ? (candidates[0] as Record<string, unknown>)
+    : {};
+  const content = first.content && typeof first.content === "object"
+    ? (first.content as Record<string, unknown>)
+    : {};
+  const parts = Array.isArray(content.parts) ? content.parts : [];
+  const values: unknown[] = [promptFeedback.blockReason, first.finishReason, first.finishMessage];
+  for (const part of parts) {
+    if (part && typeof part === "object") values.push((part as Record<string, unknown>).text);
+  }
+  return values
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .map((value) => value.trim());
+}
+
+/**
+ * Gemini image javobida rasm bo'lmasa haqiqiy sababni saqlaydi. Faqat aniq SAFETY/
+ * BLOCKLIST signali kontent rad etilishi; sababsiz bo'sh javob transient hisoblanib bir marta
+ * qayta uriniladi. Shunda harmless prompt quota/SDK bo'sh javobi sabab "content rejected"
+ * deb noto'g'ri tasniflanmaydi.
+ */
+export function extractVertexImageResponse(response: unknown, label = "Vertex image"): VertexImageResult {
+  const root = response && typeof response === "object" ? (response as Record<string, unknown>) : {};
+  const generated = Array.isArray(root.generatedImages) ? root.generatedImages : [];
+  const generatedFirst = generated[0] && typeof generated[0] === "object"
+    ? (generated[0] as Record<string, unknown>)
+    : {};
+  const generatedImage = generatedFirst.image && typeof generatedFirst.image === "object"
+    ? (generatedFirst.image as Record<string, unknown>)
+    : {};
+  if (typeof generatedImage.imageBytes === "string" && generatedImage.imageBytes.length > 0)
+    return { ok: true, data: Buffer.from(generatedImage.imageBytes, "base64") };
+  const candidates = Array.isArray(root.candidates) ? root.candidates : [];
+  const first = candidates[0] && typeof candidates[0] === "object"
+    ? (candidates[0] as Record<string, unknown>)
+    : {};
+  const content = first.content && typeof first.content === "object"
+    ? (first.content as Record<string, unknown>)
+    : {};
+  const parts = Array.isArray(content.parts) ? content.parts : [];
+  for (const part of parts) {
+    if (!part || typeof part !== "object") continue;
+    const inline = (part as Record<string, unknown>).inlineData;
+    if (!inline || typeof inline !== "object") continue;
+    const data = (inline as Record<string, unknown>).data;
+    if (typeof data === "string" && data.length > 0)
+      return { ok: true, data: Buffer.from(data, "base64") };
+  }
+  const details = responseTextParts(response);
+  const detail = details.join(" · ").slice(0, 300);
+  if (/SAFETY|BLOCKLIST|PROHIBITED_CONTENT|RECITATION|content polic|responsible ai/i.test(detail)) {
+    return {
+      ok: false,
+      error: `${label}: content policy blocked the image${detail ? ` (${detail})` : ""}`,
+      retryable: false,
+    };
+  }
+  return {
+    ok: false,
+    error: `${label}: empty image response${detail ? ` (${detail})` : ""}`,
+    retryable: true,
+  };
+}
+
+async function runVertexImageRequest(
+  request: () => Promise<unknown>,
+  label: string
+): Promise<VertexImageResult> {
+  const maxAttempts = 3;
+  let last: VertexImageResult = { ok: false, error: `${label}: request failed` };
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const response = await request();
+      last = extractVertexImageResponse(response, label);
+      if (last.ok || !last.retryable) return last;
+    } catch (error) {
+      const message = vertexErrorText(error);
+      const retryable = isRetryableVertexImageError(error);
+      last = { ok: false, error: message || `${label}: request failed`, retryable };
+      if (!retryable) return last;
+    }
+    if (attempt + 1 < maxAttempts) await new Promise((resolve) => setTimeout(resolve, 800 * 2 ** attempt));
+  }
+  return last;
+}
+
 export function buildVertexImageTextRequest(
   modelId: string,
   prompt: string,
@@ -112,17 +223,16 @@ export async function vertexImage(
     const client = getClient(locationFor(modelId));
     const built = buildVertexImageTextRequest(modelId, prompt, opts);
     if (built.kind === "imagen") {
-      const r = await client.models.generateImages(built.request);
-      const b64 = r.generatedImages?.[0]?.image?.imageBytes;
-      if (!b64) return { ok: false, error: "Imagen: no image was returned (may have been blocked by the safety filter)" };
-      return { ok: true, data: Buffer.from(b64, "base64") };
+      return await runVertexImageRequest(
+        () => client.models.generateImages(built.request),
+        "Imagen"
+      );
     }
     // Nano Banana (gemini image) — aspectRatio + imageSize imageConfig orqali (SDK ImageConfig)
-    const r = await client.models.generateContent(built.request);
-    const parts = r.candidates?.[0]?.content?.parts ?? [];
-    const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
-    if (!b64) return { ok: false, error: "Nano Banana: no image was returned" };
-    return { ok: true, data: Buffer.from(b64, "base64") };
+    return await runVertexImageRequest(
+      () => client.models.generateContent(built.request),
+      "Nano Banana"
+    );
   } catch (e) {
     return { ok: false, error: (e as Error).message || "Vertex image error" };
   }
@@ -173,13 +283,12 @@ export async function vertexImageEdit(
       if (!inl) return { ok: false, error: "Reference image failed to load" };
       ready.push({ data: inl.data, mimeType: inl.mimeType });
     }
-    const r = await getClient(locationFor(modelId)).models.generateContent(
-      buildVertexImageEditRequest(modelId, prompt, ready, opts)
+    return await runVertexImageRequest(
+      () => getClient(locationFor(modelId)).models.generateContent(
+        buildVertexImageEditRequest(modelId, prompt, ready, opts)
+      ),
+      "Nano Banana Edit"
     );
-    const parts = r.candidates?.[0]?.content?.parts ?? [];
-    const b64 = parts.find((p) => p.inlineData?.data)?.inlineData?.data;
-    if (!b64) return { ok: false, error: "Nano Banana Edit: no image was returned" };
-    return { ok: true, data: Buffer.from(b64, "base64") };
   } catch (e) {
     return { ok: false, error: (e as Error).message || "Vertex image-edit error" };
   }

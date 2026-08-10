@@ -26,6 +26,7 @@ export const DIST_DIR = path.join(REPO_ROOT, "dist/zxp");
 const CUSTOMER_FILES = [
   "AssetFlow_Plugin.html",
   "frameflow-create-workspace.js",
+  "frameflow-vnext.js",
   "assetflow-uxp-bridge.js",
   "assetflow-account.js",
   "assetflow-catalog.js",
@@ -43,6 +44,7 @@ const CUSTOMER_FILES = [
   "css/tokens.css",
   "css/styles.css",
   "css/ff-components.css",
+  "css/frameflow-vnext.css",
   "css/fonts/*.woff2",
   // #148 (PX11): AE "Window → Extensions" ro'yxati va panel yorlig'i ikonalari
   // (CSXS manifest `<Icons>`). Generatsiya: scripts/make-panel-icons.mjs.
