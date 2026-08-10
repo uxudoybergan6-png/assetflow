@@ -1,15 +1,15 @@
 Session Report: 2026-08-10
-- Production session history showed four failed Nano Banana 2 jobs for the harmless wedding-title prompt.
-- Every failure was Google `429 RESOURCE_EXHAUSTED`; this was quota pressure, not content moderation.
-- All four 32-credit charges were fully refunded and no failed job retained assets.
-- Vertex Image now serializes multi-image batches to avoid `count=4` quota bursts.
-- Retryable Google 429/5xx/network and unexplained empty-image responses receive bounded retries.
-- Explicit IMAGE_SAFETY/content-policy responses remain non-retryable and blocked.
-- Empty image responses are no longer mislabeled as content-policy rejection.
-- CEP now reports quota exhaustion accurately and suggests waiting or choosing Seedream.
-- API build passed: 51 models, 24 enabled, 0 validation issues.
-- Provider adapter contract passed: 24/24 enabled entries.
-- Create workspace passed 13/13; responsive passed 105/105; Premiere passed 19/19.
-- vNext, shared session persistence, plugin device auth and Studio device-auth UI passed.
-- Production rollout was requested; Cloud Run workflow and public health verification follow.
-- Shared CEP was refreshed with `AF_SKIP_AE=1`; only the intentional build stamp differs from source.
+- Unified session gallery previously loaded only `status=done` generations.
+- Image and video engines created pending cards only in their hidden legacy Recent grids.
+- Fast provider/quota failures removed those hidden cards immediately.
+- A shared session-job bridge now carries Image, Video, Voice and SFX active jobs into the open session.
+- Pending cards appear immediately and update their progress in place.
+- Successful jobs leave the pending registry and trigger the existing finished-generation refresh.
+- Failed jobs remain visible for 10 seconds as `Failed · credits refunded`.
+- Unified pending cards retain real cancel behavior through the existing generation engines.
+- Focused Create, vNext, responsive, session persistence and Premiere tests passed.
+- Inline JavaScript application blocks passed syntax compilation.
+- `git diff --check` passed.
+- Shared AE/Premiere CEP was refreshed locally with `AF_SKIP_AE=1`.
+- Adobe applications were not opened, closed or restarted.
+- Commit, push and production Cloud Run rollout were requested; verification follows.
