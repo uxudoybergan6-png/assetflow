@@ -11,6 +11,17 @@ assert.deepEqual(validateMentionIntegrity("Use @img1 and @video2", "Use @img1 an
 assert.equal(validateMentionIntegrity("Use @img1", "Use @img2").ok, false, "renumbered references are rejected");
 assert.equal(validateMentionIntegrity("Use @start and @end", "Use @start").ok, false, "dropped references are rejected");
 assert.equal(validateMentionIntegrity("No reference", "Use @img1").ok, false, "invented references are rejected");
+assert.deepEqual(
+  validateMentionIntegrity("Use the attached look", "Use @img1 as the visual reference", ["image:1"]),
+  { ok: true },
+  "an attached reference may be named by Vision even when the user omitted its token"
+);
+assert.equal(
+  validateMentionIntegrity("Use the attached look", "Use @img2 as the visual reference", ["image:1"]).ok,
+  false,
+  "Vision cannot name a reference slot that was not attached"
+);
+assert.deepEqual(validateMentionIntegrity("Animate this", "Begin at @start", ["start"]), { ok: true });
 
 for (const mode of ["image", "video", "voice", "sfx", "music"]) {
   assert.ok(vertex.includes(`${mode}: \"You are an expert`), `${mode} has a dedicated Enhance role`);
@@ -25,6 +36,8 @@ assert.ok(route.includes('enhance_style: z.enum(["faithful", "cinematic", "creat
 assert.ok(route.includes("enhanceModelContext(model, mode, p.data.settings)"), "selected model capabilities and settings inform Enhance");
 assert.ok(route.includes("model?.maxChars"), "voice output observes the selected model character cap");
 assert.ok(route.includes("imageRoles: p.data.image_roles"), "reference roles reach multimodal Enhance");
+assert.ok(route.includes("attachedEnhanceMentionKeys"), "attached reference slots inform mention integrity");
+assert.ok(route.includes("validateMentionIntegrity(originalPrompt, trimmed, allowedMentionAdditions)"), "mention validation accepts only attached additions");
 assert.ok(apiClient.includes("body.enhance_style = opts.style"), "web API client sends Enhance style");
 assert.ok(apiClient.includes("body.image_roles = opts.imageRoles"), "web API client sends image roles");
 assert.ok(apiClient.includes("body.settings = opts.settings"), "selected generation settings reach Enhance");

@@ -78,7 +78,7 @@ import {
   reconcileStuckGenerations,
 } from "../lib/gen-processor.js";
 import { preflightSafetyCheck } from "../lib/preflight-safety.js";
-import { validateMentionIntegrity } from "../lib/enhance-mentions.js";
+import { validateMentionIntegrity, type MentionKey } from "../lib/enhance-mentions.js";
 import { moderateContent, collectImageRefUrls } from "../lib/moderation.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { measuredEtaSeconds, fallbackEtaSeconds } from "../lib/gen-eta.js";
@@ -984,6 +984,17 @@ async function validateReferenceOwnershipAndMetadata(
   for (const entry of urlEntries) {
     const { url } = entry;
     const key = gcsKeyFromUrl(url);
+    // R2V providerlari faqat /gen/ref-upload serveri yaratgan, aniq 2–15s oralig'iga kesilgan
+    // video obyektini oladi. `gen/<uid>/...` original natija, `gen-ref-src/...` vaqtinchalik upload,
+    // tashqi/data URL yoki eski xom ref URL bu darvozadan o'tmaydi.
+    if (entry.kind === "video" && (!key || !key.startsWith(`gen-refs/${userId}/clips/`))) {
+      errors.push({
+        code: "PARAM_INVALID",
+        field: "videoUrls",
+        message: "Video references must be trimmed in the clip editor before generation",
+      });
+      continue;
+    }
     if (!key) {
       const data = /^data:([^;,]+);base64,([\s\S]+)$/i.exec(url);
       if (data) {
@@ -1198,6 +1209,8 @@ const refUploadSrcSchema = z.object({
 });
 const MAX_VIDEO_REF_TARGET_BYTES = 50 * 1024 * 1024;
 const MAX_AUDIO_REF_TARGET_BYTES = 15 * 1024 * 1024;
+const VIDEO_REF_CLIP_MIN_SEC = 2;
+const VIDEO_REF_CLIP_MAX_SEC = 15;
 // Cheklovlar `lib/upload-limits.ts`da (yagona manba + test) — GHSA-72gw-mp4g-v24j izohiga qara.
 const refUpload = multer({
   storage: multer.memoryStorage(),
@@ -1246,9 +1259,6 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   };
   const clipStartSec = numParam(req.body?.clipStartSec);
   const clipEndSec = numParam(req.body?.clipEndSec);
-  const clipEnabled =
-    req.body?.clipMode === "part" ||
-    (Number.isFinite(clipStartSec) && Number.isFinite(clipEndSec) && (clipEndSec as number) > (clipStartSec as number));
   const extractAudioRef =
     req.body?.extractAudioRef === "1" ||
     req.body?.extractAudioRef === "true" ||
@@ -1333,6 +1343,32 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     res.status(400).json({ error: "Reference is empty or too large (max 100MB)" });
     return;
   }
+  // Video reference HECH QACHON xom/to'liq manba sifatida AI'ga o'tmaydi. Klient tanlagan oralig'ini
+  // aniq yuborishi shart; server validatsiyasiz `undefined` clip bilan full videoni transcode qilishga
+  // qaytmaydi. `full` UI varianti ham 0..duration oralig'ini aniq yuboradi va yangi clip obyekt yaratadi.
+  let videoClip: { startSec: number; endSec: number } | undefined;
+  if (/^video\//.test(contentType)) {
+    const clipMode = String(req.body?.clipMode || "");
+    const start = Number(clipStartSec);
+    const end = Number(clipEndSec);
+    const duration = end - start;
+    if (
+      (clipMode !== "part" && clipMode !== "full") ||
+      !Number.isFinite(start) ||
+      !Number.isFinite(end) ||
+      start < 0 ||
+      end <= start ||
+      duration < VIDEO_REF_CLIP_MIN_SEC ||
+      duration > VIDEO_REF_CLIP_MAX_SEC
+    ) {
+      res.status(400).json({
+        error: `Select a video segment between ${VIDEO_REF_CLIP_MIN_SEC} and ${VIDEO_REF_CLIP_MAX_SEC} seconds`,
+        code: "VIDEO_CLIP_REQUIRED",
+      });
+      return;
+    }
+    videoClip = { startSec: start, endSec: end };
+  }
   let audioRef:
     | {
         id: string;
@@ -1354,7 +1390,7 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
       fs.copyFileSync(sourcePath, localPath);
       const optimized = await optimizeVideoReferenceForUpload(
         localPath,
-        clipEnabled ? { startSec: clipStartSec, endSec: clipEndSec } : undefined
+        videoClip
       );
       if (!optimized) {
         res.status(500).json({ error: "Video reference was not optimized on the server" });
@@ -1379,7 +1415,7 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
         const audioOk = await extractAudioReferenceForUpload(
           sourcePath,
           audioPath,
-          clipEnabled ? { startSec: clipStartSec, endSec: clipEndSec } : undefined
+          videoClip
         );
         if (audioOk) {
           const audioBuf = fs.readFileSync(audioPath);
@@ -1428,7 +1464,11 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
   const ext =
     EXT[contentType] ||
     (contentType.startsWith("video/") ? "mp4" : contentType.startsWith("audio/") ? "mp3" : "png");
-  const key = `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  // Video kalitidagi `clips/` marker quote/gen validatsiyasiga xom gen asset yoki vaqtinchalik
+  // upload URL'ini providerga bevosita uzatishni fail-closed bloklash imkonini beradi.
+  const key = contentType.startsWith("video/")
+    ? `gen-refs/${req.user!.userId}/clips/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+    : `gen-refs/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   await uploadBufferToS3(buf, key, contentType);
   const url = await getPublicOrSignedUrl(key, 7200); // PUBLIC (fal auth'siz yuklab oladi)
   const saved = await createSavedReference({
@@ -1439,7 +1479,20 @@ studioGenRouter.post("/gen/ref-upload", async (req: Request, res: Response) => {
     sizeBytes: buf.length,
     thumbUrl: contentType.startsWith("image/") ? url : null,
   });
-  res.json({ id: saved.id, url, bytes: buf.length, contentType, expiresAt: saved.expiresAt, audioRef, audioError });
+  res.json({
+    id: saved.id,
+    url,
+    bytes: buf.length,
+    contentType,
+    expiresAt: saved.expiresAt,
+    clip: videoClip ? {
+      startSec: videoClip.startSec,
+      endSec: videoClip.endSec,
+      durationSec: Number((videoClip.endSec - videoClip.startSec).toFixed(3)),
+    } : undefined,
+    audioRef,
+    audioError,
+  });
   // (tempSrcKey tozalash res.once("finish") bilan yuqorida — xato yo'llarini ham qamraydi.)
 });
 
@@ -1923,6 +1976,29 @@ const enhanceSchema = z.object({
   idempotencyKey: z.string().trim().min(8).max(80).optional(),
 });
 
+/** Enhance chiqishida qonuniy qo'shilishi mumkin bo'lgan @mention slotlari.
+ * Foydalanuvchi tile biriktirib, promptda @img1 deb yozmagan bo'lsa ham Vision uni tilga olishi
+ * mumkin. Faqat so'rovdagi haqiqiy PUBLIC URL + mos rol ruxsat oladi; @img2 ixtiro qilinmaydi. */
+function attachedEnhanceMentionKeys(
+  urls: string[] | undefined,
+  roles: string[] | undefined,
+  kind: "image" | "video" | "audio"
+): MentionKey[] {
+  const keys: MentionKey[] = [];
+  let sentIndex = 0;
+  for (let rawIndex = 0; rawIndex < (urls || []).length; rawIndex += 1) {
+    const url = urls![rawIndex];
+    if (!/^https?:\/\//i.test(url)) continue;
+    sentIndex += 1;
+    const role = String(roles?.[rawIndex] || "").toLowerCase();
+    if (kind === "image" && role === "start-frame") { keys.push("start"); continue; }
+    if (kind === "image" && role === "end-frame") { keys.push("end"); continue; }
+    const match = new RegExp(`^${kind}-reference-(\\d+)$`).exec(role);
+    keys.push(match ? `${kind}:${Number(match[1])}` : `${kind}:${sentIndex}`);
+  }
+  return keys;
+}
+
 function enhanceModelContext(
   model: GenModel | undefined,
   mode: string,
@@ -2029,6 +2105,23 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
   const refUrls = publicUrls(p.data.image_urls || p.data.references);
   const videoRefUrls = publicUrls(p.data.video_urls);
   const audioRefUrls = publicUrls(p.data.audio_urls);
+  // Enhance ham AI chaqiruvi: Generate bilan bir xil qoida. Xom gen asset/tashqi URL emas,
+  // faqat shu user uchun /ref-upload yaratgan server-trimmed clip Vertex'ga yuboriladi.
+  const invalidEnhanceVideo = videoRefUrls.some((url) => {
+    const key = gcsKeyFromUrl(url);
+    return !key || !key.startsWith(`gen-refs/${req.user!.userId}/clips/`);
+  });
+  if (invalidEnhanceVideo) {
+    return { status: 400, body: {
+      error: "Video references must be trimmed in the clip editor before Enhance",
+      code: "VIDEO_CLIP_REQUIRED",
+    } };
+  }
+  const allowedMentionAdditions = new Set<MentionKey>([
+    ...attachedEnhanceMentionKeys(p.data.image_urls || p.data.references, p.data.image_roles, "image"),
+    ...attachedEnhanceMentionKeys(p.data.video_urls, p.data.video_roles, "video"),
+    ...attachedEnhanceMentionKeys(p.data.audio_urls, p.data.audio_roles, "audio"),
+  ]);
   const enhanceCost = computeEnhanceCost({
     imageUrls: refUrls,
     videoUrls: videoRefUrls,
@@ -2057,7 +2150,7 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
       const cut = clipped.lastIndexOf(" ");
       trimmed = clipped.slice(0, cut > Math.floor(maxChars * 0.75) ? cut : maxChars).trim();
     }
-    const integrity = validateMentionIntegrity(originalPrompt, trimmed);
+    const integrity = validateMentionIntegrity(originalPrompt, trimmed, allowedMentionAdditions);
     if (!integrity.ok) return { prompt: originalPrompt, mentionMismatch: true };
     return { prompt: trimmed, mentionMismatch: false };
   };

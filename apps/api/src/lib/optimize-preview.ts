@@ -381,7 +381,7 @@ async function transcodeVideoReferencePass(
 
 /**
  * Video referensni modelga qulay klipga aylantiradi:
- *  - ixtiyoriy start/end oralig'i
+ *  - majburiy start/end oralig'i (xom video reference providerga o'tmasin)
  *  - 720p→480p fallback
  *  - 12fps→10fps fallback
  *  - audio olib tashlanadi
@@ -392,6 +392,17 @@ export async function optimizeVideoReferenceForUpload(
   clip?: { startSec?: number; endSec?: number }
 ): Promise<boolean> {
   if (!fs.existsSync(filePath)) return false;
+  const startSec = Number(clip?.startSec);
+  const endSec = Number(clip?.endSec);
+  const selectedDuration = endSec - startSec;
+  if (
+    !Number.isFinite(startSec) ||
+    !Number.isFinite(endSec) ||
+    startSec < 0 ||
+    endSec <= startSec ||
+    selectedDuration < 2 ||
+    selectedDuration > 15
+  ) return false;
   const tmp = `${filePath}.refopt.mp4`;
   // BytePlus Seedance r2v `reference_video` HAR KADR piksel sonini ≥ 409600 talab qiladi (aks holda
   // InvalidParameter 400 → gen fail+refund). Eski `scale=-2:min(720,ih)` FAQAT balandlikni cheklardi:
@@ -406,7 +417,13 @@ export async function optimizeVideoReferenceForUpload(
   ];
   for (const preset of presets) {
     try {
-      await transcodeVideoReferencePass(filePath, tmp, clip || null, preset);
+      await transcodeVideoReferencePass(filePath, tmp, { startSec, endSec }, preset);
+      // ffmpeg muvaffaqiyat kodi yetarli emas: hosila aynan tanlangan segment uzunligida ekanini
+      // ffprobe bilan tekshiramiz. Noto'g'ri/full chiqish providerga o'tmaydi.
+      const spec = await probeMediaSpec(tmp);
+      if (spec.durationSec == null || Math.abs(spec.durationSec - selectedDuration) > 0.75) {
+        throw new Error("Trimmed reference duration does not match the selected segment");
+      }
       fs.renameSync(tmp, filePath);
       return true;
     } catch {
