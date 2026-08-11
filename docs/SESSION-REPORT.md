@@ -1,15 +1,15 @@
-Session Report: 2026-08-10
-- Unified session gallery previously loaded only `status=done` generations.
-- The first pending-card fix covered an opened session but not the new-session launcher stage.
-- Activity therefore showed the live job while Create remained on an empty launcher.
-- A shared session-job bridge now carries Image, Video, Voice and SFX active jobs into the open session.
-- Pending cards appear immediately and update their progress in place.
-- When the server returns the new session id, Create now opens that persistent session automatically.
-- Successful jobs leave the pending registry and trigger the existing finished-generation refresh.
-- Failed jobs remain visible for 10 seconds as `Failed · credits refunded`.
-- Unified pending cards retain real cancel behavior through the existing generation engines.
-- Focused Create, vNext, responsive, session persistence and Premiere tests passed.
-- Inline JavaScript application blocks passed syntax compilation.
-- `git diff --check` passed.
-- Shared AE/Premiere CEP was refreshed locally with `AF_SKIP_AE=1`.
-- Follow-up regressions passed; Adobe was not restarted automatically.
+Session Report: 2026-08-11
+- Plugin va Web video reference kirish yo‘llari audit qilindi.
+- Web uchun 2–15 soniyali preview, start/end va Selected part trim oynasi qo‘shildi.
+- File, My Library va generation drag/drop videolari trim oqimidan o‘tadi.
+- Plugin metadata yoki preview xatosida to‘liq videoni yuboradigan fallback olib tashlandi.
+- API video upload uchun aniq start/endni majburiy va fail-closed qildi.
+- Server faqat kesilgan, siqilgan va audiosi olib tashlangan clip URL qaytaradi.
+- Provider va Enhance faqat userga tegishli gen-refs/.../clips URLni qabul qiladi.
+- 2–15 soniya va real ffmpeg duration integratsiya testi o‘tdi.
+- API build, Enhance, reference security va 24 provider testlari o‘tdi.
+- Studio parity, session policy va device-auth UI testlari o‘tdi.
+- AE/Premiere shared UI, responsive va session persistence testlari o‘tdi.
+- Studio sync va AF_SKIP_AE=1 shared CEP refresh bajarildi.
+- O‘rnatilgan CEP source bilan bir xil; Adobe avtomatik restart qilinmadi.
+- _to_delete/ va alohida mockup working tree o‘zgarishlariga tegilmadi.

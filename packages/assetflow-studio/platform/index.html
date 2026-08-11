@@ -15275,6 +15275,15 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
 .ff .ff-create-enhance.off{opacity:.45;cursor:default}
 .ff .ff-create-enhance.busy{cursor:wait}
 .ff .ff-create-enhance-label{display:none}
+/* Video reference trim — web Create. Original fayl state/provider payload'iga kirmaydi:
+   modal tanlovi server /ref-upload'ga boradi, state'ga faqat kesilgan gen-refs/.../clips URL yoziladi. */
+.ff-trim-scrim{position:fixed;inset:0;z-index:140;background:rgba(0,0,0,.82);backdrop-filter:blur(9px);display:grid;place-items:center;padding:24px}
+.ff-trim-modal{width:min(820px,96vw);max-height:92vh;overflow:auto;background:#15161a;border:1px solid #34363d;border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.62);padding:22px;color:#f7f7f8}
+.ff-trim-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px}.ff-trim-head>div{min-width:0;flex:1}.ff-trim-head h3{margin:0 0 4px;font-size:22px}.ff-trim-name{color:#a8a9b2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ff-trim-x{width:36px;height:36px;border-radius:10px;border:1px solid #353740;background:#1d1e23;color:#fff;cursor:pointer}
+.ff-trim-video{display:block;width:100%;max-height:48vh;background:#050506;border-radius:14px;object-fit:contain}
+.ff-trim-panel{margin-top:16px;padding:16px;border:1px solid #30323a;border-radius:15px;background:#111216}.ff-trim-summary{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;font-weight:700}.ff-trim-ok{color:#b9ff38}.ff-trim-row{display:grid;grid-template-columns:62px 1fr 68px;align-items:center;gap:10px;margin:10px 0;color:#aaaab3}.ff-trim-row input{width:100%;accent-color:#b9ff38}.ff-trim-time{text-align:right;font:700 12px var(--mono)}
+.ff-trim-note{margin-top:12px;color:#9899a3;font-size:12px}.ff-trim-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.ff-trim-actions button{height:42px;padding:0 20px;border-radius:12px;border:1px solid #383a42;background:#1b1c21;color:#fff;font-weight:700;cursor:pointer}.ff-trim-actions .primary{min-width:190px;background:#f7f7f8;color:#101114;border-color:#f7f7f8}
+@media(max-width:560px){.ff-trim-scrim{padding:10px}.ff-trim-modal{padding:15px;border-radius:16px}.ff-trim-head h3{font-size:18px}.ff-trim-row{grid-template-columns:48px 1fr 58px}.ff-trim-actions .primary{min-width:0;flex:1}}
 .ff .ff-create-generate{height:37px;min-width:105px;padding:0 15px;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent);font:800 11px/1 var(--font-sans);cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;white-space:nowrap}
 .ff .ff-create-generate:disabled{opacity:.42;cursor:not-allowed}
 .ff .ff-create-cost{margin-left:5px;font-weight:800}
@@ -21606,12 +21615,23 @@ class Component extends DCLogic {
   // addRefFile'ning upload'dan keyingi yozuvi bilan AYNAN bir xil slotlar). URL FFAPI.genGet
   // orqali YANGI imzo bilan olinadi. Kredit/narxga ta'sir yo'q — quote referenslarni imzolamaydi.
   async addRefFromLibrary(k, genId) {
-    let url = null;
+    let url = null, title = 'Video reference';
     try {
       const g = await FFAPI.genGet(genId);
       url = (g.assets && g.assets[0] && g.assets[0].url) || null;
+      title = g.prompt || g.title || title;
     } catch (e) { this.toast(this.errMsg(e)); return; }
     if (!url) { this.toast('Source file not found'); return; }
+    if (k === 'vid') {
+      // My Library video ham original gen URL bilan state/providerga kirmaydi: avval server clip.
+      this.setState({ refLibPick: null });
+      try {
+        this.setState({ refBusy: true });
+        url = await this.uploadTrimmedVideoUrl(url, title);
+      } catch (e) { this.toast(this.errMsg(e)); url = null; }
+      this.setState({ refBusy: false });
+      if (!url) return;
+    }
     const tool = this.curTool(); const model = this.curModel();
     const caps = this.refCaps(tool.mode, model);
     let added = true;
@@ -21690,18 +21710,104 @@ class Component extends DCLogic {
     this.toast(orig ? 'Loaded into composer — edit and Generate' : 'Loaded — original model unavailable, using a fallback');
     setTimeout(() => { try { this.afSizePromptTa(); const el = document.querySelector('.va-dock .prompt'); if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } } catch (e) {} }, 60); // #1 — restore'da ham to'liq ko'rinsin
   }
+  isVideoRefFile(f) {
+    return !!(f && (/^video\//i.test(String(f.type || '')) || /\.(?:mp4|webm|mov|m4v)$/i.test(String(f.name || ''))));
+  }
+  fmtClipTime(sec) {
+    const n = Math.max(0, Number(sec) || 0), m = Math.floor(n / 60), s = Math.floor(n % 60), d = Math.round((n - Math.floor(n)) * 10);
+    return m + ':' + String(s).padStart(2, '0') + (d ? ('.' + d) : '');
+  }
+  // Web video trim: 2–15s diapazon tanlanmaguncha Promise URL/payload oqimiga o'tmaydi.
+  // File va My Library URL bitta modalni ishlatadi; Cancel/metadata xatosi fail-closed.
+  chooseVideoRefClip(source) {
+    return new Promise((resolve, reject) => {
+      const srcUrl = source && source.srcUrl;
+      const file = source && source.file;
+      if (!srcUrl && !file) { reject(new Error('No video source')); return; }
+      const previewUrl = srcUrl || URL.createObjectURL(file);
+      const ownsUrl = !srcUrl;
+      const scrim = document.createElement('div'); scrim.className = 'ff-trim-scrim'; scrim.setAttribute('role', 'dialog'); scrim.setAttribute('aria-modal', 'true');
+      scrim.innerHTML = '<div class="ff-trim-modal"><div class="ff-trim-head"><div><h3>Trim video reference</h3><div class="ff-trim-name"></div></div><button class="ff-trim-x" type="button" aria-label="Close">✕</button></div><video class="ff-trim-video" controls playsinline preload="metadata"></video><div class="ff-trim-panel"><div class="ff-trim-summary"><span>Selected segment</span><span class="ff-trim-ok">Loading…</span></div><label class="ff-trim-row"><span>Start</span><input class="ff-trim-start" type="range" min="0" value="0" step="0.1"><span class="ff-trim-start-v ff-trim-time">0:00</span></label><label class="ff-trim-row"><span>End</span><input class="ff-trim-end" type="range" min="0" value="0" step="0.1"><span class="ff-trim-end-v ff-trim-time">0:00</span></label><div class="ff-trim-note">Only this server-trimmed segment is uploaded and sent to the AI model. The original full video is never used as the reference.</div></div><div class="ff-trim-actions"><button class="ff-trim-cancel" type="button">Cancel</button><button class="ff-trim-use primary" type="button" disabled>Use selected clip</button></div></div>';
+      document.body.appendChild(scrim);
+      const modal = scrim.firstElementChild, video = scrim.querySelector('video');
+      const startEl = scrim.querySelector('.ff-trim-start'), endEl = scrim.querySelector('.ff-trim-end');
+      const startV = scrim.querySelector('.ff-trim-start-v'), endV = scrim.querySelector('.ff-trim-end-v');
+      const summary = scrim.querySelector('.ff-trim-ok'), use = scrim.querySelector('.ff-trim-use');
+      scrim.querySelector('.ff-trim-name').textContent = String((source && source.name) || 'Video reference');
+      let total = 0, done = false;
+      const cleanup = (value, err) => {
+        if (done) return; done = true;
+        document.removeEventListener('keydown', onKey);
+        try { video.pause(); video.removeAttribute('src'); video.load(); } catch (_) {}
+        if (ownsUrl) try { URL.revokeObjectURL(previewUrl); } catch (_) {}
+        scrim.remove();
+        if (err) reject(err); else resolve(value);
+      };
+      const values = () => ({ startSec: Number(startEl.value) || 0, endSec: Number(endEl.value) || 0 });
+      const sync = (changed) => {
+        if (!total) return;
+        let start = Math.max(0, Math.min(Number(startEl.value) || 0, total));
+        let end = Math.max(0, Math.min(Number(endEl.value) || 0, total));
+        if (end - start < 2) { if (changed === 'start') start = Math.max(0, end - 2); else end = Math.min(total, start + 2); }
+        if (end - start > 15) { if (changed === 'start') end = Math.min(total, start + 15); else start = Math.max(0, end - 15); }
+        startEl.value = String(start); endEl.value = String(end);
+        startV.textContent = this.fmtClipTime(start); endV.textContent = this.fmtClipTime(end);
+        const dur = end - start, valid = dur >= 2 && dur <= 15;
+        summary.textContent = this.fmtClipTime(start) + ' – ' + this.fmtClipTime(end) + ' · ' + (Math.round(dur * 10) / 10) + 's';
+        summary.style.color = valid ? '#b9ff38' : '#ff7d72'; use.disabled = !valid;
+        try { video.currentTime = changed === 'end' ? end : start; } catch (_) {}
+      };
+      video.onloadedmetadata = () => {
+        total = Number(video.duration) || 0;
+        if (!Number.isFinite(total) || total < 2) { cleanup(null, new Error('Video must be at least 2 seconds')); return; }
+        startEl.max = endEl.max = String(total);
+        startEl.value = '0'; endEl.value = String(Math.min(total, 8));
+        sync('end'); use.disabled = false;
+      };
+      video.onerror = () => cleanup(null, new Error('Could not read video metadata — the full video was not uploaded'));
+      video.ontimeupdate = () => { const r = values(); if (video.currentTime >= r.endSec) { video.pause(); try { video.currentTime = r.startSec; } catch (_) {} } };
+      video.onplay = () => { const r = values(); if (video.currentTime < r.startSec || video.currentTime >= r.endSec) try { video.currentTime = r.startSec; } catch (_) {} };
+      startEl.oninput = () => sync('start'); endEl.oninput = () => sync('end');
+      const cancel = () => cleanup(null, null);
+      const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); cancel(); } };
+      document.addEventListener('keydown', onKey);
+      scrim.querySelector('.ff-trim-x').onclick = cancel; scrim.querySelector('.ff-trim-cancel').onclick = cancel;
+      scrim.onclick = (e) => { if (e.target === scrim) cancel(); };
+      modal.onclick = (e) => e.stopPropagation();
+      use.onclick = () => { const r = values(); const dur = r.endSec - r.startSec; if (dur >= 2 && dur <= 15) cleanup({ clipMode: 'part', startSec: r.startSec, endSec: r.endSec, durationSec: dur }, null); };
+      video.src = previewUrl;
+    });
+  }
+  async uploadTrimmedVideoUrl(srcUrl, name) {
+    const clip = await this.chooseVideoRefClip({ srcUrl, name });
+    if (!clip) return null;
+    const r = await FFAPI.refUpload({ srcUrl, clipMode: clip.clipMode, clipStartSec: clip.startSec, clipEndSec: clip.endSec });
+    if (!r || !r.url || !r.clip) throw new Error('The server did not return a trimmed video reference');
+    return r.url;
+  }
   // P8 — referens faylni R2'ga yuklash: kichik fayl dataUrl (/gen/ref-upload), katta fayl presigned
-  //   PUT (/gen/ref-upload-url) + {srcKey}. Yagona upload yo'li — drop/paste/menyu shuni qayta ishlatadi.
+  // PUT (/gen/ref-upload-url) + {srcKey}. Video bo'lsa har ikkala yo'l ham majburiy clip param oladi.
   async uploadOneRef(f) {
+    let clip = null;
+    if (this.isVideoRefFile(f)) {
+      clip = await this.chooseVideoRefClip({ file: f, name: f.name });
+      if (!clip) return null;
+    }
     if (f.size <= 20 * 1024 * 1024) {
       const dataUrl = await new Promise((res, rej) => { const rd = new FileReader(); rd.onload = () => res(String(rd.result || '')); rd.onerror = rej; rd.readAsDataURL(f); });
-      const r = await FFAPI.refUpload({ dataUrl });
+      const body = { dataUrl };
+      if (clip) Object.assign(body, { clipMode: clip.clipMode, clipStartSec: clip.startSec, clipEndSec: clip.endSec });
+      const r = await FFAPI.refUpload(body);
+      if (clip && (!r || !r.clip)) throw new Error('The server did not return a trimmed video reference');
       return (r && r.url) || null;
     }
     const pre = await FFAPI.refUploadUrl(f.type || 'application/octet-stream', f.size, f.name);
     const put = await fetch(pre.url, { method: 'PUT', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f });
     if (!put.ok) throw new Error('Upload failed (' + put.status + ')');
-    const r = await FFAPI.refUpload({ srcKey: pre.key });
+    const body = { srcKey: pre.key };
+    if (clip) Object.assign(body, { clipMode: clip.clipMode, clipStartSec: clip.startSec, clipEndSec: clip.endSec });
+    const r = await FFAPI.refUpload(body);
+    if (clip && (!r || !r.clip)) throw new Error('The server did not return a trimmed video reference');
     return (r && r.url) || null;
   }
   // ＋ menyu: k slotiga yuklash (start/end=bitta kadr; img/vid/aud=multiple). P14.3 — multi-file.
@@ -21744,7 +21850,7 @@ class Component extends DCLogic {
     if (!arr.length) return;
     let added = 0;
     for (const f of arr) {
-      const mt = f.type || '';
+      const mt = f.type || (this.isVideoRefFile(f) ? 'video/mp4' : '');
       if (!/^(image|video|audio)\//.test(mt)) { this.toast('Unsupported file: ' + (f.name || mt || 'file')); continue; }
       if (f.size > 100 * 1024 * 1024) { this.toast((f.name || 'A file') + ' is too large — max 100MB'); continue; }
       this.setState({ refBusy: true });
@@ -21833,6 +21939,14 @@ class Component extends DCLogic {
     try { const g = await FFAPI.genGet(obj.id); url = (g.assets && g.assets[0] && g.assets[0].url) || null; } catch (e) { this.toast(this.errMsg(e)); return; }
     if (!url) { this.toast('Source file not found'); return; }
     const k = obj.type === 'video' ? 'vid' : (obj.type === 'audio' || obj.type === 'sfx') ? 'aud' : 'img';
+    if (k === 'vid') {
+      try {
+        this.setState({ refBusy: true });
+        url = await this.uploadTrimmedVideoUrl(url, 'Generated video');
+      } catch (e) { this.toast(this.errMsg(e)); url = null; }
+      this.setState({ refBusy: false });
+      if (!url) return;
+    }
     const idx = k === 'vid' ? this.state.refVideos.length : k === 'aud' ? this.state.refAudios.length : this.state.refImages.length;
     if (this._chipEd) this._chipEd.commit();
     this.setState(st => { if (k === 'vid') return { refVideos: st.refVideos.concat([url]) }; if (k === 'aud') return { refAudios: st.refAudios.concat([url]) }; return { refImages: st.refImages.concat([url]) }; });

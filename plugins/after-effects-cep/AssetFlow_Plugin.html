@@ -15759,12 +15759,14 @@ window.afGallery=(function(){
         if(!src.dataUrl)throw err;
         var msg=String((err&&err.message)||'');
         if((err&&err.code==='PAYLOAD_TOO_LARGE') || (err&&err.status===413))throw err;
-        if(msg==='FORM_UNAVAILABLE')return studioPost('/api/studio/gen/ref-upload',{dataUrl:src.dataUrl},300000);
-        if(err&&err.status===400)return studioPost('/api/studio/gen/ref-upload',{dataUrl:src.dataUrl},300000);
+        // Fallback ham clip parametrlarini saqlaydi. Aks holda multipart ishlamagan CEP'da serverga
+        // faqat dataUrl ketib, tanlangan segment o'rniga original video yuborilishi mumkin edi.
+        if(msg==='FORM_UNAVAILABLE')return studioPost('/api/studio/gen/ref-upload',Object.assign({dataUrl:src.dataUrl},clipParamsJson(src)),300000);
+        if(err&&err.status===400)return studioPost('/api/studio/gen/ref-upload',Object.assign({dataUrl:src.dataUrl},clipParamsJson(src)),300000);
         throw err;
       }
     }
-    if(src&&src.dataUrl)return studioPost('/api/studio/gen/ref-upload',{dataUrl:src.dataUrl},300000);
+    if(src&&src.dataUrl)return studioPost('/api/studio/gen/ref-upload',Object.assign({dataUrl:src.dataUrl},clipParamsJson(src)),300000);
     throw new Error('No reference source found');
   }
   function removeLocalTemp(path){
@@ -15899,13 +15901,13 @@ window.afGallery=(function(){
     });
   }
   async function openVgClipper(src){
-    if(!src||(!src.path&&!src.srcUrl)){ if(src)src.skipClipper=true; prepAndUploadMediaRef(src,'video'); return; }
+    // Fail-closed: preview/meta olinmasa full videoni jim upload qilmaymiz. Foydalanuvchi aniq
+    // segment tanlamaguncha video reference yaratmaydi va AI providerga hech qanday video bormaydi.
+    if(!src||(!src.path&&!src.srcUrl)){ throw new Error('Could not open this video for trimming'); }
     var meta=null;
     if(src.srcUrl){ try{ meta=await probeRemoteMeta(src.srcUrl); }catch(_){ meta=null; } }
     else meta=await inspectMediaSource(src,'video');
-    // MUHIM: fallback'da skipClipper=true — aks holda prepAndUploadMediaRef yana openVgClipper'ni
-    // chaqirib CHEKSIZ REKURSIYA bo'lardi (meta har safar olinmasa).
-    if(!meta||!meta.duration){ src.skipClipper=true; prepAndUploadMediaRef(src,'video'); return; }
+    if(!meta||!meta.duration){ throw new Error('Could not read video duration — the full video was not uploaded'); }
     if(meta.duration<2){ toast('Video reference must be at least 2 seconds','warning'); return; }
     resetVgClipper();
     vgClip.src=src;
@@ -16602,14 +16604,16 @@ window.afGallery=(function(){
     var obj={type:type,dataUrl:type==='image'?preview:null,url:null,loading:true,sizeBytes:(type==='video'?0:(sizeBytes||0))};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
     studioUploadRefUniversal(src).then(function(r){
-      if(!r||!r.url){ toast('Failed to upload reference','error'); var i=mref.indexOf(obj); if(i>=0){ var removed=(mref[i]&&mref[i].token)||null; mref.splice(i,1); syncMediaRefTokens(removed); } renderMediaRefs(); updRefMeta(); refreshVgBtn(); return; }
+      // Video uchun server clip dalili majburiy. Eski/noto'g'ri API full manba URL qaytarsa state'ga
+      // qo'shilmaydi va keyingi quote/generate orqali AI modelga o'tmaydi.
+      if(!r||!r.url||(type==='video'&&!r.clip)){ toast(type==='video'?'Server did not return a trimmed video clip':'Failed to upload reference','error'); var i=mref.indexOf(obj); if(i>=0){ var removed=(mref[i]&&mref[i].token)||null; mref.splice(i,1); syncMediaRefTokens(removed); } renderMediaRefs(); updRefMeta(); refreshVgBtn(); return; }
       var finalBytes=(r&&r.bytes)||obj.sizeBytes||0;
       if(totalLim&&finalBytes&&(totalRefBytes(type)+finalBytes)>totalLim){
         toast(mediaRefTotalLimitMsg(type,totalLim),'warning');
         var ti=mref.indexOf(obj); if(ti>=0){ var tremoved=(mref[ti]&&mref[ti].token)||null; mref.splice(ti,1); syncMediaRefTokens(tremoved); }
         renderMediaRefs(); updRefMeta(); refreshVgBtn(); return;
       }
-      obj.url=r.url; obj.loading=false; obj.sizeBytes=finalBytes; obj.savedRefId=r.id||null; obj.expiresAt=r.expiresAt||null; renderMediaRefs(); refreshVgBtn(); loadVgSavedRefs(true);
+      obj.url=r.url; obj.loading=false; obj.sizeBytes=finalBytes; obj.savedRefId=r.id||null; obj.expiresAt=r.expiresAt||null; obj.clip=r.clip||null; renderMediaRefs(); refreshVgBtn(); loadVgSavedRefs(true);
       if(type==='video'&&r.audioRef&&r.audioRef.url){
         var addedAudio=appendUploadedRef('audio',r.audioRef);
         if(addedAudio)toast('Video and its audio added as references','success');
