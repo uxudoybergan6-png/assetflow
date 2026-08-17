@@ -116,6 +116,10 @@ jobs:
           # `set -euo pipefail` butun bosqichni o'ldiradi (fallback'gacha yetib bormaydi).
           DIRECT_URL="$(grep -E '^DIRECT_DATABASE_URL:' cloudrun-env.yaml | head -1 | sed -E 's/^DIRECT_DATABASE_URL:[[:space:]]*//; s/^"//; s/"[[:space:]]*$//' || true)"
           export DIRECT_DATABASE_URL="${DIRECT_URL:-$DB_URL}"
+          # 2026-08-18 birinchi rollout eski faol IngestJob dublikatlari sabab indexda
+          # to'xtagan. Faqat AYNAN shu ma'lum failed migration bo'lsa official Prisma
+          # resolve ishlaydi; boshqa failed migration topilsa skript fail-closed.
+          node scripts/recover-ingest-dedupe-migration.mjs
           npm run migrate:deploy -w @creative-tools/database
           # Ko'chishdan keyingi isbot: yangi bazada BARCHA migratsiya "applied" bo'lsin.
           # Drift yoki qo'llanmagan migratsiya bo'lsa bu yerda yiqilamiz → deploy TO'XTAYDI.

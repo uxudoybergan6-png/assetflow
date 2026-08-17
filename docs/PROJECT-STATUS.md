@@ -6,7 +6,8 @@
 > `REJA-*`, `STUDIO-GEN-*`, mockup va archive fayllari bajarilgan holat deb talqin qilinmaydi.
 
 **Yangilangan:** 2026-08-18
-**Holat:** local code hardened + automated QA passed; production/Marketplace release hali tashqi gate’larda.
+**Holat:** audit hardening committed, CI passed va production rollout gated pipeline orqali chiqarildi;
+Marketplace signed release hali tashqi gate’larda.
 
 ## Joriy arxitektura
 
@@ -66,7 +67,10 @@ Studio manbasi faqat `packages/assetflow-studio/js/` va `styles/`da tahrirlanadi
   Comp/Bin import tanlovi saqlanadi va ishlaydi; blank New session, Auto model, update check va project
   template import ishlaydi; Premiere’da qo‘llanmaydigan host-delete va’dasi olib tashlandi.
 - CMS notice: ishlaydigan CTA bo‘lmasa notice majburan yopiladigan bo‘ladi; guest register havolasi saqlanadi.
-- Lokal API/public/plugin build va regression testlari o‘tdi; deploy, live billing va signed release tashqi gate.
+- Lokal API/public/plugin build va regression testlari hamda GitHub Linux/Windows CI o‘tdi.
+- Production rollout: eski faol ingest dublikatlari deterministik terminal holatga keltirilib 4 audit
+  migratsiyasi qo‘llanadi; Cloud Run health gate va CDN Worker rollout ishlaydi.
+- Live billing canary va signed Marketplace installer tashqi gate bo‘lib qoladi.
 
 Migratsiyalar:
 
@@ -112,19 +116,18 @@ Audit regressiya skriptlari `apps/api/scripts/test-*.mjs`,
 
 Quyidagilar lokal kod bilan tasdiqlanmaydi va bajarilmaguncha **production/Marketplace ready emas**:
 
-1. Yangi Prisma migratsiyalarini staging/production DB’ga backup bilan deploy qilish.
-2. Production secret/env: haqiqiy Turnstile site+secret, TOTP key, moderation, Sentry, billing,
+1. Production secret/env: haqiqiy Turnstile site+secret, TOTP key, moderation, Sentry, billing,
    provider va storage qiymatlarini o‘rnatib boot validation’dan o‘tkazish.
-3. Signed ZXP + notarized PKG + signed MSI; haqiqiy ZXPSignCmd/signtool/notary tekshiruvi.
-4. Clean macOS/Windows profilida install/update/uninstall va AE/Premiere restart/import smoke.
-5. Premiere CEP UI + hidden UXP companion uchun Adobe tasdiqlagan bitta orchestrated release kanali;
+2. Signed ZXP + notarized PKG + signed MSI; haqiqiy ZXPSignCmd/signtool/notary tekshiruvi.
+3. Clean macOS/Windows profilida install/update/uninstall va AE/Premiere restart/import smoke.
+4. Premiere CEP UI + hidden UXP companion uchun Adobe tasdiqlagan bitta orchestrated release kanali;
    hozir `.ccx` alohida va shared updater uni avtomatik o‘rnatmay, fail-closed download sahifasiga yuboradi.
-6. Arzon real-provider canary va output moderation dalili.
-7. Live checkout → webhook → plan/credit → cancel/refund end-to-end sinovi.
-8. Cloud SQL restore drill, GCS object versioning/lifecycle va backup restore dalili.
-9. GitHub `main` branch protection/ruleset: required CI, review, direct-push/force-push taqiqi.
-10. Terms/privacy/refund/DMCA uchun yurist sign-off.
-11. Production katalog content ishi: PRO assortiment, preview completeness, taxonomy/format normalization.
+5. Arzon real-provider canary va output moderation dalili.
+6. Live checkout → webhook → plan/credit → cancel/refund end-to-end sinovi.
+7. Cloud SQL restore drill, GCS object versioning/lifecycle va backup restore dalili.
+8. GitHub `main` branch protection/ruleset: required CI, review, direct-push/force-push taqiqi.
+9. Terms/privacy/refund/DMCA uchun yurist sign-off.
+10. Production katalog content ishi: PRO assortiment, preview completeness, taxonomy/format normalization.
 
 ## Ataylab current scope’dan tashqarida
 

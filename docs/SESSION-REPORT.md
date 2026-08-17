@@ -2,12 +2,14 @@ Session Report: 2026-08-18 — web/plugin audit remediation
 - Public Stock browse/detail va landingdagi no-op/misroute tugmalar tuzatildi.
 - Lemon Squeezy customer portal backend, web va customer pluginga ulandi.
 - CMS notice trap, canonical narx, guest holati, share fallback va release race tuzatildi.
-- Studio Gen retry payloadlari immutable; stale ledger/session/project javoblari bloklandi.
-- Audio eski sessiyadan ham o‘ynaydi; ARIA va xato holati yaxshilandi.
+- Studio Gen retry payloadlari immutable; stale javoblar bloklandi; eski session audio/ARIA tuzatildi.
 - Plugin tokeni secure store’dan keyin plaintextga qayta yozilmaydi.
 - Comp/Bin import, blank New session, Auto model va Check for updates ishlaydi.
-- Project template Import real pack oqimiga ulandi; Premiere host-delete da’vosi olib tashlandi.
-- Bulk web download ikkinchi tasdiq talab qiladi; 40 fayl himoyasi saqlandi.
+- Project template Import real packga ulandi; Premiere host-delete da’vosi olib tashlandi; bulk tasdiq qo‘shildi.
 - studio:sync, API build, public-copy, create, Premiere, updater, responsive, package QA PASS.
 - Marketplace/release/download/dependency contract testlari PASS; npm audit: 0 zaiflik.
-- Commit va production deploy qilinmadi; live Turnstile/billing/signed installer tashqi gate bo‘lib qoladi.
+- Main commit/push bajarildi; GitHub Linux + real Windows MSI CI PASS.
+- CDN Worker productionga chiqarildi; GitHub Cloudflare secretlari yo‘qligi alohida infra qarzi.
+- Cloud SQL eski ingest dublikatlari migrationda xavfsiz terminal `duplicate` holatga keltirildi.
+- Failed Prisma attempt official rolled-back resolve bilan tiklanib, gated Cloud Run rollout bajarildi.
+- Live Turnstile/billing canary va signed Marketplace installer tashqi gate bo‘lib qoladi.
