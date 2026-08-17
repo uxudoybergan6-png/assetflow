@@ -157,6 +157,19 @@ type HealthResult = { healthy: boolean; checks: Record<string, string> };
 let healthCache: { at: number; result: HealthResult } | null = null;
 let healthInFlight: Promise<HealthResult> | null = null;
 
+/** Public health javobiga secret/host/message chiqarmasdan DB xato sinfini beradi. */
+function dbHealthReason(error: unknown): string {
+  const code = String((error as { code?: unknown })?.code || "").trim();
+  const name = String((error as { name?: unknown })?.name || "").trim();
+  const message = String((error as { message?: unknown })?.message || "");
+  if (code === "P1000" || /authentication failed/i.test(message)) return "authentication";
+  if (code === "P1001" || /can't reach database server/i.test(message)) return "unreachable";
+  if (/permission denied/i.test(message)) return "socket_permission";
+  if (/query engine|libquery_engine/i.test(message)) return "query_engine";
+  if (/does not exist/i.test(message)) return "missing_resource";
+  return code || name || "unknown";
+}
+
 async function probeHealth(): Promise<HealthResult> {
   const checks: Record<string, string> = {};
   let healthy = true;
@@ -165,6 +178,7 @@ async function probeHealth(): Promise<HealthResult> {
     checks.db = "ok";
   } catch (e) {
     checks.db = "down";
+    checks.db_reason = dbHealthReason(e);
     healthy = false;
     captureException(e);
   }
