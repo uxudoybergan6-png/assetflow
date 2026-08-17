@@ -24,11 +24,15 @@ if (process.env.NODE_ENV === "production" && !process.env.TOTP_ENC_KEY?.trim()) 
   throw new Error("TOTP_ENC_KEY is required in production and must be independent from JWT_SECRET");
 }
 
-function encKey(): Buffer {
+function keyFrom(material: string): Buffer {
   return crypto
     .createHash("sha256")
-    .update(process.env.TOTP_ENC_KEY || JWT_SECRET)
+    .update(material)
     .digest();
+}
+
+function encKey(): Buffer {
+  return keyFrom(process.env.TOTP_ENC_KEY || JWT_SECRET);
 }
 
 export function encryptTotpSecret(secret: string): string {
@@ -40,22 +44,33 @@ export function encryptTotpSecret(secret: string): string {
 }
 
 export function decryptTotpSecret(stored: string): string | null {
-  try {
-    const [v, ivB64, tagB64, encB64] = stored.split(":");
-    if (v !== "v1" || !ivB64 || !tagB64 || !encB64) return null;
-    const decipher = crypto.createDecipheriv(
-      "aes-256-gcm",
-      encKey(),
-      Buffer.from(ivB64, "base64")
-    );
-    decipher.setAuthTag(Buffer.from(tagB64, "base64"));
-    return Buffer.concat([
-      decipher.update(Buffer.from(encB64, "base64")),
-      decipher.final(),
-    ]).toString("utf8");
-  } catch {
-    return null;
+  const [v, ivB64, tagB64, encB64] = stored.split(":");
+  if (v !== "v1" || !ivB64 || !tagB64 || !encB64) return null;
+
+  // TOTP_ENC_KEY joriy qilinishidan oldingi production yozuvlari JWT_SECRET'dan
+  // olingan kalit bilan shifrlangan. Yangi mustaqil kalit o'rnatilganda adminlar
+  // birdan 2FA'dan qulflanib qolmasin: avval yangi, keyin faqat legacy JWT kalitini
+  // sinaymiz. Yangi encryptlar har doim TOTP_ENC_KEY bilan yoziladi.
+  const materials = Array.from(
+    new Set([process.env.TOTP_ENC_KEY?.trim(), JWT_SECRET].filter(Boolean) as string[])
+  );
+  for (const material of materials) {
+    try {
+      const decipher = crypto.createDecipheriv(
+        "aes-256-gcm",
+        keyFrom(material),
+        Buffer.from(ivB64, "base64")
+      );
+      decipher.setAuthTag(Buffer.from(tagB64, "base64"));
+      return Buffer.concat([
+        decipher.update(Buffer.from(encB64, "base64")),
+        decipher.final(),
+      ]).toString("utf8");
+    } catch {
+      // Key mos kelmadi — keyingi aniq legacy kandidatni sinaymiz.
+    }
   }
+  return null;
 }
 
 export function generateTotpSecret(): string {

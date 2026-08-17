@@ -58,7 +58,16 @@ jobs:
       - name: Write cloudrun-env.yaml
         env:
           CLOUDRUN_ENV_YAML: ${{ secrets.CLOUDRUN_ENV_YAML }}
-        run: printf '%s\n' "$CLOUDRUN_ENV_YAML" > cloudrun-env.yaml
+          TOTP_ENC_KEY: ${{ secrets.TOTP_ENC_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOTP_ENC_KEY" ]; then
+            echo "::error::TOTP_ENC_KEY GitHub secret yo'q — deploy bekor qilindi" >&2
+            exit 1
+          fi
+          printf '%s\n' "$CLOUDRUN_ENV_YAML" > cloudrun-env.yaml
+          sed -i '/^TOTP_ENC_KEY:/d' cloudrun-env.yaml
+          printf '\nTOTP_ENC_KEY: "%s"\n' "$TOTP_ENC_KEY" >> cloudrun-env.yaml
 
       # Gate: yangi kod DEPLOY bo'lishidan OLDIN migratsiyalar qo'llanadi. Xato
       # bo'lsa bu qadam yiqiladi → build/push/deploy ISHLAMAYDI → eski (ishlaydigan)
