@@ -7,6 +7,13 @@ FROM node:22-bookworm-slim AS build
 
 WORKDIR /app
 
+# Prisma `native` binaryTarget'ni generate paytida OpenSSL orqali aniqlaydi.
+# Build stage'da openssl bo'lmasa noto'g'ri engine varianti tanlanib, runtime'da
+# `query_engine_openssl` bilan faqat birinchi DB so'rovida yiqiladi.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 # ffmpeg (preview transcode) + openssl/ca (Prisma engine + TLS)
 # Monorepo: barcha workspace manbasi (node_modules .dockerignore'da chiqarilgan)
 COPY . .
@@ -28,7 +35,7 @@ RUN npm ci --include=dev \
  && cp -a node_modules/.prisma /tmp/prisma-generated \
  && npm prune --omit=dev --omit=optional \
  && cp -a /tmp/prisma-generated/. node_modules/.prisma/ \
- && test -n "$(find node_modules/.prisma/client -maxdepth 1 -type f -name 'libquery_engine-*.so.node' -print -quit)"
+ && test -f node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node
 
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
