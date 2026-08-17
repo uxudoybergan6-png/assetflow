@@ -6,8 +6,8 @@
 > `REJA-*`, `STUDIO-GEN-*`, mockup va archive fayllari bajarilgan holat deb talqin qilinmaydi.
 
 **Yangilangan:** 2026-08-18
-**Holat:** audit hardening committed, CI passed va production DB migratsiyalari qo‘llandi;
-Cloud Run rollout health-gated pipeline orqali chiqariladi, Marketplace signed release tashqi gate’da.
+**Holat:** audit hardening main’ga push qilindi, CI passed, production DB migratsiyalari qo‘llandi;
+health-gated Cloud Run revision 100% trafikda, Marketplace signed release tashqi gate’da.
 
 ## Joriy arxitektura
 
@@ -69,7 +69,7 @@ Studio manbasi faqat `packages/assetflow-studio/js/` va `styles/`da tahrirlanadi
 - CMS notice: ishlaydigan CTA bo‘lmasa notice majburan yopiladigan bo‘ladi; guest register havolasi saqlanadi.
 - Lokal API/public/plugin build va regression testlari hamda GitHub Linux/Windows CI o‘tdi.
 - Production rollout: eski faol ingest dublikatlari deterministik terminal holatga keltirilib 4 audit
-  migratsiyasi qo‘llanadi; Cloud Run health gate va CDN Worker rollout ishlaydi.
+  migratsiyasi qo‘llandi; Cloud Run DB/storage health gate’dan o‘tib 100% trafikka chiqarildi; CDN Worker ishlaydi.
 - Live billing canary va signed Marketplace installer tashqi gate bo‘lib qoladi.
 
 Migratsiyalar:

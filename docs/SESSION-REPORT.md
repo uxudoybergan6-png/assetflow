@@ -8,8 +8,8 @@ Session Report: 2026-08-18 — web/plugin audit remediation
 - Project template Import real packga ulandi; Premiere host-delete da’vosi olib tashlandi; bulk tasdiq qo‘shildi.
 - studio:sync, API build, public-copy, create, Premiere, updater, responsive, package QA PASS.
 - Marketplace/release/download/dependency contract testlari PASS; npm audit: 0 zaiflik.
-- Main commit/push bajarildi; GitHub Linux + real Windows MSI CI PASS.
-- CDN Worker productionga chiqarildi; GitHub Cloudflare secretlari yo‘qligi alohida infra qarzi.
+- Audit commitlari main’ga push, Linux/Windows MSI CI PASS; CDN Worker productionda (Actions secretlari infra qarzi).
 - Cloud SQL eski ingest dublikatlari migrationda xavfsiz terminal `duplicate` holatga keltirildi.
-- Failed Prisma attempt tiklandi, 4 migratsiya qo‘llandi; env xatosi faqat AI/signupni fail-closed bloklaydi.
+- 4 migratsiya qo‘llandi; Prisma OpenSSL engine tuzatildi; yangi Cloud Run revision health PASS va 100% trafikda.
+- Turnstile runtime holati faqat site+secret ikkalasi bo‘lsa `enabled`; yetishmasa signup fail-closed.
 - Live Turnstile/billing canary va signed Marketplace installer tashqi gate bo‘lib qoladi.

@@ -14,11 +14,14 @@ import { CATALOG_SELECT } from "./plugin.js";
 export const publicRouter = Router();
 
 publicRouter.get("/runtime-config", (_req: Request, res: Response) => {
+  const turnstileSecret = process.env.TURNSTILE_SECRET_KEY?.trim() || "";
+  const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY?.trim() || "";
+  const turnstileEnabled = Boolean(turnstileSecret && turnstileSiteKey);
   res.set("Cache-Control", "public, max-age=300, s-maxage=300");
   res.json({
     turnstile: {
-      enabled: Boolean(process.env.TURNSTILE_SECRET_KEY?.trim()),
-      siteKey: process.env.TURNSTILE_SITE_KEY?.trim() || "",
+      enabled: turnstileEnabled,
+      siteKey: turnstileEnabled ? turnstileSiteKey : "",
     },
   });
 });
