@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/bootstrap.ts",
     "build": "tsc && node dist/lib/gen-models-validate.js",
     "test:pricing": "npm run build && node scripts/test-pricing-normalization.mjs",
-    "start": "node dist/index.js",
+    "start": "node dist/bootstrap.js",
     "check:models": "node dist/lib/gen-models-validate.js"
   },
   "dependencies": {
@@ -30,6 +30,7 @@
     "express": "^5.1.0",
     "google-auth-library": "^10.9.0",
     "helmet": "^8.2.0",
+    "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.2.0",
     "otplib": "^13.4.1",

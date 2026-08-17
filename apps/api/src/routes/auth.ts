@@ -63,9 +63,6 @@ async function sendVerificationEmail(email: string): Promise<void> {
     ),
     text: `Verify your email: ${verifyUrl}`,
   });
-  if (!isEmailConfigured()) {
-    console.log(`[auth] Email tasdiqlash havolasi (${email}): ${verifyUrl}`);
-  }
 }
 
 /** Brute-force'dan himoya: Studio/admin login + register */
@@ -323,19 +320,15 @@ authRouter.post("/2fa/verify", twofaLimiter, async (req, res) => {
   const code = parsed.data.code.trim();
   let ok = false;
   if (looksLikeBackupCode(code)) {
-    const remaining = consumeBackupCode(code, user.totpBackupCodes);
-    if (remaining) {
+    const remaining = await consumeBackupCodeAtomically(user.id, code);
+    if (remaining !== null) {
       ok = true;
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { totpBackupCodes: remaining },
-      });
       writeAuditLog({
         actorId: user.id,
         action: "2fa_backup_code_used",
         targetType: "user",
         targetId: user.id,
-        detail: `Backup kod ishlatildi (qolgani: ${remaining.length})`,
+        detail: `Backup kod ishlatildi (qolgani: ${remaining})`,
       });
     }
   } else {
@@ -480,9 +473,6 @@ authRouter.post("/forgot-password", forgotLimiter, async (req, res) => {
       ),
       text: `Reset your password: ${resetUrl}`,
     });
-    if (!isEmailConfigured()) {
-      console.log(`[auth] Parol tiklash havolasi (${email}): ${resetUrl}`);
-    }
   }
 
   res.json({
@@ -512,16 +502,24 @@ authRouter.post("/reset-password", tokenLimiter, async (req, res) => {
     return;
   }
   const passwordHash = await bcrypt.hash(password, 12);
-  await prisma.user.update({
-    where: { id: user.id },
-    // Parol o'zgardi → barcha eski sessiyalarni bekor qilamiz:
-    // tokenVersion oshadi (eski JWT'lar rad etiladi) + plugin tokenlar o'chadi.
-    data: { passwordHash, tokenVersion: { increment: 1 } },
+  const claimed = await prisma.$transaction(async (tx) => {
+    const tokenClaim = await tx.verificationToken.deleteMany({
+      where: { token, expires: { gte: new Date() } },
+    });
+    if (tokenClaim.count !== 1) return false;
+    await tx.user.update({
+      where: { id: user.id },
+      // Parol o'zgardi → barcha eski sessiyalarni bekor qilamiz.
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+    });
+    await tx.pluginToken.deleteMany({ where: { userId: user.id } });
+    await tx.verificationToken.deleteMany({ where: { identifier: record.identifier } });
+    return true;
   });
-  await prisma.pluginToken.deleteMany({ where: { userId: user.id } });
-  await prisma.verificationToken.deleteMany({
-    where: { identifier: record.identifier },
-  });
+  if (!claimed) {
+    res.status(400).json({ error: "Link is invalid or has expired" });
+    return;
+  }
   // D3 — `role` javobda: reset-password.html tugagach foydalanuvchini O'Z portali
   // loginiga yuboradi (verify-email bilan bir xil naqsh). Ilgari role yo'q edi va
   // sahifa hammani Contributor Studio loginiga tashlardi (USER uchun boshi berk).
@@ -605,6 +603,22 @@ function require2faAdmin(req: import("express").Request, res: import("express").
   return true;
 }
 
+/** Backup code check+remove is serialized per user; parallel requests cannot both win. */
+async function consumeBackupCodeAtomically(userId: string, code: string): Promise<number | null> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`frameflow:2fa:${userId}`}))`;
+    const fresh = await tx.user.findUnique({
+      where: { id: userId },
+      select: { totpBackupCodes: true },
+    });
+    if (!fresh) return null;
+    const remaining = consumeBackupCode(code, fresh.totpBackupCodes);
+    if (!remaining) return null;
+    await tx.user.update({ where: { id: userId }, data: { totpBackupCodes: remaining } });
+    return remaining.length;
+  });
+}
+
 authRouter.get("/2fa/status", requireAuth, async (req, res) => {
   if (!require2faAdmin(req, res)) return;
   const user = await prisma.user.findUnique({
@@ -673,10 +687,15 @@ authRouter.post("/2fa/enable", requireAuth, twofaLimiter, async (req, res) => {
     res.status(401).json({ error: "Incorrect code — check your authenticator app", code: "TWO_FA_INVALID" });
     return;
   }
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { totpEnabled: true },
-  });
+  // 2FA yoqilishidan oldin olingan barcha web/plugin sessiyalarini bekor qilamiz.
+  // Javob yangi JWT bermaydi: admin yangi MFA-protected sessiya bilan qayta kiradi.
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id },
+      data: { totpEnabled: true, tokenVersion: { increment: 1 } },
+    }),
+    prisma.pluginToken.deleteMany({ where: { userId: user.id } }),
+  ]);
   writeAuditLog({
     actorId: user.id,
     action: "2fa_enabled",
@@ -684,7 +703,7 @@ authRouter.post("/2fa/enable", requireAuth, twofaLimiter, async (req, res) => {
     targetId: user.id,
     detail: "Admin TOTP 2FA yoqildi",
   });
-  res.json({ ok: true, enabled: true });
+  res.json({ ok: true, enabled: true, reauthRequired: true });
 });
 
 authRouter.post("/2fa/disable", requireAuth, twofaLimiter, async (req, res) => {
@@ -703,8 +722,9 @@ authRouter.post("/2fa/disable", requireAuth, twofaLimiter, async (req, res) => {
   let ok = false;
   let backupRemaining: string[] | null = null;
   if (looksLikeBackupCode(code)) {
-    backupRemaining = consumeBackupCode(code, user.totpBackupCodes);
-    ok = backupRemaining !== null;
+    const remainingCount = await consumeBackupCodeAtomically(user.id, code);
+    backupRemaining = remainingCount === null ? null : [];
+    ok = remainingCount !== null;
   } else {
     const secret = user.totpSecret ? decryptTotpSecret(user.totpSecret) : null;
     ok = !!secret && (await verifyTotpCode(code, secret));
@@ -714,17 +734,12 @@ authRouter.post("/2fa/disable", requireAuth, twofaLimiter, async (req, res) => {
     return;
   }
   if (backupRemaining) {
-    // #150: ishlatilgan backup kod darhol yoziladi — quyidagi o'chirish uzilsa ham qayta ishlatilmasin
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { totpBackupCodes: backupRemaining },
-    });
     writeAuditLog({
       actorId: user.id,
       action: "2fa_backup_code_used",
       targetType: "user",
       targetId: user.id,
-      detail: `Backup kod ishlatildi (2FA o'chirish, qolgani: ${backupRemaining.length})`,
+      detail: "Backup kod ishlatildi (2FA o'chirish)",
     });
   }
   await prisma.user.update({
@@ -951,6 +966,13 @@ authRouter.patch("/me", requireAuth, async (req, res) => {
 });
 
 authRouter.post("/checkout", requireAuth, async (req, res) => {
+  if (process.env.ENABLE_LEGACY_STRIPE_CHECKOUT !== "true") {
+    res.status(410).json({
+      error: "This checkout endpoint was retired; use /api/billing/checkout",
+      code: "LEGACY_CHECKOUT_RETIRED",
+    });
+    return;
+  }
   if (!isStripeConfigured()) {
     res.status(503).json({
       error: "Stripe is not configured — payments are unavailable right now (local dev)",

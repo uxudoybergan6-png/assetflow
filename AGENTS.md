@@ -6,7 +6,7 @@ Sen `/Users/usmonov/Projects/creative-tools-saas` monorepo ustida ishlayapsan. B
 
 1. Contributor Studio'da shablon yuklaydi (thumb, preview, pack .zip/.aep).
 2. Admin tasdiqlaydi (approve/reject, published=true).
-3. Tasdiqlangan shablonlar **Render API** orqali AE plugin katalogida chiqadi.
+3. Tasdiqlangan shablonlar **Cloud Run API** orqali AE/Premiere plugin katalogida chiqadi.
 4. Obunachi AE ichida Browse paneldan import qiladi (Free/Pro limitlar).
 5. Obunachi AE ichida **Studio Gen AI** bilan rasm/video/ovoz/SFX generatsiya qiladi (kredit asosida) — pastdagi "Studio Gen AI tizimi" bo'limiga qara.
 
@@ -16,8 +16,8 @@ Sen `/Users/usmonov/Projects/creative-tools-saas` monorepo ustida ishlayapsan. B
 
 | Xizmat | URL |
 |--------|-----|
-| API (Render) | https://assetflow-rqbq.onrender.com |
-| Studio (CF Pages) | https://assetflow-20j.pages.dev |
+| API (Cloud Run custom domain) | https://api.getframeflow.app |
+| Studio / public web | https://getframeflow.app |
 | Contributor login | …/studio/login.html yoki …/studio/contributor/ |
 | Admin login (brauzer) | …/studio/admin-login.html |
 | Admin panel | …/studio/admin/ |
@@ -25,7 +25,8 @@ Sen `/Users/usmonov/Projects/creative-tools-saas` monorepo ustida ishlayapsan. B
 **CF Pages Build command:** `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs`
 **CF Pages Output dir:** `packages/assetflow-studio/dist`
 
-**Render env:** `API_PUBLIC_URL`, `ADMIN_URL`, `CORS_ORIGIN`, R2 (`AWS_*`, `S3_ENDPOINT`, `CDN_BASE_URL`).
+**Cloud Run env:** `API_PUBLIC_URL`, `ADMIN_URL`, `CORS_ORIGIN`, GCS via S3-compatible adapter
+(`AWS_*`, `S3_ENDPOINT`, `CDN_BASE_URL`) va `DATABASE_URL` (Cloud SQL Unix socket).
 
 ## Seed hisoblar
 
@@ -39,7 +40,7 @@ Sen `/Users/usmonov/Projects/creative-tools-saas` monorepo ustida ishlayapsan. B
 
 ```
 packages/assetflow-studio/  → Admin + Contributor static UI (Vercel manba)
-apps/api/                   → Express API, Prisma, R2 upload
+apps/api/                   → Express API, Prisma, GCS/S3-compatible upload
 packages/database/          → Prisma schema + migrations
 plugins/after-effects-cep/  → AE Browse + AssetFlow Admin CEP panel
 ~/Library/.../com.assetflow.demo/  → o'rnatilgan CEP (install-cep.sh)
@@ -83,7 +84,7 @@ AE plagin ichidagi (USER roli) kredit-asosli generativ studiya. Rasm / rasm-edit
 - Demo statistika va soxta xabarlar olib tashlandi; haqiqiy API (`plugin-analytics`, audit, `activityByDay`).
 - `studio-stats.js`, `studio-config.js` production API default.
 
-### API / R2
+### API / object storage (tarixiy 2026-06-04 sessiya)
 
 - **Muammo:** Katalog faqat diskni tekshirardi → `hasPack: false` (Render ephemeral disk).
 - **Tuzatish:** `catalog-map.ts` → `templateAssetFlags()` (disk + R2).
@@ -107,17 +108,17 @@ AE plagin ichidagi (USER roli) kredit-asosli generativ studiya. Rasm / rasm-edit
 ### Tekshirilgan (ishlaydi)
 
 ```bash
-GET https://assetflow-rqbq.onrender.com/api/plugin/catalog
+GET https://api.getframeflow.app/api/plugin/catalog
 # → cmpzpnnyq0001oc1gzla3mzi5 "Football Championship..." hasPack:true, hasPreview:true
 ```
 
 ## Ochiq / ehtiyot bo'lish kerak joylar
 
-1. **Render deploy** — API o'zgarishlari push qilinmagan bo'lishi mumkin; avval `npm run build -w apps/api` va deploy.
+1. **Cloud Run deploy** — API o'zgarishlari push qilinmagan bo'lishi mumkin; avval `npm run build -w apps/api` va gated deploy.
 2. **AE Admin CEP** — brauzer Admin (Vercel) ishonchliroq; CEP `Failed to fetch` = eski extension yoki `localhost` API.
-3. **Plugin Browse** — login + **↻ Sync**; API `https://assetflow-rqbq.onrender.com`; **Video Templates** tab (`nav: video`).
+3. **Plugin Browse** — login + **↻ Sync**; API `https://api.getframeflow.app`; **Video Templates** tab (`nav: video`).
 4. **Pack yo'q** bo'lsa katalogda ko'rinadi lekin import bloklanadi (`hasPack:false`).
-5. **Tez orada** (hali to'liq emas): Stripe tariflar (localStorage), email bildirishnomalar, contributor payout.
+5. **Release gate:** Lemon Squeezy live billing canary, email/moderation env, contributor payout ops va signed installer dalili tashqi tekshiruv talab qiladi.
 6. **Lokal dev**: `npm run studio` → API (:4000) + Contributor Studio (:3000, `dev-studio-server.mjs`) + Admin (:3001, `dev-admin-server.mjs`), Studio MANBASINI to'g'ridan serv qiladi. (apps/web Next.js o'chirildi — audit #10; CF Pages/Vercel manbadan build qiladi.)
 
 ## Studio manba fayllari (MUHIM)
@@ -137,7 +138,7 @@ Artefaktlarga yozilgan o'zgarishlar yo'qoladi. HAR DOIM root `js/` va `styles/` 
 npm run pm2:start
 npm run check:stack
 npm run verify:pipeline
-API_URL=https://assetflow-rqbq.onrender.com node scripts/verify-pipeline.mjs --allow-remote   # ⚠️ yozadi (test shablon+hisob), oxirida tozalaydi
+API_URL=https://api.getframeflow.app node scripts/verify-pipeline.mjs --allow-remote   # ⚠️ yozadi (test shablon+hisob), oxirida tozalaydi
 npm run studio:sync
 bash plugins/after-effects-cep/scripts/install-cep.sh
 npm run migrate:deploy -w @creative-tools/database
@@ -149,15 +150,15 @@ npm run demo:clear   # demo shablonlar + xabarlar tozalash
 - Minimal diff, mavjud konventsiyaga mos.
 - Commit faqat foydalanuvchi so'rasa.
 - O'zbekcha UI matnlari.
-- Production URL: `assetflow-rqbq.onrender.com`, Studio: `assetflow-20j.pages.dev`.
+- Production URL: `api.getframeflow.app`, Studio/public web: `getframeflow.app`.
 - Har diagnostika/tuzatish tugaganda qisqa natijani `docs/SESSION-REPORT.md` ga yoz (almashtirib): nima qilindi, nima topildi, nima kutilmoqda. Maks 15 qator.
 
 ## Keyingi ustuvor vazifalar
 
-1. Render/Vercel deploy holatini tasdiqlash (katalog `hasPack` productionda).
+1. Cloud Run/Cloudflare deploy holatini tasdiqlash (katalog `hasPack` productionda).
 2. AE plugin ↔ API ulanishini CEP da barqaror qilish.
 3. Contributor upload → Admin approve → AE Sync end-to-end test.
-4. "Tez orada" bo'limlar: Stripe, email, payout.
+4. Tashqi release gate’lari: signed installer, live billing/provider canary, restore drill, email/moderation env va payout ops.
 
 ## Muhim fayllar (boshlash uchun)
 

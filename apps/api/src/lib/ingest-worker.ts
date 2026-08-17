@@ -94,9 +94,27 @@ export type EnqueueInput = {
 /** Partiyani navbatga qo'shadi (bitta transaction). Qaytadi: yaratilgan job id'lar. */
 export async function enqueueIngestJobs(items: EnqueueInput[]): Promise<{ jobIds: string[] }> {
   if (!items.length) return { jobIds: [] };
-  const created = await prisma.$transaction(
-    items.map((it) =>
-      prisma.ingestJob.create({
+  const contributorId = items[0].contributorId;
+  if (items.some((item) => item.contributorId !== contributorId)) throw new Error("Mixed contributor ingest batch");
+  const unique = Array.from(new Map(items.map((item) => [item.key, item])).values());
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ingest:${contributorId}`}))`;
+    const active = await tx.ingestJob.count({ where: { contributorId, status: { in: ["queued", "processing"] } } });
+    const existing = await tx.ingestJob.findMany({
+      where: { contributorId, key: { in: unique.map((item) => item.key) }, status: { in: ["queued", "processing"] } },
+      select: { key: true },
+    });
+    const existingKeys = new Set(existing.map((row) => row.key));
+    const pending = unique.filter((item) => !existingKeys.has(item.key));
+    const maxActive = Math.max(10, Number(process.env.INGEST_MAX_ACTIVE_PER_USER) || 100);
+    if (active + pending.length > maxActive) {
+      const err = new Error(`Too many queued ingest items (maximum ${maxActive})`) as Error & { code?: string };
+      err.code = "INGEST_QUOTA_REACHED";
+      throw err;
+    }
+    const created = [];
+    for (const it of pending) {
+      created.push(await tx.ingestJob.create({
         data: {
           batchId: it.batchId,
           contributorId: it.contributorId,
@@ -112,10 +130,10 @@ export async function enqueueIngestJobs(items: EnqueueInput[]): Promise<{ jobIds
           rightsTermsVersion: it.rightsTermsVersion ?? null,
         },
         select: { id: true },
-      })
-    )
-  );
-  return { jobIds: created.map((c) => c.id) };
+      }));
+    }
+    return { jobIds: created.map((c) => c.id) };
+  }, { isolationLevel: "Serializable" });
 }
 
 // ── Progress (klient polling) ──────────────────────────────────────────────────

@@ -55,6 +55,10 @@
   "engines": {
     "node": ">=22"
   },
+  "overrides": {
+    "ip-address": "^10.5.0",
+    "js-yaml": "^4.3.1"
+  },
   "devDependencies": {
     "pm2": "^7.0.3"
   }

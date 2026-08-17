@@ -1,0 +1,12 @@
+{
+  "name": "FrameFlow",
+  "short_name": "FrameFlow",
+  "description": "Creative assets and AI generation workspace.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090b0f",
+  "theme_color": "#090b0f",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

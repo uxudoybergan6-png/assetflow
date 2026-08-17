@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import crypto from "crypto";
 import multer from "multer";
 import { z } from "zod";
 import { prisma } from "@creative-tools/database";
@@ -702,7 +703,7 @@ studioGenRouter.delete("/gen/sessions/:id", async (req: Request, res: Response) 
   const genIds = gens.map((g) => g.id);
   // Storage tozalash — single-gen delete bilan bir xil qamrov (asset + poster + wm + linked ref)
   const keys = gens
-    .flatMap((g) => g.assets.flatMap((a) => [a.resultKey, a.thumbKey, a.watermarkKey]))
+    .flatMap((g) => g.assets.flatMap((a) => [a.resultKey, a.thumbKey, a.displayKey, a.previewKey, a.watermarkKey]))
     .filter((k): k is string => typeof k === "string" && k.length > 0);
   let r2deleted = 0;
   if (keys.length) {
@@ -1004,6 +1005,12 @@ async function validateReferenceOwnershipAndMetadata(
           contentType: data[1],
           sizeBytes: Math.floor((data[2].length * 3) / 4),
           url,
+        });
+      } else {
+        errors.push({
+          code: "PARAM_INVALID",
+          field: "references",
+          message: "External reference URLs are not accepted — upload the file or choose a saved reference",
         });
       }
       continue;
@@ -1533,7 +1540,7 @@ studioGenRouter.post("/gen/ref-upload-url", async (req: Request, res: Response) 
   const extFromName = /\.([a-z0-9]{2,5})$/i.exec(p.data.name || "")?.[1]?.toLowerCase() || "";
   const ext = extFromName || (p.data.contentType.startsWith("video/") ? "mp4" : p.data.contentType.startsWith("audio/") ? "mp3" : "png");
   const key = `gen-ref-src/${req.user!.userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const url = await getSignedUploadUrl(key, p.data.contentType, 900);
+  const url = await getSignedUploadUrl(key, p.data.contentType, 900, p.data.sizeBytes);
   res.json({ key, url, expiresInSec: 900 });
 });
 
@@ -1548,7 +1555,7 @@ const genSchema = z.object({
   costQuoteSignature: z.string().min(10),
   // Idempotentlik (P18) — klient job yaratishning har URINISHI uchun bitta UUID yuboradi.
   // Javob yo'qolib qayta yuborilsa, server shu kalit bo'yicha mavjud job'ni qaytaradi.
-  idempotencyKey: z.string().trim().min(8).max(80).optional(),
+  idempotencyKey: z.string().trim().min(8).max(80),
 });
 studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // Eslatma (P18 #3): cleanupExpiredSavedReferences va reconcileStuckGenerations shu yerdan
@@ -1562,25 +1569,6 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   }
   const { sessionId, mode, prompt, modelId, price, costQuoteSignature, idempotencyKey } = p.data;
   let params = { ...((p.data.params ?? {}) as Record<string, unknown>) };
-
-  // Idempotent QAYTA-URINISH: shu kalit bilan job ALLAQACHON yaratilган bo'lsa — o'shani qaytaramiz
-  // (yangi job YO'Q, kredit IKKINCHI marta yechilMAYDI). Ketma-ket retry (javob yo'qolgan) shu yerda
-  // qamrab olinadi; genuine parallel poyga esa create'dagi P2002-catch bilan (pastda).
-  if (idempotencyKey) {
-    const existing = await prisma.generation.findFirst({
-      where: { userId: req.user!.userId, idempotencyKey },
-    });
-    if (existing) {
-      const prof = await ensurePluginProfile(req.user!.userId);
-      res.status(200).json({
-        jobId: existing.id,
-        status: existing.status,
-        creditsLeft: prof.aiCredits,
-        idempotentReplay: true,
-      });
-      return;
-    }
-  }
 
   const session = await prisma.genSession.findUnique({ where: { id: sessionId } });
   if (!session || session.userId !== req.user!.userId) {
@@ -1788,10 +1776,60 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     return;
   }
 
+  // Unique reservation barcha quota/slot/kredit side-effectidan OLDIN yaratiladi.
+  const idempotencyHash = crypto.createHash("sha256")
+    .update(JSON.stringify({ sessionId, mode, prompt, modelId, price, ph }))
+    .digest("hex");
+  let gen: { id: string; status: string };
+  try {
+    gen = await prisma.generation.create({
+      data: {
+        sessionId,
+        userId: req.user!.userId,
+        mode,
+        prompt,
+        modelId,
+        params: params as object,
+        status: "reserving",
+        cost: price,
+        idempotencyKey,
+        idempotencyHash,
+      },
+    });
+  } catch (e) {
+    if ((e as { code?: string })?.code !== "P2002") throw e;
+    const existing = await prisma.generation.findFirst({
+      where: { userId: req.user!.userId, idempotencyKey },
+    });
+    if (!existing) throw e;
+    if (existing.idempotencyHash && existing.idempotencyHash !== idempotencyHash) {
+      res.status(409).json({
+        error: "Idempotency key was already used for a different request",
+        code: "IDEMPOTENCY_CONFLICT",
+      });
+      return;
+    }
+    const prof = await ensurePluginProfile(req.user!.userId);
+    res.status(existing.status === "reserving" ? 202 : 200).json({
+      jobId: existing.id,
+      status: existing.status,
+      creditsLeft: prof.aiCredits,
+      idempotentReplay: true,
+    });
+    return;
+  }
+  const failReservation = async (message: string) => {
+    await prisma.generation.updateMany({
+      where: { id: gen.id, status: "reserving" },
+      data: { status: "failed", error: message },
+    });
+  };
+
   // 3) Per-user kunlik /gen cap (ADMIN ozod) — bitta hisob orqali portlashni to'sadi.
   // Imzo tekshiruvidan KEYIN (muddati o'tgan/soxta quote hisoblagichni oshirmasin), lekin
   // kredit yechishdan OLDIN (reject → charge yo'q).
   if (!(await withinGenDailyCap(req.user!.userId, req.user!.role === "ADMIN"))) {
+    await failReservation("GEN_DAILY_CAP_REACHED");
     res.status(429).json({
       error: "Daily generation limit reached — please try again tomorrow",
       code: "GEN_DAILY_CAP_REACHED",
@@ -1803,6 +1841,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // toza rad (kredit YECHILMAYDI, chunki consume'dan OLDIN). ADMIN ozod.
   const storage = await isStorageOverQuota(req.user!.userId, req.user!.role === "ADMIN");
   if (storage.over) {
+    await failReservation("STORAGE_QUOTA_EXCEEDED");
     res.status(413).json({
       error: "Storage is full — delete old generations or upgrade your plan",
       code: "STORAGE_QUOTA_EXCEEDED",
@@ -1824,6 +1863,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   if (needsSlot) {
     const slot = await claimGenerationSlot(req.user!.userId, MAX_ACTIVE_GENERATIONS);
     if (!slot.ok) {
+      await failReservation("TOO_MANY_ACTIVE_GENERATIONS");
       res.status(429).json({
         error: `Too many generations running at once (max ${MAX_ACTIVE_GENERATIONS}) — wait for one to finish`,
         code: "TOO_MANY_ACTIVE_GENERATIONS",
@@ -1839,64 +1879,25 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   };
 
   // Kredit zaxiraga olinadi (atomik). failed bo'lsa 1c qaytaradi.
-  const gate = await consumeAiCredits(req.user!.userId, price);
+  const gate = await consumeAiCredits(req.user!.userId, price, { generationId: gen.id });
   if (!gate.ok) {
     await releaseSlot();
+    await failReservation(gate.code || "INSUFFICIENT_CREDITS");
     res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
     return;
   }
 
-  let gen;
   try {
-    gen = await prisma.generation.create({
-      data: {
-        sessionId,
-        userId: req.user!.userId,
-        mode,
-        prompt,
-        modelId,
-        params: params as object,
-        status: "queued",
-        cost: price,
-        idempotencyKey: idempotencyKey ?? null,
-      },
+    gen = await prisma.generation.update({
+      where: { id: gen.id },
+      data: { status: "queued" },
     });
   } catch (e) {
-    // Genuine PARALLEL poyga: bir vaqtda kelgan bir xil kalitli so'rov job'ni bir necha
-    // mikrosoniya oldin yaratdi (unique (userId, idempotencyKey) → P2002). Biz endigina
-    // yechgan kreditni QAYTARAMIZ (mavjud refund primitivi) va yutgan job'ni qaytaramiz —
-    // ikkinchi charge/job bo'lmasin. Money math o'zgarmaydi (aynan yechilган miqdor qaytadi).
-    let refunded = false;
-    if ((e as { code?: string })?.code === "P2002" && idempotencyKey) {
-      await refundAiCredits(req.user!.userId, price).catch(() => {});
-      refunded = true;
-      const existing = await prisma.generation.findFirst({
-        where: { userId: req.user!.userId, idempotencyKey },
-      });
-      if (existing) {
-        // Bizning job yaratilmadi → slot bizga tegishli emas (mavjud job o'z slotini ushlab turadi).
-        await releaseSlot();
-        const prof = await ensurePluginProfile(req.user!.userId);
-        res.status(200).json({
-          jobId: existing.id,
-          status: existing.status,
-          creditsLeft: prof.aiCredits,
-          idempotentReplay: true,
-        });
-        return;
-      }
-    }
-    // M5 (#39) — HAR QANDAY boshqa xato (DB uzilishi, constraint, timeout) ham kreditni
-    // qaytarishi SHART: kredit ALLAQACHON atomik yechilgan, lekin `Generation` qatori yo'q →
-    // uni keyin refund qiladigan hech narsa qolmaydi (`generationId` yo'q → jimgina yo'qolish).
-    // Bu yerda `generationId` bermaymiz (qator yaratilmagan) → refund idempotent EMAS, shu
-    // sabab `refunded` bayrog'i P2002 yo'lida ikki marta qaytarishni to'sadi.
-    if (!refunded) {
-      await refundAiCredits(req.user!.userId, price).catch((err) =>
-        console.error("[studio-gen] create-xatosidan keyin refund muvaffaqiyatsiz:", err)
-      );
-    }
-    await releaseSlot(); // job yaratilmadi → slot bo'shatiladi (aks holda abadiy band)
+    await refundAiCredits(req.user!.userId, price, { generationId: gen.id }).catch((err) =>
+      console.error("[studio-gen] reservation finalize xatosidan keyin refund muvaffaqiyatsiz:", err)
+    );
+    await failReservation("RESERVATION_FINALIZE_FAILED");
+    await releaseSlot();
     throw e;
   }
 
@@ -2580,7 +2581,7 @@ studioGenRouter.delete("/gen/:jobId", async (req: Request, res: Response) => {
   }
   // Avval R2'dan asset fayllarni o'chiramiz (resultKey + video poster thumbKey + P4 wm nusxa).
   const keys = gen.assets
-    .flatMap((a) => [a.resultKey, a.thumbKey, a.watermarkKey])
+    .flatMap((a) => [a.resultKey, a.thumbKey, a.displayKey, a.previewKey, a.watermarkKey])
     .filter((k): k is string => typeof k === "string" && k.length > 0);
   let r2deleted = 0;
   if (keys.length) {

@@ -35,3 +35,6 @@ cloudrun-env.yaml
 # Local scratch/wrapper scripts with hardcoded credentials — never commit
 vwrap.mjs
 .fuse_hidden*
+
+# Audit/sessiya vaqtinchalik arxivlari va karantin fayllari — hech qachon relizga kirmaydi
+/_to_delete/

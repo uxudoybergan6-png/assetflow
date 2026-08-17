@@ -35,16 +35,19 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Production dependency audit (HIGH bloklanadi)
+        run: npm audit --omit=dev --omit=optional --audit-level=high
 
       - name: Prisma generate
         run: npm run generate -w @creative-tools/database
@@ -102,6 +105,37 @@ jobs:
       - name: Ochiq sahifa matni (da'volar, huquqiy izohlar, AI narxlari)
         run: npm run test:public-copy
 
+      - name: API, Studio, CEP va UXP audit regressiya suite'lari
+        run: |
+          set -euo pipefail
+          for test in \
+            apps/api/scripts/test-preflight-safety-context.mjs \
+            apps/api/scripts/test-upload-limits.mjs \
+            apps/api/scripts/test-plugin-device-auth.mjs \
+            apps/api/scripts/test-plugin-session-policy.mjs \
+            apps/api/scripts/test-gen-provider-availability.mjs \
+            apps/api/scripts/test-gen-provider-adapters.mjs \
+            apps/api/scripts/test-gen-reference-security.mjs \
+            apps/api/scripts/test-gen-param-contract.mjs \
+            apps/api/scripts/test-reference-moderation.mjs \
+            apps/api/scripts/test-public-keys.mjs \
+            apps/api/scripts/test-enhance-intelligence.mjs \
+            apps/api/scripts/test-video-reference-trim.mjs \
+            packages/assetflow-studio/scripts/test-studio-session-policy.mjs \
+            packages/assetflow-studio/scripts/test-aistudio-create-init.mjs \
+            packages/assetflow-studio/scripts/test-aistudio-create-parity.mjs \
+            packages/assetflow-studio/scripts/test-device-auth-ui.mjs \
+            plugins/after-effects-cep/scripts/test-create-workspace.mjs \
+            plugins/after-effects-cep/scripts/test-frameflow-vnext.mjs \
+            plugins/after-effects-cep/scripts/test-frameflow-session-persistence.mjs \
+            plugins/after-effects-cep/scripts/test-premiere-cep-host.mjs \
+            plugins/after-effects-cep/scripts/test-premiere-cep-integration.mjs \
+            plugins/premiere-uxp/scripts/test-cep-uxp-bridge.mjs \
+            plugins/premiere-uxp/scripts/test-host-shim.mjs
+          do
+            node "$test"
+          done
+
   windows-installer:
     name: Windows installer (real MSI build + per-user install/uninstall)
     runs-on: windows-latest
@@ -118,10 +152,10 @@ jobs:
       DOTNET_ROLL_FORWARD: "LatestMajor"
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22
           # setup-node v7 keshni avtomatik yoqishi mumkin — bu job'da ATAYLAB kerak emas
@@ -129,7 +163,7 @@ jobs:
           package-manager-cache: false
 
       - name: Setup .NET (WiX global tool runtime'i)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           dotnet-version: "8.0.x"
 

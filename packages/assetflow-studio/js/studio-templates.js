@@ -53,7 +53,7 @@ const StudioTemplates = (() => {
           : t.orient === "square"
             ? "Square"
             : "Landscape",
-      grad: meta.grad || GRAD_CYCLE[i % GRAD_CYCLE.length],
+      grad: GRAD_CYCLE.includes(meta.grad) ? meta.grad : GRAD_CYCLE[i % GRAD_CYCLE.length],
       size:
         meta.size ||
         (t.fileSize ? `${(t.fileSize / 1024 / 1024).toFixed(1)} MB` : "—"),
@@ -87,8 +87,8 @@ const StudioTemplates = (() => {
       tags: t.tags || [],
       reason: t.reviewNote || "",
       assets,
-      thumbUrl: assets.thumb ? `${base}/api/plugin/assets/${id}/thumb` : null,
-      previewUrl: assets.preview ? `${base}/api/plugin/assets/${id}/preview` : null,
+      thumbUrl: assets.thumb ? (t.mediaUrls?.thumb || `${base}/api/plugin/assets/${id}/thumb`) : null,
+      previewUrl: assets.preview ? (t.mediaUrls?.preview || `${base}/api/plugin/assets/${id}/preview`) : null,
       packUrl: assets.pack ? `${base}/api/plugin/assets/${id}/pack` : null,
       fileName: t.fileName || null,
       _api: t,

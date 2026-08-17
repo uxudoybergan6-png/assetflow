@@ -75,7 +75,7 @@ await check("expired quote is rejected before dispatch", async () => {
   await assert.rejects(() => c.submit(async () => {}), /quote_expired/);
 });
 
-await check("quote signature is private and never exposed in snapshots or dispatch payload", async () => {
+await check("quote signature stays out of snapshots but reaches the trusted dispatch once", async () => {
   const c = createController();
   c.setModels("image", [imageA]);
   c.setPrompt("A clean editorial frame");
@@ -83,7 +83,8 @@ await check("quote signature is private and never exposed in snapshots or dispat
   let payload;
   await c.submit(async (p) => { payload = p; return { accepted: true }; });
   assert.equal(JSON.stringify(c.snapshot()).includes("secret-signed-quote"), false);
-  assert.equal(JSON.stringify(payload).includes("secret-signed-quote"), false);
+  assert.equal(payload.costQuoteSignature, "secret-signed-quote");
+  assert.equal(payload.quotedPrice, 4);
 });
 
 await check("new-session submit is deduplicated while dispatch is pending", async () => {

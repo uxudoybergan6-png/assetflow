@@ -2,11 +2,12 @@ import {
   PluginAccountStatus,
   PluginPlanTier,
   SubscriptionStatus,
+  Prisma,
   prisma,
 } from "@creative-tools/database";
 import { isEmailConfigured } from "./email.js";
 import { avatarPublicUrl } from "./app-urls.js";
-import { writeCreditLedger, claimCreditGrant } from "./ledger.js";
+import { writeCreditLedger } from "./ledger.js";
 
 const FREE_DOWNLOAD_LIMIT = 15;
 const FREE_IMPORT_LIMIT = 10;
@@ -60,7 +61,6 @@ const PLAN_CFG_TTL_MS = 60_000;
 /** Keshni yangilaydi (TTL o'tgan bo'lsa). force=true — admin tahriridan keyin darhol. */
 export async function refreshPlanConfigCache(force = false): Promise<void> {
   if (!force && Date.now() - planCfgFetchedAt < PLAN_CFG_TTL_MS) return;
-  planCfgFetchedAt = Date.now();
   try {
     const rows = await prisma.planConfig.findMany();
     for (const r of rows) {
@@ -72,6 +72,7 @@ export async function refreshPlanConfigCache(force = false): Promise<void> {
         maxResolution: r.maxResolution,
       });
     }
+    planCfgFetchedAt = Date.now();
   } catch (e) {
     // DB xatosi — statik fallback ishlashda davom etadi (fail-open emas:
     // qiymatlar bugungi konstantalar bilan bir xil).
@@ -166,6 +167,8 @@ export async function resetExpiredPluginMonths(userIds?: string[]): Promise<void
 }
 
 export async function ensurePluginProfile(userId: string) {
+  // Money decision oldidan DB PlanConfig birinchi marta ham await qilinadi.
+  await refreshPlanConfigCache();
   await resetMonthIfNeeded(userId);
   // `create` ANIQ aiCredits/aiCreditsResetAt beradi — faqat ustun DEFAULT'iga
   // TAYANMAYDI (schema.prisma'dagi @default(50) bilan AI_MONTHLY_CREDITS.FREE
@@ -369,20 +372,32 @@ export async function grantAiCreditsTopup(
   // B3 (#11) — sourceKey berilgan bo'lsa grant CLAIM-FIRST: bir order bir marta.
   // Webhook layer'idagi dedup buzilsa/qayta yetkazilsa ham kredit 2× berilmaydi.
   if (opts.sourceKey) {
-    const claimed = await claimCreditGrant({ userId, delta, reason, sourceKey: opts.sourceKey });
-    if (!claimed) {
-      console.warn("[credits] topup allaqachon berilgan, o'tkazib yuborildi:", opts.sourceKey);
-      return { balance: null as number | null, duplicate: true as const };
+    const sourceKey = opts.sourceKey;
+    try {
+      return await prisma.$transaction(async (tx) => {
+        // Ledger claim va balans increment BITTA transaction: oradagi xato claimni
+        // yetim qoldirmaydi, provider retry grantni qayta bajarishi mumkin.
+        await tx.creditLedger.create({
+          data: { userId, delta, reason, sourceKey },
+        });
+        const updated = await tx.pluginProfile.update({
+          where: { userId },
+          data: { aiCredits: { increment: delta }, aiCreditsTopup: { increment: delta } },
+          select: { aiCredits: true },
+        });
+        await tx.creditLedger.update({
+          where: { sourceKey },
+          data: { balanceAfter: updated.aiCredits },
+        });
+        return { balance: updated.aiCredits };
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (e) {
+      if ((e as { code?: string })?.code === "P2002") {
+        console.warn("[credits] topup allaqachon berilgan, o'tkazib yuborildi:", opts.sourceKey);
+        return { balance: null as number | null, duplicate: true as const };
+      }
+      throw e;
     }
-    const updated = await prisma.pluginProfile.update({
-      where: { userId },
-      data: { aiCredits: { increment: delta }, aiCreditsTopup: { increment: delta } },
-      select: { aiCredits: true },
-    });
-    await prisma.creditLedger
-      .updateMany({ where: { sourceKey: opts.sourceKey }, data: { balanceAfter: updated.aiCredits } })
-      .catch(() => {});
-    return { balance: updated.aiCredits };
   }
   const updated = await prisma.pluginProfile.update({
     where: { userId },
@@ -627,6 +642,47 @@ export async function consumeImport(userId: string) {
   return { ok: true as const };
 }
 
+export async function reserveImport(userId: string, templateId?: string) {
+  const profile = await ensurePluginProfile(userId);
+  if (profile.status !== PluginAccountStatus.ACTIVE) return { ok: false as const, error: "Account is not active", code: "ACCOUNT_INACTIVE" };
+  const effectiveLimit = profile.importLimitOverride ?? planLimits(profile.plan).importLimit;
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`import:${userId}`}))`;
+    const expired = await tx.importReservation.updateMany({
+      where: { userId, status: "reserved", expiresAt: { lt: new Date() } },
+      data: { status: "expired" },
+    });
+    if (expired.count) {
+      await tx.$executeRaw`UPDATE "PluginProfile" SET "importsTotal"=GREATEST(0,"importsTotal"-${expired.count}), "importsMonth"=GREATEST(0,"importsMonth"-${expired.count}) WHERE "userId"=${userId}`;
+    }
+    const claimed = effectiveLimit === null
+      ? await tx.pluginProfile.updateMany({ where: { userId, status: PluginAccountStatus.ACTIVE }, data: { importsTotal: { increment: 1 }, importsMonth: { increment: 1 }, lastSeenAt: new Date() } })
+      : await tx.pluginProfile.updateMany({ where: { userId, status: PluginAccountStatus.ACTIVE, importsMonth: { lt: effectiveLimit } }, data: { importsTotal: { increment: 1 }, importsMonth: { increment: 1 }, lastSeenAt: new Date() } });
+    if (!claimed.count) return { ok: false as const, error: "Monthly import limit reached — upgrade to Pro", code: "LIMIT_REACHED" };
+    const row = await tx.importReservation.create({ data: { userId, templateId: templateId || null, expiresAt: new Date(Date.now() + 10 * 60_000) } });
+    return { ok: true as const, reservationId: row.id, expiresAt: row.expiresAt };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+}
+
+export async function finishImportReservation(userId: string, reservationId: string, commit: boolean) {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`import:${userId}`}))`;
+    const changed = await tx.importReservation.updateMany({
+      where: { id: reservationId, userId, status: "reserved" },
+      data: { status: commit ? "committed" : "cancelled" },
+    });
+    if (!changed.count) {
+      const row = await tx.importReservation.findFirst({ where: { id: reservationId, userId }, select: { status: true, templateId: true } });
+      return { ok: row?.status === (commit ? "committed" : "cancelled"), duplicate: true, templateId: row?.templateId };
+    }
+    if (!commit) {
+      await tx.$executeRaw`UPDATE "PluginProfile" SET "importsTotal"=GREATEST(0,"importsTotal"-1), "importsMonth"=GREATEST(0,"importsMonth"-1) WHERE "userId"=${userId}`;
+    }
+    const row = await tx.importReservation.findUnique({ where: { id: reservationId }, select: { templateId: true } });
+    return { ok: true, duplicate: false, templateId: row?.templateId };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+}
+
 /**
  * AI kredit-gate — har AI generatsiyadan OLDIN chaqiriladi. Server tomonda:
  *   1) oylik reset (aiCreditsResetAt < oy boshi bo'lsa plan ulushiga tiklash),
@@ -634,7 +690,11 @@ export async function consumeImport(userId: string) {
  *      sabab parallel so'rovlarda balans manfiyga tushmaydi (race-safe).
  * Frontend hech qachon kredit hisobini boshqarmaydi.
  */
-export async function consumeAiCredits(userId: string, cost: number) {
+export async function consumeAiCredits(
+  userId: string,
+  cost: number,
+  opts: { generationId?: string } = {}
+) {
   const profile = await ensurePluginProfile(userId);
   if (profile.status !== PluginAccountStatus.ACTIVE) {
     return { ok: false as const, error: "Account is not active", code: "ACCOUNT_INACTIVE" };
@@ -673,15 +733,20 @@ export async function consumeAiCredits(userId: string, cost: number) {
   const start = monthStart();
   let available = profile.aiCredits;
   if (profile.aiCreditsResetAt < start) {
-    const reset = await prisma.pluginProfile.updateMany({
-      where: { userId, aiCreditsResetAt: { lt: start } },
-      data: {
-        aiCredits: aiMonthlyAllotment(profile.plan) + profile.aiCreditsTopup,
-        aiCreditsResetAt: start,
-      },
-    });
-    if (reset.count > 0) {
-      available = aiMonthlyAllotment(profile.plan) + profile.aiCreditsTopup;
+    const reset = await prisma.$queryRaw<Array<{ aiCredits: number }>>(Prisma.sql`
+      UPDATE "PluginProfile"
+      SET "aiCredits" = CASE "plan"::text
+            WHEN 'PRO' THEN ${aiMonthlyAllotment(PluginPlanTier.PRO)}
+            WHEN 'STUDIO' THEN ${aiMonthlyAllotment(PluginPlanTier.STUDIO)}
+            ELSE ${aiMonthlyAllotment(PluginPlanTier.FREE)}
+          END + "aiCreditsTopup",
+          "aiCreditsResetAt" = ${start},
+          "updatedAt" = NOW()
+      WHERE "userId" = ${userId} AND "aiCreditsResetAt" < ${start}
+      RETURNING "aiCredits"
+    `);
+    if (reset.length > 0) {
+      available = reset[0].aiCredits;
     } else {
       // Boshqa parallel so'rov reset qildi → haqiqiy balansni qayta o'qi (eski
       // `profile.aiCredits` reset'dan OLDINGI qiymat, ishlatib bo'lmaydi).
@@ -702,12 +767,34 @@ export async function consumeAiCredits(userId: string, cost: number) {
     };
   }
 
-  // Atomik: faqat balans yetarli bo'lsa kamaytiradi
-  const res = await prisma.pluginProfile.updateMany({
-    where: { userId, aiCredits: { gte: cost } },
-    data: { aiCredits: { decrement: cost }, lastSeenAt: new Date() },
+  // Kredit va top-up tracker BIR SQL statementda kamayadi/clamp bo'ladi. Parallel
+  // consume/reset/topup stale balans bilan absolute write qila olmaydi.
+  // Balans kamayishi va audit ledger BIR transaction: process aynan shu ikki yozuv
+  // orasida o'lsa ham "yechildi, lekin izi yo'q" holati yuz bermaydi. generationId
+  // reservation bilan bog'lansa stale reservation aniq refund qilinadi.
+  const newBalance = await prisma.$transaction(async (tx) => {
+    const consumed = await tx.$queryRaw<Array<{ aiCredits: number }>>(Prisma.sql`
+      UPDATE "PluginProfile"
+      SET "aiCredits" = "aiCredits" - ${cost},
+          "aiCreditsTopup" = LEAST("aiCreditsTopup", "aiCredits" - ${cost}),
+          "lastSeenAt" = NOW(),
+          "updatedAt" = NOW()
+      WHERE "userId" = ${userId} AND "aiCredits" >= ${cost}
+      RETURNING "aiCredits"
+    `);
+    if (consumed.length === 0) return null;
+    await tx.creditLedger.create({
+      data: {
+        userId,
+        generationId: opts.generationId || null,
+        delta: -cost,
+        reason: "consume",
+        balanceAfter: consumed[0].aiCredits,
+      },
+    });
+    return consumed[0].aiCredits;
   });
-  if (res.count === 0) {
+  if (newBalance == null) {
     return {
       ok: false as const,
       error: "AI credits exhausted — wait for next month or upgrade to Pro",
@@ -716,25 +803,7 @@ export async function consumeAiCredits(userId: string, cost: number) {
     };
   }
 
-  // Bosqich 4 #5: top-up tracker'ni yangi balansga clamp (allotment AVVAL sarflanadi;
-  // balans top-up chizig'idan pastga tushsagina top-up ulushi kamayadi). Bu tracker
-  // MONEY-GATE emas (atomik gate yuqorida aiCredits ustida) — best-effort follow-up.
-  const newBalance = available - cost;
-  if (profile.aiCreditsTopup > newBalance) {
-    await prisma.pluginProfile
-      .updateMany({ where: { userId }, data: { aiCreditsTopup: Math.max(0, newBalance) } })
-      .catch(() => {});
-  }
-
-  // Moliyaviy izi (#2.6) — atomik kamaytirishdan KEYIN, best-effort (bloklamaydi).
-  await writeCreditLedger({
-    userId,
-    delta: -cost,
-    reason: "consume",
-    balanceAfter: available - cost,
-  });
-
-  return { ok: true as const, remaining: available - cost };
+  return { ok: true as const, remaining: newBalance };
 }
 
 /**
@@ -813,68 +882,52 @@ export async function refundAiCredits(
   opts: { generationId?: string } = {}
 ) {
   if (cost <= 0) return;
-  const prof = await prisma.pluginProfile.findUnique({
-    where: { userId },
-    include: { user: { select: { role: true } } },
-  });
-  if (!prof || prof.user.role === "ADMIN") return;
-
-  // Idempotent per-generation: faqat hali refund qilinmagan gen refund qilinadi (atomik claim).
-  if (opts.generationId) {
-    const claim = await prisma.generation.updateMany({
-      where: { id: opts.generationId, refunded: false },
-      data: { refunded: true },
+  await prisma.$transaction(async (tx) => {
+    const prof = await tx.pluginProfile.findUnique({
+      where: { userId },
+      include: { user: { select: { role: true } } },
     });
-    if (claim.count === 0) return; // allaqachon refund qilingan → qayta refund YO'Q
-  }
+    if (!prof || prof.user.role === "ADMIN") return;
 
-  // Oy-chegarasi cap: refund allotment + TOP-UP dan oshirmaydi (Bosqich 4 #5 — top-up'dan
-  // moliyalangan gen refund'i allotment'gacha qirqilmasin), lekin mavjud balansni kamaytirmaydi.
-  // Refund faqat aiCredits'ni oshiradi → invariant (aiCreditsTopup <= aiCredits) saqlanadi.
-  //
-  // ⚠️ M2 (audit #6): yozuv ATOMIK `increment` bo'lishi SHART. Avval eski o'qishdan
-  // hisoblangan absolyut qiymat yozilardi (`aiCredits: newBalance`) → refund bilan bir
-  // vaqtda ketgan `consumeAiCredits` sarfini O'CHIRIB yuborardi (foydalanuvchi tekin
-  // kredit oladi). Cap invariantini saqlash uchun guard WHERE'da: natija ceiling'dan
-  // oshmasligi tekshiriladi, sarf tufayli balans tushgan bo'lsa increment baribir o'tadi.
-  const allot = aiMonthlyAllotment(prof.plan);
-  const ceiling = Math.max(allot + prof.aiCreditsTopup, prof.aiCredits);
-  const credited = Math.max(0, Math.min(cost, ceiling - prof.aiCredits));
-  let applied = credited;
-  if (credited > 0) {
-    // updateMany → profil yo'q bo'lsa no-op (update P2025 throw EMAS).
-    const res = await prisma.pluginProfile.updateMany({
-      where: { userId, aiCredits: { lte: ceiling - credited } },
-      data: { aiCredits: { increment: credited } },
-    });
-    if (res.count === 0) {
-      // Guard o'tmadi — parallel refund balansni ceiling'ga ko'targan. Kredit berilmadi.
-      applied = 0;
-      console.warn(
-        `[credits] refund guard skipped: user=${userId} cost=${cost} ceiling=${ceiling} gen=${opts.generationId ?? "-"}`
-      );
+    if (opts.generationId) {
+      const claim = await tx.generation.updateMany({
+        where: { id: opts.generationId, userId, refunded: false },
+        data: { refunded: true, refundStatus: "pending" },
+      });
+      if (claim.count === 0) return;
     }
-  }
-  // M9 (audit #43): oylararo ceiling refundni JIMGINA 0 ga tushirishi mumkin —
-  // buni yutmaslik kerak, aks holda "refund qilindi" deb hisoblanadi-yu pul qaytmaydi.
-  if (applied < cost) {
-    console.warn(
-      `[credits] refund capped: user=${userId} requested=${cost} credited=${applied} ` +
-        `balance=${prof.aiCredits} allot=${allot} topup=${prof.aiCreditsTopup} ceiling=${ceiling} ` +
-        `gen=${opts.generationId ?? "-"}`
-    );
-  }
-  // Moliyaviy izi (#2.6) — haqiqiy qaytarilgan miqdor (cap tufayli cost'dan kam bo'lishi mumkin).
-  const after = await prisma.pluginProfile
-    .findUnique({ where: { userId }, select: { aiCredits: true } })
-    .catch(() => null);
-  await writeCreditLedger({
-    userId,
-    generationId: opts.generationId ?? null,
-    delta: applied,
-    reason: "refund",
-    balanceAfter: after?.aiCredits ?? prof.aiCredits + applied,
-  });
+
+    const allot = aiMonthlyAllotment(prof.plan);
+    const ceiling = Math.max(allot + prof.aiCreditsTopup, prof.aiCredits);
+    const applied = Math.max(0, Math.min(cost, ceiling - prof.aiCredits));
+    const after = applied > 0
+      ? await tx.pluginProfile.update({
+          where: { userId },
+          data: { aiCredits: { increment: applied } },
+          select: { aiCredits: true },
+        })
+      : { aiCredits: prof.aiCredits };
+
+    await tx.creditLedger.create({
+      data: {
+        userId,
+        generationId: opts.generationId ?? null,
+        delta: applied,
+        reason: "refund",
+        balanceAfter: after.aiCredits,
+        ...(opts.generationId ? { sourceKey: `gen:${opts.generationId}:refund` } : {}),
+      },
+    });
+    if (opts.generationId) {
+      await tx.generation.update({
+        where: { id: opts.generationId },
+        data: { refundStatus: "applied", refundApplied: applied },
+      });
+    }
+    if (applied < cost) {
+      console.warn(`[credits] refund capped: user=${userId} requested=${cost} credited=${applied} gen=${opts.generationId ?? "-"}`);
+    }
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 
 export function formatLastSeen(iso: string | Date | null | undefined) {

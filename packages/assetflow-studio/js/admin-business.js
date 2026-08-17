@@ -14,6 +14,22 @@ function bizUsdCents(c){ return "$" + ((Number(c)||0)/100).toFixed(2); }
 function bizMarginColor(pct){ if(pct==null) return "var(--muted2)"; if(pct>=60) return "var(--lime)"; if(pct>=30) return "#FFB27C"; return "#FF6B5E"; }
 function bizErr(msg){ return `<div class="adx-empty" style="max-width:440px;margin:50px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Failed to load data</div><div style="font-size:11px;color:var(--muted2);line-height:1.5">${esc(msg||'Could not connect to the API. Sign in as admin and check that the API is running.')}</div></div>`; }
 function bizLoading(){ return `<div style="display:flex;align-items:center;justify-content:center;padding:80px 0"><span class="adx-spin" style="font-size:22px;color:var(--lime)"><i class="ph ph-arrow-clockwise"></i></span></div>`; }
+function bizRouteAlive(view, root){
+  return CURRENT===view && !!root && root.isConnected && document.getElementById('bizRoot')===root;
+}
+function bizTashkentDateTime(value, timeOnly){
+  const d = new Date(value);
+  if(!value || Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('uz-UZ', timeOnly
+    ? {timeZone:'Asia/Tashkent',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}
+    : {timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}
+  ).format(d);
+}
+function bizTashkentMonth(){
+  const p = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit'}).formatToParts(new Date());
+  const get = (t)=> (p.find(x=>x.type===t)||{}).value||'';
+  return `${get('year')}-${get('month')}`;
+}
 function bizModeBadge(mode){
   const m = {
     image:['adx-bdg-info','Image'], video:['','Video'], voice:['adx-bdg-soft','Voice'],
@@ -178,10 +194,12 @@ async function measureAllMissing(){
 async function loadPricing(){
   const root = document.getElementById('bizRoot');
   try {
-    PRICING_DATA = await StudioApi.getAdminPricing();
+    const data = await StudioApi.getAdminPricing();
+    if(!bizRouteAlive('pricing',root)) return;
+    PRICING_DATA = data;
     renderPricing();
   } catch(e){
-    if(root) root.innerHTML = bizErr(e && e.message);
+    if(bizRouteAlive('pricing',root)) root.innerHTML = bizErr(e && e.message);
   }
 }
 
@@ -418,7 +436,7 @@ window.afterRender.finance = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='finance') tba.innerHTML =
     `<input type="month" class="adx-input" style="width:160px;height:34px" value="${esc(FINANCE_MONTH)}" onchange="FINANCE_MONTH=this.value;loadFinance()" title="Period (empty = all time)">`+
-    `<button class="adx-btn2 sm" onclick="toast('Export','Preparing finance report CSV…','info')"><i class="ph ph-export"></i>Export</button>`;
+    `<button class="adx-btn2 sm" onclick="exportVisibleTableCsv('frameflow-finance.csv')"><i class="ph ph-export"></i>Export</button>`;
   await loadFinance();
 };
 
@@ -426,9 +444,11 @@ async function loadFinance(){
   const root = document.getElementById('bizRoot');
   if(root) root.innerHTML = bizLoading();
   try {
-    FINANCE_DATA = await StudioApi.getAdminFinance(FINANCE_MONTH || undefined);
+    const data = await StudioApi.getAdminFinance(FINANCE_MONTH || undefined);
+    if(!bizRouteAlive('finance',root)) return;
+    FINANCE_DATA = data;
     renderFinance();
-  } catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+  } catch(e){ if(bizRouteAlive('finance',root)) root.innerHTML = bizErr(e && e.message); }
 }
 
 function financeDonut(providers){
@@ -549,10 +569,10 @@ window.afterRender.genspend = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='genspend') tba.innerHTML =
     `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>All time</span></span>`+
-    `<button class="adx-btn2 sm" onclick="toast('Export','Preparing gen spend CSV…','info')"><i class="ph ph-export"></i>CSV</button>`;
+    `<button class="adx-btn2 sm" onclick="exportVisibleTableCsv('frameflow-gen-spend.csv')"><i class="ph ph-export"></i>CSV</button>`;
   const root = document.getElementById('bizRoot');
-  try { GENSPEND_DATA = await StudioApi.getAdminGenSpend(); renderGenSpend(); }
-  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+  try { const data = await StudioApi.getAdminGenSpend(); if(!bizRouteAlive('genspend',root)) return; GENSPEND_DATA = data; renderGenSpend(); }
+  catch(e){ if(bizRouteAlive('genspend',root)) root.innerHTML = bizErr(e && e.message); }
 };
 
 function renderGenSpend(){
@@ -594,7 +614,7 @@ window.afterRender.payouts = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='payouts') tba.innerHTML =
     `<span class="adx-sel"><i class="ph ph-clock-countdown" style="font-size:13px"></i><span>All time</span></span>`+
-    `<button class="adx-btn2 sm" onclick="toast('Export','Preparing payout report CSV…','info')"><i class="ph ph-export"></i>Export</button>`;
+    `<button class="adx-btn2 sm" onclick="exportVisibleTableCsv('frameflow-payouts.csv')"><i class="ph ph-export"></i>Export</button>`;
   const root = document.getElementById('bizRoot');
   try {
     // Step 20 — earning + sybil tahlilini parallel yuklaymiz (sybil xatosi payout'ni buzmasin).
@@ -602,10 +622,11 @@ window.afterRender.payouts = async function(){
       StudioApi.getAdminEarnings(),
       StudioApi.getAdminSybil(90, false).catch(()=>null),
     ]);
+    if(!bizRouteAlive('payouts',root)) return;
     PAYOUT_DATA = earn; SYBIL_DATA = sybil;
     renderPayouts();
   }
-  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+  catch(e){ if(bizRouteAlive('payouts',root)) root.innerHTML = bizErr(e && e.message); }
 };
 let SYBIL_DATA = null;
 let SYBIL_EXPANDED = {};
@@ -613,24 +634,29 @@ let SYBIL_EXPANDED = {};
 /* FAZA 4 (C) — pool compute panel state */
 let POOL_PREVIEW = null;
 function poolDefaultMonth(){
-  const dt = new Date(); dt.setUTCDate(1); dt.setUTCMonth(dt.getUTCMonth()-1); // previous month
-  return dt.toISOString().slice(0,7);
+  const dt = new Date(`${bizTashkentMonth()}-01T00:00:00+05:00`); dt.setUTCMonth(dt.getUTCMonth()-1);
+  const p = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit'}).formatToParts(dt);
+  const get = (t)=> (p.find(x=>x.type===t)||{}).value||'';
+  return `${get('year')}-${get('month')}`;
 }
 async function loadPoolPreview(){
   const month = document.getElementById('poolMonth')?.value || poolDefaultMonth();
   const box = document.getElementById('poolPanelBody');
   if(box) box.innerHTML = bizLoading();
-  try { POOL_PREVIEW = await StudioApi.getAdminPoolPreview(month); renderPoolPanel(); }
-  catch(e){ if(box) box.innerHTML = `<div style="padding:12px;font-size:11px;color:#FF6B5E">${esc(e&&e.message||'Failed to compute pool')}</div>`; }
+  try { const data = await StudioApi.getAdminPoolPreview(month); if(CURRENT!=='payouts' || !box?.isConnected) return; POOL_PREVIEW = data; renderPoolPanel(); }
+  catch(e){ if(CURRENT==='payouts' && box?.isConnected) box.innerHTML = `<div style="padding:12px;font-size:11px;color:#FF6B5E">${esc(e&&e.message||'Failed to compute pool')}</div>`; }
 }
 async function writePoolRows(recompute){
   const month = document.getElementById('poolMonth')?.value || poolDefaultMonth();
   try {
     const res = await StudioApi.computeAdminPool(month, recompute);
+    if(CURRENT!=='payouts') return;
     toast('Pool written', `${bizUsdCents(res.poolCents)} pool for ${month} — ${res.written} earning row(s) written${recompute?' (recomputed)':''}`, 'success');
     if(typeof AssetFlowLog!=='undefined') AssetFlowLog.info('Pool payout computed',{action:'payout',detail:`${month}:${res.poolCents}`});
     POOL_PREVIEW = res; renderPoolPanel();
-    PAYOUT_DATA = await StudioApi.getAdminEarnings(); renderPayouts();
+    const earnings = await StudioApi.getAdminEarnings();
+    if(CURRENT!=='payouts') return;
+    PAYOUT_DATA = earnings; renderPayouts();
   } catch(e){ toast('Error',(e&&e.message)||'Failed to write pool','danger'); }
 }
 function renderPoolPanel(){
@@ -818,14 +844,15 @@ window.afterRender.activity = async function(){
   const tba = document.getElementById('tbActions');
   if(tba && CURRENT==='activity') tba.innerHTML =
     `<div class="adx-inp" style="width:220px;height:34px"><i class="ph ph-magnifying-glass" style="font-size:14px;color:var(--muted)"></i><input placeholder="User, ID…" value="${esc(ACTIVITY_SEARCH)}" oninput="ACTIVITY_SEARCH=this.value;renderActivity()"></div>`+
-    `<button class="adx-btn2 sm" onclick="toast('Export','Preparing activity log CSV…','info')"><i class="ph ph-export"></i>CSV</button>`;
+    `<button class="adx-btn2 sm" onclick="exportVisibleTableCsv('frameflow-activity.csv')"><i class="ph ph-export"></i>CSV</button>`;
   await loadActivity();
 };
 
 async function loadActivity(){
   const root = document.getElementById('bizRoot');
-  try { ACTIVITY_DATA = await StudioApi.getAdminActivity(ACTIVITY_FILTER); renderActivity(); }
-  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+  const filter = ACTIVITY_FILTER;
+  try { const data = await StudioApi.getAdminActivity(filter); if(!bizRouteAlive('activity',root) || filter!==ACTIVITY_FILTER) return; ACTIVITY_DATA = data; renderActivity(); }
+  catch(e){ if(bizRouteAlive('activity',root) && filter===ACTIVITY_FILTER) root.innerHTML = bizErr(e && e.message); }
 }
 async function setActivityFilter(f){ ACTIVITY_FILTER=f; await loadActivity(); }
 
@@ -856,8 +883,9 @@ window.afterRender.metrics = async function(){
 async function loadMetrics(){
   const root = document.getElementById('bizRoot');
   if(root) root.innerHTML = bizLoading();
-  try { METRICS_DATA = await StudioApi.getAdminMetrics(METRICS_MONTH || undefined); renderMetrics(); }
-  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+  const month = METRICS_MONTH;
+  try { const data = await StudioApi.getAdminMetrics(month || undefined); if(!bizRouteAlive('metrics',root) || month!==METRICS_MONTH) return; METRICS_DATA = data; renderMetrics(); }
+  catch(e){ if(bizRouteAlive('metrics',root) && month===METRICS_MONTH) root.innerHTML = bizErr(e && e.message); }
 }
 
 function metricsChangeBadge(from,to){
@@ -891,7 +919,7 @@ function renderMetrics(){
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:760px">
         <thead><tr><th>Time</th><th>User</th><th>Change</th><th>From → To</th><th>Source</th></tr></thead>
         <tbody>${(d.recentChanges||[]).length ? d.recentChanges.map(c=>`<tr>
-          <td class="adx-num" style="font-size:10.5px;color:var(--muted);white-space:nowrap">${esc(String(c.at||'').slice(0,16).replace('T',' '))}</td>
+          <td class="adx-num" style="font-size:10.5px;color:var(--muted);white-space:nowrap">${esc(bizTashkentDateTime(c.at,false))}</td>
           <td><div class="adx-who">${axAv(c.userName||c.userEmail||'?',c.userEmail,26)}<span class="nm" style="font-size:12px">${esc(c.userName||c.userEmail||'—')}</span></div></td>
           <td>${metricsChangeBadge(c.fromPlan,c.toPlan)}</td>
           <td style="font-size:11.5px;color:var(--text2)">${esc(c.fromPlan)} → <b style="color:var(--text)">${esc(c.toPlan)}</b></td>
@@ -916,7 +944,7 @@ function renderActivity(){
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:940px">
         <thead><tr><th>Time</th><th>User</th><th>Event</th><th>Detail</th><th>Source</th><th class="r">Credit / cost</th></tr></thead>
         <tbody>${items.length ? items.map(it=>{
-          const time = String(it.at||'').slice(11,19) || String(it.at||'').slice(0,10);
+          const time = bizTashkentDateTime(it.at,true);
           const cred = it.event==='gen' && it.credits>0 ? `<span style="color:var(--lime)">−✦ ${it.credits}</span>` : '<span style="color:var(--muted)">—</span>';
           return `<tr>
             <td class="adx-num" style="font-size:10.5px;color:var(--muted);white-space:nowrap">${esc(time)}</td>
@@ -937,7 +965,7 @@ function renderActivity(){
    Barcha raqamlar REAL admin endpoint'dan (READ). Infra = admin kiritadi.
    ============================================================ */
 let PROFIT_DATA = null;
-let PROFIT_MONTH = new Date().toISOString().slice(0,7); // joriy oy
+let PROFIT_MONTH = bizTashkentMonth(); // joriy oy — Asia/Tashkent, UTC siljishisiz
 
 VIEWS.profit = function(){ return `<div id="bizRoot">${bizLoading()}</div>`; };
 window.afterRender.profit = async function(){
@@ -951,8 +979,9 @@ window.afterRender.profit = async function(){
 async function loadProfit(){
   const root = document.getElementById('bizRoot');
   if(root) root.innerHTML = bizLoading();
-  try { PROFIT_DATA = await StudioApi.getAdminProfit(PROFIT_MONTH || undefined); renderProfit(); }
-  catch(e){ if(root) root.innerHTML = bizErr(e && e.message); }
+  const month = PROFIT_MONTH;
+  try { const data = await StudioApi.getAdminProfit(month || undefined); if(!bizRouteAlive('profit',root) || month!==PROFIT_MONTH) return; PROFIT_DATA = data; renderProfit(); }
+  catch(e){ if(bizRouteAlive('profit',root) && month===PROFIT_MONTH) root.innerHTML = bizErr(e && e.message); }
 }
 
 /** P&L bitta qatori: label, signed cents, izoh, rang. */

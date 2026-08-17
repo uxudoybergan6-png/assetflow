@@ -1205,6 +1205,7 @@ export function normalizeNotices(raw: unknown): SiteNotice[] {
     const parsed = noticeSchema.safeParse(item);
     if (!parsed.success) continue;
     const n = parsed.data;
+    const hasWorkingCta = !!(n.ctaLabel && (n.ctaTarget || n.ctaUrl));
     out.push({
       id: n.id,
       enabled: n.enabled !== false,
@@ -1216,7 +1217,9 @@ export function normalizeNotices(raw: unknown): SiteNotice[] {
       ctaLabel: n.ctaLabel || "",
       ctaTarget: n.ctaTarget || "",
       ctaUrl: n.ctaUrl || "",
-      dismissable: n.dismissable !== false,
+      // Modal/banner foydalanuvchini berk holatga solmasin: yopilmaydigan notice
+      // faqat ishlaydigan CTA mavjud bo'lsa ruxsat etiladi.
+      dismissable: n.dismissable !== false || !hasWorkingCta,
       startAt: n.startAt || "",
       endAt: n.endAt || "",
     });

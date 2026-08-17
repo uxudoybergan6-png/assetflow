@@ -169,7 +169,7 @@ adminRouter.post("/upload-url", async (req, res) => {
     return;
   }
 
-  const uploadUrl = await getSignedUploadUrl(key, contentType);
+  const uploadUrl = await getSignedUploadUrl(key, contentType, 3600, Number.isFinite(sizeBytes) ? sizeBytes as number : undefined);
   // SC_63 — CMS media yuklashlari endi audit'da (ilgari izsiz edi)
   if (CMS_MEDIA_FOLDERS.has(safeFolder)) {
     await writeAuditLog({
@@ -2067,8 +2067,9 @@ adminRouter.patch("/users/:id/role", async (req, res) => {
   // Oxirgi admin himoyasi — tekshiruv+yozish bitta tranzaksiyada (parallel
   // demote poygasi 0 ta admin qoldirmasin).
   const updated = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('frameflow:last-admin'))`;
     if (target.role === UserRole.ADMIN && newRole !== UserRole.ADMIN) {
-      const admins = await tx.user.count({ where: { role: UserRole.ADMIN } });
+      const admins = await tx.user.count({ where: { role: UserRole.ADMIN, deletedAt: null, suspendedAt: null } });
       if (admins <= 1) return null;
     }
     return tx.user.update({
@@ -2132,6 +2133,7 @@ adminRouter.patch("/users/:id/suspend", async (req, res) => {
   if (suspended) {
     // Oxirgi admin himoyasi — rol o'zgarishidagi kabi (0 ta faol admin qolmasin).
     const updated = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('frameflow:last-admin'))`;
       if (target.role === UserRole.ADMIN) {
         const activeAdmins = await tx.user.count({
           where: { role: UserRole.ADMIN, suspendedAt: null },

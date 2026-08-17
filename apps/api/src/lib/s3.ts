@@ -149,12 +149,14 @@ export async function getPublicOrSignedUrl(
 export async function getSignedUploadUrl(
   key: string,
   contentType: string,
-  expiresIn = 3600
+  expiresIn = 3600,
+  contentLength?: number
 ): Promise<string> {
   const command = new PutObjectCommand({
     Bucket: bucket,
     Key: key,
     ContentType: contentType,
+    ...(Number.isSafeInteger(contentLength) && contentLength! > 0 ? { ContentLength: contentLength } : {}),
   });
   return getSignedUrl(s3, command, { expiresIn });
 }
@@ -164,18 +166,38 @@ export function isS3Configured(): boolean {
 }
 
 /**
- * Yengil ulanish tekshiruvi (/health readiness uchun — Bosqich 1 #6). HeadBucket bilan
- * bucket'ga TEKKIZAMIZ. 403/401 (ruxsat cheklangan, lekin xizmat javob berdi) → REACHABLE (true) —
- * false-negative bermaslik uchun. Faqat tarmoq/ulanish/5xx xatosi → down (false).
+ * Readiness tekshiruvi. Productionda tiny PUT→GET→DELETE canary haqiqiy runtime
+ * permissionlarni tekshiradi; 401/403 hech qachon healthy deb hisoblanmaydi.
  */
 export async function checkS3Health(): Promise<boolean> {
   if (!isS3Configured()) return false;
   try {
     await s3.send(new HeadBucketCommand({ Bucket: bucket }));
+    if (process.env.NODE_ENV === "production") {
+      const key = `_health/api-canary-${process.pid}`;
+      await s3.send(new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: Buffer.from("ok"),
+        ContentType: "text/plain",
+        CacheControl: "no-store",
+      }));
+      const got = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+      const body = got.Body as (SdkStreamMixin & { destroy?: () => void }) | undefined;
+      if (!body) throw new Error("Storage canary GET returned no body");
+      if (typeof body.transformToByteArray === "function") {
+        const bytes = await body.transformToByteArray();
+        if (Buffer.from(bytes).toString("utf8") !== "ok") throw new Error("Storage canary body mismatch");
+      } else {
+        body.destroy?.();
+      }
+      await s3.send(new DeleteObjectsCommand({
+        Bucket: bucket,
+        Delete: { Objects: [{ Key: key }], Quiet: true },
+      }));
+    }
     return true;
-  } catch (e) {
-    const status = (e as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode;
-    if (status === 403 || status === 401) return true; // xizmat javob berdi → ulanish bor
+  } catch {
     return false;
   }
 }
@@ -519,6 +541,43 @@ export async function deleteGenObjectsByPrefix(userId: string, genId: string): P
     }
     continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
   } while (continuationToken);
+  return deleted;
+}
+
+/** Privacy deletion: faqat user ID bilan ajratilgan private prefikslar. */
+export async function deleteUserPrivateAssets(userId: string): Promise<number> {
+  if (!isS3Configured()) return 0;
+  const uid = String(userId || "").trim();
+  if (!/^[a-zA-Z0-9_-]+$/.test(uid)) throw new Error("Invalid user identifier");
+  const prefixes = [
+    `gen/${uid}/`,
+    `gen-refs/${uid}/`,
+    `gen-ref-src/${uid}/`,
+    `incoming/${uid}/`,
+    `avatars/${uid}.`,
+  ];
+  let deleted = 0;
+  for (const prefix of prefixes) {
+    let continuationToken: string | undefined;
+    do {
+      const listed = await s3.send(new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      }));
+      const keys = (listed.Contents ?? [])
+        .map((object) => object.Key)
+        .filter((key): key is string => typeof key === "string" && key.startsWith(prefix));
+      if (keys.length) {
+        await s3.send(new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true },
+        }));
+        deleted += keys.length;
+      }
+      continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+    } while (continuationToken);
+  }
   return deleted;
 }
 

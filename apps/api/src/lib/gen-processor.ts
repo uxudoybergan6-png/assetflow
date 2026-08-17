@@ -1401,7 +1401,10 @@ async function moderateGeneratedOutput(gen: {
     if (!urls.length) return;
     result = await moderateContent({ imageUrls: urls });
   } catch (e) {
-    console.warn("[moderation] output check xato — fail-open:", e instanceof Error ? e.message : e);
+    console.warn("[moderation] output check xato:", e instanceof Error ? e.message : e);
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("MODERATION_OUTPUT_UNVERIFIED: output moderation could not complete");
+    }
     return;
   }
   if (!result.blocked) return;
@@ -1581,7 +1584,12 @@ export async function processGeneration(genId: string): Promise<void> {
           mfRbgUrl = u; // allaqachon http URL (yoki dev fallback — data-URI'ни Magnific ololmaydi)
         }
         // Render log: bu URL'ni AUTH'siz `curl` bilan ochib ko'ring — 200 qaytmasa Magnific ham ololmaydi.
-        console.log(`[gen] remove-bg image_url → ${mfRbgUrl}`);
+        try {
+          const safeUrl = new URL(mfRbgUrl);
+          console.log(`[gen] remove-bg image source → ${safeUrl.origin}${safeUrl.pathname}`);
+        } catch {
+          console.log("[gen] remove-bg image source prepared");
+        }
       }
       // FAL image-edit: input rasm(lar) fal'ga PUBLIC URL bo'lib uzatiladi (data-URI/private auth
       // → file_download_error). data-URI'ni R2'ga yuklab TOZA public URL beramiz (remove-bg naqshi).
@@ -2047,7 +2055,48 @@ async function settleStuckGeneration(g: {
   return "skipped";
 }
 
+const GEN_RESERVATION_TIMEOUT_MS = Math.max(
+  60_000,
+  Number(process.env.GEN_RESERVATION_TIMEOUT_MS) || 10 * 60_000
+);
+
+/**
+ * POST /gen jarayoni reserving holatida uzilib qolsa, krediti yechilganini durable
+ * CreditLedger orqali aniqlaymiz. Faqat consume izi bor reservation refund oladi;
+ * iz bo'lmasa kredit yaratilmaydi. Slot counter ataylab decrement qilinmaydi: crash
+ * slot claimdan oldin ham bo'lishi mumkin. claimGenerationSlot uning yuqori driftini
+ * queued/running haqiqiy sonidan fail-closed tarzda o'zi tuzatadi.
+ */
+async function reconcileStaleReservations(userId?: string): Promise<number> {
+  const rows = await prisma.generation.findMany({
+    where: {
+      ...(userId ? { userId } : {}),
+      status: "reserving",
+      updatedAt: { lt: new Date(Date.now() - GEN_RESERVATION_TIMEOUT_MS) },
+    },
+    select: { id: true, userId: true, cost: true },
+    orderBy: { updatedAt: "asc" },
+    take: 500,
+  });
+  let settled = 0;
+  for (const g of rows) {
+    const claimed = await prisma.generation.updateMany({
+      where: { id: g.id, status: "reserving" },
+      data: { status: "failed", error: "RESERVATION_TIMED_OUT" },
+    });
+    if (claimed.count === 0) continue;
+    const consumed = await prisma.creditLedger.findFirst({
+      where: { generationId: g.id, reason: "consume", delta: { lt: 0 } },
+      select: { id: true },
+    });
+    if (consumed) await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+    settled++;
+  }
+  return settled;
+}
+
 export async function reconcileStuckGenerations(userId: string): Promise<number> {
+  const reservations = await reconcileStaleReservations(userId);
   const stuck = await prisma.generation.findMany({
     where: { userId, status: { in: ["queued", "running"] } },
   });
@@ -2057,7 +2106,7 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
     // P19.5 — provayderdan so'rab, so'ng (kerak bo'lsa) atomik fail+refund.
     await settleStuckGeneration(g);
   }
-  return stuck.length;
+  return stuck.length + reservations;
 }
 
 /**
@@ -2068,6 +2117,7 @@ export async function reconcileStuckGenerations(userId: string): Promise<number>
  * so'raydi (settleStuckGeneration), atomik naqsh BAYT-BAYT bir xil — money math o'zgarmaydi.
  */
 export async function reconcileAllStuckGenerations(): Promise<number> {
+  const reservations = await reconcileStaleReservations();
   const stuck = await prisma.generation.findMany({
     where: { status: { in: ["queued", "running"] } },
     select: { id: true, userId: true, cost: true, mode: true, modelId: true, createdAt: true, params: true },
@@ -2083,7 +2133,7 @@ export async function reconcileAllStuckGenerations(): Promise<number> {
     if (outcome === "refunded") refunded++;
   }
   if (refunded > 0) console.log(`[studio-gen] P1 reconcile: ${refunded} qotган gen fail+refund qilindi`);
-  return refunded;
+  return refunded + reservations;
 }
 
 /**

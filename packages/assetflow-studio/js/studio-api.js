@@ -97,15 +97,17 @@ const StudioApi = (() => {
     // Tarmoq xatosida qayta urinish — Render free-tarif "cold start" (uyqudan uyg'onish)
     // birinchi so'rovni uzishi mumkin. 3 urinish (1.5s, 3s backoff). Network-throw = server
     // so'rovni qayta ishlamadi → POST takrori xavfsiz.
+    const method = String(options.method || "GET").toUpperCase();
+    const retryable = method === "GET" || method === "HEAD" || method === "OPTIONS";
     let res, lastErr;
-    for (let a = 0; a < 3; a++) {
+    for (let a = 0; a < (retryable ? 3 : 1); a++) {
       try {
         res = await fetch(`${baseUrl()}${path}`, fetchOpts);
         lastErr = null;
         break;
       } catch (e) {
         lastErr = e;
-        if (a < 2) await new Promise((r) => setTimeout(r, 1500 * (a + 1)));
+        if (retryable && a < 2) await new Promise((r) => setTimeout(r, 1500 * (a + 1)));
       }
     }
     if (lastErr) {
@@ -151,7 +153,10 @@ const StudioApi = (() => {
 
   async function healthCheck() {
     try {
-      const res = await fetch(`${baseUrl()}/health`, { method: "GET" });
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 5000) : null;
+      const res = await fetch(`${baseUrl()}/health`, { method: "GET", ...(ctrl ? { signal: ctrl.signal } : {}) });
+      if (timer) clearTimeout(timer);
       return res.ok;
     } catch {
       return false;
@@ -223,6 +228,10 @@ const StudioApi = (() => {
     });
   }
 
+  async function getUploadProgressToken(id) {
+    return request(`/api/contributor/templates/${id}/upload-progress-token`);
+  }
+
   /**
    * Fayllarni XHR bilan yuklaydi — fetch'dan farqli, upload progress beradi.
    * onProgress(yuklangan, jami) baytlarda chaqiriladi.
@@ -273,7 +282,7 @@ const StudioApi = (() => {
       const h = opts.headers || {};
       Object.keys(h).forEach((k) => xhr.setRequestHeader(k, h[k]));
       xhr.upload.onprogress = (ev) => {
-        if (opts.onProg && ev.lengthComputable) opts.onProg(ev.loaded);
+        if (opts.onProg && ev.lengthComputable) opts.onProg(ev.loaded, ev.total);
       };
       xhr.onload = () => {
         let data = null;
@@ -332,6 +341,7 @@ const StudioApi = (() => {
    */
   async function uploadAssets(id, files, onProgress) {
     const order = ["thumb", "preview", "pack"].filter((k) => files[k]);
+    const total = order.reduce((sum, key) => sum + Number(files[key].size || 0), 0);
     let urls = [];
     if (order.length) {
       const resp = await request(`/api/contributor/templates/${id}/upload-url`, {
@@ -341,6 +351,7 @@ const StudioApi = (() => {
             kind: k,
             fileName: files[k].name,
             contentType: files[k].type || "application/octet-stream",
+            sizeBytes: files[k].size,
           })),
         },
       });
@@ -349,7 +360,7 @@ const StudioApi = (() => {
     let base = 0; // tugagan fayllar yig'indisi (kumulyativ progress uchun)
     for (const k of order) {
       const onProg = (loaded) => {
-        if (onProgress) onProgress(base + loaded);
+        if (onProgress) onProgress(base + loaded, total);
       };
       const u = urls.find((x) => x.kind === k);
       if (!u) throw new Error(`Failed to get upload URL for ${k}`);
@@ -362,7 +373,7 @@ const StudioApi = (() => {
         onProg,
       });
       base += files[k].size;
-      if (onProgress) onProgress(base);
+      if (onProgress) onProgress(base, total);
     }
     // #15: preview presigned PUT tugadi → server-side fon transcode signali
     // (POST /preview-uploaded → status='pending' + fon 720p siqish). Xatoga
@@ -486,7 +497,7 @@ const StudioApi = (() => {
       async (f) => {
         const resp = await request("/api/contributor/incoming/upload-url", {
           method: "POST",
-          body: { files: [{ fileName: f.name }] },
+          body: { files: [{ fileName: f.name, sizeBytes: f.size }] },
         });
         return (resp && resp.uploads && resp.uploads[0]) || null;
       },
@@ -605,7 +616,7 @@ const StudioApi = (() => {
           method: "POST",
           body: {
             category,
-            files: [{ fileName: f.name, contentType: f.type || undefined }],
+            files: [{ fileName: f.name, contentType: f.type || undefined, sizeBytes: f.size }],
           },
         });
         return (resp && resp.uploads && resp.uploads[0]) || null;
@@ -1038,6 +1049,7 @@ const StudioApi = (() => {
     googleLogin,
     createTemplate,
     submitTemplate,
+    getUploadProgressToken,
     uploadAssets,
     bulkIngestZips,
     bulkIngestAssets,

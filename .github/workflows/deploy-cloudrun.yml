@@ -7,18 +7,10 @@ name: Deploy API to Cloud Run
 # fayl tarkibi, butunligicha).
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-    paths:
-      - "apps/api/**"
-      - "packages/database/**"
-      - "Dockerfile"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/deploy-cloudrun.yml"
-      # Migratsiya qadami shu skriptga bog'liq — o'zgarsa deploy yo'li qayta sinalsin.
-      - "scripts/cloudsql-proxy.sh"
-      - "scripts/check-db-url.mjs"
   workflow_dispatch: {}
 
 concurrency:
@@ -42,20 +34,23 @@ env:
 
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Auth to GCP
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
 
       - name: Setup gcloud
-        uses: google-github-actions/setup-gcloud@v3
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" -q
@@ -70,7 +65,7 @@ jobs:
       # revision jonli qoladi (Cloud Run'da preDeploy hook yo'q — gate shu yerda).
       # Migratsiyalar FAQAT additive bo'lgani uchun eski kod yangi sxemani ham tolerat qiladi.
       - name: Setup Node (migration)
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "22"
           cache: "npm"
@@ -133,15 +128,19 @@ jobs:
           if [ -f cloud-sql-proxy.pid ]; then kill "$(cat cloud-sql-proxy.pid)" 2>/dev/null || true; fi
 
       - name: Build image
+        env:
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api"
-          docker build --provenance=false -t "$IMG:latest" -t "$IMG:${GITHUB_SHA}" .
+          docker build --provenance=false -t "$IMG:latest" -t "$IMG:${DEPLOY_SHA}" .
 
       - name: Push image
+        env:
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api"
           docker push "$IMG:latest"
-          docker push "$IMG:${GITHUB_SHA}"
+          docker push "$IMG:${DEPLOY_SHA}"
 
       # FAZA 3 (D) — health-gated rollout: startup probe /health (DB+storage haqiqiy
       # tekshiruv) — bog'liqligi buzilgan revision trafik olmaydi, deploy yiqiladi va
@@ -150,8 +149,10 @@ jobs:
       # #65 (T5.4) — --concurrency 20: instans 1 CPU / 1Gi va ffmpeg/ingest bir xil
       # protsessda → Cloud Run default 80 parallel so'rov OOM xavfi. 20 × 10 instans = 200.
       - name: Deploy to Cloud Run
+        env:
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
-          IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api:${GITHUB_SHA}"
+          IMG="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/api:${DEPLOY_SHA}"
           gcloud run deploy "$SERVICE" --image "$IMG" \
             --region "$REGION" --allow-unauthenticated \
             --no-cpu-throttling --min-instances 1 --max-instances 10 \

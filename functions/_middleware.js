@@ -22,5 +22,16 @@ export async function onRequest(context) {
     }
   }
 
+  // Cloudflare'ning SPA fallback'i noma'lum URL va brauzer assetlariga 1.1 MB
+  // index.html + 200 qaytarmasin. Faqat haqiqiy ilova route'lari shellga o'tadi;
+  // qolgan yo'llar exact static asset bo'lmasa haqiqiy 404 oladi.
+  const spaRoots = ["/stock", "/pricing", "/plugin", "/dashboard", "/account", "/projects", "/aistudio", "/auth", "/login"];
+  const isSpaRoute = spaRoots.some((p) => url.pathname === p || url.pathname.startsWith(p + "/"));
+  if (!isSpaRoute && url.pathname !== "/" && url.pathname !== "/index.html") {
+    const exact = await env.ASSETS.fetch(request);
+    if (exact.status !== 404) return exact;
+    return new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+  }
+
   return context.next();
 }

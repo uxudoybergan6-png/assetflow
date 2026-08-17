@@ -260,6 +260,10 @@ const DETAIL_PARENT = { 'contributor-detail': 'contributors', 'subscriber-detail
 let _routeInited = false;
 
 function route(view, arg, fromHistory){
+  if (view !== CURRENT && window.afCmsHasUnsaved && window.afCmsHasUnsaved()) {
+    if (!window.confirm("You have unsaved CMS changes. Leave this page and discard them?")) return;
+    if (window.afCmsDiscardUnsaved) window.afCmsDiscardUnsaved();
+  }
   CURRENT = view;
   // Tarix yozuvi: popstate'dan kelmagan bo'lsa — dastlab replaceState, keyin har o'zgarishda pushState.
   if (!fromHistory) {
@@ -289,7 +293,8 @@ function route(view, arg, fromHistory){
   } catch (e) {
     console.error(e);
     AssetFlowLog.error(e.message, { action: "view_error", detail: view });
-    document.getElementById('view').innerHTML = `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Error</div><div style="font-size:11px;color:var(--muted2)">${e.message}</div></div>`;
+    const safeErr = window.StudioMedia?.escapeHtml ? StudioMedia.escapeHtml(e?.message || 'Unknown error') : 'Unknown error';
+    document.getElementById('view').innerHTML = `<div class="adx-empty" style="max-width:420px;margin:60px auto"><span class="ei"><i class="ph ph-warning"></i></span><div style="font-weight:600;font-size:13px">Error</div><div style="font-size:11px;color:var(--muted2)">${safeErr}</div></div>`;
   }
   document.getElementById('adxContent').scrollTop = 0;
 }
@@ -309,6 +314,13 @@ document.getElementById('adxNavToggle').addEventListener('click', () => {
 });
 document.getElementById('adxScrim').addEventListener('click', () => {
   document.body.classList.remove('adx-nav-open');
+});
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && String(e.key).toLowerCase() === 'k') {
+    e.preventDefault();
+    const search = document.getElementById('adminGlobalSearch');
+    if (search) { search.focus(); search.select(); }
+  }
 });
 
 /* ── Theme button (for legacy screens; the new shell is dark-fixed) ── */
@@ -368,7 +380,7 @@ window.addEventListener('af-theme-change', (e) => {
     const r = await StudioApi.listInfringementReports("pending");
     window._AF_DMCA_PENDING = (r.reports || []).length;
   })();
-  await Promise.allSettled([
+  const bootResults = await Promise.allSettled([
     tplJob,
     dmcaJob,
     StudioTemplates.loadAdminContributors(),
@@ -381,6 +393,19 @@ window.addEventListener('af-theme-change', (e) => {
   // Partiya o'rnashgach — nav (badge'lar) + joriy ekranni bir marta yaxlit qayta render.
   renderNav();
   route(CURRENT, null, true);
+  const bootFailures = bootResults.filter((r) => r.status === 'rejected');
+  if (bootFailures.length) {
+    const banner = document.createElement('div');
+    banner.id = 'adminBootDegraded';
+    banner.setAttribute('role', 'alert');
+    banner.style.cssText = 'position:fixed;z-index:9998;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(255,178,124,.35);border-radius:10px;background:#21170f;color:#ffd0a8;font-size:12px;box-shadow:0 12px 36px rgba(0,0,0,.35)';
+    const text = document.createElement('span');
+    text.textContent = `${bootFailures.length} admin data source(s) failed to load. Some counters may be unavailable.`;
+    const retry = document.createElement('button');
+    retry.type = 'button'; retry.className = 'adx-btn2 sm'; retry.textContent = 'Retry';
+    retry.addEventListener('click', () => location.reload());
+    banner.append(text, retry); document.body.appendChild(banner);
+  }
 })();
 </script>
 </body>

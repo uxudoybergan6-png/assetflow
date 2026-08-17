@@ -145,7 +145,11 @@ export const falWebhookHandler: RequestHandler = async (req, res) => {
     const gen = await findGenerationByFalRequestId(requestId);
     if (!gen) {
       console.warn(`[fal-webhook] generation topilmadi: ${requestId}`);
-      res.status(200).json({ received: true, matched: false });
+      // Submit javobi qaytib, requestId Generation'ga yozilayotgan juda qisqa oynada
+      // webhook oldin kelishi mumkin. 200 desak fal qayta yubormaydi va natija yo'qoladi;
+      // 503 provider retry'ini saqlaydi, persist tugagach keyingi urinish match bo'ladi.
+      res.setHeader("Retry-After", "2");
+      res.status(503).json({ received: false, matched: false, retry: true });
       return;
     }
 

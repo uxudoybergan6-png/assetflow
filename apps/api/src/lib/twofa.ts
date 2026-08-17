@@ -20,6 +20,10 @@ const PENDING_TTL = "5m";
 
 const TOTP_ISSUER = "FrameFlow Admin";
 
+if (process.env.NODE_ENV === "production" && !process.env.TOTP_ENC_KEY?.trim()) {
+  throw new Error("TOTP_ENC_KEY is required in production and must be independent from JWT_SECRET");
+}
+
 function encKey(): Buffer {
   return crypto
     .createHash("sha256")

@@ -539,9 +539,14 @@ function startNewUpload() {
 window.startNewUpload = startNewUpload;
 
 /** Kategoriyani tanlaydi (top-level yoki stock sub). Fayllarni tozalaydi (ext o'zgaradi). */
-function selectBulkCat(key) {
+async function selectBulkCat(key) {
   if (BULK_RUNNING) return;
   if (!taxonByKey(key)) return;
+  if (BULK_FILES.length && key !== BULK_CAT && !(await afConfirm({
+    title: "Change category?",
+    warn: `${BULK_FILES.length} selected file(s) will be cleared because the allowed formats may change.`,
+    okLabel: "Change and clear",
+  }))) return;
   BULK_CAT = key;
   BULK_FILES = [];
   renderUpload();
@@ -660,6 +665,12 @@ function bulkDzHandlers() {
   const input = document.getElementById("bulkFileInput");
   if (!dz || !input) return;
   dz.onclick = () => input.click();
+  dz.setAttribute("role", "button");
+  dz.setAttribute("tabindex", "0");
+  dz.setAttribute("aria-label", "Choose files to upload");
+  dz.onkeydown = (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); }
+  };
   input.onchange = () => {
     bulkAddFiles(input.files);
     input.value = "";
@@ -871,7 +882,7 @@ function renderBulkUpload() {
         ${dzBody}
       </div>
       ${BULK_FILES.length ? `<div class="col">${BULK_FILES.map((b, i) => bulkRenderRow(b, i)).join("")}</div>` : ""}
-      <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div class="checkbox${BULK_RIGHTS ? " on" : ""}" onclick="toggleBulkRights()">${ic("check")}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
+      <label class="row gap-8" style="cursor:pointer;align-items:flex-start"><div class="checkbox${BULK_RIGHTS ? " on" : ""}" role="checkbox" tabindex="0" aria-checked="${BULK_RIGHTS ? "true" : "false"}" onclick="toggleBulkRights()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBulkRights()}">${ic("check")}</div><span class="body" style="flex:1">${RIGHTS_ATTEST_TEXT}</span></label>
       <div class="row between center">
         <button class="btn btn-ghost" onclick="bulkClearFinished()" ${BULK_FILES.some((b) => b.stage === "done") && !BULK_RUNNING ? "" : "disabled"}>Clear finished</button>
         ${BULK_RUNNING ? `<button class="btn btn-danger-ghost" id="bulkAbortBtn" onclick="bulkAbort()">${ic("x")} Stop</button>` : ""}
@@ -1144,7 +1155,7 @@ async function startMediaUploadThenNext() {
     const created = await createUploadTemplateRecord();
     const tid = UP_EDIT_ID || created.id;
     UP_EDIT_ID = tid; // avoid creating a duplicate record on retry
-    prog = listenUploadProgress(tid, (p) => { if (!p.error) setUploadServerStage(p); });
+    prog = await listenUploadProgress(tid, (p) => { if (!p.error) setUploadServerStage(p); });
     await StudioApi.uploadAssets(tid, files, (done) => updateFileProgress(list, done));
     markAllFilesDone(list);
     setUploadServerStage({ done: true });
@@ -1388,13 +1399,15 @@ const UPLOAD_STAGE_LABELS = {
   db: "Writing to database",
 };
 
-function listenUploadProgress(tid, onUpdate) {
+async function listenUploadProgress(tid, onUpdate) {
   const handle = { stage: "", close() {} };
   if (typeof EventSource === "undefined") return handle;
   let es = null;
   try {
+    const capability = await StudioApi.getUploadProgressToken(tid);
+    if (!capability?.token) return handle;
     es = new EventSource(
-      `${StudioApi.baseUrl()}/api/contributor/templates/${tid}/upload-progress`
+      `${StudioApi.baseUrl()}/api/contributor/templates/${encodeURIComponent(tid)}/upload-progress?token=${encodeURIComponent(capability.token)}`
     );
   } catch {
     return handle;
@@ -1451,7 +1464,7 @@ async function submitUpload(){
       // If these files were already uploaded during the media step — don't re-upload
       if (filesPresent && !alreadyUploaded) {
         // Server-side stages (80-100%): storage save, scene extract, DB write
-        prog = listenUploadProgress(tid, (p) => {
+        prog = await listenUploadProgress(tid, (p) => {
           if (!btn || p.error) return;
           btn.innerHTML = `${esc(p.message || "Processing…")} ${Math.round(p.pct)}%`;
         });
@@ -1564,6 +1577,7 @@ async function selectContributorThread(i) {
 }
 
 async function renderCMsg() {
+  const renderEpoch = (window.__cmsgEpoch = (window.__cmsgEpoch || 0) + 1);
   const root = document.getElementById("cmsgRoot");
   if (!C_THREADS.length) {
     root.innerHTML = `<div class="card card-pad empty"><div class="ico">${ic("inbox")}</div><h3>No messages</h3><p class="body">Admin moderation and broadcast messages will appear here.</p></div>`;
@@ -1571,11 +1585,14 @@ async function renderCMsg() {
   }
   if (CMSG_SEL >= C_THREADS.length) CMSG_SEL = 0;
   const th = C_THREADS[CMSG_SEL];
-  C_THREAD_MESSAGES = [];
+  let loadedMessages = [];
   try {
     const data = await StudioApi.getMessageThread(th.id);
-    C_THREAD_MESSAGES = data.messages || [];
+    if (renderEpoch !== window.__cmsgEpoch || C_THREADS[CMSG_SEL]?.id !== th.id) return;
+    loadedMessages = data.messages || [];
     await StudioApi.markMessageThreadRead(th.id);
+    if (renderEpoch !== window.__cmsgEpoch || C_THREADS[CMSG_SEL]?.id !== th.id) return;
+    C_THREAD_MESSAGES = loadedMessages;
     th.unread = false;
     window._STUDIO_MSG_UNREAD = contributorUnreadCount();
     if (typeof renderNav === "function") renderNav();
@@ -1627,19 +1644,26 @@ async function renderCMsg() {
 
 async function sendContributorReply() {
   const th = C_THREADS[CMSG_SEL];
+  const threadId = th?.id;
   const input = document.getElementById("cReplyInput");
   const body = input?.value?.trim();
-  if (!th || !body) return;
+  if (!th || !body || input?.dataset.busy === "1") return;
+  if (input) { input.dataset.busy = "1"; input.disabled = true; }
   try {
-    await StudioApi.replyMessageThread(th.id, body);
-    input.value = "";
-    const data = await StudioApi.getMessageThread(th.id);
-    C_THREAD_MESSAGES = data.messages || [];
+    await StudioApi.replyMessageThread(threadId, body);
+    if (input) input.value = "";
+    const data = await StudioApi.getMessageThread(threadId);
     th.last = body;
-    await renderCMsg();
+    if (C_THREADS[CMSG_SEL]?.id === threadId) {
+      C_THREAD_MESSAGES = data.messages || [];
+      await renderCMsg();
+    }
     toast("Sent", "Your reply was delivered to the admin", "success");
   } catch (e) {
     toast("Error", e.message || "Send failed", "danger");
+  } finally {
+    const current = document.getElementById("cReplyInput");
+    if (current) { current.dataset.busy = ""; current.disabled = false; }
   }
 }
 

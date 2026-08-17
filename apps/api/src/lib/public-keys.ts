@@ -16,9 +16,8 @@
  * qarorini beradi (private kalitlar CDN yoqilganda ham SIGNED qoladi).
  *
  * OMMAVIY (true):
- *   templates/<id>/thumb[.ext]     — shablon karta rasmi
- *   templates/<id>/preview[.ext]   — shablon hover preview
- *   templates/<id>/scenes/**       — sahna preview/thumb
+ *   Template media public CDN allow-listga KIRMAYDI. Ular API publication/takedown
+ *   gate'idan o'tib, qisqa signed storage URL'ga redirect qilinadi.
  *   gen/<uid>/*-thumb.jpg          — gen rasm/video thumb (derivativ)
  *   gen/<uid>/*-poster.jpg         — gen video poster (derivativ)
  *   gen/<uid>/*-preview.mp4        — gen video hover-preview (derivativ)
@@ -44,10 +43,8 @@
 // tushiradi (CLOUDFLARE_API_TOKEN/ACCOUNT_ID secretlari o'rnatilgan bo'lsa).
 export function isPublicReadKey(key: string): boolean {
   if (!key || typeof key !== "string") return false;
-  // Shablon: thumb/preview ANIQ segment — pack.*/pack.dl.zip'ga TEGMAYDI.
-  if (/^templates\/[^/]+\/(thumb|preview)(\.[A-Za-z0-9]+)?$/.test(key)) return true;
-  // Shablon sahna fayllari (preview/thumb) — scenes/ ostidagi hammasi.
-  if (/^templates\/[^/]+\/scenes\/.+$/.test(key)) return true;
+  // Template media ataylab public emas: CDN Worker DB publication/takedown holatini
+  // bilmaydi. API route gate'idan keyin signed storage URL ishlatiladi.
   // Generatsiya KO'RSATISH derivativlari (asl fayl EMAS). Asl fayl
   // `gen/<uid>/<id>-<ts>.<ext>` bu suffikslar bilan TUGAMAYDI → private qoladi.
   if (/^gen\/[^/]+\/.+-(thumb\.jpg|poster\.jpg|preview\.mp4|disp\.[A-Za-z0-9]+)$/.test(key))

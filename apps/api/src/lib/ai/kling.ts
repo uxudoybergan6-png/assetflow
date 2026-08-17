@@ -249,7 +249,7 @@ async function klingDownloadUrl(url: string, kind: string): Promise<OrResult<Buf
   try {
     const res = await fetch(url);
     if (!res.ok) return { ok: false, error: `kling download HTTP ${res.status}`, status: res.status };
-    const buf = Buffer.from(await res.arrayBuffer());
+    const buf = await readCappedResponse(res);
     return buf.length ? { ok: true, data: buf } : { ok: false, error: "kling: empty result" };
   } catch (e) {
     return { ok: false, error: (e as Error).message || "kling download error" };
@@ -357,3 +357,4 @@ export async function klingImage(
   }
   return { ok: false, error: "kling: image generation timed out" };
 }
+import { readCappedResponse } from "./capped-download.js";

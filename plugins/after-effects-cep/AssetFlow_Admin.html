@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>FrameFlow Admin</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file: 'unsafe-inline'; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data: blob: https:; media-src 'self' file: data: blob: https:; font-src 'self' file: data:; connect-src https://api.getframeflow.app; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
 <link rel="stylesheet" href="css/tokens.css">
 <script>
 /* D2 — tema: Browse panelda tanlangan temani (af.prefs.theme) shu panelga ham qo'llaymiz.
@@ -440,7 +441,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:1
     </div>
     <div class="topbar-right">
       <span class="topbar-user" id="topApi" title="API address" style="font-size:var(--fs-xs);color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis"></span>
-      <div class="admin-avatar" id="adminAvatar" onclick="openAdminAccount()" title="Account settings">A</div>
+      <button type="button" class="admin-avatar" id="adminAvatar" onclick="openAdminAccount()" title="Account settings" aria-label="Account settings">A</button>
       <button class="btn-ghost" onclick="doLogout()">Sign out</button>
     </div>
   </div>
@@ -568,6 +569,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:1
 
 <script src="js/CSInterface.js"></script>
 <script src="assetflow-env.js"></script>
+<script src="assetflow-zip.js"></script>
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 const IS_CEP = typeof window.__adobe_cep__ !== 'undefined';
@@ -579,15 +581,14 @@ const PLATFORM = (typeof process !== 'undefined' && process.platform) ? process.
 const IS_WIN = PLATFORM === 'win32';
 
 /** Cross-platform unzip */
-function unzipTo(child, zipPath, destDir) {
-  if (IS_WIN) {
-    child.execFileSync('powershell', ['-NoProfile', '-Command',
-      `Expand-Archive -LiteralPath '${zipPath.replace(/'/g, "''")}' -DestinationPath '${destDir.replace(/'/g, "''")}' -Force`
-    ], { timeout: 120000 });
-  } else {
-    // macOS AppleDouble (._*) va __MACOSX papkasini chiqarmaymiz — AE ularni o'qiy olmaydi
-    child.execFileSync('unzip', ['-o', '-q', zipPath, '-d', destDir, '-x', '__MACOSX/*', '._*', '*/._*'], { timeout: 120000 });
-  }
+async function unzipTo(_child, zipPath, destDir) {
+  if (!window.AFZip || !AFZip.available()) throw new Error('Secure ZIP extractor is unavailable');
+  return AFZip.extractAll(zipPath, destDir, {
+    maxEntries: 20000,
+    maxEntryBytes: 4 * 1024 * 1024 * 1024,
+    maxTotalBytes: 12 * 1024 * 1024 * 1024,
+    maxCompressionRatio: 200,
+  });
 }
 
 /** Papkada (rekursiv) kengaytma bo'yicha birinchi fayl ('' = topilmadi) */
@@ -608,19 +609,19 @@ function findByExtIn(fs, path, dir, ext) {
 }
 
 /** ZIP bo'lmagan kengaytmali arxivni ochish (Expand-Archive .zip talab qiladi) */
-function unzipAnyTo(fs, child, srcPath, destDir) {
+async function unzipAnyTo(fs, child, srcPath, destDir) {
   if (IS_WIN && !/\.zip$/i.test(srcPath)) {
     const tmpZip = srcPath + '.afz.zip';
     fs.copyFileSync(srcPath, tmpZip);
-    try { unzipTo(child, tmpZip, destDir); }
+    try { await unzipTo(child, tmpZip, destDir); }
     finally { try { fs.rmSync(tmpZip, { force: true }); } catch (e) {} }
   } else {
-    unzipTo(child, srcPath, destDir);
+    await unzipTo(child, srcPath, destDir);
   }
 }
 
 /** project.aegraphic → .aep: PK (zip) bo'lsa ichidan .aep, aks holda RIFX — rename */
-function aegraphicToAepIn(fs, path, child, dir, aegraphicPath) {
+async function aegraphicToAepIn(fs, path, child, dir, aegraphicPath) {
   const g = aegraphicPath || findByExtIn(fs, path, dir, '.aegraphic');
   if (!g) return '';
   const { Buffer: NodeBuffer } = require('buffer');
@@ -629,7 +630,7 @@ function aegraphicToAepIn(fs, path, child, dir, aegraphicPath) {
   fs.readSync(fd, head, 0, 2, 0);
   fs.closeSync(fd);
   if (head[0] === 0x50 && head[1] === 0x4b) {
-    unzipAnyTo(fs, child, g, dir);
+    await unzipAnyTo(fs, child, g, dir);
     return findByExtIn(fs, path, dir, '.aep');
   }
   const aep = path.join(path.dirname(g), 'mogrt_TEMP.aep');
@@ -638,9 +639,9 @@ function aegraphicToAepIn(fs, path, child, dir, aegraphicPath) {
 }
 
 /** .mogrt → .aep (ikki bosqich: mogrt zip → project.aegraphic → .aep) */
-function mogrtToAepIn(fs, path, child, mogrtPath, destDir) {
+async function mogrtToAepIn(fs, path, child, mogrtPath, destDir) {
   fs.mkdirSync(destDir, { recursive: true });
-  unzipAnyTo(fs, child, mogrtPath, destDir);
+  await unzipAnyTo(fs, child, mogrtPath, destDir);
   return aegraphicToAepIn(fs, path, child, destDir, '');
 }
 
@@ -682,12 +683,24 @@ function defaultApiUrl() {
 // Render'dan Cloud Run'ga ko'chishdan oldin saqlangan localStorage qiymati
 // (localhost yoki eski Render manzili) bo'lsa — joriy default'ga almashtiriladi.
 function apiBase() {
-  let url = (localStorage.getItem(API_KEY) || defaultApiUrl()).replace(/\/$/, '');
-  if (IS_CEP && STALE_API_HOST_RE.test(url)) {
-    url = defaultApiUrl();
-    localStorage.setItem(API_KEY, url);
+  const stored = localStorage.getItem(API_KEY) || defaultApiUrl();
+  const normalized = normalizeAdminApi(stored);
+  if (!normalized) {
+    localStorage.setItem(API_KEY, PROD_API);
+    return PROD_API;
   }
-  return url;
+  if (normalized !== stored.replace(/\/$/, '')) localStorage.setItem(API_KEY, normalized);
+  return normalized;
+}
+
+function normalizeAdminApi(value) {
+  try {
+    const u = new URL(String(value || '').trim());
+    const origin = u.origin.replace(/\/$/, '');
+    if (IS_CEP) return origin === PROD_API ? PROD_API : '';
+    if (origin === PROD_API || /^http:\/\/(localhost|127\.0\.0\.1):4000$/.test(origin)) return origin;
+  } catch (e) {}
+  return '';
 }
 
 /** "Failed to fetch" ko'p sababli bo'ladi (CEP file:// origin CORS'dan o'tadi, demak
@@ -716,7 +729,7 @@ function renderErrorState(el, e) {
 
 async function pingApi() {
   try {
-    const r = await fetch(apiBase() + '/health', { cache: 'no-store' });
+    const r = await fetchWithTimeout(apiBase() + '/health', { cache: 'no-store' }, 8000);
     return r.ok;
   } catch {
     return false;
@@ -746,21 +759,28 @@ function getUser() {
 }
 
 // ── HTTP ───────────────────────────────────────────────────────────────────
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs || 20000);
+  try { return await fetch(url, { ...(options || {}), signal: ctrl.signal }); }
+  finally { clearTimeout(timer); }
+}
 async function api(path, opts = {}, _retried = false) {
   const isFormData = opts.body instanceof FormData;
   const headers = { ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...opts.headers };
   if (token()) headers['Authorization'] = 'Bearer ' + token();
   let res;
   try {
-    res = await fetch(apiBase() + path, {
+    res = await fetchWithTimeout(apiBase() + path, {
       ...opts,
       headers,
       body: opts.body && !isFormData ? JSON.stringify(opts.body) : opts.body
-    });
+    }, Number(opts.timeoutMs) || 20000);
   } catch (netErr) {
     // Tarmoq xatosi — seans o'rtasida Cloud Run instansi nolga tushgan bo'lishi mumkin.
     // Bir marta uyg'otib qayta urinamiz; uyg'onmasa tushunarli xato qaytaramiz.
-    if (!_retried) {
+    const method = String(opts.method || 'GET').toUpperCase();
+    if (!_retried && (method === 'GET' || method === 'HEAD')) {
       toast('Server is waking up… retrying', false);
       const ok = await waitForApi(null, 5, 4000);
       if (ok) return api(path, opts, true);
@@ -783,11 +803,11 @@ async function api(path, opts = {}, _retried = false) {
 async function apiForm(path, formData, _retried = false) {
   let res;
   try {
-    res = await fetch(apiBase() + path, {
+    res = await fetchWithTimeout(apiBase() + path, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token() },
       body: formData
-    });
+    }, 120000);
   } catch (netErr) {
     // api() bilan bir xil: cold-start bo'lsa bir marta uyg'otib qayta urinamiz.
     if (!_retried) {
@@ -882,7 +902,16 @@ async function doLogin() {
   btn.disabled = true;
   btn.textContent = 'Signing in…';
   const apiIn = document.getElementById('loginApi').value.trim();
-  if (apiIn) localStorage.setItem(API_KEY, apiIn.replace(/\/$/, ''));
+  if (apiIn) {
+    const safeApi = normalizeAdminApi(apiIn);
+    if (!safeApi) {
+      err.textContent = IS_CEP ? 'Release Admin only connects to https://api.getframeflow.app' : 'Invalid API URL';
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+      return;
+    }
+    localStorage.setItem(API_KEY, safeApi);
+  }
   try {
     if (!(await pingApi())) {
       btn.textContent = 'Server is waking up…';
@@ -993,6 +1022,7 @@ function switchTab(el, tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
   currentTab = tab;
+  window.__adminTabEpoch = (window.__adminTabEpoch || 0) + 1;
   const isSubs = tab === 'subscribers';
   const isDl = tab === 'downloaded';
   const refreshBtn = document.querySelector('.btn-refresh');
@@ -1017,6 +1047,8 @@ function switchTab(el, tab) {
 
 // ── Templates ──────────────────────────────────────────────────────────────
 async function loadTemplates() {
+  const epoch = window.__adminTabEpoch || 0;
+  const requestedTab = currentTab;
   const el = document.getElementById('listArea');
   el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
   try {
@@ -1024,6 +1056,7 @@ async function loadTemplates() {
     const params = new URLSearchParams({ scope: 'all' });
     if (status) params.set('status', status);
     const data = await api('/api/contributor/templates?' + params);
+    if (epoch !== window.__adminTabEpoch || requestedTab !== currentTab) return;
     allTemplates = data.items || [];
     applySearch();
   } catch(e) {
@@ -1120,7 +1153,7 @@ function renderCard(t) {
     return sc.length ? sc.length + ' scenes' : (t.assets?.pack ? '.aep/.mogrt present' : 'no scenes');
   })();
   return `<div class="tpl-card" id="card-${t.id}">
-    <div class="tpl-row" onclick="toggleDetail('${t.id}')">
+    <div class="tpl-row" role="button" tabindex="0" aria-expanded="false" aria-controls="detail-${t.id}" onclick="toggleDetail('${t.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDetail('${t.id}')}" >
       <div class="tpl-thumb">${typeof thumb === 'string' && thumb.startsWith('<img') ? thumb : '<span>' + thumb + '</span>'}</div>
       <div class="tpl-info">
         <div class="tpl-name">${escHtml(t.name)}</div>
@@ -1139,15 +1172,19 @@ function renderCard(t) {
 function toggleDetail(id) {
   const d = document.getElementById('detail-' + id);
   const chev = document.getElementById('chev-' + id);
+  const card = document.getElementById('card-' + id);
+  const row = card && card.querySelector('.tpl-row');
   if (d.classList.contains('open')) {
     d.classList.remove('open');
     chev.textContent = '›';
+    if (row) row.setAttribute('aria-expanded', 'false');
   } else {
     const t = allTemplates.find(x => x.id === id);
     if (t) {
       d.innerHTML = renderDetail(t);
       d.classList.add('open');
       chev.textContent = '⌄';
+      if (row) row.setAttribute('aria-expanded', 'true');
       hydrateSceneVideos(d);
     }
   }
@@ -1161,7 +1198,7 @@ async function hydrateSceneVideos(root) {
     const url = el.getAttribute('data-af-scene');
     el.removeAttribute('data-af-scene');
     try {
-      const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token() } });
+      const r = await fetchWithTimeout(url, { headers: { 'Authorization': 'Bearer ' + token() } }, 20000);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json();
       if (j && j.url) el.src = j.url; else throw new Error('No url');
@@ -1941,9 +1978,11 @@ async function importPackToAE(id) {
     await new Promise((resolve, reject) => {
       // Authorization faqat o'z API origin'iga; signed R2 URL'ga redirect bo'lsa
       // token yuborilmaydi (cross-origin leak oldini olish).
+      const MAX_PACK_BYTES = 3 * 1024 * 1024 * 1024;
       const doGet = (url, redirects) => {
         if (redirects <= 0) { reject(new Error('Redirect limit')); return; }
-        const lib = url.startsWith('https') ? require('https') : require('http');
+        if (!/^https:\/\//i.test(url)) { reject(new Error('HTTPS is required for pack downloads')); return; }
+        const lib = require('https');
         const sameOrigin = originOf(url) === packOrigin && packOrigin !== '';
         const opts = sameOrigin ? { headers: { 'Authorization': 'Bearer ' + token() } } : {};
         const req = lib.get(url, opts, res => {
@@ -1956,10 +1995,16 @@ async function importPackToAE(id) {
           }
           if (res.statusCode !== 200) { res.resume(); reject(new Error('Pack HTTP ' + res.statusCode)); return; }
           totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+          if (totalBytes > MAX_PACK_BYTES) { res.resume(); reject(new Error('Pack exceeds the 3 GB limit')); return; }
           const ws = fs.createWriteStream(zipPath);
           let lastPct = -1;
           res.on('data', chunk => {
             doneBytes += chunk.length;
+            if (doneBytes > MAX_PACK_BYTES) {
+              res.destroy(new Error('Pack exceeds the 3 GB limit'));
+              try { ws.destroy(); fs.rmSync(zipPath, { force: true }); } catch (e) {}
+              return;
+            }
             if (totalBytes > 0) {
               const pct = Math.min(100, Math.floor(doneBytes / totalBytes * 100));
               if (pct !== lastPct && (pct % 2 === 0 || pct === 100)) {
@@ -1975,6 +2020,7 @@ async function importPackToAE(id) {
           ws.on('error', reject);
           res.on('error', reject);
         });
+        req.setTimeout(30000, () => req.destroy(new Error('Pack download timed out')));
         req.on('error', reject);
       };
       doGet(packUrl, 8);
@@ -1986,7 +2032,7 @@ async function importPackToAE(id) {
 
     // 1 — Unzip (cross-platform). Xato bo'lsa saqlaymiz — hech narsa chiqmasa ko'rsatamiz
     let unzipErr = null;
-    try { unzipTo(child, zipPath, tmpDir); } catch(e) { unzipErr = e; }
+    try { await unzipTo(child, zipPath, tmpDir); } catch(e) { unzipErr = e; }
     let aepPath = '';
     const mogrtPaths = [];
     let aegraphicPath = '';
@@ -2015,10 +2061,10 @@ async function importPackToAE(id) {
       steps[1] = { state: 'run', text: 'Opening MOGRT → .aep…' };
       log();
       if (mogrtPaths.length) {
-        aepPath = mogrtToAepIn(fs, path, child, mogrtPaths[0], path.join(tmpDir, 'af_mogrt_0'));
+        aepPath = await mogrtToAepIn(fs, path, child, mogrtPaths[0], path.join(tmpDir, 'af_mogrt_0'));
         mogrtNote = ' · MOGRT pack (' + mogrtPaths.length + ')';
       } else {
-        aepPath = aegraphicToAepIn(fs, path, child, tmpDir, aegraphicPath);
+        aepPath = await aegraphicToAepIn(fs, path, child, tmpDir, aegraphicPath);
         mogrtNote = ' · MOGRT';
       }
     }
@@ -2769,10 +2815,12 @@ async function uploadTemplateToServer(id) {
 window.uploadTemplateToServer = uploadTemplateToServer;
 // ── Subscribers ────────────────────────────────────────────────────────────
 async function loadSubscribers() {
+  const epoch = window.__adminTabEpoch || 0;
   const el = document.getElementById('listArea');
   el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
   try {
     const data = await api('/api/admin/plugin-subscribers');
+    if (epoch !== window.__adminTabEpoch || currentTab !== 'subscribers') return;
     allSubscribers = data.items || [];
     applySubscriberSearch();
   } catch(e) {
@@ -2968,20 +3016,15 @@ async function adminDeleteDownloaded(id) {
     // 2) Lokal disk fayllarini tozalash (af_admin_<id> papkasi)
     try {
       const fs = require('fs'), path = require('path');
-      // Ro'yxatdagi pack papkasi
-      let target = d.dir || '';
-      // Zaxira: aepPath ning af_admin_<id> ildizi
-      if ((!target || !fs.existsSync(target)) && d.aepPath) {
-        let cur = path.dirname(d.aepPath);
-        for (let i = 0; i < 6; i++) {
-          if (/af_admin_/.test(path.basename(cur))) { target = cur; break; }
-          const up = path.dirname(cur);
-          if (up === cur) break;
-          cur = up;
-        }
-        if (!target) target = path.dirname(d.aepPath);
+      const base = fs.realpathSync(adminBaseDir());
+      const expectedName = 'af_admin_' + String(id).replace(/[^a-zA-Z0-9_-]/g, '');
+      const candidate = path.join(base, expectedName);
+      let target = '';
+      if (fs.existsSync(candidate)) {
+        const real = fs.realpathSync(candidate);
+        if (path.dirname(real) === base && path.basename(real) === expectedName) target = real;
       }
-      if (target && fs.existsSync(target)) {
+      if (target) {
         fs.rmSync(target, { recursive: true, force: true });
         toast('✓ Local files deleted');
       }
@@ -3209,7 +3252,9 @@ function adminSaveFolder() {
 function adminSaveApi() {
   const val = (document.getElementById('sheetApiUrl')?.value || '').trim().replace(/\/$/, '');
   if (!val) { toast('Enter a URL', true); return; }
-  localStorage.setItem(API_KEY, val);
+  const safeApi = normalizeAdminApi(val);
+  if (!safeApi) { toast(IS_CEP ? 'Release Admin only allows the production API' : 'Invalid API URL', true); return; }
+  localStorage.setItem(API_KEY, safeApi);
   toast('✓ API saved — sign in again');
 }
 

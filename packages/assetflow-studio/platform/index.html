@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="google-client-id" content="331762958776-8tengevn9af728qapb9vn4ppl1p77kgr.apps.googleusercontent.com">
-<meta name="turnstile-site-key" content="0x4AAAAAAADvCAW2JrGu92omA">
+<meta name="turnstile-site-key" content="">
 <title>FrameFlow — Creative Assets & AI Generation Platform</title>
 
 <!-- #157 (L10) — SEO/OG. Kanonik domen: https://getframeflow.app (app-urls.ts DEFAULT_WEB_URL).
@@ -15,6 +15,8 @@
      summary_large_image qo'shiladi. -->
 <meta name="description" content="FrameFlow — ready-made motion templates plus AI image, video, voice and SFX generation. Work in the browser or right inside After Effects.">
 <link rel="canonical" href="https://getframeflow.app/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FrameFlow">
 <meta property="og:url" content="https://getframeflow.app/">
@@ -14289,7 +14291,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
   .ff .ffl-promo-tag{background:color-mix(in srgb,var(--th-on-accent) 16%,transparent);padding:2px 7px;border-radius:4px;font-weight:800}
   .ff .ffl-promo-txt{font-weight:700}
   .ff .ffl-promo-try{border:0;background:none;color:inherit;font:inherit;font-weight:800;display:inline-flex;align-items:center;gap:4px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-  .ff .ffl-promo-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:none;color:inherit;font-size:16px;line-height:1;cursor:pointer;opacity:.75}
+  .ff .ffl-promo-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:0;background:none;color:inherit;font-size:16px;line-height:1;cursor:pointer;opacity:.75}
   .ff .ffl-promo-x:hover{opacity:1}
 
   /* ── MEGA-MENYU (nav dropdown, 2 ustun) ── */
@@ -15091,14 +15093,14 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
      .va-main global 1600px cap'ni katalogda olib tashlaymiz (hero mavjudligiga qarab). */
   .ff .va-main:has(.va-cathero){max-width:none}
   /* Reading bloklar (hero eyebrow/headline) markazda va cheklangan — ultra-keng sarlavha yomonroq o'qiladi */
-  .ff .va-cathero .va-kick,.ff .va-cathero h2{max-width:820px;margin-left:auto;margin-right:auto}
+  .ff .va-cathero .va-kick,.ff .va-cathero h1{max-width:820px;margin-left:auto;margin-right:auto}
   .ff .va-cathero{padding:60px clamp(16px,3vw,40px) 34px;text-align:center;position:relative}
   .ff .va-cathero::before{content:"";position:absolute;inset:0;background:radial-gradient(560px 320px at 50% 6%,var(--th-accent-soft),transparent 62%);pointer-events:none}
   .ff .va-cathero>*{position:relative}
   .ff .va-cathero .va-kick{color:var(--muted)}
   /* margin — `auto` yon tomonlar SHART: qisqartma `0` yozilsa yuqoridagi
      margin-left/right:auto bekor bo'ladi va 820px blok chapga yopishadi. */
-  .ff .va-cathero h2{font-family:'Space Grotesk','Inter',sans-serif;font-size:clamp(34px,4.4vw,55px);font-weight:600;line-height:1.02;letter-spacing:-.045em;margin:14px auto 26px}
+  .ff .va-cathero h1{font-family:'Space Grotesk','Inter',sans-serif;font-size:clamp(34px,4.4vw,55px);font-weight:600;line-height:1.02;letter-spacing:-.045em;margin:14px auto 26px}
   .ff .va-bigsearch{margin:0 auto;max-width:700px;height:56px;display:flex;align-items:center;gap:12px;padding:0 16px;border-radius:14px;background:var(--surface);border:1px solid var(--border);color:var(--muted2);font-size:14px;box-shadow:0 12px 50px rgba(0,0,0,.2);transition:border-color .16s,box-shadow .16s}
   .ff .va-bigsearch:focus-within{border-color:var(--th-accent);box-shadow:0 0 0 3px var(--th-accent-soft)}
   .ff .va-bigsearch input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-family:inherit;font-size:14px}
@@ -16081,7 +16083,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <div class="ffl-mega-rows">
                     <button role="menuitem" onclick="{{ goTemplates }}"><i class="ph ph-squares-four"></i><span><b>Stock Catalog</b><small>Templates, motion, graphics, LUTs, music &amp; SFX</small></span><em>LIVE</em><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
                     <button role="menuitem" onclick="{{ goAistudio }}"><i class="ph ph-sparkle"></i><span><b>AI Studio</b><small>Image, video, voice and SFX in one session</small></span><em>NEW</em><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
-                    <button role="menuitem" onclick="{{ goAistudio }}"><i class="ph ph-stack"></i><span><b>Creative projects</b><small>Keep generations and templates together</small></span><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
+                    <button role="menuitem" onclick="{{ goProjects }}"><i class="ph ph-stack"></i><span><b>Creative projects</b><small>Keep generations and templates together</small></span><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
                     <button role="menuitem" onclick="{{ goPlugin }}"><i class="ph ph-download-simple"></i><span><b>Creative plugin</b><small>Browse and import without leaving the timeline</small></span><em>AE</em><strong class="ffl-mega-go"><i class="ph ph-arrow-right"></i></strong></button>
                   </div>
                 </div>
@@ -16170,7 +16172,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         </div>
         <div class="ffl-cinema" data-rv="" data-rv-delay="120">
           <div class="ffl-cinema-bar"><span data-cms-text="cinema.barLeft">{{ lcCinBarLeft }}</span><i></i><span data-cms-text="cinema.barRight">{{ lcCinBarRight }}</span></div>
-          <div class="ffl-cinema-media ffl-art ffl-art-sunset"><sc-if value="{{ cinHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ cinUrl }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if><sc-if value="{{ cinIsVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ cinUrl }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if><span class="sun"></span><span class="horizon"></span><div class="ffl-cinema-word" style="white-space:pre-line" data-cms-text="cinema.word">{{ lcCinWord }}</div><button class="ffl-cplay" aria-label="Play billboard preview"><i class="ph-fill ph-play"></i></button></div>
+          <div class="ffl-cinema-media ffl-art ffl-art-sunset"><sc-if value="{{ cinHasImg }}" hint-placeholder-val="{{ false }}"><img class="va-media" loading="lazy" src="{{ cinUrl }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></sc-if><sc-if value="{{ cinIsVideo }}" hint-placeholder-val="{{ false }}"><video class="va-media" src="{{ cinUrl }}" muted="{{ true }}" playsinline="{{ true }}" loop="{{ true }}" autoplay="{{ true }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video></sc-if><span class="sun"></span><span class="horizon"></span><div class="ffl-cinema-word" style="white-space:pre-line" data-cms-text="cinema.word">{{ lcCinWord }}</div><button class="ffl-cplay" onclick="{{ toggleCinema }}" aria-label="Play or pause billboard preview"><i class="ph-fill ph-play"></i></button></div>
           <div class="ffl-cinema-foot"><div><b data-cms-text="cinema.footTitle">{{ lcCinFootTitle }}</b><span data-cms-text="cinema.footSub">{{ lcCinFootSub }}</span></div><strong data-cms-text="cinema.cost">{{ lcCinCost }}</strong></div>
         </div>
       </section>
@@ -16251,7 +16253,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <div>
               <div class="psearch"><i class="ph ph-magnifying-glass"></i>{{ lcPpWinSearch }}</div>
               <div class="pgrid"><i class="ffm-g7"></i><i class="ffm-g4"></i><i class="ffm-g6"></i></div>
-              <button data-cms-text="pluginPromo.winImport">{{ lcPpWinImport }}</button>
+              <button onclick="{{ goPlugin }}" data-cms-text="pluginPromo.winImport">{{ lcPpWinImport }}</button>
             </div>
           </div>
         </div>
@@ -16366,7 +16368,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <p data-cms-text="pluginPage.sub">{{ lcPgSub }}</p>
             <div class="pg-cta">
               <button class="ffm-btn lg" onclick="{{ download }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ lcPgCta }}</button>
-              <button class="ffm-btn lg secondary" onclick="{{ downloadAe }}"><i class="ph ph-download-simple" style="font-size:15px"></i>After Effects (.zxp)</button>
+              <button class="ffm-btn lg secondary" onclick="{{ downloadAe }}" disabled="{{ aeUnavailable }}" aria-disabled="{{ aeUnavailable }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ aeCtaLabel }}</button>
             </div>
             <div style="margin-top:12px;padding:11px 13px;border:1px solid var(--border);border-radius:12px;font-size:11px;line-height:1.55;color:var(--muted)">
               <b style="color:var(--text)">Premiere Pro 25.6+:</b> download the <code>.ccx</code>, open it with Adobe Creative Cloud, then restart Premiere Pro and choose Window → Extensions → FrameFlow.
@@ -16380,7 +16382,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <div class="plugin-main">
                 <div class="plugin-search"><i class="ph ph-magnifying-glass"></i> {{ lcPgWinSearch }}</div>
                 <div class="plugin-cards"><span class="art-red"></span><span class="art-glass"></span><span class="art-green"></span><span class="art-sunset"></span></div>
-                <div class="plugin-import"><b data-cms-text="pluginPage.mockName">{{ lcPgMockName }}</b><button data-cms-text="pluginPage.mockImport">{{ lcPgMockImport }}</button></div>
+                <div class="plugin-import"><b data-cms-text="pluginPage.mockName">{{ lcPgMockName }}</b><button onclick="{{ download }}" data-cms-text="pluginPage.mockImport">{{ lcPgMockImport }}</button></div>
               </div>
             </div>
           </div>
@@ -16410,7 +16412,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             </div>
             <div>
               <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT2 }}</div>
-              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtCatLinks }}" as="l" hint-placeholder-count="5"><a class="ff-link" onclick="{{ goTemplates }}" style="cursor:pointer" role="button" tabindex="0">{{ l.label }}</a></sc-for></div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#B7C0CE"><sc-for list="{{ lcFtCatLinks }}" as="l" hint-placeholder-count="5"><a class="ff-link" data-cat="{{ l.cat }}" onclick="{{ openFooterCat }}" style="cursor:pointer" role="button" tabindex="0">{{ l.label }}</a></sc-for></div>
             </div>
             <div>
               <div style="font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:12px">{{ lcFtColT3 }}</div>
@@ -16506,7 +16508,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
       </div>
       <div class="va-nav-r">
       <div class="va-search"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="Search templates…" aria-label="Search templates"><span class="k">⌘K</span></div>
-      <span class="va-credpill" onclick="{{ openCredits }}" title="Add credits" role="button" tabindex="0"><span class="s">✦</span>{{ creditsFmt }} <span class="pl">{{ planPill }}</span></span>
+      <sc-if value="{{ hasUser }}" hint-placeholder-val="{{ true }}"><span class="va-credpill" onclick="{{ openCredits }}" title="Add credits" role="button" tabindex="0"><span class="s">✦</span>{{ creditsFmt }} <span class="pl">{{ planPill }}</span></span></sc-if>
+      <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}"><button type="button" class="ffm-btn sm" onclick="{{ guestSignIn }}">Sign in</button></sc-if>
+      <sc-if value="{{ hasUser }}" hint-placeholder-val="{{ true }}">
       <div style="position:relative" data-pop-root="avatar">
         <span class="va-ava" onclick="{{ toggleAvatar }}" style="{{ avaStyle }}" role="button" tabindex="0" aria-label="Account menu">{{ avaText }}</span>
         <sc-if value="{{ avatarOpen }}" hint-placeholder-val="{{ false }}">
@@ -16516,7 +16520,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <div style="min-width:0"><div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ userName }}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">{{ planLabel }}</div></div>
             </div>
             <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-user-circle"></i>Account</button>
-            <button class="ffa-mrow" data-screen="account" onclick="{{ onNav }}"><i class="ph ph-download-simple"></i>Downloads</button>
+            <button class="ffa-mrow" onclick="{{ openDownloads }}"><i class="ph ph-download-simple"></i>Downloads</button>
             <!-- SC_12/28: Projects avatar-menyuda har ekranda ko'rinadi (SC_28: top-bar entry olib tashlandi — bu YAGONA yo'l) -->
             <button class="ffa-mrow" data-screen="projects" onclick="{{ onNav }}"><i class="ph ph-folder-open"></i>Projects</button>
             <button class="ffa-mrow" data-screen="plugin" onclick="{{ onNav }}"><i class="ph ph-puzzle-piece"></i>Plugin</button>
@@ -16524,6 +16528,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
           </div>
         </sc-if>
       </div>
+      </sc-if>
       </div>
     </header>
 
@@ -16615,7 +16620,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               <sc-if value="{{ detail.dlExhausted }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> Monthly limit reached — Upgrade to Pro</a></sc-if>
               <!-- §E (P2) — qolgan yuklab olishlar soni (faqat limitli tarifda) -->
               <sc-if value="{{ detail.showDlLeft }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:7px">{{ detail.dlLeftLabel }}</div></sc-if>
-              <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><a class="va-btn ghost full" onclick="{{ goPlugin }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Open in {{ detail.appFull }}</a></sc-if>
+              <sc-if value="{{ detail.notAudio }}" hint-placeholder-val="{{ true }}"><a class="va-btn ghost full" onclick="{{ goPlugin }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-puzzle"></use></svg> Get the {{ detail.appFull }} plugin</a></sc-if>
               <div class="va-gate"><svg class="va-ic" style="margin-top:1px"><use href="#i-check"></use></svg><span>{{ detailGate }}</span></div>
               <!-- inline-alert — faqat Free rejada Pro shablon uchun -->
               <sc-if value="{{ detail.gated }}" hint-placeholder-val="{{ false }}"><div class="va-alert"><b>PRO DOWNLOAD</b><span>Your Free plan can preview this template. Upgrade to download the production pack.</span></div></sc-if>
@@ -16877,7 +16882,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
         <sc-if value="{{ isTemplates }}" hint-placeholder-val="{{ false }}">
           <div class="va-cathero">
             <div class="va-kick" data-cms="catalogPage" data-cms-text="catalogPage.kicker">{{ lcCatKicker }}</div>
-            <h2 style="white-space:pre-line" data-cms="catalogPage.title" data-cms-text="catalogPage.title">{{ lcCatTitle }}</h2>
+            <h1 style="white-space:pre-line" data-cms="catalogPage.title" data-cms-text="catalogPage.title">{{ lcCatTitle }}</h1>
             <div class="va-bigsearch"><svg class="va-ic"><use href="#i-search"></use></svg><input value="{{ q }}" oninput="{{ onSearch }}" placeholder="{{ lcCatSearchPh }}" aria-label="Search templates"><kbd>⌘ K</kbd></div>
             <div class="va-catchips">
               <sc-for list="{{ fCatsView }}" as="x" hint-placeholder-count="6"><span data-v="{{ x.v }}" onclick="{{ onFCat }}" class="{{ x.chipCls }}" role="button" tabindex="0">{{ x.label }}</span></sc-for>
@@ -17003,7 +17008,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <sc-if value="{{ sessBulkOn }}" hint-placeholder-val="{{ false }}">
                     <div class="va-sessbulk">
                       <span class="n">{{ sessBulkCount }} selected</span>
-                      <b onclick="{{ axBulkDownload }}"><i class="ph ph-download-simple"></i>Download</b>
+                      <b onclick="{{ axBulkDownload }}"><i class="ph ph-download-simple"></i>{{ sessBulkDlLabel }}</b>
                       <b class="{{ sessBulkDelCls }}" onclick="{{ axBulkDelete }}"><i class="ph ph-trash"></i>{{ sessBulkDelLabel }}</b>
                       <b onclick="{{ axSessSelectToggle }}">Cancel</b>
                     </div>
@@ -17262,7 +17267,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                     </sc-if>
                     <sc-if value="{{ showVoices }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Voice</div><div class="va-sgops"><sc-for list="{{ voicesView }}" as="v" hint-placeholder-count="4"><button data-v="{{ v.v }}" onclick="{{ onVoiceM }}" class="{{ v.setoptCls }}">{{ v.label }}</button></sc-for></div></div></sc-if>
                     <sc-if value="{{ showBitrate }}" hint-placeholder-val="{{ false }}"><div class="va-sgrp"><div class="va-sgh">Bitrate</div><div class="va-sgops"><sc-for list="{{ bitrateView }}" as="z" hint-placeholder-count="2"><button data-v="{{ z.v }}" onclick="{{ onBitrateM }}" class="{{ z.setoptCls }}">{{ z.v }}</button></sc-for></div></div></sc-if>
-                    <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><div class="va-sgrow"><span class="va-sgh">Audio{{ audioLockNote }}</span><button class="{{ audioToggleCls }}" onclick="{{ toggleAudio }}" title="{{ audioLockNote }}"></button></div></sc-if>
+                    <sc-if value="{{ showAudio }}" hint-placeholder-val="{{ false }}"><div class="va-sgrow"><span class="va-sgh">Audio{{ audioLockNote }}</span><button class="{{ audioToggleCls }}" onclick="{{ toggleAudio }}" title="{{ audioLockNote }}" aria-label="Include generated audio" aria-pressed="{{ audioPressed }}" aria-disabled="{{ audioDisabled }}"></button></div></sc-if>
                     <sc-if value="{{ showPromptBar }}" hint-placeholder-val="{{ true }}"><div class="va-sgrp"><div class="va-sgh">Enhance style</div><div class="va-sgops"><sc-for list="{{ enhanceStylesView }}" as="z" hint-placeholder-count="3"><button data-v="{{ z.v }}" onclick="{{ onEnhanceStyle }}" class="{{ z.setoptCls }}" title="{{ z.tip }}">{{ z.label }}</button></sc-for></div></div></sc-if>
                   </div></sc-if>
                 </span></sc-if>
@@ -17341,7 +17346,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <sc-for list="{{ planFeats }}" as="f" hint-placeholder-count="4"><li><svg class="va-ic"><use href="#i-check"></use></svg> {{ f.t }}</li></sc-for>
                 </ul>
                 <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
-                  <a class="va-btn ghost sm" onclick="{{ goPricing }}" role="button" tabindex="0">Manage subscription</a>
+                  <a class="va-btn ghost sm" onclick="{{ manageSubscription }}" role="button" tabindex="0">Manage subscription</a>
                   <a class="va-btn ghost sm" onclick="{{ goPricing }}" style="color:var(--muted)" role="button" tabindex="0">Compare plans</a>
                   <span style="margin-left:auto;font:500 10px var(--mono);color:var(--muted2)">via Lemon Squeezy · cancel anytime</span>
                 </div>
@@ -17407,7 +17412,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
                   <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);margin-bottom:8px"><i class="ph-fill ph-crown" style="color:var(--lime)"></i>Current plan</div>
                   <div style="font-size:22px;font-weight:700;margin-bottom:3px">{{ planLabel }}</div>
                   <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px">{{ planNote }}</div>
-                  <button onclick="{{ goPricing }}" class="ffm-btn2 sm">Change plan</button>
+                  <button onclick="{{ changePlan }}" class="ffm-btn2 sm">Change plan</button>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                   <div class="ffa-acccard" style="padding:16px"><div style="font-size:12px;color:var(--muted);margin-bottom:5px">Credit balance</div><div style="font-size:24px;font-weight:700;color:var(--lime);font-family:var(--mono)">✦ {{ creditsFmt }}</div></div>
@@ -18289,6 +18294,7 @@ class Component extends DCLogic {
     aiMediaView: null,      // null = joriy tool rejimiga ergashadi; 'visuals' | 'audio'
     sessSelect: false,      // P6 — sessiya rail select-rejimi
     sessSel: {},            // P6 — tanlangan sessiya id'lari
+    sessBulkDlArm: false,   // ommaviy yuklash brauzerda ko'p dialog ochishidan oldin tasdiq
     useMenuOpen: false,
     useMenuPos: null,       // P19 — desktopda JS bilan hisoblangan position:fixed koordinatalari (multicol bug)
     composerExpanded: false, // P15 — kompozer promptni default ~200px qopqoqdan 60vh'gacha kengaytirish toggle'i
@@ -18316,7 +18322,7 @@ class Component extends DCLogic {
     activeGenId: null,
     scrollP: 0,
     scrollY: 0,
-    statP: 0,
+    statP: 1,
     animOk: false,
     tipIdx: 0,
     pageFlip: 0,
@@ -18521,8 +18527,8 @@ class Component extends DCLogic {
 
   plans = [
     { key: 'free', name: 'Free', pm: 0, cr: '50 credits/mo', pop: false, cta: 'Get started', sub: 'For trying it out', feats: ['50 AI credits per month', 'Full template library, any resolution', '15 downloads per month', '1 active project', 'Community support'], tf: ['Full template library, any resolution', '15 downloads per month', '1 active project'] },
-    { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin', 'Email support'], tf: ['Full template library, any resolution', 'Unlimited downloads', 'After Effects plugin'] },
-    { key: 'studio', name: 'Studio', pm: 59, cr: '3,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For high-volume work', feats: ['3,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin', 'Email support'], tf: ['3,000 credits per month', 'Unlimited downloads', 'After Effects plugin'] },
+    { key: 'pro', name: 'Pro', pm: 19, cr: '1,000 credits/mo', pop: true, cta: 'Upgrade to Pro', sub: 'For professionals', feats: ['1,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin — coming soon', 'Email support'], tf: ['Full template library, any resolution', 'Unlimited downloads', 'After Effects plugin — coming soon'] },
+    { key: 'studio', name: 'Studio', pm: 59, cr: '3,000 credits/mo', pop: false, cta: 'Choose Studio', sub: 'For high-volume work', feats: ['3,000 AI credits per month', 'Full template library, any resolution', 'Unlimited downloads', 'Unlimited projects', 'After Effects plugin — coming soon', 'Email support'], tf: ['3,000 credits per month', 'Unlimited downloads', 'After Effects plugin — coming soon'] },
   ];
 
   faqs = [
@@ -18988,7 +18994,9 @@ class Component extends DCLogic {
     // (yangi tarix yozuvi qo'shmaydi), fromPop popstate ichida ishlatiladi.
     opts = opts || {};
     // App ekranlari login talab qiladi — token yo'q bo'lsa auth ekraniga.
-    const APP_SCREENS = ['dashboard', 'templates', 'aistudio', 'account', 'projects'];
+    // Stock Catalog ommaviy: guest qidirish/filtrlash/detail ko'rishi mumkin.
+    // Yuklab olishning o'zi downloadTemplate() ichida login/plan gate bilan qoladi.
+    const APP_SCREENS = ['dashboard', 'aistudio', 'account', 'projects'];
     if (APP_SCREENS.indexOf(screen) >= 0 && !(window.FFAPI && FFAPI.getToken())) {
       this._afterAuth = screen;
       screen = 'auth';
@@ -19084,9 +19092,8 @@ class Component extends DCLogic {
   }
 
   // P30 (29c) — toast endi TIPGA ega (ikonka/rang shundan): success=✓ · error=✕ · warning · info.
-  // Orqaga moslik: tipsiz chaqiruvlar 'success' (mavjud ✓ xatti-harakati saqlanadi). Xato oqimlari
-  // (masalan generatsiya rad etilishi) endi 'error' beradi → ✓ EMAS, halol ✕ ikonka.
-  toast(msg, type) { const t = type || 'success'; this._toastRetryFn = null; this.setState({ toast: msg, toastType: t, toastRetry: false }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null, toastRetry: false }), t === 'error' ? 4600 : 2600); }
+  // Tipsiz xabar betaraf `info`: catch ichidagi unutilgan tip endi yolg'on ✓ ko'rsatmaydi.
+  toast(msg, type) { const t = type || 'info'; this._toastRetryFn = null; this.setState({ toast: msg, toastType: t, toastRetry: false }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null, toastRetry: false }), t === 'error' ? 4600 : 2600); }
   // P17 — tarmoq xatosida "Retry" tugmali toast (AYNI operatsiyani qayta chaqiradi — enhance/gen
   // uchun AYNI idempotency kaliti bilan, shu bois ikkinchi charge/dublikat YO'Q). Uzoqroq ko'rinadi.
   toastWithRetry(msg, retryFn) { this._toastRetryFn = retryFn; this.setState({ toast: msg, toastType: 'error', toastRetry: true }); clearTimeout(this._t); this._t = setTimeout(() => { this._toastRetryFn = null; this.setState({ toast: null, toastRetry: false }); }, 9000); }
@@ -19095,6 +19102,21 @@ class Component extends DCLogic {
     // FIX A4 (P6) — warm-up: fire-and-forget /health pingi Cloud Run + Neon'ni foydalanuvchi
     // sahifani o'qiyotganda uyg'otadi (birinchi login/katalog so'rovi cold-start'ga tushmasin).
     try { if (window.FFAPI) FFAPI.req('/health', { auth: false, timeout: 8000 }).catch(() => {}); } catch (e) {}
+    this._turnstileConfigLoaded = false;
+    this._turnstileConfigError = false;
+    try {
+      FFAPI.req('/api/public/runtime-config', { auth: false, timeout: 8000 }).then((cfg) => {
+        const turnstile = cfg && cfg.turnstile;
+        const meta = document.querySelector('meta[name="turnstile-site-key"]');
+        if (!turnstile || !turnstile.enabled || !turnstile.siteKey) throw new Error('Bot protection is not configured');
+        if (meta) meta.setAttribute('content', turnstile.siteKey);
+        this._turnstileConfigLoaded = true;
+        this.renderTurnstile();
+      }).catch(() => {
+        this._turnstileConfigError = true;
+        this.setState({ authErr: 'Sign-up is temporarily unavailable because bot protection could not be verified. Please try again later.' });
+      });
+    } catch (e) { this._turnstileConfigError = true; }
     // FFCMS — admin vizual muharrir preview rejimi (?ffcms=1, iframe ichida):
     // ko'prik skripti (sahifa oxirida) shu hooklar orqali draft config qo'llaydi / ekran almashtiradi.
     try {
@@ -19271,6 +19293,15 @@ class Component extends DCLogic {
       /* FF-MEDIA-DELEGATION:END */
       // §A (P2) — Esc lightbox/tanlagichlarni yopadi (a11y); P11 — lightbox ochiq bo'lsa ←/→ nav
       window.addEventListener('keydown', this._onEsc = (ev) => {
+        // role=button bilan fokuslanadigan non-native boshqaruvlar ham klaviaturada
+        // native tugmadek ishlasin (Enter/Space).
+        if ((ev.key === 'Enter' || ev.key === ' ') && ev.target && ev.target.closest) {
+          const el = ev.target.closest('[role="button"][tabindex]');
+          const native = /^(BUTTON|INPUT|TEXTAREA|SELECT)$/.test(el && el.tagName) || (el && el.tagName === 'A' && el.hasAttribute('href'));
+          if (el && !native && !el.isContentEditable) {
+            ev.preventDefault(); el.click(); return;
+          }
+        }
         // SC_37 — ⌘K / Ctrl+K: Stock Catalog qidiruviga fokus (login bo'lgandagina).
         if ((ev.metaKey || ev.ctrlKey) && !ev.altKey && !ev.shiftKey && String(ev.key).toLowerCase() === 'k') {
           if (window.FFAPI && FFAPI.getToken()) { ev.preventDefault(); this.focusSearch(); }
@@ -19400,7 +19431,7 @@ class Component extends DCLogic {
       }));
     } catch (e) {}
   }
-  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._onMediaError) window.removeEventListener('error', this._onMediaError, true); if (this._onMediaLoad) { document.removeEventListener('load', this._onMediaLoad, true); window.removeEventListener('loadedmetadata', this._onMediaLoad, true); } if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
+  componentWillUnmount() { try { window.removeEventListener('scroll', this._onScroll); if (this._onUseMenuResize) window.removeEventListener('resize', this._onUseMenuResize); clearInterval(this._tipT); clearInterval(this._rvSafety); this._clearPollTimers(); if (this._genAnimT) { clearInterval(this._genAnimT); this._genAnimT = null; } if (this._onExpired) window.removeEventListener('ff-auth-expired', this._onExpired); if (this._onPop) window.removeEventListener('popstate', this._onPop); if (this._onEsc) window.removeEventListener('keydown', this._onEsc); if (this._modalTrap) { document.removeEventListener('keydown', this._modalTrap, true); this._modalTrap = null; } if (this._modalScrollLocked) { document.body.style.overflow = this._prevBodyOverflow || ''; this._modalScrollLocked = false; } clearInterval(this._projDelI); clearTimeout(this._projDelT); clearTimeout(this._sessBulkT); clearTimeout(this._sessBulkDlT); clearTimeout(this._projBulkT); clearTimeout(this._genDelT); if (this._onOutsideClick) window.removeEventListener('mousedown', this._onOutsideClick, true); if (this._onMediaError) window.removeEventListener('error', this._onMediaError, true); if (this._onMediaLoad) { document.removeEventListener('load', this._onMediaLoad, true); window.removeEventListener('loadedmetadata', this._onMediaLoad, true); } if (this._io) this._io.disconnect(); if (this._audioEl) { this._audioEl.pause(); this._audioEl.src = ''; } } catch (e) {} }
   // P20 — barcha per-job poll taymerlarini tozalash (logout/delete/unmount)
   _clearPollTimers() { try { const t = this._pollT || {}; Object.keys(t).forEach(k => clearTimeout(t[k])); this._pollT = {}; clearTimeout(this._gqT); } catch (e) {} }
   componentDidUpdate(prev) { if (prev && prev.props && prev.props.entryScreen !== this.props.entryScreen) this._applyEntry(); if (this._armed) this.installRv(); this.installLanding(); this.installMediaFx(); this.installAudioPlayers(); this.installCompare(); this.renderGoogleBtn(); this.renderTurnstile(); this.syncGenAnim(); this.installChipEditor(); this.installComposerDnd(); this.syncGenQuote(); this._syncModalFx(); }
@@ -19489,7 +19520,7 @@ class Component extends DCLogic {
   installRv() { if (!this._io) return; try { document.querySelectorAll('.ff [data-rv]').forEach(el => { if (!el.__rv) { el.__rv = 1; this._io.observe(el); } }); } catch (e) {} }
   /** QA-FIX #3 — audio natijani REAL o'ynatish (bitta umumiy Audio element, play/pause toggle). */
   playAudio(id) {
-    const g = this.state.gens.find(x => x.id === id);
+    const g = this.state.gens.find(x => x.id === id) || (this.state.sessGens || []).find(x => x.id === id);
     if (!g || !g.url) return;
     if (!this._audioEl) {
       this._audioEl = new Audio();
@@ -19763,7 +19794,7 @@ class Component extends DCLogic {
       });
     } catch (e) {}
   }
-  runStats() { if (this._statsRun) return; this._statsRun = true; const t0 = performance.now(), dur = 1500; const step = (t) => { const p = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - p, 3); this.setState({ statP: e }); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+  runStats() { if (this._statsRun) return; this._statsRun = true; if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { this.setState({ statP: 1 }); return; } this.setState({ statP: 0 }); const t0 = performance.now(), dur = 1500; const step = (t) => { const p = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - p, 3); this.setState({ statP: e }); if (p < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
   // #9/#10 — shablonni qat'iy 4 kategoriyadan biriga solishtiradi (real katalog
   // kategoriya matni/teglari kalit so'zlariga qarab). Eng aniqdan (LUTs) umumiyga (Templates):
   // shu tartib muhim — masalan "logo reveal" → Motion, oddiy "logo" → Graphics.
@@ -19937,6 +19968,21 @@ class Component extends DCLogic {
       this.toastWithRetry("Checkout didn't open — try again", () => { window.location.href = url; });
     }, 8000);
     window.location.href = url;
+  }
+  async openBillingPortal() {
+    if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    if (this._payBusy) return;
+    this._payBusy = true; this.setState({ payBusy: 'portal' });
+    try {
+      const r = await FFAPI.billingPortal();
+      if (!r || !r.url) throw new Error('No portal URL returned');
+      this._payGo(r.url);
+    } catch (e) {
+      this._payBusy = false; this.setState({ payBusy: '' });
+      const code = (e && (e.code || (e.data && e.data.code))) || '';
+      if (code === 'SUBSCRIPTION_NOT_FOUND') { this.go('pricing'); return; }
+      this.toast(this.payErrMsg(e), 'error');
+    }
   }
   fmtDate(iso) {
     if (!iso) return '';
@@ -20283,13 +20329,15 @@ class Component extends DCLogic {
   }
   // ── P21 (29) — HAQIQIY kredit ledger (refunds ko'rinadi) + REAL yuklab olish tarixi ──
   async loadCreditLedger(reset) {
-    if (this.state.ledgerLoading) return;
+    if (this.state.ledgerLoading && !reset) return;
     if (!(window.FFAPI && FFAPI.getToken())) return;
     const filter = this.state.ledgerFilter || 'all';
+    const epoch = this._ledgerEpoch = (this._ledgerEpoch || 0) + 1;
     const cursor = reset ? null : this.state.ledgerCursor;
     this.setState({ ledgerLoading: true });
     try {
       const r = await FFAPI.creditLedger(cursor, filter);
+      if (epoch !== this._ledgerEpoch || filter !== (this.state.ledgerFilter || 'all')) return;
       const rows = r.items || [];
       this.setState(s => ({
         ledger: (reset || !cursor) ? rows : s.ledger.concat(rows),
@@ -20299,7 +20347,7 @@ class Component extends DCLogic {
         ledgerLoaded: true,
         ledgerLoading: false,
       }));
-    } catch (e) { this.setState({ ledgerLoaded: true, ledgerLoading: false }); }
+    } catch (e) { if (epoch === this._ledgerEpoch) this.setState({ ledgerLoaded: true, ledgerLoading: false }); }
   }
   // Account tab ochilганда tegishli ma'lumotni (bir marta) yuklaydi.
   accTabLoad(tab) {
@@ -20355,26 +20403,30 @@ class Component extends DCLogic {
   }
   // ── QA-FIX #12 — sessiyalar (Artlist uslubi rail) ──
   async loadSessions() {
+    const epoch = this._sessionsEpoch = (this._sessionsEpoch || 0) + 1;
     // P9 — issiq boot: keshlangan sessiyalarni darhol ko'rsat, so'ng fon so'rovi ustiga yozadi.
     if (!this.state.sessionsLoaded) { const c = this._cacheGet('sess'); if (c && c.length) this.setState({ sessions: c }); }
     try {
       const r = await FFAPI.sessions(); const items = r.items || []; this._cacheSet('sess', items);
+      if (epoch !== this._sessionsEpoch) return;
       // P23 — imzo: id+title+count+cover; bir xil bo'lsa idle qayta-yuklashda setState YO'Q.
       const sig = items.map(x => x.id + ':' + (x.title || '') + ':' + (x.count != null ? x.count : (x.doneCount || 0)) + ':' + ((x.cover && x.cover.thumb) || x.coverUrl || '')).join('|');
       if (this._sigChanged('sess', sig) || !this.state.sessionsLoaded) this.setState({ sessions: items, sessionsLoaded: true, sessErr: false });
     } catch (e) {
       // §C (P30) — jim skelet yo'q: xatoni belgilaymiz + loaded:true (skelet to'xtaydi) → error+Retry.
-      this.setState({ sessionsLoaded: true, sessErr: true });
+      if (epoch === this._sessionsEpoch) this.setState({ sessionsLoaded: true, sessErr: true });
     }
   }
   async openSessionById(id) {
     // Sessiyani ko'rish + davom ettirish: keyingi gen'lar ham shu sessiyaga boradi
     this.setState({ viewSess: id, curSessId: id, sessGens: [], sessGensLoading: true, activeGenId: null, useMenuOpen: false });
+    const epoch = this._sessionOpenEpoch = (this._sessionOpenEpoch || 0) + 1;
     try {
       const r = await FFAPI.sessionGens(id);
+      if (epoch !== this._sessionOpenEpoch || this.state.viewSess !== id) return;
       const gens = (r.items || []).filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
       this.setState(s => s.viewSess === id ? { sessGens: gens, sessGensLoading: false, activeGenId: gens[0] ? gens[0].id : null } : { sessGensLoading: false });
-    } catch (e) { this.setState({ sessGensLoading: false }); this.toast(this.errMsg(e)); }
+    } catch (e) { if (epoch === this._sessionOpenEpoch && this.state.viewSess === id) { this.setState({ sessGensLoading: false }); this.toast(this.errMsg(e), 'error'); } }
   }
   // SC_40 — qatorda inline rename (modal emas): input joriy displey nomi bilan ochiladi
   startSessRename(id) {
@@ -20404,22 +20456,25 @@ class Component extends DCLogic {
   }
   // ── QA-FIX #13 — loyihalar ──
   async loadProjects() {
+    const epoch = this._projectsEpoch = (this._projectsEpoch || 0) + 1;
     // P9 — issiq boot: keshlangan loyihalarni darhol ko'rsat, so'ng fon so'rovi ustiga yozadi.
     if (!this.state.projectsLoaded) { const c = this._cacheGet('proj'); if (c && c.length) this.setState({ projects: c }); }
     try {
       const r = await FFAPI.projects(); const items = r.items || []; this._cacheSet('proj', items);
+      if (epoch !== this._projectsEpoch) return;
       // P23 — imzo: id+name+count+updated; bir xil bo'lsa idle qayta-yuklashda setState YO'Q.
       const sig = items.map(x => x.id + ':' + (x.name || '') + ':' + (x.count || 0) + ':' + (x.updatedAt || '')).join('|');
       if (this._sigChanged('proj', sig) || !this.state.projectsLoaded) this.setState({ projects: items, projectsLoaded: true, projErr: false });
     } catch (e) {
       // §C (P30) — jim skelet yo'q: xato + loaded:true → error+Retry.
-      this.setState({ projectsLoaded: true, projErr: true });
+      if (epoch === this._projectsEpoch) this.setState({ projectsLoaded: true, projErr: true });
     }
   }
   async openProjectById(id) {
+    const epoch = this._projectOpenEpoch = (this._projectOpenEpoch || 0) + 1;
     this.setState({ projLoading: true, projDelArm: false });
-    try { const p = await FFAPI.projectGet(id); this.setState({ projOpen: p, projLoading: false }); try { window.scrollTo(0, 0); } catch (e2) {} }
-    catch (e) { this.setState({ projLoading: false }); this.toast(this.errMsg(e)); }
+    try { const p = await FFAPI.projectGet(id); if (epoch !== this._projectOpenEpoch) return; this.setState({ projOpen: p, projLoading: false }); try { window.scrollTo(0, 0); } catch (e2) {} }
+    catch (e) { if (epoch === this._projectOpenEpoch) { this.setState({ projLoading: false }); this.toast(this.errMsg(e), 'error'); } }
   }
   async confirmNameModal() {
     const m = this.state.nameModal; if (!m) return;
@@ -20610,6 +20665,12 @@ class Component extends DCLogic {
     if (st.authMode !== 'forgot' && pass.length < (st.authMode === 'register' ? 8 : 1)) {
       this.setState({ authErr: st.authMode === 'register' ? 'Password must be at least 8 characters' : 'Enter your password' }); return;
     }
+    if (st.authMode === 'register' && !this._turnstileConfigLoaded) {
+      this.setState({ authErr: this._turnstileConfigError
+        ? 'Sign-up is temporarily unavailable because bot protection is misconfigured.'
+        : 'Bot protection is still loading — please wait a moment.' });
+      return;
+    }
     const turnstileSiteKey = (document.querySelector('meta[name="turnstile-site-key"]') || {}).getAttribute && document.querySelector('meta[name="turnstile-site-key"]').getAttribute('content');
     if (st.authMode === 'register' && turnstileSiteKey && !this._turnstileToken) {
       this.setState({ authErr: 'Please complete the bot check' }); return;
@@ -20715,7 +20776,12 @@ class Component extends DCLogic {
       sitekey: siteKey,
       callback: (token) => { this._turnstileToken = token; },
       'expired-callback': () => { this._turnstileToken = ''; },
-      'error-callback': () => { this._turnstileToken = ''; },
+      'error-callback': (code) => {
+        this._turnstileToken = '';
+        this.setState({ authErr: /^400020/.test(String(code || ''))
+          ? 'Sign-up is temporarily unavailable: the bot-protection site key is invalid.'
+          : 'The bot check failed to load. Please reload the page and try again.' });
+      },
     });
   }
   resendVerification() {
@@ -20986,6 +21052,22 @@ class Component extends DCLogic {
     }
     return model.cost;
   }
+  async retryGenerationSnapshot() {
+    const snap = this._genRetrySnapshot;
+    if (!snap || this._genSubmitting) return;
+    this._genSubmitting = true;
+    try {
+      const r = await FFAPI.gen(snap.body);
+      this._genRetrySnapshot = null; this._genIdemKey = null;
+      if ((this.state.activeJobs || []).some(j => j.id === r.jobId)) return;
+      const job = { id: r.jobId, tempId: 'j' + (this._jobSeq = (this._jobSeq || 0) + 1), sessionId: snap.sessionId, mode: snap.mode, modelName: snap.modelName, cost: snap.cost, startedAt: Date.now() };
+      this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]), credits: (typeof r.creditsLeft === 'number' ? r.creditsLeft : s.credits) }));
+      this._persistActiveJob(job); this.pollJob(r.jobId);
+    } catch (e) {
+      if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — retrying uses the exact same request", () => this.retryGenerationSnapshot());
+      else { this._genRetrySnapshot = null; this._genIdemKey = null; this.toast(this.errMsg(e), 'error'); }
+    } finally { this._genSubmitting = false; }
+  }
   async generate(isRetry) {
     if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
     // P17 — bir "click" uchun BITTA idempotency kaliti: tarmoq uzilib Retry bosilsa AYNI kalit
@@ -21054,17 +21136,21 @@ class Component extends DCLogic {
       }
       let r;
       try {
-        r = await FFAPI.gen({ sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey });
+        const body = { sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey };
+        this._genRetrySnapshot = { body: JSON.parse(JSON.stringify(body)), sessionId: sid, mode: tool.mode, modelName: model.label || 'Model', cost: q.price };
+        r = await FFAPI.gen(body);
       } catch (ge) {
         // Eskirgan/begona session (404) — yangi session bilan BIR marta qayta urinish
         if (ge && ge.status === 404) {
           const s2 = await FFAPI.session(tool.mode, this.deriveSessName(prompt)); // SC_22: toza nom
           sid = s2.id;
           this.setState(st => ({ curSessId: s2.id, viewSess: st.viewSess === sid || st.viewSess === 'new' ? s2.id : st.viewSess, sessGens: st.viewSess === sid ? [] : st.sessGens }));
-          r = await FFAPI.gen({ sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey });
+          const body2 = { sessionId: s2.id, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey };
+          this._genRetrySnapshot = { body: JSON.parse(JSON.stringify(body2)), sessionId: s2.id, mode: tool.mode, modelName: model.label || 'Model', cost: q.price };
+          r = await FFAPI.gen(body2);
         } else { throw ge; }
       }
-      this._genIdemKey = null; // klik muvaffaqiyatli tugadi — keyingi generate() yangi kalit oladi
+      this._genIdemKey = null; this._genRetrySnapshot = null; // muvaffaqiyat — yangi klik yangi request
       // P20 — ishni FAOL ro'yxatga qo'shamiz; kompozer ochiq qoladi (keyingi promptni yozish mumkin).
       const job = { id: r.jobId, tempId: 'j' + (this._jobSeq = (this._jobSeq || 0) + 1), sessionId: sid, mode: tool.mode, modelName: model.label || 'Model', cost: q.price, startedAt: Date.now() };
       this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]), credits: (typeof r.creditsLeft === 'number' ? r.creditsLeft : s.credits) }));
@@ -21074,8 +21160,8 @@ class Component extends DCLogic {
       if (e && e.code === 'INSUFFICIENT_CREDITS') { this._genIdemKey = null; this.setState({ showCredits: true }); }
       else if (e && (e.status === 429 || e.code === 'TOO_MANY_ACTIVE_GENERATIONS')) { this._genIdemKey = null; this.toast('Too many generations running — wait for one to finish'); }
       // P17 — tarmoq uzildi: AYNI kalit bilan Retry (server dedup → dublikat yo'q, ikkinchi charge yo'q).
-      else if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — you won't be charged unless it goes through", () => this.generate(true));
-      else { this._genIdemKey = null; this.toast(this.errMsg(e)); }
+      else if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — retrying uses the exact same request", () => this.retryGenerationSnapshot());
+      else { this._genIdemKey = null; this._genRetrySnapshot = null; this.toast(this.errMsg(e), 'error'); }
     } finally { this._genSubmitting = false; }
   }
   // R4_08 — kartadagi "Use ▾ → Upscale" bir-bosishlik Topaz op: manba gen'ning YANGI imzolangan
@@ -21369,6 +21455,30 @@ class Component extends DCLogic {
     this.setState({ aiPrompt: cur + sep + tpl + ' ' });
     setTimeout(() => { this.afSizePromptTa(); try { const t = document.querySelector('.va-dock .prompt'); if (t) t.focus(); } catch (x) {} }, 60);
   }
+  applyEnhanceResult(r, nref, undoKey) {
+    if (r && r.mentionMismatch) {
+      this.toast('Kept your prompt — the rewrite pointed a reference at the wrong image, so it was discarded', 'warning');
+    } else if (r && r.prompt) {
+      this.setState({ aiPrompt: r.prompt }); setTimeout(() => this.afSizePromptTa(), 60);
+      const seen = typeof r.referencesUsed === 'number' ? r.referencesUsed : nref;
+      const skipped = typeof r.referencesSkipped === 'number' ? r.referencesSkipped : 0;
+      this.toast('Prompt enhanced ✨' + (seen ? (' · saw ' + seen + ' reference' + (seen > 1 ? 's' : '')) : '') + (skipped ? (' · skipped ' + skipped + ' unavailable/large') : '') + (r.creditsCharged ? (' · ✦' + r.creditsCharged) : '') + ' · ' + undoKey + ' to undo', skipped ? 'warning' : 'success');
+    }
+    if (r && typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
+  }
+  async retryEnhanceSnapshot() {
+    const snap = this._enhRetrySnapshot; if (!snap || this.state.enhBusy) return;
+    this.setState({ enhBusy: true });
+    try {
+      const r = await FFAPI.enhance(snap.prompt, snap.mode, snap.modelId, snap.opts);
+      this._enhIdemKey = null; this._enhRetrySnapshot = null;
+      this.applyEnhanceResult(r, snap.nref, snap.undoKey);
+    } catch (e) {
+      if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — retrying uses the exact same prompt and references", () => this.retryEnhanceSnapshot());
+      else { this._enhIdemKey = null; this._enhRetrySnapshot = null; this.toast(this.errMsg(e), 'error'); }
+    }
+    this.setState({ enhBusy: false });
+  }
   async doEnhance(isRetry) {
     const prompt = (this.state.aiPrompt || '').trim();
     if (prompt.length < 2) { this.toast('Write a prompt first'); return; }
@@ -21401,24 +21511,16 @@ class Component extends DCLogic {
     if (this.state.creditsLoaded && this.state.credits < enhanceCost) { this.setState({ showCredits: true }); this.toast('Enhance costs ✦' + enhanceCost + ' — only ✦' + this.state.credits + ' left', 'warning'); return; }
     const undoKey = (navigator.platform && /Mac/i.test(navigator.platform)) ? '⌘Z' : 'Ctrl+Z';
     refOpts.idempotencyKey = this._enhIdemKey; // P17
+    this._enhRetrySnapshot = { prompt, mode: tool.mode, modelId: model ? model.id : undefined, opts: JSON.parse(JSON.stringify(refOpts)), nref, undoKey };
     this.setState({ enhBusy: true });
     try {
       const r = await FFAPI.enhance(prompt, tool.mode, model ? model.id : undefined, refOpts);
-      this._enhIdemKey = null; // muvaffaqiyat — keyingi klik yangi kalit
-      if (r && r.mentionMismatch) {
-        // API mos kelmagan @mention (renumber/ixtiro) sabab qayta yozishni RAD ETdi → asl prompt qaytdi.
-        this.toast('Kept your prompt — the rewrite pointed a reference at the wrong image, so it was discarded');
-      } else if (r && r.prompt) {
-        this.setState({ aiPrompt: r.prompt }); setTimeout(() => this.afSizePromptTa(), 60); // #1 (chip-editor setValue = ⌘Z undo checkpoint)
-        const seen = typeof r.referencesUsed === 'number' ? r.referencesUsed : nref;
-        const skipped = typeof r.referencesSkipped === 'number' ? r.referencesSkipped : 0;
-        this.toast('Prompt enhanced ✨' + (seen ? (' · saw ' + seen + ' reference' + (seen > 1 ? 's' : '')) : '') + (skipped ? (' · skipped ' + skipped + ' unavailable/large') : '') + (r.creditsCharged ? (' · ✦' + r.creditsCharged) : '') + ' · ' + undoKey + ' to undo', skipped ? 'warning' : 'success');
-      }
-      if (typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
+      this._enhIdemKey = null; this._enhRetrySnapshot = null;
+      this.applyEnhanceResult(r, nref, undoKey);
     } catch (e) {
       // P17 — tarmoq uzildi: AYNI idempotency kaliti bilan Retry (server dedup → ikkinchi charge yo'q).
-      if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — you won't be charged unless it goes through", () => this.doEnhance(true));
-      else { this._enhIdemKey = null; this.toast(this.errMsg(e)); }
+      if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — retrying uses the exact same prompt and references", () => this.retryEnhanceSnapshot());
+      else { this._enhIdemKey = null; this._enhRetrySnapshot = null; this.toast(this.errMsg(e), 'error'); }
     }
     this.setState({ enhBusy: false });
   }
@@ -22061,7 +22163,9 @@ class Component extends DCLogic {
     // key/pop va checkout oqimi (onChoosePlan) KODDA — pul mantig'iga tegilmaydi.
     const plansSrc = this.plans.map((p, i) => ({
       ...p,
-      name: lc.plans[i].name, pm: lc.plans[i].price, cr: lc.plans[i].credits,
+      // Billing narxi CMS matnidan kelmaydi: checkout plan kaliti bilan bog'langan
+      // kod-tasdiqlangan narx ko'rsatiladi. CMS faqat copy/featuresni tahrirlaydi.
+      name: lc.plans[i].name, pm: p.pm, cr: lc.plans[i].credits,
       sub: lc.plans[i].sub, cta: lc.plans[i].cta, feats: lc.plans[i].feats, tf: lc.plans[i].teaserFeats,
     }));
     const plansView = plansSrc.map((p, pli) => {
@@ -23120,6 +23224,8 @@ class Component extends DCLogic {
     const dashGensView = dashGens.map(g => ({ ...g, isVideo: g.type === 'video' }));
     // Foydalanuvchi ma'lumoti (sidebar/topbar/account)
     const u = this.state.user || {};
+    const hasUser = !!(this.state.user && this.state.user.id);
+    const isGuest = !hasUser;
     const userName = u.name || (u.email ? u.email.split('@')[0] : 'User');
     const userEmail = u.email || '';
     const userInitials = ((userName.match(/\b[\wА-Яа-яЎўҚқҒғҲҳ]/g) || ['F']).slice(0, 2).join('')).toUpperCase();
@@ -23134,7 +23240,7 @@ class Component extends DCLogic {
     const isFreePlan = planKey === 'free';
     // Kredit bloki (sidebar/drawer) — reja kvotasiga nisbatan progress
     const planShort = planKey === 'pro' ? 'Pro' : (planKey === 'studio' ? 'Studio' : 'Free');
-    const creditMax = planKey === 'pro' ? 1000 : (planKey === 'studio' ? 6000 : 50);
+    const creditMax = planKey === 'pro' ? 1000 : (planKey === 'studio' ? 3000 : 50);
     const creditMaxFmt = creditMax.toLocaleString();
     const creditPct = Math.max(0, Math.min(100, Math.round((this.state.credits / creditMax) * 100))) + '%';
     // App chrome holati
@@ -23143,7 +23249,9 @@ class Component extends DCLogic {
     const collapseIcon = collapsed ? 'caret-double-right' : 'caret-double-left';
     const btmCls = (scr) => (s === scr ? 'on' : '');
     const sub = u.subscription || null;
-    const planNote = sub && sub.currentPeriodEnd ? ('Next renewal: ' + this.fmtDay(sub.currentPeriodEnd)) : 'With 50 free credits monthly';
+    const planNote = sub && sub.currentPeriodEnd
+      ? ('Next renewal: ' + this.fmtDay(sub.currentPeriodEnd))
+      : (isFreePlan ? 'With 50 free credits monthly' : (planShort + ' plan is active'));
     const plansCur = plansView.map(p => ({ ...p, cur: p.key === planKey }));
     // FAZA 5 Variant A — top nav + hero bindings
     const navLinksView = this.sidebarMain.map(it => ({ ...it, cls: it.screen === s ? 'on' : '' }));
@@ -23316,7 +23424,18 @@ class Component extends DCLogic {
     // Footer havolalari: yorliq config'dan, manzil/handler KODDA (zip; ortiqcha yorliq tushadi)
     const ftScreens = ['templates', 'aistudio', 'plugin', 'pricing'];
     const lcFtProdLinks = lc.footer.cols[0].links.slice(0, 4).map((label, i) => ({ label, screen: ftScreens[i] }));
-    const lcFtCatLinks = lc.footer.cols[1].links.map((label) => ({ label }));
+    const footerCatFromLabel = (label) => {
+      const v = String(label || '').toLowerCase();
+      if (/sound|sfx/.test(v)) return 'SFX';
+      if (/music|audio/.test(v)) return 'Music';
+      if (/lut|color/.test(v)) return 'LUTs';
+      if (/motion/.test(v)) return 'Motion';
+      if (/graphic/.test(v)) return 'Graphics';
+      if (/\bai\b/.test(v)) return 'AIStock';
+      if (/template|video/.test(v)) return 'Templates';
+      return 'All';
+    };
+    const lcFtCatLinks = lc.footer.cols[1].links.map((label) => ({ label, cat: footerCatFromLabel(label) }));
     const ftHrefs = ['help.html', 'terms.html', 'privacy.html', 'refund.html'];
     const lcFtLegalLinks = lc.footer.cols[2].links.slice(0, 4).map((label, i) => ({ label, href: ftHrefs[i] }));
     // Plugin promo chip'lari (3 ta, ranglar kodda)
@@ -23430,6 +23549,8 @@ class Component extends DCLogic {
       lcPrFaqTitle: lc.pricingPage.faqTitle,
       lcPgBadge: lc.pluginPage.badge, lcPgTitle: lc.pluginPage.title, lcPgSub: lc.pluginPage.sub,
       lcPgCta: pgCtaLabel, lcPgVersion: pgVersionNote, lcPgGuarantee: lc.pluginPage.guarantee,
+      aeUnavailable: !this.state.pluginAeDownloadUrl,
+      aeCtaLabel: this.state.pluginAeDownloadUrl ? 'After Effects (.zxp)' : 'After Effects — coming soon',
       pluginStepsView,
       pageAnim, marqA, marqB, heroWords, howSteps,
       studioRv, plansRv,
@@ -23476,6 +23597,7 @@ class Component extends DCLogic {
       switchForgot: () => this.setState({ authMode: 'forgot', authErr: null, authInfo: null }),
       // Foydalanuvchi
       userName, userEmail, userInitials, avaStyle, avaText, planLabel, isFreePlan, planNote, plansCur,
+      hasUser, isGuest, guestSignIn: () => this.gotoAuth('login'),
       onAvatarPick: (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; this.uploadAvatar(f); },
       pickAvatarFile: () => { const el = document.getElementById('ffaAvatarFile'); if (el) el.click(); },
       isLoggedIn: !!(window.FFAPI && FFAPI.getToken()),
@@ -23484,6 +23606,7 @@ class Component extends DCLogic {
       goLanding: () => this.go('landing'),
       goDashboard: () => this.go('dashboard'),
       goTemplates: () => this.go('templates'),
+      goProjects: () => this.go('projects'),
       goAistudio: () => {
         this.setState(st => initAistudioState(null, null, st));
         ensureAistudioModels();
@@ -23492,6 +23615,8 @@ class Component extends DCLogic {
       goPricing: () => this.go('pricing'),
       goPlugin: () => this.go('plugin'),
       goAccount: () => { this.go('account'); this.accTabLoad(this.state.accountTab); },
+      openDownloads: () => { this.setState({ accountTab: 'Downloads' }); this.go('account'); this.accTabLoad('Downloads'); },
+      openFooterCat: (e) => { const cat = (e.currentTarget && e.currentTarget.dataset.cat) || 'All'; this.setState({ fCat: cat, detail: null, detailNF: false }); this.go('templates'); setTimeout(() => this._syncStockUrl(), 0); },
       goLogin: () => this.gotoAuth('login'),
       goRegister: () => this.gotoAuth('register'),
       toggleNav: () => this.setState(st => ({ navOpen: !st.navOpen })),
@@ -23535,6 +23660,14 @@ class Component extends DCLogic {
       },
       onNav: (e) => this.go(e.currentTarget.dataset.screen),
       onCat: (e) => this.setState({ activeCat: e.currentTarget.dataset.cat }),
+      toggleCinema: (e) => {
+        if (e) e.stopPropagation();
+        const root = e && e.currentTarget && e.currentTarget.closest('.ffl-cinema-media');
+        const video = root && root.querySelector('video');
+        if (!video) { this.go('aistudio'); return; }
+        if (video.paused) { const p = video.play(); if (p && p.catch) p.catch(() => this.toast('Preview could not play', 'error')); }
+        else video.pause();
+      },
       onFaq: (e) => { const i = +e.currentTarget.dataset.idx; this.setState(st => ({ openFaq: st.openFaq === i ? -1 : i })); },
       onTryTool: (e) => {
         const k = e.currentTarget.dataset.tool;
@@ -23566,7 +23699,10 @@ class Component extends DCLogic {
           if (r && r.url) { this._payGo(r.url); return; } // #129 — navigatsiya bo'lmasa _payGo tiklaydi
           this._payBusy = false; this.setState({ payBusy: '' });
           this.toast("Couldn't get the payment link", 'error');
-        } catch (err) { this._payBusy = false; this.setState({ payBusy: '' }); this.toast(this.payErrMsg(err), 'error'); }
+        } catch (err) {
+          this._payBusy = false; this.setState({ payBusy: '' });
+          this.toast(this.payErrMsg(err), 'error');
+        }
       },
       onChoosePlan: async (e) => {
         const key = (e && e.currentTarget && e.currentTarget.dataset.plan) || '';
@@ -23582,7 +23718,12 @@ class Component extends DCLogic {
           if (r && r.url) { this._payGo(r.url); return; }
           this._payBusy = false; this.setState({ payBusy: '' });
           this.toast("Couldn't get the payment link", 'error');
-        } catch (err) { this._payBusy = false; this.setState({ payBusy: '' }); this.toast(this.payErrMsg(err), 'error'); }
+        } catch (err) {
+          this._payBusy = false; this.setState({ payBusy: '' });
+          const code = (err && (err.code || (err.data && err.data.code))) || '';
+          if (code === 'SUBSCRIPTION_ACTIVE') { this.openBillingPortal(); return; }
+          this.toast(this.payErrMsg(err), 'error');
+        }
       },
       // §H — niyatni bajarish (login'dan keyin chaqiriladi): saqlangan tarif/kreditga to'g'ridan checkout.
       resumePayIntent: () => this._resumePayIntent(),
@@ -23676,7 +23817,8 @@ class Component extends DCLogic {
       sessBulkCount: Object.keys(this.state.sessSel).length,
       sessBulkDelLabel: this.state.sessBulkArm ? 'Click again' : 'Delete', // §D
       sessBulkDelCls: this.state.sessBulkArm ? 'danger armed' : 'danger',
-      axSessSelectToggle: (e) => { if (e) e.stopPropagation(); this.setState(st => ({ sessSelect: !st.sessSelect, sessSel: {} })); },
+      sessBulkDlLabel: this.state.sessBulkDlArm ? 'Download up to 40' : 'Download',
+      axSessSelectToggle: (e) => { if (e) e.stopPropagation(); this.setState(st => ({ sessSelect: !st.sessSelect, sessSel: {}, sessBulkDlArm: false })); },
       axBulkDelete: async (e) => { e.stopPropagation();
         const ids = Object.keys(this.state.sessSel); if (!ids.length) return;
         // §D (P31) — native confirm() O'RNIGA in-app "armed" tasdiq (2-klik + 3.5s disarm).
@@ -23695,6 +23837,13 @@ class Component extends DCLogic {
         this.toast(done + ' session' + (done > 1 ? 's' : '') + ' deleted'); },
       axBulkDownload: async (e) => { e.stopPropagation();
         const ids = Object.keys(this.state.sessSel); if (!ids.length) return;
+        if (!this.state.sessBulkDlArm) {
+          this.setState({ sessBulkDlArm: true });
+          this.toast('Click Download again to allow up to 40 files from ' + ids.length + ' selected session' + (ids.length > 1 ? 's' : ''), 'warning');
+          clearTimeout(this._sessBulkDlT); this._sessBulkDlT = setTimeout(() => this.setState({ sessBulkDlArm: false }), 5000);
+          return;
+        }
+        clearTimeout(this._sessBulkDlT); this.setState({ sessBulkDlArm: false });
         this.toast('Preparing downloads…');
         let n = 0;
         for (const id of ids) {
@@ -23821,7 +23970,7 @@ class Component extends DCLogic {
           return { refImages: st.refImages.filter((_, x) => x !== i), aiPrompt: p };
         }); },
       addRefK: (e) => { e.stopPropagation(); this.addRefFile(e.currentTarget.dataset.k); },
-      showAudio, audioVal, toggleAudio: (e) => { e.stopPropagation();
+      showAudio, audioVal, audioPressed: audioOn ? 'true' : 'false', audioDisabled: audioLockedCap ? 'true' : 'false', toggleAudio: (e) => { e.stopPropagation();
         if (audioLockedCap) { this.toast('Audio is always on for this model'); return; }
         this.setState({ aiAudio: !audioOn }); },
       showBitrate, bitVal, popBitrate, chipBitrateCls, bitrateView,
@@ -23958,7 +24107,7 @@ class Component extends DCLogic {
         // P2 — KANONIK deep-link (origin + /stock/<type>/<slug>-<shortId>). Ulashilganda OG
         //   preview funksiyasi shu URL uchun asetning rasm/sarlavha/tavsifini beradi.
         const url = window.location.origin + this.assetPath(d);
-        try { if (navigator.share) { await navigator.share({ title: d.n + ' — FrameFlow', url }); return; } } catch (e) { return; }
+        try { if (navigator.share) { await navigator.share({ title: d.n + ' — FrameFlow', url }); return; } } catch (e) { /* rad etildi/bloklandi — clipboard fallback */ }
         try { await navigator.clipboard.writeText(url); this.toast('Link copied'); } catch (e) { this.toast(url); }
       },
       fAppsView, fCatsView, fPlansView, fOrientView, fQualView,
@@ -23980,6 +24129,8 @@ class Component extends DCLogic {
       accName: this.state.accName,
       onAccName: (e) => this.setState({ accName: e.target.value }),
       saveAcc: () => this.saveProfile(),
+      manageSubscription: () => isFreePlan ? this.go('pricing') : this.openBillingPortal(),
+      changePlan: () => isFreePlan ? this.go('pricing') : this.openBillingPortal(),
       // P30 (29c) — rad etilish banneri handlerlari
       tryRejectModel: () => this.tryRejectModel(),
       dismissRejectBanner: () => this.dismissRejectBanner(),
@@ -24113,7 +24264,7 @@ class Component extends DCLogic {
       toggleSort: () => this.setState(s => ({ sortOpen: !s.sortOpen })),
       pickSort: (e) => { this.setState({ sortKey: e.currentTarget.dataset.v, sortOpen: false }); this.scheduleBrowse(); },
       resetFilters: () => { this.setState({ fApps: [], fCats: [], fCat: 'All', fPlan: 'All', fOrient: 'All', fQual: 'All', q: '' }); this.scheduleBrowse(); },
-      openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const bi = (this.state.browse && this.state.browse.items) || []; const t = bi.find(x => x.id === id) || this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ detail: t, detailNF: false }); try { window.scrollTo(0, 0); } catch (e2) {}
+      openDetail: (e) => { e.stopPropagation(); const id = e.currentTarget.dataset.id; const bi = (this.state.browse && this.state.browse.items) || []; const t = bi.find(x => x.id === id) || this.state.catalog.find(x => x.id === id) || this.templates.find(x => String(x.id) === id); if (t) { this.setState({ screen: 'templates', detail: t, detailNF: false }); try { window.scrollTo(0, 0); } catch (e2) {}
         // P2 — detal HAQIQIY URL: /stock/<type>/<slug>-<shortId>. pushState → Orqaga detalni yopadi.
         try { this._detailFromApp = true; history.pushState({ screen: 'templates', detail: 1, id: t.id }, '', this.assetPath(t)); } catch (er) {} } },
       // P2 — Yopish: ilova ichidan kelsak Orqaga (URL /stock/<pill> ga qaytadi, popstate yopadi);

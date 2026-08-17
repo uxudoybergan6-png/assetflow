@@ -60,13 +60,19 @@
     if (state) return state;
     var fs = nodeRequire("fs"), os = nodeRequire("os"), path = nodeRequire("path"), crypto = nodeRequire("crypto");
     if (!fs || !os || !path || !crypto) throw new Error("CEP Node bridge modules are unavailable");
-    var dir = mailboxRoot(os, path);
+    var rootDir = mailboxRoot(os, path);
+    fs.mkdirSync(rootDir, { recursive: true, mode: 448 });
+    try { fs.chmodSync(rootDir, 448); } catch (e) {}
+    var session = randomHex(16, crypto);
+    var dir = path.join(rootDir, "session-" + session);
     fs.mkdirSync(dir, { recursive: true, mode: 448 });
     try { fs.chmodSync(dir, 448); } catch (e) {}
     state = {
       fs: fs,
       path: path,
+      rootDir: rootDir,
       dir: dir,
+      session: session,
       secret: randomHex(32, crypto),
       request: path.join(dir, "request.json"),
       response: path.join(dir, "response.json"),
@@ -78,6 +84,7 @@
     safeUnlink(fs, state.ready);
     atomicJson(fs, path, state.descriptor, {
       protocol: PROTOCOL,
+      session: state.session,
       secret: state.secret,
       pid: typeof process !== "undefined" ? process.pid : 0,
       createdAt: Date.now(),
@@ -93,7 +100,7 @@
     var until = Date.now() + READY_WAIT_MS;
     while (Date.now() < until) {
       var ready = readJson(s.fs, s.ready);
-      if (ready && ready.protocol === PROTOCOL && ready.secret === s.secret) return true;
+      if (ready && ready.protocol === PROTOCOL && ready.session === s.session && ready.secret === s.secret) return true;
       await sleep(75);
     }
     return false;
@@ -107,14 +114,17 @@
     atomicJson(s.fs, s.path, s.request, {
       protocol: PROTOCOL,
       id: id,
+      session: s.session,
       secret: s.secret,
+      pid: typeof process !== "undefined" ? process.pid : 0,
       script: String(script || ""),
       createdAt: Date.now(),
+      deadlineAt: Date.now() + RESPONSE_WAIT_MS,
     });
     var until = Date.now() + RESPONSE_WAIT_MS;
     while (Date.now() < until) {
       var response = readJson(s.fs, s.response);
-      if (response && response.protocol === PROTOCOL && response.id === id && response.secret === s.secret) {
+      if (response && response.protocol === PROTOCOL && response.session === s.session && response.id === id && response.secret === s.secret) {
         safeUnlink(s.fs, s.request);
         safeUnlink(s.fs, s.response);
         return String(response.result == null ? "" : response.result);

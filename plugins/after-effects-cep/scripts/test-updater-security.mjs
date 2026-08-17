@@ -388,16 +388,15 @@ function listen(handler) {
 }
 const close = (srv) => new Promise((res) => srv.close(res));
 
-// D1 — ORQAGA MOSLIK: opts'siz chaqiruv (pack/mogrt yo'llari) o'zgarmagan — redirect
-// kuzatiladi, fayl to'liq yoziladi.
+// D1 — lokal HTTP faqat aniq opt-out bilan ishlaydi; redirect kuzatiladi.
 {
   const { srv, base } = await listen((req, res) => {
     if (req.url === "/r") { res.writeHead(302, { location: base + "/f" }); res.end(); return; }
     res.writeHead(200, { "content-length": "5" }); res.end("hello");
   });
   const out = dest("compat.bin");
-  const r = await settle(CAT.downloadUrlToFile(base + "/r", out, null));
-  ok("legacy call (no opts) still follows redirects and writes the file", r.ok && readFileSync(out, "utf8") === "hello");
+  const r = await settle(CAT.downloadUrlToFile(base + "/r", out, null, null, { httpsOnly: false }));
+  ok("explicit local-http opt-out follows redirects and writes the file", r.ok && readFileSync(out, "utf8") === "hello");
   ok("legacy call leaves no .part file", !existsSync(out + ".part"));
   await close(srv);
 }
@@ -458,7 +457,7 @@ function fakeTransports(location) {
 {
   const { srv, base } = await listen((req, res) => { res.writeHead(200, { "content-length": String(4096) }); res.end(Buffer.alloc(4096)); });
   const out = dest("too-big-declared.bin");
-  const r = await settle(CAT.downloadUrlToFile(base + "/f", out, null, null, { maxBytes: 1024 }));
+  const r = await settle(CAT.downloadUrlToFile(base + "/f", out, null, null, { httpsOnly: false, maxBytes: 1024 }));
   ok("declared Content-Length over the limit is rejected", !r.ok && /size limit/i.test(String(r.e && r.e.message)));
   ok("oversized declaration leaves no file behind", noLeftovers(out));
   await close(srv);
@@ -481,7 +480,7 @@ function fakeTransports(location) {
   });
   const out = dest("too-big-streamed.bin");
   const LIMIT = 256 * 1024;
-  const r = await settle(CAT.downloadUrlToFile(base + "/f", out, null, null, { maxBytes: LIMIT }));
+  const r = await settle(CAT.downloadUrlToFile(base + "/f", out, null, null, { httpsOnly: false, maxBytes: LIMIT }));
   ok("streamed bytes over the limit are rejected", !r.ok && /size limit/i.test(String(r.e && r.e.message)));
   ok("the stream is cut early, not after filling the disk", sent < PLANNED);
   ok("streamed overflow leaves no partial data", noLeftovers(out));

@@ -10,6 +10,7 @@ import os from "node:os";
 import path from "node:path";
 import vm from "node:vm";
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 
 const requireFromHere = createRequire(import.meta.url);
 const pluginRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
@@ -22,6 +23,8 @@ const logSrc = readFileSync(path.join(pluginRoot, "assetflow-log.js"), "utf8");
 const storeSrc = readFileSync(path.join(pluginRoot, "assetflow-local-store.js"), "utf8");
 
 const tempRoot = mkdtempSync(path.join(os.tmpdir(), "ff-pr-integration-"));
+const fixtureBytes = Buffer.alloc(2048, 1);
+const fixtureSha256 = createHash("sha256").update(fixtureBytes).digest("hex");
 let passed = 0;
 
 function check(name, fn) {
@@ -44,7 +47,8 @@ function check(name, fn) {
 
 function fixtureFile(filePath) {
   mkdirSync(path.dirname(filePath), { recursive: true });
-  writeFileSync(filePath, Buffer.alloc(2048, 1));
+  writeFileSync(filePath, fixtureBytes);
+  writeFileSync(`${filePath}.sha256`, fixtureSha256);
   return filePath;
 }
 
@@ -58,6 +62,12 @@ function makeCatalog(hostId, name) {
   };
   const window = {
     __adobe_cep__: {},
+    packs: Object.fromEntries(
+      ["direct", "one", "project", "multi", "footage", "empty", "wrong"].map((id) => [
+        id,
+        { serverTemplateId: id, fileSize: 0, packSha256: fixtureSha256, displayName: " " },
+      ]),
+    ),
     AFZip: {
       listEntries() { return []; },
       async extractAll(source, dest) {
@@ -95,6 +105,10 @@ function makeCatalog(hostId, name) {
 function cachedZipDir(root, templateId) {
   const dir = path.join(root, `assetflow_${templateId}_unzipped`);
   mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    path.join(dir, ".assetflow_pack_size"),
+    JSON.stringify({ size: 0, sha256: fixtureSha256 }),
+  );
   return dir;
 }
 

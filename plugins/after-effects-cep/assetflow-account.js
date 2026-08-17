@@ -248,12 +248,13 @@ const AssetFlowAccount = (() => {
     cachedUser = null;
   }
 
-  function writeTokenToPrefs(tokenValue, meta, keepLegacyTokens = true) {
+  function writeTokenToPrefs(tokenValue, meta, keepLegacyTokens = true, persistPlaintext = true) {
     const prefs = getClientPrefs();
     const client = prefs.client || {};
     client.apiBaseUrl = apiBase();
     if (tokenValue) {
-      client.token = tokenValue;
+      if (persistPlaintext) client.token = tokenValue;
+      else delete client.token;
       if (meta) client[CREDENTIAL_META_KEY] = meta;
       else delete client[CREDENTIAL_META_KEY];
       if (!keepLegacyTokens) {
@@ -296,7 +297,7 @@ const AssetFlowAccount = (() => {
     }
 
     const keepLegacyTokens = !store || !clearLegacy || !sharedPersisted;
-    writeTokenToPrefs(tokenValue, tokenMeta, keepLegacyTokens);
+    writeTokenToPrefs(tokenValue, tokenMeta, keepLegacyTokens, !(store && sharedPersisted));
 
     if (tokenMeta) activeTokenMeta = tokenMeta;
     if (sharedPersisted || !store) setActiveToken(tokenValue, tokenMeta);
@@ -409,9 +410,10 @@ const AssetFlowAccount = (() => {
       if (wrote) {
         const prefsToSave = getClientPrefs();
         const client = prefsToSave.client || {};
-        client.token = activeToken;
+        delete client.token;
         delete client.tokens;
         delete client[CREDENTIAL_META_BY_HOST_KEY];
+        prefsToSave.client = client;
         if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefsToSave);
       }
     }
@@ -684,20 +686,11 @@ const AssetFlowAccount = (() => {
   function persistClient(partial) {
     const prefs =
       typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs() : { client: {} };
-    const nextToken = partial.token !== undefined ? String(partial.token || "") : token();
     const client = prefs.client || {};
     client.apiBaseUrl = partial.apiBaseUrl || apiBase();
-    if (nextToken) {
-      client.token = nextToken;
-      if (partial.meta) client[CREDENTIAL_META_KEY] = partial.meta;
-      delete client.tokens;
-      delete client[CREDENTIAL_META_BY_HOST_KEY];
-    } else {
-      delete client.token;
-      delete client.tokens;
-      delete client[CREDENTIAL_META_KEY];
-      delete client[CREDENTIAL_META_BY_HOST_KEY];
-    }
+    // Token persistence faqat persistSharedToken() orqali: secure store ishlasa
+    // bu yordamchi uni prefs.json'ga qayta ochiq matn qilib yozmasligi kerak.
+    if (partial.meta) client[CREDENTIAL_META_KEY] = partial.meta;
     prefs.client = client;
     if (typeof AssetFlowStore !== "undefined") AssetFlowStore.savePrefs(prefs);
   }
@@ -719,15 +712,17 @@ const AssetFlowAccount = (() => {
   }
 
   async function logout() {
-    if (token()) {
+    const currentToken = token();
+    // UI darhol xavfsiz holatga o'tadi; server revoke best-effort va eski token bilan.
+    clearToken();
+    stopDevicePolling();
+    if (currentToken) {
       try {
-        await request("/api/plugin/logout", { method: "POST" });
+        await requestWithToken("/api/plugin/logout", { method: "POST" }, currentToken, { handleAuthFailure: false });
       } catch {
         /* local fallback */
       }
     }
-    clearToken();
-    stopDevicePolling();
   }
 
   // ── Google bilan kirish (device-code oqimi) ───────────────────────────────
@@ -848,9 +843,9 @@ const AssetFlowAccount = (() => {
     return data?.url || "";
   }
 
-  /** Stripe billing portal URL'i (obunani boshqarish/bekor qilish) */
+  /** Lemon Squeezy customer portal URL'i (obunani boshqarish/bekor qilish) */
   async function requestBillingPortal() {
-    const data = await request("/api/auth/portal", { method: "POST" });
+    const data = await request("/api/billing/portal", { method: "POST" });
     return data?.url || "";
   }
 
@@ -865,6 +860,19 @@ const AssetFlowAccount = (() => {
    */
   function openExternal(url) {
     if (!url) return false;
+    let parsed;
+    try {
+      parsed = new URL(String(url));
+      const host = parsed.hostname.toLowerCase();
+      const allowed = ["getframeflow.app", "stripe.com", "lemonsqueezy.com", "google.com"];
+      if (parsed.protocol !== "https:" || !allowed.some(function (base) { return host === base || host.endsWith("." + base); })) {
+        console.warn("[openExternal] rejected non-allowlisted URL origin");
+        return false;
+      }
+    } catch (e0) {
+      return false;
+    }
+    url = parsed.toString();
 
     // (a) Kanonik CEP API — window.cep.util.openURLInDefaultBrowser. Natija: {err: <code>}.
     try {
@@ -886,18 +894,16 @@ const AssetFlowAccount = (() => {
       console.log("[openExternal] cep.util threw:", e && e.message);
     }
 
-    // (b) Node fallback — child_process (execSync => haqiqiy muvaffaqiyat aniqlash).
+    // (b) Node fallback — shell EMAS, executable + argv.
     try {
       if (typeof require === "function") {
         const cp = require("child_process");
         const plat = (typeof process !== "undefined" && process.platform) || "";
-        // URL'ni qo'shtirnoq ichida uzatamiz; ichki qo'shtirnoqni zararsizlantiramiz.
-        const safe = String(url).replace(/"/g, "%22");
-        let cmd;
-        if (plat === "darwin") cmd = 'open "' + safe + '"';
-        else if (plat === "win32") cmd = 'start "" "' + safe + '"';
-        else cmd = 'xdg-open "' + safe + '"';
-        cp.execSync(cmd, { timeout: 5000 });
+        let executable, args;
+        if (plat === "darwin") { executable = "/usr/bin/open"; args = [url]; }
+        else if (plat === "win32") { executable = "rundll32.exe"; args = ["url.dll,FileProtocolHandler", url]; }
+        else { executable = "xdg-open"; args = [url]; }
+        cp.execFileSync(executable, args, { timeout: 5000, windowsHide: true });
         console.log("[openExternal] opened via child_process (" + plat + ")");
         return true;
       }
@@ -962,6 +968,23 @@ const AssetFlowAccount = (() => {
     return cachedUser;
   }
 
+  async function reserveImport(templateId) {
+    const data = await request("/api/plugin/usage/import/reserve", {
+      method: "POST",
+      body: { templateId, app: hostApp() },
+    });
+    return data && data.reservationId ? data.reservationId : "";
+  }
+  async function commitImport(reservationId) {
+    const data = await request("/api/plugin/usage/import/commit", { method: "POST", body: { reservationId, app: hostApp() } });
+    cachedUser = data.user;
+    return cachedUser;
+  }
+  async function cancelImport(reservationId) {
+    if (!reservationId) return;
+    try { await request("/api/plugin/usage/import/cancel", { method: "POST", body: { reservationId, app: hostApp() } }); } catch (_) {}
+  }
+
   function getCachedUser() {
     return cachedUser;
   }
@@ -1008,6 +1031,9 @@ const AssetFlowAccount = (() => {
     heartbeat,
     recordDownload,
     recordImport,
+    reserveImport,
+    commitImport,
+    cancelImport,
     getCachedUser,
     getAdminUrl,
     openAdminPanel,

@@ -276,6 +276,28 @@ export async function createCheckout(opts: {
   return url;
 }
 
+/** Account deletion / explicit cancellation uchun provider-side cancel. */
+export async function cancelLemonSqueezySubscription(subscriptionId: string): Promise<void> {
+  const id = String(subscriptionId || "").trim();
+  if (!id) return;
+  await lsFetch(`/subscriptions/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+/**
+ * Foydalanuvchi bosgan paytda yangi (24 soatlik) imzolangan Customer Portal URL
+ * oladi. URL DB'da saqlanmaydi: Lemon Squeezy uni har retrieve javobida yangilaydi.
+ */
+export async function getLemonSqueezyCustomerPortalUrl(subscriptionId: string): Promise<string> {
+  const id = String(subscriptionId || "").trim();
+  if (!id) throw new Error("Lemon Squeezy subscription ID is missing");
+  const json = await lsFetch(`/subscriptions/${encodeURIComponent(id)}`);
+  const url = json?.data?.attributes?.urls?.customer_portal;
+  if (!url || typeof url !== "string" || !/^https:\/\//i.test(url)) {
+    throw new Error("Lemon Squeezy customer portal URL was not returned");
+  }
+  return url;
+}
+
 // ── Webhook imzosi ──────────────────────────────────────────────────────────
 
 /**

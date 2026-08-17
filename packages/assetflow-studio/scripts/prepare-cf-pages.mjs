@@ -229,6 +229,7 @@ const redirects = `\
 /admin-login        /admin/login.html           301
 /templates          /stock                      301
 /templates/*        /stock                      301
+/favicon.ico        /favicon.svg                302
 `;
 fs.writeFileSync(path.join(dist, "_redirects"), redirects);
 

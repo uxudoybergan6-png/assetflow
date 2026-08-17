@@ -84,12 +84,13 @@ function avatar(name, size){
 // XOM matn uzatsin — esc() bilan oldindan escape qilmang (aks holda "Tom &amp; Jerry" ikki-escape).
 function toast(title, msg, kind){
   let wrap=document.querySelector('.toast-wrap');
-  if(!wrap){ wrap=document.createElement('div'); wrap.className='toast-wrap'; document.body.appendChild(wrap); }
+  if(!wrap){ wrap=document.createElement('div'); wrap.className='toast-wrap'; wrap.setAttribute('aria-live','polite'); wrap.setAttribute('aria-atomic','false'); document.body.appendChild(wrap); }
   const map={success:['green','checkCircle'],danger:['red','xCircle'],error:['red','xCircle'],warn:['orange','alert'],info:['violet','bell']};
   // Noma'lum kind bilan chaqirilsa ilgari destructuring TypeError berardi va toast UMUMAN
   // ko'rinmasdi (2FA ekranlarida 'error' aynan shunday edi) — endi 'error' alias + zaxira.
   const [c,i]=map[kind||'success']||map.success;
   const el=document.createElement('div'); el.className='toast';
+  el.setAttribute('role', kind==='danger'||kind==='error' ? 'alert' : 'status');
   // title/msg ko'pincha server matni (xato, contributor nomi) — XSS oldini olish uchun escape
   const esc=(s)=>(window.StudioMedia&&StudioMedia.escapeHtml?StudioMedia.escapeHtml(s):String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])));
   el.innerHTML=`<div class="t-ico" style="background:var(--${c}-dim);color:var(--${c})">${ic(i)}</div>
@@ -114,6 +115,20 @@ function toast(title, msg, kind){
   closeBtn.addEventListener('click',hide);
   arm();
 }
+
+function exportVisibleTableCsv(filename){
+  const table=document.querySelector('#view table');
+  if(!table){ toast('Export','No table data is available on this screen','warn'); return; }
+  const q=(value)=>'"'+String(value||'').replace(/"/g,'""')+'"';
+  const rows=Array.from(table.querySelectorAll('tr')).map((tr)=>Array.from(tr.querySelectorAll('th,td')).map((cell)=>q(cell.innerText.trim())).join(','));
+  if(!rows.length){ toast('Export','No rows to export','warn'); return; }
+  const blob=new Blob(['\uFEFF'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=filename||'frameflow-export.csv'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('Export','CSV downloaded','success');
+}
+if(typeof window!=='undefined') window.exportVisibleTableCsv=exportVisibleTableCsv;
 
 // status meta
 const STATUS = {
@@ -145,6 +160,20 @@ if(typeof window!=='undefined'){ window.fmtLocalDate=fmtLocalDate; window.fmtLoc
    foydalanuvchisi Tab bilan panel ichiga tushmasdi), yopilganda esa qaytmasdi.
    Panelga tabindex="-1" + focus, yopilganda oldingi elementga qaytaramiz. */
 let _lastFocus = null;
+let _inerted = [];
+function _setBackgroundInert(except){
+  _clearBackgroundInert();
+  const keep = except || [];
+  Array.from(document.body.children).forEach((el)=>{
+    if(keep.indexOf(el)>=0 || el.classList.contains('toast-wrap')) return;
+    _inerted.push({el,aria:el.getAttribute('aria-hidden'),inert:el.inert});
+    el.inert=true; el.setAttribute('aria-hidden','true');
+  });
+}
+function _clearBackgroundInert(){
+  _inerted.forEach((x)=>{ x.el.inert=x.inert; if(x.aria===null)x.el.removeAttribute('aria-hidden');else x.el.setAttribute('aria-hidden',x.aria); });
+  _inerted=[];
+}
 function _focusPanel(panel){
   if (!panel) return;
   _lastFocus = document.activeElement;
@@ -166,11 +195,14 @@ function openModal(html){
   o.innerHTML=`<div class="modal">${html}</div>`;
   o.addEventListener('click',e=>{ if(e.target===o) closeModal(); });
   document.body.appendChild(o);
+  const panel=o.querySelector('.modal'); panel.setAttribute('role','dialog'); panel.setAttribute('aria-modal','true');
+  const heading=panel.querySelector('h1,h2,h3'); if(heading){ heading.id='__modal_title'; panel.setAttribute('aria-labelledby',heading.id); }
+  _setBackgroundInert([o]);
   document.addEventListener('keydown', escClose);
-  _focusPanel(o.querySelector('.modal'));
+  _focusPanel(panel);
 }
 function closeModal(){
-  const o=document.getElementById('__modal'); if(o){ o.remove(); _restoreFocus(); }
+  const o=document.getElementById('__modal'); if(o){ o.remove(); _clearBackgroundInert(); _restoreFocus(); }
   document.removeEventListener('keydown', escClose);
   // Ochiq afConfirm bo'lsa — yopilish = BEKOR (Cancel/Esc/scrim/boshqa modal ochilishi).
   if(_confirmResolve){ const r=_confirmResolve; _confirmResolve=null; r(false); }
@@ -212,7 +244,16 @@ function __afConfirmYes(){
   closeModal();
   if(r) r(true);
 }
-function escClose(e){ if(e.key==='Escape'){ closeModal(); closeDrawer(); } }
+function escClose(e){
+  if(e.key==='Escape'){ closeModal(); closeDrawer(); return; }
+  if(e.key!=='Tab') return;
+  const panel=document.querySelector('#__modal .modal,#__drawer'); if(!panel) return;
+  const focusable=Array.from(panel.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(el=>!el.hidden&&el.offsetParent!==null);
+  if(!focusable.length){ e.preventDefault(); panel.focus(); return; }
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+}
 
 function openDrawer(html){
   closeDrawer();
@@ -220,10 +261,13 @@ function openDrawer(html){
   s.addEventListener('click', closeDrawer);
   const d=document.createElement('div'); d.className='drawer'; d.id='__drawer'; d.innerHTML=html;
   document.body.appendChild(s); document.body.appendChild(d);
+  d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true');
+  const heading=d.querySelector('h1,h2,h3'); if(heading){ heading.id='__drawer_title'; d.setAttribute('aria-labelledby',heading.id); }
+  _setBackgroundInert([s,d]);
   document.addEventListener('keydown', escClose);
   _focusPanel(d);
 }
-function closeDrawer(){ const d=document.getElementById('__drawer'); const s=document.getElementById('__scrim'); if(d){ d.remove(); _restoreFocus(); } if(s)s.remove(); }
+function closeDrawer(){ const d=document.getElementById('__drawer'); const s=document.getElementById('__scrim'); if(d){ d.remove(); _clearBackgroundInert(); _restoreFocus(); } if(s)s.remove(); document.removeEventListener('keydown', escClose); }
 
 // tiny donut svg
 function donut(segments, size){

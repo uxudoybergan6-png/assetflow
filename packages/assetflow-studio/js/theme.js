@@ -115,6 +115,13 @@ const AssetFlowTheme = (() => {
       app.insertBefore(scrim, app.firstChild);
     }
 
+    if (!app.dataset.navDelegateBound) {
+      app.dataset.navDelegateBound = "1";
+      app.addEventListener("click", (event) => {
+        if (event.target.closest(".nav-item") && window.matchMedia("(max-width: 768px)").matches) closeNav();
+      });
+    }
+
     document.querySelectorAll("[data-nav-toggle]").forEach((btn) => {
       if (btn.dataset.navBound) return;
       btn.dataset.navBound = "1";

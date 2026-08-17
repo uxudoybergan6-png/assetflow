@@ -1,5 +1,9 @@
 # AssetFlow / Creative Tools SaaS — handoff (Cursor → Claude Code)
 
+> **TARIXIY HUJJAT — operatsion manba emas.** Undagi Render/R2/Neon/Stripe va eski URL/version
+> yozuvlari migration tarixidir. Joriy production arxitekturasi va release gate’lari uchun faqat
+> `docs/PROJECT-STATUS.md` hamda kodga qarang.
+
 Bu hujjat loyiha joylashuvi, arxitektura va **hozirgacha qilingan ishlar**ni qisqacha beradi. Claude Code shu repoda davom etishi mumkin.
 
 ---

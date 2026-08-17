@@ -10,6 +10,7 @@ let WS_CFG = null;      // joriy (merged) konfiguratsiya — forma shu ustida is
 let WS_DEFAULTS = null; // server defaultlari (reset ko'rsatkichi uchun)
 let WS_LOADED = false;
 let WS_LOAD_ERR = null;
+let WS_DIRTY = false;
 
 function wsEsc(s) {
   return String(s == null ? "" : s)
@@ -66,6 +67,7 @@ async function wsLoadConfig(force) {
     WS_DEFAULTS = d.defaults;
     WS_LOADED = true;
     WS_LOAD_ERR = null;
+    WS_DIRTY = false;
   } catch (e) {
     WS_LOAD_ERR = e.message || "Failed to load";
   }
@@ -783,14 +785,23 @@ function wsSnapshot() {
   WS_REDO.length = 0;
 }
 
-/* Plagin yuzasida saqlanmagan o'zgarish ko'rsatkichi (toolbar'dagi nuqta).
-   Sayt yuzasida bunday ko'rsatkich yo'q — jim o'tadi. */
 function wsMarkDirty() {
-  if (WS_SURF !== "plugin") return;
-  if (typeof PC_DIRTY === "undefined" || PC_DIRTY) return;
-  PC_DIRTY = true;
-  if (typeof pcRenderActions === "function") pcRenderActions();
+  if (WS_SURF === "plugin") {
+    if (typeof PC_DIRTY === "undefined" || PC_DIRTY) return;
+    PC_DIRTY = true;
+    if (typeof pcRenderActions === "function") pcRenderActions();
+    return;
+  }
+  WS_DIRTY = true;
+  if (typeof wsRenderActions === "function") wsRenderActions();
 }
+window.afCmsHasUnsaved = () => !!(WS_DIRTY || (typeof PC_DIRTY !== "undefined" && PC_DIRTY));
+window.afCmsDiscardUnsaved = () => { WS_DIRTY = false; if (typeof PC_DIRTY !== "undefined") PC_DIRTY = false; };
+window.addEventListener("beforeunload", (e) => {
+  if (!window.afCmsHasUnsaved()) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
 function wsUndo() {
   if (!WS_UNDO.length) { toast("Tarix bo'sh", "Bekor qilinadigan o'zgarish yo'q", "warn"); return; }
   try { WS_REDO.push(JSON.stringify(wsCollect())); } catch (e) {}
@@ -1089,6 +1100,7 @@ async function wsSave() {
       uiStyles: WS_CFG.uiStyles || {}, notices: WS_CFG.notices || [],
     });
     WS_CFG = d.config;
+    WS_DIRTY = false;
     WS_UNDO.length = 0; WS_REDO.length = 0;
     AssetFlowLog.info("Site saved", { action: "landing_save", detail: "Visual editor" });
     toast("Saved", "The public site will reflect the changes within ~1 minute", "success");
@@ -1110,6 +1122,7 @@ async function wsReset() {
   try {
     const d = await StudioApi.resetLandingConfig();
     WS_CFG = d.config;
+    WS_DIRTY = false;
     AssetFlowLog.info("Site reset", { action: "landing_reset", detail: "Website tab" });
     toast("Reset", "Site restored to defaults", "success");
     if (CURRENT === "website") route("website");
@@ -1165,14 +1178,18 @@ async function cmsHistoryRestore(id, kind) {
   }
 }
 
-window.afterRender.website = function () {
+function wsRenderActions() {
   const tba = document.getElementById("tbActions");
   if (tba && CURRENT === "website") {
     tba.innerHTML =
+      (WS_DIRTY ? `<span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:#FFB27C;margin-right:6px"><i class="ph ph-circle-fill" style="font-size:7px"></i>Unsaved changes</span>` : "") +
       `<button class="adx-btn2 sm" onclick="cmsHistoryOpen('landing')"><i class="ph ph-clock-counter-clockwise"></i>History</button>` +
       `<button class="adx-btn2 sm" onclick="wsReset()"><i class="ph ph-arrow-counter-clockwise"></i>Reset to defaults</button>` +
       `<button class="adx-btn sm" onclick="wsSave()"><i class="ph ph-check"></i>Save & publish</button>`;
   }
+}
+window.afterRender.website = function () {
+  wsRenderActions();
   if (!WS_LOADED) { wsLoadConfig(); return; }
   wsEditorBoot();
 };

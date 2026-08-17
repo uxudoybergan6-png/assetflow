@@ -3,6 +3,7 @@
 
   var state = {
     mode: "image",
+    autoModel: (function () { try { return localStorage.getItem("ff_auto_model") !== "0"; } catch (_) { return true; } })(),
     showcase: 0,
     timer: null,
     showcasePaused: false,
@@ -47,7 +48,7 @@
     else if (typeof window.afNavTab === "function") window.afNavTab("catalog");
   }
   function goCreate(mode) {
-    if (typeof window.afOpenCreateDraft === "function") window.afOpenCreateDraft({ mode: mode === "assistant" ? "image" : mode });
+    if (typeof window.afOpenCreateDraft === "function") window.afOpenCreateDraft({ mode: mode === "assistant" ? "image" : mode, autoModel: state.autoModel });
   }
 
   function setMode(mode) {
@@ -72,17 +73,9 @@
     var input = byId("homeHeroPrompt");
     var prompt = String(input && input.value || "").trim();
     var mode = state.mode;
-    if (!prompt) {
-      toast("Write a prompt to start creating.", "warning");
-      if (input) {
-        input.setAttribute("aria-invalid", "true");
-        try { input.focus(); } catch (_) {}
-      }
-      return;
-    }
     if (input) input.removeAttribute("aria-invalid");
     if (typeof window.afOpenCreateDraft === "function") {
-      Promise.resolve(window.afOpenCreateDraft({ mode: mode, prompt: prompt })).then(function () {
+      Promise.resolve(window.afOpenCreateDraft({ mode: mode, prompt: prompt, autoModel: state.autoModel })).then(function () {
         if (input) input.value = "";
       }).catch(function (error) {
         toast((error && error.message) || "The Create workspace could not be prepared.", "error");
@@ -300,9 +293,15 @@
     state.wired = true;
     byId("ffxQuickModes").addEventListener("click", function (event) { var button = event.target.closest("[data-ffx-mode]"); if (button) setMode(button.getAttribute("data-ffx-mode")); });
     byId("ffxStartCreate").addEventListener("click", startSession);
-    byId("ffxAutoModel").addEventListener("click", function () {
-      this.setAttribute("aria-pressed", "true");
-      toast("FrameFlow Auto will use the best live model for this mode.", "info");
+    var autoButton = byId("ffxAutoModel");
+    autoButton.setAttribute("aria-pressed", state.autoModel ? "true" : "false");
+    autoButton.classList.toggle("active", state.autoModel);
+    autoButton.addEventListener("click", function () {
+      state.autoModel = !state.autoModel;
+      try { localStorage.setItem("ff_auto_model", state.autoModel ? "1" : "0"); } catch (_) {}
+      this.setAttribute("aria-pressed", state.autoModel ? "true" : "false");
+      this.classList.toggle("active", state.autoModel);
+      toast(state.autoModel ? "FrameFlow Auto will use the catalog-default live model." : "Manual model choice is enabled.", "info");
       byId("homeHeroPrompt").focus();
     });
     byId("homeHeroPrompt").addEventListener("keydown", function (event) { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); startSession(); } });

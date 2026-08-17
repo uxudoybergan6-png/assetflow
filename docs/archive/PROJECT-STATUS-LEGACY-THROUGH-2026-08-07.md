@@ -1,0 +1,825 @@
+> **STATUS:** ⚠️ Quyidagi eski bloklarning ayrim infra/AI/brend faktlari eskirgan. AI model zanjiri
+> uchun avval **«§-15 · 2026-08-07 AI MODEL CHAIN HARDENING»**, Premiere UI uchun keyin §-14 ni o'qing.
+
+# §-15. 2026-08-07 AI MODEL CHAIN HARDENING — LOCAL CODE + AUTOMATED QA
+
+- Provider availability endi exhaustive va fail-closed: `/gen/models`, `/gen/ops`, quote va `/gen`
+  aynan bitta resolverdan foydalanadi. Provider sozlanmagan model selectable katalogdan chiqariladi;
+  safe `unavailableModels`, `providerStatus` va `catalogVersion` qaytariladi.
+- Bitta canonical model-param/reference validatori barcha Image/Video/Voice/SFX settinglari,
+  start/end frame, image/video/audio/saved reference, format, per-item/total size va limitlarni quote
+  hamda creditdan oldingi generate darvozasida bir xil tekshiradi. Provider runnerlaridagi jim `slice()`
+  olib tashlandi; unsupported/ortiqcha reference aniq code bilan rad etiladi.
+- Signed quote endi canonical priced params bilan birga reference manifest hashiga bog'langan:
+  quote olgandan keyin reference o'zgarsa stale quote qabul qilinmaydi.
+- Actual Web builder, actual umumiy AE/PR CEP controller va API canonicalizer parity matritsasi 44
+  model variantida teng; mavjud Create va session composer oqimi saqlandi.
+- Enabled katalogdagi 24 entryning 24/24 provider adapter request contracti qoplandi. Build katalogi:
+  51 entry, 24 enabled, 0 invariant muammo.
+- Reference security/lifecycle gate: user ownership, storage prefix, MIME, item/total size, signed URL
+  refresh, TTL renewal, linked-reference retention va generation/session orphan cleanup testlangan.
+- Yakuniy QA: Create 12/12, responsive 103/103, Premiere host 18/18 + integration 19/19,
+  package 59/59, Marketplace 100/100, installers 262/262, release contract 110/110 — PASS;
+  monorepo build va `git diff --check` toza.
+- Customer QA ZIP: `dist/zxp/frameflow-plugin-v1.2.0-unsigned.zip` — 844469 bayt,
+  SHA-256 `d02793ccc22ea7ffbc53efddcda0b4866fcdfa20ec137ae09d4d343c69629f8b`.
+- Customer macOS QA PKG: `dist/installers/frameflow-plugin-1.2.0-mac-unsigned.pkg` — 840741 bayt,
+  SHA-256 `a3ce797baa9b8616d9aa25ce35d0ea21297c9416f7a6e1cb08fe22b00b26c4f6`.
+- Umumiy CEP `com.frameflow` AE/PR uchun per-user qayta o'rnatildi; prefs saqlandi, Adobe ochilmadi.
+- Production hali eski build: `api.getframeflow.app` health sog'lom, ammo Kling false bo'lsa ham eski
+  katalog/quote uni beradi. Deploy taqiqlangani uchun lokal fix productionga chiqarilmadi. Signed ZXP,
+  real provider canary va qo'lda AE+Premiere smoke tashqi release blocker bo'lib qoladi.
+- Eski session Image/Video/Audio composer sozlamalari panel resize'da endi ikkinchi qatorga tushmaydi:
+  bitta qatorda qoladi, o'ta tor panelda lokal gorizontal scroll ishlaydi. Clear ikonasi inset-safe 14px
+  SVG bilan almashtirildi; AE va Premiere umumiy CEP DOM/CSS'i bir xil qoladi.
+
+---
+
+# §-14. 2026-08-05 FRAMEFLOW PREMIERE — FINAL CREATE WORKSPACE + AUTOMATED QA
+
+- AEFT va PPRO aynan bitta `AssetFlow_Plugin.html`, DOM, CSS va `frameflow-create-workspace.js`
+  controllerini ishlatadi; Premiere-only layout/CSS fork qo'shilmadi.
+- Create kirishi real unified composer: New Session'da sahifaning pastki dockida, ochilgan eski session'da
+  natijalardan keyingi sticky dockda aynan bitta DOM ko'chib ishlaydi; eski session ID submit payloadga
+  uzatiladi va engine aynan shu sessionni davom ettiradi.
+- Image/Video/Voiceover/SFX katta prompt-usti tablari olib tashlandi; mode almashtirish prompt pastidagi
+  ixcham selector menyusida. Auto-grow prompt, quick shortlist → searchable/provider-filtered All Models,
+  capability settings, Enhance va server quote saqlandi.
+- Submit dedupe/stale+expired quote guard'dan keyin mavjud signed image/video/audio handlerini chaqiradi;
+  active workspace gallery + sticky composer, Sessions/Projects va refund/poll oqimi saqlandi.
+- `+` File/Project/Timeline/current-frame/Library secure pickerlariga delegatsiya qiladi; model almashganda
+  capability validation va reference projection mavjud, yaroqsiz state jimgina charge qilmaydi.
+- Global Activity local active-job registry + server history, cancel/retry/open-session bilan ishlaydi;
+  audio job recovery va account-scoped active-session pointer qo'shildi.
+- Lokal browser QA: 320×600, 380×720, 600×900, 1000×900; page overflow 0, modal bounds/focus/Escape,
+  quick picker, Voiceover disclosure va Activity click PASS. AE/PR shared parity static gate PASS.
+- Automated: Create 10/10, responsive 103/103, package 59/59, marketplace QA 67/67 + mutation 100/100,
+  updater 118/118, Premiere adapter 18/18 + integration 19/19, host shim va CEP↔UXP bridge PASS.
+- API build PASS: 51 model (24 enabled), BytePlus mention va Seedream size validation PASS.
+- Customer QA ZIP: `dist/zxp/frameflow-plugin-v1.2.0-unsigned.zip` — 843769 bayt,
+  SHA-256 `5c130a1c5b3708a93f84f225fb6b78713c01de6cd3347d97617a50053a38d9ea`.
+- Companion CCX: `dist/uxp/frameflow-premiere-host-v1.0.0.ccx` — 14312 bayt,
+  SHA-256 `e76f08a2810270a25cb7c442b08f75300c9788ea40208c2d846695ed8ed57885`.
+- CEP build `2026-08-05 08:56 · ea7a8d6` va companion 1.0.0 per-user o'rnatildi; muhim
+  source→installed fayllar byte-hash mos (HTML'da faqat kutilgan build stamp farqi), prefs saqlandi.
+- Tashqi blocker: valid signed ZXP/owner metadata yo'q; PPRO 26.2 uchun companion hali alohida External
+  install. Adobe tasdiqlagan single-install dependency, clean-profile install/update/uninstall va manual
+  Premiere+AE smoke bajarilmaguncha holat `code-complete + automated QA complete`, Marketplace-ready emas.
+
+---
+
+# §-13. 2026-08-05 PREMIERE HYBRID — CEP UI + ko'rinmas UXP host companion
+
+- AE/PR bir xil CEP HTML/CSS/auth/catalog/AI/Sessions/Projects sirtini ishlatadi;
+  Premiere hybrid host funksiyalari jonli ishlashi foydalanuvchi tomonidan tasdiqlandi.
+- Home Artlist uslubidagi professional discovery IA'ga o'tdi: `Home · Create · Browse`, universal
+  asset qidiruvi, `Sessions`, `Music` va `Popular LUTs` javonlari.
+  Real javonlar kanonik API'dan mustaqil yuklanadi va bo'sh turlar yashiriladi;
+  eski server CMS copy'si production Home matnlarini qayta yozmaydi. Home referens kompozitsiyasida
+  4 real AI tool (`Image/Video/Voiceover/SFX`) kartasi, to'liq kenglikdagi slim asset search va
+  `Explore featured models` gorizontal carousel'i
+  `/api/studio/gen/models`dagi real enabled image/video modellaridan tuziladi; hardcoded demo model
+  yo'q, karta `Create`ni ochib aynan shu modelni tanlaydi. Tartib `Search → AI toolkit → Models →
+  Footage of the week → Sessions → Music/LUT discovery → Video Templates demo`. `Explore featured assets`,
+  `Recent creations` va Home'dagi `Sound effects` javoni keyingi yangi blok uchun olib tashlandi;
+  AI Sound FX generatori saqlandi. AI copy shu ritmga mos. Home greeting va takroriy
+  `Open Create` olib tashlangan; `FREE` implicit,
+  faqat `PRO` badge ko'rinadi; asset ↗ affordance hover/focusda chiqadi. Birinchi AI qatori
+  Artlist referens kompozitsiyasiga o'tdi: tashqi karta `7:5`, 20–30px yumaloq ramka va
+  13–19px responsive insetda; panoramik media kartaning katta pastki qismini egallaydi,
+  yumshoq pastki rim glow/soya, ixcham bold title
+  va doimiy yuqori-o'ng ↗ affordance bor. ↗ title flex oqimidan chiqarilib karta insetiga
+  absolute mahkamlangan; uzun `AI Voiceover/Sound FX` matni uni ramkadan itarmaydi.
+  Image/Video markaziy aylana ikonlari yo'q.
+  `Create with leading AI tools ✦` 21px/760 bold. Tepada
+  katta banner emas, `Find the right asset` + aniq search copy'li compact editorial hero bor;
+  nozik purple edge/glow qora sahifaga focal point beradi. To'rtta AI tool kartasi hech qachon
+  wrap bo'lmaydi: bitta flex qatorda, har biri kamida 210px; keng panelda teng kengayadi, tor
+  panelda horizontal scroll + snap bilan proporsiyasini saqlaydi. Tor panelda model carousel'i
+  kabi chap/o'ng arrow va page dot'lar paydo bo'ladi; tugmalar smooth page scroll/wrap qiladi,
+  keng panelda barcha 4 karta sig'sa boshqaruvlar avtomatik yashirinadi. Model, Footage, Sessions va
+  discovery kartalari ham fixed footprint + horizontal overflow bilan buzilmaydi.
+- Discovery'da real `motion-graphics` katalogidan `Footage of the week` carousel bor. Kartalar
+  featured-model kartalari bilan aynan bir xil `4:5` footprint (`176–230px`); hover/focusda
+  flex-basis animatsiyasi bilan `16:9`ga kengayadi va mavjud
+  `previewUrl` lazy-load bo'lib muted loop o'ynaydi, chiqishda pause/reset qilinadi. Carousel
+  4.8 soniyada o'zi siljiydi, hover/focusda pauza va `prefers-reduced-motion`da autoplay yo'q;
+  arrows/dots ham bor. Hover preview model kartasi balandligini saqlaydi; 16:9 nisbati saqlanadi.
+  Productionda 5 footage'ning 5/5 thumb va 5/5 preview'i tasdiqlandi.
+- Video-template katalogi hozir bo'sh bo'lgani uchun Home oxirida foydalanuvchi so'ragan vaqtinchalik
+  `Video templates picked for you` demo javoni bor: 4 ta media-first 16:9 karta, play affordance,
+  title va bir qator tavsif. Keng panelda yonma-yon, tor panelda bitta gorizontal scroll/snap qator;
+  kartalar soxta import qilmaydi, faqat haqiqiy `Video Templates` Browse bo'limini ochadi.
+- Artlist Image/Video Generator foydalanuvchining jonli Chrome akkaunti orqali audit qilindi: composer promptni alohida katta yozuv
+  zonasi qiladi, ikkilamchi boshqaruvlarni progressive disclosure bilan ixchamlaydi va uzun model
+  katalogini katta searchable modalga chiqaradi. Shu naqsh Image va Video workspace'ga ko'chirildi:
+  prompt 68–74px minimal balandlikda, boshqaruvlar wrap qiladi, ≤520px panelda model nomi to'liq
+  alohida qator oladi; eski `kc1…kc6` 64px siqish/DOM'ni overflow'ga ko'chirish ishlamaydi.
+  Enhance/Clear ikonka-only, Generate+narx saqlangan. Image/Video model picker 720px gacha markaziy
+  blur modal, qidiruv, katta o'qiladigan qator va aniq close bilan ochiladi; model/API/quote/job
+  handlerlari o'zgarmagan. 2026-08-05 real `Nano Banana 2 · 16:9 · 2K · 1 image` testi
+  muvaffaqiyatli bajarildi: server quote `130` kredit, balans `7,500 → 7,370`, natija taxminan
+  27 soniyada `processing → completed` bo'ldi. Brauzerning sanitizatsiyalangan Network auditida
+  same-origin tRPC oqimi tasdiqlandi: `modelRouter.getCostQuote` → imzolangan quote →
+  `userGenerationRouter.createUserGeneration` → session generation query → wallet refresh.
+- PPRO 26.2.2 native CEP `evalScript()` ishlamasa `afEvalScript()` avtomatik
+  `AF_UXP_BRIDGE`ga o'tadi; AE va CEP scripting sog'lom Premiere versiyalarida native yo'l saqlanadi.
+- `com.frameflow.premiere.host` UXP companion `hostUIContext.hideFromMenu:true`: Premiere
+  startupda avtomatik yuklaydi, UXP Plugins menyusida/panel sifatida ko'rinmaydi.
+- IPC loopback tarmog'i emas: `/tmp/com.frameflow.premiere.host-bridge` mode-0700 mailbox,
+  har CEP sessiyasiga 256-bit secret, qat'iy protocol/id/size tekshiruvi; UXP arbitrary JS eval qilmaydi.
+- Native UXP host qatlami MOGRT, PRPROJ sequence, footage/media import, Project footage,
+  Timeline clip/current-frame, work area, project tree, reveal va capabilities'ni qoplaydi.
+- Premiere UXP 26.2 Project-panel selection API bermaydi: `getSelectedProjectReference()`
+  taxmin qilmay fail-closed; foydalanuvchi ishlaydigan Project footage ro'yxatidan tanlaydi.
+- Testlar: UXP host shim PASS; authenticated CEP↔UXP mailbox PASS; Premiere CEP adapter
+  18/18; integration 19/19; package 59/59; marketplace 100/100; installer 262/262;
+  updater 118/118; responsive va `git diff --check` PASS.
+- CEP QA: `dist/zxp/frameflow-plugin-v1.2.0-unsigned.zip` — 830199 bayt,
+  SHA-256 `30e523ba97c50fa9048bf9d65155af631a78ce7a958776551cfa547b5f2b3a4b`.
+- Companion CCX: `dist/uxp/frameflow-premiere-host-v1.0.0.ccx` — 14312 bayt,
+  SHA-256 `a59cd2d9c3ef70cf6a26c7221fe3e5813ba60805307df7d4ee8cebda33bfeb8d`.
+- CEP build `2026-08-05 00:45 · ea7a8d6` va UXP companion 1.0.0 per-user o'rnatildi;
+  registry/payload diskdan tekshirildi. Premiere o'rnatmadan oldin ochiq bo'lgani uchun yangi
+  companion'ni yuklash va jonli import smoke uchun foydalanuvchi uni qo'lda to'liq qayta ochadi.
+- Computer Use faqat foydalanuvchi ruxsati bilan Chrome'dagi Artlist auditida ishlatildi;
+  Adobe/Premiere boshqarilmadi, yakuniy Premiere restart/smoke foydalanuvchiga qoldirildi.
+
+---
+
+# §-12. 2026-08-04 PREMIERE CEP PRODUCTION IMPLEMENTATION — host bridge blok sababi isbotlandi
+
+- Dual-host CEP saqlandi: AE va Premiere bitta `AssetFlow_Plugin.html`, CSS, auth, AI,
+  Sessions/Projects va writable `assetflow-data` zanjiridan foydalanadi; UXP runtime emas.
+- Host-aware resolver tuzatildi: AE MOGRT→AEP oqimi saqlandi; Premiere direct/ZIP/single/
+  multi MOGRT native `.mogrt`; ZIP `.prproj` va footage-only bundle taniladi; wrong-host
+  `.aep` Premiere'da fail-closed.
+- Premiere adapter `importMGT(path, String(position.ticks), ...)` va media insertda ticks-string
+  ishlatadi. `.prproj` hech qachon `importFiles()`ga tushmaydi: yopiq project sequence ID'lari
+  ishonchli olinmagani uchun download/reveal + `File → Import` manual fallback qaytadi.
+- `getHostCapabilities()` ikkala adapterda bor. PPRO Publisher `false`/Studio-only; unsaved
+  project `documentID` bilan saved deb belgilanmaydi.
+- Remove ID-only: Project/Timeline item ID'lari prefsda saqlanadi; Premiere rollback qo'shildi;
+  AE va PR'da eski nom bo'yicha keng delete o'chirildi — bir xil nomli user itemiga tegmaydi.
+- Request host metadata: catalog/featured/download, usage import/download, heartbeat, updater
+  va loglarda `app=pr` yoki `X-FF-App: pr`; local-store hodisasi AEFT+PPRO'ga dispatch.
+- Premiere copy qatlami static va keyin yaratiladigan dinamik UI'ni qamraydi: Library `Use`, AI
+  result actions, Project/Timeline reference picker, toast/confirm/title/placeholderlarda AE-only
+  matnlar PR semantikasiga o'tadi. Headerda `Premiere Pro`/`Pr` edition belgisi bor; PR'da
+  ishlamaydigan Comp/Bin default-import preference yashirilgan. Project panelga kirib Timeline'ga
+  qo'shilmagan media endi xato emas, aniq partial-success sifatida ko'rsatiladi.
+- Yangi integration test 19/19: resolver fixture'lari, host-call inventory, PRPROJ, wrong-host,
+  request capture va dual-host sync. Strict adapter 18/18, package 59/59, marketplace QA
+  67/67 + mutation 100/100, responsive PASS.
+- PR boot default `video-templates` bo'sh bo'lsa `motion/graphics/luts/music/sfx` ichidan birinchi
+  bo'sh bo'lmagan bo'limga o'tadi. Host bridge health va oxirgi JS runtime xatolari lokal diagnostikaga
+  yoziladi; simultaneous AE/PR debug portlari 8098/8099 qilib ajratildi.
+- Jonli PPRO 26.2.2 CDP smoke: panel/API ishlaydi, lekin native `evalScript('1+1')` ham
+  `EvalScript error.` qaytaradi. Bu FrameFlow JSX funksiyasi emas, Premiere CEP scripting-engine
+  holati; Adobe'ning ma'lum Adobe Stock panel regressiyasi bilan aynan mos. Barcha host chaqiruvlari
+  endi buni `premiere_script_engine_unavailable` deb bir xil va aniq ko'rsatadi.
+- QA artefakti unsigned: `dist/zxp/frameflow-plugin-v1.2.0-unsigned.zip` (818255 bayt,
+  SHA-256 `3231bbdc03f35de289396b6c5ca975b434fe596e3137f1d826da5366fb18fd33`); signed ZXP yo'q.
+- Yangilangan customer CEP `~/Library/Application Support/Adobe/CEP/extensions/com.frameflow`
+  papkasiga o'rnatildi; build `2026-08-04 13:42 · ea7a8d6`, 45/45 fayl diskdan tasdiqlandi.
+- Computer Use ishlatilmadi, Adobe ilovalari ochilmadi/yopilmadi. Host funksiyalarini smoke qilishdan
+  oldin Adobe Stock panelini yopib Premiere'ni to'liq qayta ochish shart; hozir production-ready emas.
+- Audit/prompt: `docs/PREMIERE-CEP-PROD-AUDIT-2026-08-04.md` va
+  `docs/PREMIERE-CEP-PROD-SYSTEM-PROMPT.md`.
+
+---
+
+# §-11. 2026-08-04 DUAL-HOST CEP 1.2.0 — AE paneli bevosita Premiere'ga o'tkazildi
+
+- Premiere UXP porti rad etildi: uning CSS/layout rendererida pill va kartalar buzilgan.
+  Joriy yo'l — AE bilan aynan bitta `AssetFlow_Plugin.html` ishlatadigan CEP panel.
+- `com.frameflow.panel` manifesti `AEFT + PPRO`; host bootstrap AE uchun `host.jsx`,
+  Premiere uchun `host-premiere.jsx` yuklaydi. UI/CSS/network/auth/session kodi umumiy.
+- Premiere adapter: media → Project/Timeline, MOGRT → playhead, footage bundle,
+  `.prproj` import, Project/Timeline reference, work area va current-frame PNG eksport.
+- Katalog hostdan avtomatik `app=ae|pr` yuboradi; featured ham host bo'yicha filtrlanadi.
+- Lokal meta/prefs/blob/Sessions extension papkasidan doimiy yoziladigan
+  `Application Support/AssetFlow/assetflow-data` ga ko'chadi; legacy data bir marta migratsiya qilinadi.
+- UXP dev o'rnatma registr/papkadan olib tashlandi. CEP 1.2.0
+  `~/Library/Application Support/Adobe/CEP/extensions/com.frameflow` ga o'rnatildi;
+  eski token/favorites saqlandi. Adobe ilovalari avtomatik ochilmadi/yopilmadi.
+- CLI isbot: Premiere host adapter 18/18, package-security 59/59,
+  marketplace-preflight 100/100 va responsive kontrakt PASS.
+- Foydalanuvchi Computer Use'ni taqiqlagan; Premiere ichidagi yakuniy ochib-ko'rish
+  avtomatlashtirilmagan. Ko'rinishi uchun Premiere'ni to'liq qayta ishga tushirish kerak.
+
+---
+
+# §-10. 2026-08-04 PREMIERE UXP 0.1.6 — Sessions va composer paint zanjiri tuzatildi
+
+- Premiere UI alohida qayta yozilmaydi: AE `AssetFlow_Plugin.html` yagona manba,
+  `ae-port.mjs` host adapterlari bilan UXP paketini avtomatik chiqaradi.
+- AI launcher’da `Tools · Sessions · Projects` doim ko‘rinadi; server sessiya picker’i
+  Premiere’da ham AE bilan bir xil ishlaydi, UXP-only bypass olib tashlandi.
+- View ochilgandan 300 ms keyingi `opacity` repaint olib tashlandi: u sog‘lom
+  Settings/Sessions view’ini qora/bo‘sh kadrga aylantirib, elementlar yo‘qolgandek ko‘rsatgan.
+- Picker → Image/Video/Audio composer o‘tishida Premiere ba’zan butun ota zanjirni `0×0`
+  paint qilgan. Composer layout renderdan oldin inline mahkamlanadi, bounded child-layout
+  barrier ishlaydi; boshqa view’ga qaytganda inline xossalar tozalanadi (ustma-ust view yo‘q).
+- Production seed hisobida `/gen/sessions` 200 va 40/40 sessiya generatsiyali: ma’lumot
+  o‘chmagan, muammo UI navigatsiya/paint qatlamida bo‘lgan.
+- Premiere Pro 26.2.2 jonli QA: Image, Video, Audio composer, composer↔picker,
+  Settings, Sessions va Projects PASS; final logda FrameFlow runtime error/rejection 0 ta.
+  Original loyiha o‘rniga alohida QA backup ishlatildi.
+- API build 51/24, release 110/110, host/session parity, responsive, CCX byte-verify
+  va buzilgan ZIP salbiy testi PASS. 0.1.6: 60 fayl, 791065 bayt, SHA-256
+  `c248f57718579d9e28fdd4ec0d803a48e35aecf222f1a6feb373bc2832062a06`.
+- Dev o‘rnatma final 0.1.6 buildga yangilandi.
+
+---
+
+# §-9. 2026-08-04 PREMIERE UXP 0.1.5 — production release va real AI/import QA
+
+- Premiere 26.2.2 jonli QA’da login restartdan keyin saqlandi; Home, AI launcher,
+  Image/Video/Audio workspace va Stock katalogi AE bilan bir zanjirda ishladi.
+- UXP qora-kadr sabablari yopildi: AI flex zanjiri doimiy, barcha view’larda
+  `getBoundingClientRect().height` layout barrier + faqat view’ga target repaint;
+  pending spinner/hover transformlari statik, natija kartalariga aniq balandlik berildi.
+- Production Nano Banana 2 bilan ikki real rasm yaratildi; DB model narxi, quote va
+  UI ✦8 bo‘lib teng, pending progress ko‘rindi, kredit 50→42→34 yangilandi.
+- Graphics video va Industrial Alarm Bell SFX Premiere Project paneliga import qilindi;
+  raw success sentinellari yolg‘on `Import error` chiqarmaydi. `getSystemPath`/token
+  writable UXP DataFolder’da, UXP local-store esa CEP disk backendini noto‘g‘ri yoqmaydi.
+- API build (51/24), release 110/110, responsive, host-shim, CCX byte-verify va
+  buzilgan-ZIP salbiy testi PASS. Artefakt: 59 fayl, 789215 bayt, SHA-256
+  `97676a317753de2a402a969721cd23e99642c3e663ce3459a8bcc95aa7af245c`.
+- Production `pr` kanalida 0.1.5 mac/win publish; ikkala signed download bayti hashga mos.
+
+# §-8. 2026-08-04 PREMIERE UXP 0.1.3 — AE parity va AI/Stock release candidate
+
+- AE va Premiere paneli jonli yonma-yon tekshirildi; UXP Home/AI/Stock navigatsiyasi,
+  dinamik kartalar, detail/import va Image/Video prompt fokuslari native hodisalarga o‘tkazildi.
+- UXP repaint qora-kadr xatosi `opacity` invalidatsiyasi bilan tuzatildi; ishlamaydigan
+  MutationObserver olib tashlandi. `getSystemPath` writable data/temp kontrakti saqlandi.
+- Raw stock app-neutral: Premiere `?app=pr` endi video/rasm/audio stockni ham ko‘radi.
+  Removed/inactive profil login/me/device oqimida `ACCOUNT_INACTIVE` bilan fail-closed.
+- Lokal isbot: API build, release 110/110, host-shim, CCX byte-verify va dev-instrument
+  salbiy testi PASS. `0.1.3`: 59 fayl, 768.4 KB, SHA-256
+  `9c5b2d92b93d65202812b31f9d8fff88735c9aaec86c6a9e72c40a638113d9c9`.
+- Production deploy, active-user AI generation/import va `pr` release publish kutilmoqda.
+
+---
+
+# §-7. 2026-08-04 PREMIERE UXP 0.1.2 — jonli import va stabil runtime
+
+- Premiere 26.2.2 ichida production login → Sound Effects → `Industrial Alarm Bell`
+  → download → `Project.importFiles()` oqimi boshidan oxirigacha o'tdi; MP3 Project
+  panelida 4-element bo'lib paydo bo'ldi, testdan keyin `Undo` bilan olib tashlandi.
+- `getSystemPath()` faqat yoziladigan plugin-data/plugin-temp/native temp qaytaradi;
+  host-shim testi writable path, `.prproj`, media import va `cep.fs`ni tasdiqladi.
+- Premiere 26.2 fetch reader `done:true` bermaydigan CDN oqimi `Content-Length` bilan
+  yakunlanadi; `.part` → final copy va rasmiy 4-parametrli `importFiles` bridge ishlaydi.
+- Hostda exception loop bergan 7 legacy layout shimi production script-orderdan chiqarildi;
+  UXP kartalari/detail soddalashtirildi, animatsiya/transition o'chirildi. Jonli log 10 soniyada
+  `Uncaught JS Exception` 35→35: yangi xato yo'q.
+- `0.1.2` CCX: 58 fayl, 763.6 KB, SHA-256
+  `677dd2bd39b80b711c236b614987d817ff5b2bdc39de495b48d6e476f6bb5bb1`; byte-verify PASS.
+- `801e955` main'ga push; GitHub CI `30847212557` PASS. Production `pr` kanalida
+  `0.1.2` publish qilindi; mac/win signed-download baytlari shu SHA-256 bilan mos.
+
+## §-6. 2026-08-03 PREMIERE UXP — release candidate productionga deploy qilindi
+
+- `plugins/premiere-uxp/` qayta tiklangan: AE panelining generativ 1:1 porti, UXP repaint/
+  transform/indexedDB/input/clipboard/file-picker shimlari va yoziladigan plugin-data backend.
+- `.mogrt` timeline import + Essential Graphics o'rnatish, media bundle va `.prproj`
+  `Project.importSequences` ko'prigi kodda; `cep.fs` picker/Base64 AI referens oqimi ulangan.
+- `?app=pr` release tekshiruvi, `.ccx` landing CTA/CCD yo'riqnomasi, global xato-log,
+  `eventsByApp.pr` admin analitikasi va browse holatini tiklash qo'shilgan.
+- Lokal isbot: DB/API build, public-copy 137/137, installer 262/262, release-contract 110/110,
+  updater 118/118, host-shim kontrakti va deterministik CCX byte-verify — PASS. Artefakt:
+  `plugins/premiere-uxp/dist/frameflow-premiere-0.1.0-standalone.ccx` (65 fayl, 783.9 KB),
+  SHA-256 `ab42a001aec3795175d2a47ba9c5fb4bad8796d71b7a4067d2a6b9013491d8a0`.
+- `c09e563` `main`ga push qilindi; Cloud Run `30828591927` va CI `30828593547` PASS.
+  Production `/health`: DB/storage `ok`; `?app=pr` katalogi 2 ta app-neytral SFX qaytaradi.
+  Web `/plugin` sahifasida Premiere `.ccx` CTA va Creative Cloud o'rnatish yo'riqnomasi jonli.
+- Installer API hanuz `latest:null/not_published`: tayyor CCX admin reliz kanaliga nashr qilinmagan;
+  Premiere-native `.mogrt/.prproj` kontent ham hali yo'q.
+- Jonli macOS isbot: `MOGRT.prproj` saqlandi, Premiere 26.2.2 to'liq quit/relaunch qilindi,
+  FrameFlow docked paneli render bo'ldi; boot diag `(xato yo'q)`, writable path/token warning 0.
+  Auth/import/AI smoke uchun foydalanuvchi login'i, native PR kontent/release va Windows beta darvoza.
+
+---
+
+## §-5. 2026-07-22 CI NODE 20 DEPRECATION — 3 workflow ko'tarildi, push kutilmoqda
+
+- Barcha `.github/workflows/*.yml` (`ci.yml`, `db-backup.yml`, `deploy-cloudrun.yml`):
+  `actions/checkout@v4→v7`, `actions/setup-node@v4→v7`, `google-github-actions/auth@v2→v3`,
+  `google-github-actions/setup-gcloud@v2→v3`. Ilova `node-version: 20` HAMMA joyda O'ZGARMADI.
+- Windows `Setup Node`ga `package-manager-cache: false` aniq qo'shildi (v7 implicit kesh YO'Q).
+- `test:ci-windows-installer` **162/162 PASS** (barcha workflow'ni skanerlaydi, joriy majorlarni
+  va `node-version: 20`ni tasdiqlaydi, mutatsiya isboti bilan).
+- **Lokal/statik isbot TO'LIQ; "warning-free" haqiqiy isbot faqat push'dan keyingi masofaviy
+  GitHub Actions run bilan tasdiqlanadi** (bu sessiyada push YO'Q).
+- Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.4.
+
+---
+
+## §-4. 2026-07-22 MARKETPLACE PREFLIGHT — kod tomoni tayyor, topshirilmagan
+
+- Adobe Developer Distribution (CC Marketplace) uchun fail-closed preflight qo'shildi:
+  `npm run preflight:marketplace` (QA struktura — kredensialsiz, ZXPSignCmd CHAQIRILMAYDI) va
+  `-- --release` (imzolangan `.zxp` + **Adobe `ZXPSignCmd -verify` bilan KRIPTOGRAFIK tekshiruv**
+  + to'liq ega metadata SHART). Yagona manba `package-flavors.mjs`/`verify-zxp-package.mjs`/
+  `installer-payload.mjs` qayta ishlatildi; raqib ro'yxat yo'q. Test — **100/100**.
+- Endi majburlanadi (ilgari tekshirilmasdi): `<Extension Version=>` ↔ bundle versiya ·
+  `HostList`/`RequiredRuntime`/`ScriptPath`/`Menu`/`ExtensionBundleName` · CEF bayroq allowlist'i ·
+  `.debug`/`PlayerDebugMode` · masofaviy `<script>`/`<link>` · HTTPS bo'lmagan standart endpoint ·
+  imzolanmagan zip imzolangan nom ostida · `owner.publisherAccountEmail` email SHAKLI.
+- **Kriptografik chegara halol nomlangan:** imzo konvertining borligi va konteyner baytlarining
+  mosligi imzoni ISBOTLAMAYDI (soxta `META-INF/signatures.xml` qo'shish mumkin) — hukmni
+  `ZXPSignCmd -verify` chiqish kodi beradi; vosita yo'q bo'lsa tekshiruv o'tkazib yuborilmaydi.
+  Lokal tekshiruv paketni tasdiqlaydi; **yakuniy qabul — Adobe portali / Creative Cloud**.
+- **Adobe'ga HECH NARSA topshirilmadi.** Bloker: `ZXPSignCmd`/imzolash identikasi yo'q →
+  `-- --release` ataylab yiqiladi (exit 1). Ega ishi: hisob, sertifikat, listing matni, vizual assetlar.
+- Operator qo'llanmasi: `docs/MARKETPLACE-SUBMISSION.md` ·
+  metadata: `plugins/after-effects-cep/marketplace-submission.json`.
+
+---
+
+## §-3. 2026-07-22 PLAGIN RELIZ ZANJIRI — Task 2/3 masofada YASHIL
+
+- Plagin installer/updater texnik zanjiri (Task 2 self-updater almashtirish + Task 3 `.pkg`/`.msi`
+  quvuri) tugadi va masofada isbotlandi: `4293a6c` `origin/main`'da, CI run **29902381702**
+  to'liq yashil, Windows job **88865831801** — qadalgan WiX, haqiqiy MSI build, `wix msi validate`,
+  **"Per-user install → migration → uninstall proof"** — hammasi o'tdi (birinchi haqiqiy
+  `msiexec` isboti). Lokal testlar: 135 · 244 · 47 · 118 · 108 · 10 (barchasi PASS).
+- Jonli `GET api.getframeflow.app/api/plugin/version?platform=mac` →
+  `installerStatus:"not_published"` — kontrakt ishlaydi, hali BIRORTA `PluginRelease` yo'q.
+- **Shu reliz zanjiridagi yagona tashqi bloker (EGA ishi, kodda hal qilinmaydi):** Apple Developer ID Installer +
+  notarizatsiya va Windows Authenticode imzolash kredensiallari yo'q.
+- Tafsilot: `docs/SESSION-REPORT.md` · `docs/RELEASE-ARCHITECTURE.md` §3A.4 ·
+  `docs/PLUGIN-UPDATE-CHAIN.md` · `docs/DIREKTOR-HANDOFF.md` §5.
+
+---
+
+## §-2. 2026-07-11 JONLI TEKSHIRUV (Direktor — prod'ga qarshi tasdiqlangan)
+
+> Hujjat da'volariga ishonmasdan git + kod + jonli prod API tekshirildi. Bu blok §-1'dan yangi.
+
+- **Deploy holati:** BATCH3 (13 fix) + BATCH4 (4 fix) + barcha 5 launch-faza — **push qilingan VA prod'da jonli** (git 0 ahead; `/health` db+storage ok; katalog javobida `kind`/`stockType` → `stock_kind_columns`/`plan_config_active` migratsiyalari qo'llangan).
+- **Prod:** `api.getframeflow.app` (Cloud Run) · `getframeflow.app` (CF Pages) · landing CMS jonli (`/api/landing/config`).
+- **Kodda tasdiqlangan:** `COST_QUOTE_SECRET` FATAL-check (API boot bo'lgani = o'rnatilgan) · Sentry real dep · `db-backup.yml` · legal HTML Lemon Squeezy · attestation server-enforce (`RIGHTS_REQUIRED` ×3) · `RevenueEvent` + refund/clawback/dunning · plagin bundle `com.frameflow`.
+- **🔴 Asosiy amaliy bloker:** prod katalogda **faqat 1 published shablon** ("Football Championship Logo Reveal"); landing "5000+ templates" / Pro "10,000+" deydi — kontent to'ldirish yoki raqamlarni moslash SHART.
+- **Tashqaridan tekshirib bo'lmagan (USER tasdig'i kerak):** prod env — `SENTRY_DSN`, `BACKUP_GCS_BUCKET`+versioning, `MODERATION_API_KEY`, `VIRUSTOTAL_API_KEY`, Lemon Squeezy LIVE · Admin → Pricing "Apply target margin" bosilgan-bosilmagani · AE plagin jonli E2E.
+- Batafsil: `docs/LAUNCH-READINESS.md` (⭐ HOLAT) · `docs/SESSION-REPORT.md` · `docs/DIREKTOR-HANDOFF.md` §5.
+
+# AssetFlow — Loyiha holati (yangi dasturchi uchun onboarding)
+
+> **Maqsad:** bu hujjat yangi dasturchini loyiha bilan tanishtiradi. Mazmun **haqiqiy koddan** tekshirilgan (route'lar, Prisma schema, build skriptlari, env). Bu — loyiha joriy holati uchun **yagona kod-tasdiqlangan haqiqat manbai**; `docs/REJA-*` va `docs/STUDIO-GEN-*` reja/dizayn hujjatlari joriy holat EMAS. `HANDOFF.md` katta va ba'zi joylari eskirgan — ishonchli manba: kodning o'zi va shu hujjat.
+>
+> *Yangilangan: 2026-06-20 · Tekshirgan: kod tahlili (apps/api, packages/database, packages/assetflow-studio, plugins/after-effects-cep)*
+
+---
+
+## §-1. 2026-07-03 YANGILANISH — INFRA/AI/BREND KO'CHDI (eski §0-§9 ni bekor qiladi)
+
+> Bu blok koddan tekshirilgan (`Dockerfile`, `deploy-cloudrun.sh`, `cloudrun-env.yaml`, `.github/workflows/`, `apps/api/src/lib/ai/*`, `functions/_middleware.js`). Pastdagi bo'limlar hali eski Render/R2/OpenRouter/AssetFlow deb yozadi — QUYIDAGI ustun.
+
+### Nima o'zgardi (ESKI → HOZIR)
+
+| Qism | ESKI (§0-§9) | HOZIR (kodda tasdiqlangan) |
+|------|--------------|----------------------------|
+| API hosting | Render (`assetflow-rqbq.onrender.com`) | **Google Cloud Run** — `europe-west1`, service `assetflow-api`, `https://api.getframeflow.app`. `min-instances 1` (cold-start yo'q). |
+| Deploy | render.yaml auto | **GitHub Actions** `.github/workflows/deploy-cloudrun.yml` (WIF auth, kalitsiz). `main`'ga push → build (Docker) → **migrate-gate** (`migrate:deploy` yiqilsa deploy to'xtaydi) → deploy. Qo'lda: `deploy-cloudrun.sh`. |
+| Storage | Cloudflare R2 | **GCS (S3-mos)** — bucket `assetflow-assets-2026`, `S3_ENDPOINT=https://storage.googleapis.com`, `AWS_*` = GCS HMAC. `s3.ts` `gcsKeyFromUrl/gcsUriFromUrl` bilan `gs://` chiqaradi (Vertex video input uchun). |
+| DB | Neon PostgreSQL | Neon PostgreSQL — **o'zgarmagan** ✅ |
+| Rasm AI | OpenRouter | **Vertex AI** (`vertex-image.ts`) — Imagen 4/Ultra + Nano Banana 2/Lite/Pro (5 model `enabled`). |
+| Video AI | OpenRouter | **Vertex Omni Flash** (`vertex-omni.ts`, SINXRON) + **Veo** (`vertex.ts`, async) + **fal.ai** R2V (`fal.ts`, zaxira). |
+| Ovoz/SFX | ElevenLabs | ElevenLabs — o'zgarmagan ✅ (SFX). Kokoro TTS OpenRouter'da (dormant). |
+| Frontend | CF Pages `assetflow-20j.pages.dev` | **CF Pages `getframeflow.app`** + `admin.` / `studio.` subdomenlar (`functions/_middleware.js` host-router). Yangi **public platforma** (`platform/`, `ff-api.js`, `window.FFAPI`) — faqat USER roli. |
+| To'lov | Stripe (yopiq) | Stripe kodi bor, lekin `STRIPE_*` kalitlari BO'SH → **to'lov amalda o'chiq**. (Reja: Paddle — `docs` / xotira.) |
+| Brend | AssetFlow | **FrameFlow** (public UI/API/domen/email). Ichki JS klasslar hali `AssetFlow*`, `af_*` localStorage — texnik qarz. |
+
+**Dormant (kodda bor, `enabled:false`):** OpenRouter (barcha modellar), fal.ai RASM modellari, Magnific. Vertex ustun.
+
+### Yangi/qo'shilgan (2026-06-21 dan keyin)
+
+- **Auth:** Google OAuth (web `login.html`), **Google device-code** (AE plagin — webview GIS yuklay olmaydi), **email-verify gate** (`consumeAiCredits` ichida, RESEND sozlangan → majburiy; eski userlar grandfather), **Turnstile** (register formalar). Rate-limiting (`middleware/rate-limit.ts`).
+- **DB migratsiyalar (oxirgi):** `20260622_template_is_pro_tier` (per-shablon Free/Pro), `20260629_saved_references_ttl` (`SavedReference` TTL), `20260703_backfill_email_verified`, `20260703_plugin_device_code` (`PluginDeviceCode`). pgvector saqlanadi.
+- **AI kredit oqimi (tekshirilgan, SOG'LOM):** imzolangan `cost-quote` (`gen-quote.ts`) → `consumeAiCredits` ATOMIK (`updateMany aiCredits>=cost`) → xato/timeout≠refund ajratilgan → `fail()` `updateMany count>0` bilan BIR MARTA refund (double-refund race yopiq) → ADMIN consume/refund'dan ozod (simmetriya). `gen.cost = price` (consume=refund summasi).
+- **Env manbai:** `cloudrun-env.yaml` (git-ignored, hech qachon commit qilinmagan). Deploy'da GitHub secret `CLOUDRUN_ENV_YAML` dan yoziladi — YAML o'zgarsa `gh secret set CLOUDRUN_ENV_YAML` SHART.
+
+### Hali ochiq / ehtiyot
+- **Vertex Omni video** — kredit MANTIG'I sog'lom, lekin real GCP billing'da (~$1/video) end-to-end SINALMAGAN (`vertex-omni.ts` izohi). `>15MB` video referens uchun same-project GCS bucket yo'q (`OMNI_INLINE_VIDEO_MAX`).
+- **`keepalive.yml`** — O'CHIRILDI (2026-07-03). Cloud Run `min-instances 1` bo'lgani uchun keraksiz edi.
+- **`render.yaml`** — legacy, deploy qilinmaydi (referens uchun qolgan).
+- **`cloudrun-env.yaml`** — jonli maxfiy kalitlar mahalliy diskda; commit qilinmasin, davriy rotatsiya tavsiya.
+- **Faza 2 plagin AI tool'lar** (lip-sync/motion/slow-mo/video→SFX/restyle/draw) — UI tayyor, backend "Tez orada · fal.ai".
+
+---
+
+## 0. Audit + sessiya HANDOFF — YAKUNLANDI (2026-06-19/21)
+
+> 2026-06-19 multi-agent audit (57 agent, 177 topilma → 34 tasdiqlangan). **Barcha 34 topilma hal qilindi, productionga deploy qilindi, `origin/main` bilan sinxron.** Bo'lim-bo'lim deploy, har biri read-only smoke-test (`/health` + `/api/plugin/catalog`); pul/auth/CSP/CI hech qachon buzilmagan. **Yangi (toza) sessiya shu §0 dan davom etadi.**
+
+### A) Audit topilmalari — har band (✅ live · 🟡 qisman · ⏸️ ixtiyoriy)
+
+**Pul / billing (5 ✅):** `#1` Free/Pro paywall server-tomon ATOMIK majburlash (`guardDownloadable`→`consumeDownload` baytlardan oldin; `/usage/*` analitika-only) · `#3` Stripe obuna tugasa→`PluginProfile.plan` FREE (`syncPluginPlanFromStripe` + reorder guard; `reconcile:plans`) · `#4` `/gen/describe`+`/enhance` kredit (1/2/3) + per-user kunlik cap + refund · `#12` `currentPeriodEnd` Stripe v18 `items.data[0]` + `apiVersion` pin + self-serve PRO fail-closed · `#16` webhook idempotency (`WebhookEvent` dedup).
+
+**Xavfsizlik (3 ✅ + 1 🟡):** `#2` admin stored-XSS `esc()` (`admin-views.js`, `admin-subscribers.js`) + server cap · `#5` token revoke (`requireAuth` markaziy block check; `User.tokenVersion` JWT'da, reset/block'da increment + pluginToken o'chirish) · `#14` upload path-traversal `param('id')` cuid-guard + `UPLOADS_ROOT` containment · `#17` 🟡 JWT `sessionStorage` + global 401 interceptor + **CSP enforce** (HttpOnly cookie qoldi — E).
+
+**Barqarorlik (4 ✅):** `#6` CDN cache-bust `?v=updatedAt` + Studio JS/CSS `immutable` olindi · `#11` semantik qidiruv → **pgvector HNSW** (`embeddingVec vector(1024)`, `$queryRaw <=>`, JSON-cosine fallback) · `#13` katalog/serve birxil + scene R2 PutObject muvaffaqdan keyin "saved" · `#15` inline ffmpeg → semaphore + fon transcode worker (`transcode-preview.ts`, `/preview-uploaded` signal, `previewTranscodeStatus` + UI badge).
+
+**Infra / tozalash (5 ✅):** `#7` GitHub Actions CI + **migrate-gate** (`migrate:deploy` → `preDeployCommand`) · `#8` Premiere UXP o'chirildi · `#9` CF Pages build **manbadan self-regen** + drift artefaktlar untracked+gitignored · `#10` apps/web (Next.js) + packages/shared + o'lik Asset CRUD o'chirildi, lokal :3000 host → `dev-studio-server.mjs` (Asset/Download MODEL saqlandi — users.ts+seed) · `#18` docs.
+
+### B) Deploy / infra holati
+- **Render (API):** `render.yaml` — build (migratsiyasiz) → **`preDeployCommand: npm run migrate:deploy`** (gated: fail → deploy to'xtaydi, eski kod qoladi) → `start`. Migratsiyalar FAQAT additive. Env: `JWT_SECRET`, `DATABASE_URL` (Neon), R2 (`AWS_*`,`S3_ENDPOINT`,`CDN_BASE_URL`), `OPENROUTER_API_KEY`, `ELEVENLABS_API_KEY`, `CF_ACCOUNT_ID`+`CF_AI_TOKEN`, `STRIPE_*`, `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false`.
+- **CF Pages (Studio, assetflow-20j.pages.dev):** build `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs` — MANBADAN (`js/`,`styles/`,`*.html`) dist yasaydi, committed artefaktga BOG'LIQ EMAS. `_headers`: **CSP enforce** + cache; `_redirects`: /studio/*, /admin/* → manba.
+- **Vercel (eski/zaxira):** `packages/assetflow-studio/vercel.json` → `prepare-vercel.mjs` (`studio:sync` ham shuni chaqiradi).
+- **Lokal dev:** `npm run studio` → API :4000 + Contributor :3000 (`dev-studio-server.mjs`) + Admin :3001 (`dev-admin-server.mjs`), MANBANI to'g'ridan serv. **apps/web YO'Q.** PM2: `ecosystem.config.cjs` (assetflow-api/web/admin → dev:api/dev:studio-web/dev:studio-admin).
+- **Push intizomi:** bosqichma-bosqich — backend+migratsiya alohida, studio/CF alohida (incident zonasi). Har deploy A smoke-test; studio o'zgarsa brauzer + konsol (CSP) tekshiruvi.
+
+### C) Commit tarixi (audit, eng yangidan — hammasi origin/main'da)
+```
+ae28520 chore: docs + render-build cleanup (post-audit)
+4e81018 chore: remove dead apps/web + packages/shared, lightweight local studio host (#10)
+79ec2de chore(studio): untrack build artifacts now that CF build self-regenerates (#9)
+2ff6ab4 chore(db): embeddingVec backfill script (manual, JSON->vector) (#11)
+ff788e8 feat(studio): preview transcode status badge in contributor list (#15)
+47297db chore(api): remove dead Asset CRUD admin handlers (#10 verified-dead; model kept)
+32fa64d feat(studio): trigger preview transcode after upload (#15 frontend)
+0550781 build(studio): CF Pages build regenerates artifacts from source (#9)
+ca70156 chore: remove abandoned Premiere UXP plugin + dead /api/assets route (#8,#10)
+f7bf5a0 feat(transcode): background preview transcode worker + status column (#15 backend)
+998aab4 perf(search): pgvector HNSW semantic search with JSON-cosine fallback (#11)
+0719fa6 security(studio): enforce Content-Security-Policy (#17 done)
+d2e6ca9 security(studio): allow Google Fonts in CSP report-only (#17)
+77ba0b6 security(studio): add Content-Security-Policy headers (#17 v3)
+46c2a5d ci: gate migrations via preDeployCommand (separate from build) (#7)
+a135b70 docs: project status + AI system + plan banners (re-apply #18)
+57c4479 fix(studio): restore tracked CF Pages build artifacts (revert bad untrack) [INCIDENT FIX]
+107c5da chore: untrack generated Studio artifact trees [INCIDENT SABABI — keyin revert]
+7beecaf fix(stability): CDN cache-bust + unify catalog/serve + atomic month-reset + ffmpeg semaphore (#6,#11,#13,#15)
+bf05195 fix(security): escape admin XSS + token revoke (tokenVersion) + cuid path-guard + JWT sessionStorage (#2,#5,#14,#17)
+74b7a95 ci: add build/lint GitHub Actions workflow (#7)
+5ba8c04 fix(billing): idempotent Stripe webhook via WebhookEvent dedup (#16)
+e691f81 fix(billing): currentPeriodEnd from sub item + fail-closed self-serve PRO (#12)
+a450104 fix(ai): charge credits + per-user daily cap on /gen describe & enhance (#4)
+4871009 fix(billing): downgrade plan to FREE when Stripe subscription lapses (#3)
+303ed60 fix(paywall): enforce Free/Pro download+import limits server-side (atomic) (#1)
+```
+
+### D) Operatsion bilim (yangi sessiya bilishi shart)
+- **pgvector:** prodda FAOL; **5 APPROVED+published shablon embed** (6-si qoralama — published emas, search'da ko'rinmaydi). Migration `20260620150000_template_embedding_pgvector` qo'llangan (CREATE EXTENSION vector + embeddingVec + HNSW).
+- **Reindex:** `POST /api/plugin/ai/reindex` — **ADMIN-only**, **kreditsiz**, Workers AI re-embed + dual-write (embedding+embeddingVec). Admin token: `POST /api/auth/login {admin@assetflow.uz/admin123}` → JWT (`Authorization: Bearer`).
+- **backfill:embedvec:** `npm run backfill:embedvec` — mavjud JSON embedding → embeddingVec (re-embed YO'Q). Hozir **0 nomzod** (reindex hammasini to'ldirdi). `DRY_RUN=1` avval. Prod `DATABASE_URL` kerak → Render Shell.
+- **Workers AI:** `configured: true` (CF_ACCOUNT_ID + CF_AI_TOKEN). `POST /api/plugin/ai/estimate {type:"search"}` → `{configured}`.
+- **/search:** `POST /api/plugin/ai/search {query}` — **ACTIVE plugin USER** (`user@assetflow.uz/user123`, 1 kredit). ADMIN'da **402 `ACCOUNT_INACTIVE`** (admin plugin-obunachi emas — BUG EMAS). bge-m3 1024-dim. Tasdiqlangan: "grunge..." → grunge shablon 0.68. Render log'da `[ai:search] ... fallback` CHIQMASA = pgvector ishladi.
+- **with_vec tekshiruv (Render Shell):** `node -e 'const{PrismaClient}=require("@prisma/client");const p=new PrismaClient();p.$queryRawUnsafe(`SELECT count(*) FILTER (WHERE "embedding" IS NOT NULL) AS with_json, count(*) FILTER (WHERE "embeddingVec" IS NOT NULL) AS with_vec FROM "ContributorTemplate"`).then(r=>{console.log(JSON.stringify(r,(k,v)=>typeof v==="bigint"?Number(v):v));return p.$disconnect();})'`
+
+### E) Qolgan ish (ixtiyoriy, kod-band EMAS)
+- **#11 prod backfill** — hozir 0 nomzod (reindex bajardi); kelajakda eski/import qatorlar paydo bo'lsa `backfill:embedvec`.
+- **#17 HttpOnly cookie** — faqat custom domen (`*.assetflow.uz`) bilan ishonchli (API `onrender.com` ≠ Studio `pages.dev` → 3rd-party cookie Safari ITP'da bloklanadi). CSP enforce hozircha yetarli. Infra (DNS) qarori.
+- **`packages/assetflow-studio/README.md:13`** — eski `dev:web` eslatmasi (kichik; "studio package'ga tegma" cheklovi tufayli qoldirilgan → `dev:studio-web` ga yangilash mumkin).
+- **`requireActiveSubscription`** (`apps/api/src/middleware/auth.ts`) — yetim export (0 call-site, auth-sensitive → qoldirilgan).
+- **`render-build.sh`** o'chirilgan (havolasiz edi). Untracked research docs: `docs/AI-API-RESEARCH-2026.md`, `AI-MODELS-PRICING-2026.md`, `FIX-ROADMAP.md`, `MAGNIFIC-API-ANALYSIS.md` (commit qilinmagan).
+
+### F) MUHIM SABOQLAR (incident oldini olish)
+1. **Studio artefakt/build oqimiga tegadigan o'zgarish → ALOHIDA commit + ehtiyot deploy + brauzer/konsol test.** Bir marta CF Studio buzilgan: artefakt `git rm --cached` → CF stilsiz sahifa (`prepare-cf-pages` faqat nusxalardi) → revert `57c4479` → keyin self-regen `0550781` + xavfsiz untrack `79ec2de`.
+2. **Migratsiyalar FAQAT additive** (CREATE/ADD COLUMN/EXTENSION/INDEX; DROP yo'q); preDeploy gate himoyalaydi (fail → eski kod qoladi). Migratsiyani lokal/prod DB'ga qo'lda DEPLOY QILMA — push'da Render o'zi qiladi.
+3. **Pul/auth/CSP kodiga ehtiyot:** `consume*`, `guardDownloadable`, `syncPluginPlanFromStripe`, `WebhookEvent` dedup, `tokenVersion`, CSP `_headers` — har o'zgarishda saqlab qol; har deploy A smoke-test bilan tasdiqla.
+
+---
+
+## 1. Loyiha nima
+
+**AssetFlow** — ikki katta qismdan iborat:
+
+1. **AE shablon marketplace** — After Effects shablonlari uchun zanjir:
+   `Contributor yuklaydi → Admin moderatsiya qiladi → AE plugin katalogida chiqadi → Obunachi import qiladi.`
+2. **AI generatsiya studiyasi (Studio Gen)** — rasm / ovoz / video / SFX generatsiyasi (kredit asosida, OpenRouter + ElevenLabs + Cloudflare Workers AI orqali).
+
+### Foydalanuvchi rollari (`UserRole` enum)
+
+| Rol | Nima qiladi | Qayerda ishlaydi |
+|-----|-------------|------------------|
+| **CONTRIBUTOR** | Shablon yuklaydi (thumb, preview, pack), tekshiruvga yuboradi, admin bilan yozishadi | Contributor Studio (web) |
+| **ADMIN** | Shablonlarni tasdiqlaydi/rad etadi, publish qiladi, obunachilarni boshqaradi, AI kredit beradi, audit/log ko'radi | Admin Console (web) + AE Admin panel |
+| **USER** (obunachi) | AE plugin orqali katalogni ko'radi, import qiladi (Free/Pro limit), AI Tools'dan foydalanadi | AE CEP plugin |
+
+---
+
+## 2. Arxitektura va texnologiya
+
+### Monorepo (npm workspaces, Node ≥ 20)
+
+```
+apps/
+  api/                     → Express 5 + TypeScript API (asosiy backend)
+packages/
+  database/                → Prisma 6 schema + migratsiyalar + seed (PostgreSQL)
+  assetflow-studio/        → Admin + Contributor static UI (HTML/CSS/JS, build tool YO'Q) + lokal dev serverlar (:3000/:3001)
+plugins/
+  after-effects-cep/       → AE CEP plugin (Browse panel + Admin panel)
+scripts/                   → pm2, verify-pipeline, check-stack, seed tozalash
+# apps/web (Next.js) va packages/shared o'chirildi (#10); premiere-uxp o'chirildi (#8).
+```
+
+### Texnologiya stack (haqiqiy versiyalar)
+
+| Qism | Texnologiya | Versiya |
+|------|-------------|---------|
+| API | Express | 5.1.0 |
+| API | TypeScript (tsx dev, tsc build) | 5.8.3 |
+| Auth | jsonwebtoken / bcryptjs | 9.0.2 / 3.0.2 |
+| Storage SDK | @aws-sdk/client-s3 (+ lib-storage, presigner) | 3.812.0 |
+| Validatsiya | zod | 3.25.28 |
+| Upload | multer | 2.0.1 |
+| To'lov | stripe | 18.1.0 |
+| DB ORM | Prisma | 6.8.2 |
+| DB | PostgreSQL (prod: Neon.tech) | — |
+| Studio UI | toza HTML/CSS/JS (build tool yo'q) | — |
+| Process manager (lokal) | pm2 | 6.x |
+
+### Har bo'lim nima qiladi
+
+- **apps/api** — REST API. Auth, katalog, contributor CRUD/upload, admin moderatsiya, xabarlar, audit, AI Tools (`/plugin/ai`), Studio Gen (`/studio/gen`), Stripe. Kirish nuqtasi: `apps/api/src/index.ts`. Route'lar `apps/api/src/routes/*.ts` (11 ta fayl), kutubxonalar `apps/api/src/lib/*`.
+- **packages/database** — Prisma schema (`prisma/schema.prisma`), 12 ta migratsiya, ikkita seed (`seed.ts`, `seed-assetflow.ts`).
+- **packages/assetflow-studio** — Admin va Contributor brauzer UI. **Build tool yo'q** — toza static. `js/` va `styles/` (root) = MANBA; `studio/`, `admin/js`, `dist/` = artefakt (pastga qarang).
+- **Lokal dev (Studio)** — `packages/assetflow-studio/scripts/dev-studio-server.mjs` (:3000, Contributor) + `dev-admin-server.mjs` (:3001, Admin) Studio MANBASINI to'g'ridan serv qiladi (+ `/api` proxy). Eski apps/web Next.js o'chirildi (#10).
+- **plugins/after-effects-cep** — AE ichidagi CEP panel: Browse (`AssetFlow_Plugin.html`) + Admin (`AssetFlow_Admin.html`), ExtendScript `jsx/host.jsx`.
+
+### Deploy topologiyasi
+
+> ⚠️ ESKIRGAN — joriy topologiya (Cloud Run + GCS + `getframeflow.app`) uchun **§-1** ga qarang. Quyidagi jadval 2026-06-21 holati.
+
+| Xizmat | Platforma | URL |
+|--------|-----------|-----|
+| API | Render | https://assetflow-rqbq.onrender.com |
+| Studio (Admin+Contributor) | Cloudflare Pages | https://assetflow-20j.pages.dev |
+| (eski) Studio | Vercel | render.yaml CORS'da hali ro'yxatda (`assetflow-studio-one.vercel.app`) — orqaga moslik uchun |
+| Storage | Cloudflare R2 (S3-mos) | `S3_ENDPOINT` + `CDN_BASE_URL` |
+| DB | Neon.tech PostgreSQL | `DATABASE_URL` |
+| Git remote | GitHub | `github.com/uxudoybergan6-png/assetflow` |
+
+> ✅ **CORS/ADMIN_URL tuzatildi (2026-06-18):** `render.yaml` da `CORS_ORIGIN` endi `https://assetflow-20j.pages.dev,https://assetflow-studio-one.vercel.app` (CF Pages birinchi, eski Vercel orqaga moslik uchun), `ADMIN_URL` = `https://assetflow-20j.pages.dev/admin/`. ⚠️ **Lekin:** Render dashboard'da bu env'lar qo'lda o'rnatilgan bo'lsa, ular yaml'dan ustun turadi — dashboard → Environment'da ham yangilang yoki "Sync" qiling.
+
+---
+
+## 3. NIMA ISHLAYDI (kod bilan tasdiqlangan)
+
+### 3.1 Autentifikatsiya — JWT + Plugin Token
+**Fayl:** `apps/api/src/middleware/auth.ts`
+- **JWT** (Studio): `signToken()` 7 kun, `JWT_SECRET` bilan imzolanadi. Header `Authorization: Bearer <jwt>`. Payload `{ userId, email, role }`.
+- **Plugin Token** (AE): `ensurePluginToken()` — `crypto.randomBytes(32)` (64 belgi), 30 kun TTL, `PluginToken` jadvalida saqlanadi. Status `BLOCKED`/`REMOVED` bo'lsa bekor qilinadi.
+- Middleware: `requireAuth` (avval plugin token, keyin JWT), `requireAdmin`, `requireActiveSubscription`, `requireContributorOrAdmin`.
+
+### 3.2 Katalog (plugin)
+**Fayl:** `apps/api/src/routes/plugin.ts` + `apps/api/src/lib/catalog-map.ts`
+- `GET /api/plugin/catalog` — faqat `APPROVED` + `published:true` shablonlar (paginatsiya).
+- `GET /api/plugin/featured` — so'nggi tasdiqlanganlar.
+- `templateAssetFlags()` `hasPack`/`hasPreview` ni **disk + R2** ikkalasidan tekshiradi (Render ephemeral disk muammosi shu yerda hal qilingan).
+
+### 3.3 Contributor upload → moderatsiya → approve
+**Fayl:** `apps/api/src/routes/contributor.ts`
+- `POST /templates` (yaratish) → `POST /templates/:id/upload-url` (thumb/preview uchun **presigned PUT** to'g'ridan R2 ga, OOM oldini oladi) → `POST /templates/:id/assets` (pack multer orqali, server `.mogrt` sahnalarni ajratadi) → `POST /templates/:id/submit` (tekshiruvga).
+- `POST /templates/:id/review` (admin) — approve/reject + izoh + ixtiyoriy publish.
+- `GET /templates/:id/upload-progress` — SSE orqali upload bosqichi/foiz.
+- **Preview optimizatsiya:** yangi upload'da preview `optimizePreviewForStreaming()` bilan 720p H.264 ga siqiladi (250MB·4K → ~3-8MB). **Eski previewlar** (tuzatishdan oldingilar) hali katta — backfill: `POST /admin/templates/:id/re-transcode-preview` (admin) yoki bulk `npm run retranscode:previews` (admin token bilan, ketma-ket; `scripts/retranscode-previews.mjs`).
+- Status oqimi: `DRAFT → PENDING_REVIEW → APPROVED | REJECTED` (`TemplateReviewStatus` enum).
+
+### 3.4 Plugin browse + import (AE CEP)
+**Fayllar:** `plugins/after-effects-cep/assetflow-catalog.js`, `jsx/host.jsx`
+- Login (`POST /api/plugin/login`) → token + `apiBaseUrl` + `adminUrl` qaytadi, prefs'ga yoziladi.
+- Katalog tortiladi, pack yuklab olinadi (`/api/plugin/assets/:id/pack`).
+- **Scene-aware import** (`host.jsx`): `importSingleSceneFromAep()` — proyekt sifatida import qiladi, `collectCompDependencies()` bilan kerakli comp/footage zanjirini yig'adi, `pruneToScene` rejimida faqat tanlangan comp + bog'liqliklarni qoldiradi. Hamma amallar `beginUndoGroup`/`endUndoGroup` ichida.
+
+### 3.5 Free / Pro + limitlar
+**Fayllar:** `apps/api/src/routes/plugin.ts`, schema `PluginProfile`
+- `PluginProfile.plan` = `FREE | PRO` (`PluginPlanTier`).
+- `POST /usage/download` va `POST /usage/import` — hisoblagichni oshiradi, limit oshsa 403.
+- `downloadLimitOverride` / `importLimitOverride` — admin har bir obunachi uchun cheklovni alohida belgilashi mumkin.
+
+### 3.6 Obunachi boshqaruvi (admin)
+**Fayllar:** `apps/api/src/routes/admin.ts`, `packages/assetflow-studio/js/admin-subscribers.js`
+- `GET /api/admin/plugin-subscribers` — faol AE foydalanuvchilar.
+- `GET /api/admin/plugin-analytics` — yuklab olishlar, kunlik faollik grafigi.
+- `PATCH /api/admin/plugin-subscribers/:userId` — plan/status/limit/**AI kredit** o'zgartirish.
+
+### 3.7 Xabarlar + Audit
+- `apps/api/src/routes/messages.ts` — threadlar, reply, **broadcast** (barcha contributor'larga).
+- `apps/api/src/routes/audit.ts` — `GET /api/studio/audit` (admin), barcha amallar `StudioAuditLog` ga yoziladi.
+
+### 3.8 Dizayn / temalar — DIQQAT: Studio va Plugin TURLICHA
+Ikki kod bazasida ikki xil tema tizimi bor — aralashtirmang:
+
+**STUDIO (web) — 2 tema.** Fayllar: `packages/assetflow-studio/styles/app.css`, `js/theme.js`.
+- `dark` (default) ↔ `light`. CSS'da faqat `[data-theme="light"]` override, `theme.js` faqat dark↔light toggle.
+- `localStorage` kaliti: `af-theme`, system preference (`prefers-color-scheme`) fallback bilan.
+
+**PLUGIN (AE CEP) — 3 tema.** Fayllar: `plugins/after-effects-cep/css/tokens.css`, `AssetFlow_Plugin.html`.
+- `tokens.css` da `[data-theme]` bo'yicha **3 ta**: `standart` (= `:root` default), `liquid-glass`, `light-glass`.
+- Tanlash UI: Sozlamalardagi `.theme-pick` (Standart / Liquid Glass / Light Glass tugmalari) → `setTheme()` `html[data-theme]` ni o'zgartiradi (`AF_THEMES=['standart','liquid-glass','light-glass']`).
+- ⚠️ Bu Studio'ning 2 temasidan MUSTAQIL — plugin temasini o'zgartirish Studio'ga, va aksincha, ta'sir qilmaydi.
+
+### 3.9 Bandwidth — R2 CDN direct
+- Yuklab olish/preview to'g'ridan R2/CDN (`CDN_BASE_URL`) yoki signed URL orqali (`apps/api/src/lib/s3.ts`), server orqali oqim emas → Render bandwidth tejaladi. Thumb/preview upload ham presigned PUT bilan to'g'ridan R2 ga (server xotirasini chetlab o'tadi).
+
+### 3.10 AI Tools — eski `/plugin/ai` (Cloudflare Workers AI)
+**Fayllar:** `apps/api/src/routes/ai.ts`, `apps/api/src/lib/ai/workers-ai.ts`
+- `POST /api/plugin/ai/image` — text→image (Flux schnell), 5 kredit.
+- `POST /api/plugin/ai/voiceover` — text→speech (MeloTTS), 3 kredit.
+- `POST /api/plugin/ai/search` — **semantik qidiruv** (bge-m3 embedding, `aiEmbed` Workers AI'da — `routes/ai.ts:212`), 1 kredit.
+- `POST /api/plugin/ai/reindex` (admin) — APPROVED+published shablonlarga embedding backfill.
+- Env: `CF_ACCOUNT_ID`, `CF_AI_TOKEN`, `AI_MODEL_IMAGE/EMBED/TEXT/TTS`. Kalit yo'q bo'lsa → `503 AI_NOT_CONFIGURED`.
+
+### 3.11 Studio Gen arxitekturasi (session / quote / job)
+**Fayllar:** `apps/api/src/routes/studio-gen.ts`, `lib/gen-processor.ts`, `lib/gen-quote.ts`, `lib/gen-models.ts`, `lib/ai/openrouter.ts`
+- **Oqim:** `POST /gen/sessions` (sessiya) → `POST /gen/cost-quote` (imzolangan narx, JWT 15 daqiqa) → `POST /gen` (quote tekshiriladi, kredit atomik bloklanadi, job `queued`) → fonda `processGeneration()` → natija R2 ga → `GET /gen/:jobId` (poll).
+- **Imzolangan cost-quote:** `signCostQuote()` — `{modelId, mode, price, paramsHash}` JWT bilan imzolanadi; serverda generatsiyadan oldin signature + qiymatlar mosligi tekshiriladi (narxni klient o'zgartira olmaydi).
+- Modellar `gen-models.ts` da raqamli ID bilan (1001 image, 2001 voice, 3001+ video, 4001 SFX). OpenRouter ulanishi haqiqiy: `openrouter.ts` → `BASE = https://openrouter.ai/api/v1`, `OPENROUTER_API_KEY`.
+- Schema modellari: `GenSession`, `Generation`, `GenAsset`. Muvaffaqiyatsizlikda kredit qaytariladi (`refundAiCredits`).
+- DB jadvallari, route'lar, kredit hisobi, R2 saqlash — **kod sifatida tayyor**. Lekin: 4-bo'limdagi ogohlantirishni o'qing.
+
+### 3.12 Admin Pricing management — normalized cost + review/apply
+- Provider xarajati bir xil birlikda saqlanadi/ko'rsatiladi: `$/image`, `$/second` yoki `$/generation`; default request jami alohida ko'rsatiladi.
+- BytePlus real usage o'lchovi `ProviderSpend.measuredUnitCostUsd` + unit/tier/quantity metadata bilan yoziladi; video total xarajati endi xato qilib `$/second` sifatida ishlatilmaydi.
+- `POST /api/admin/pricing/preview` hech narsa yozmasdan current → recommended farqni beradi; apply faqat admin belgilagan `modelIds` ni o'zgartiradi.
+- Manual PATCH provider xarajatidan past kredit narxini serverda `409 BELOW_PROVIDER_COST` bilan bloklaydi.
+- Panelda source/effective date, confidence, gross margin %, default tier misoli va health holati bir jadvalda ko'rinadi.
+- Google image/Veo va ElevenLabs SFX jadvallari 2026-08-02 tekshiruv qiymatlariga yangilangan; boshqa provayderlar table/estimate sifatida ochiq belgilangan.
+
+---
+
+## 4. NIMA QISMAN / TEST QILINMAGAN (halol)
+
+### 4.1 OpenRouter generatsiya — model ID'lar TASDIQLANDI, end-to-end test hali yo'q ⚠️
+- Kod to'liq yozilgan (`openrouter.ts`, `gen-processor.ts`). Haqiqiy ishlash uchun Render'da `OPENROUTER_API_KEY` o'rnatilgan va balansli bo'lishi kerak.
+- ✅ **Model ID'lar 2026-06-18'da tasdiqlandi.** `gen-models.ts` dagi har bir OpenRouter `key` per-model `/api/v1/models/<key>/endpoints` (status=0) orqali jonli ekanligi tekshirildi — barchasi mavjud. DIQQAT: `/api/v1/models` ro'yxati TO'LIQ EMAS (rasm-gen/TTS/embedding ko'rsatmaydi), shuning uchun avtoritativ tekshiruv — per-model `/endpoints` (izoh `gen-models.ts` boshida).
+- **Qolgan qadam:** har mode (image/voice/video/sfx) bo'yicha bitta real `/gen` chaqiruvi — kredit hisobi + R2 saqlashni end-to-end tasdiqlash (hali sinalmagan).
+
+### 4.2 Generatsiya tarixi grid (vazifa "1e-3") — QILINMAGAN
+- Backend `GET /api/studio/gen/history` va `GET /gen/sessions/:id/generations` mavjud, lekin Studio'da bu tarixni ko'rsatadigan **frontend grid** yo'q. Studio static UI'da umuman Studio Gen sahifasi topilmadi (AI gen UI faqat backend + AE plugin tomonda).
+
+### 4.3 IKKI AI TIZIM — `/plugin/ai` vs `/studio/gen` (aralashtirmang)
+Loyihada **ikkita butunlay alohida AI tizim** bor. Ikkalasi har xil route prefiksi, har xil provayder, har xil kalit ishlatadi:
+
+| Tizim | Route prefiks | Provayder | Nima qiladi | Kalit |
+|-------|---------------|-----------|-------------|-------|
+| **AI Tools (eski)** | `/api/plugin/ai/*` | Cloudflare **Workers AI** | **Semantik qidiruv** (embedding), eski image/voiceover | `CF_ACCOUNT_ID` + `CF_AI_TOKEN` |
+| **Studio Gen (yangi)** | `/api/studio/gen/*` | **OpenRouter** (+ **ElevenLabs** faqat SFX) | rasm / video / ovoz generatsiya | `OPENROUTER_API_KEY` (+ `ELEVENLABS_API_KEY`) |
+
+- **Qidiruv embeddinglari = Workers AI** (`bge-m3`, `routes/ai.ts:212` `aiEmbed`). OpenRouter embedding (`qwen/qwen3-embedding-4b`, `gen-models.ts` `EMBED_MODEL`) faqat Studio Gen tomonida ichki ishlatiladi — qidiruv uni ishlatmaydi.
+- **Plugin (AE CEP) hozir `/plugin/ai` (Workers AI) ni ishlatadi** — Browse qidiruvi va eski AI Tools shu yerda. `/studio/gen` (OpenRouter) plugin AI Tools'iga hali **to'liq ulanmagan** (4.1 va F-vazifa: tarix grid).
+- **SFX = ElevenLabs** (`elevenlabs/sound-effects`) — OpenRouter SFX'ni qoplamaydi, shuning uchun alohida.
+- Uchta provayder, uchta alohida kalit. Birini ikkinchisiga almashtirib bo'lmaydi.
+
+### 4.4 Stripe / to'lov — to'liq emas
+- Stripe kodi bor (`routes/stripe.ts`, `auth.ts` checkout/portal), lekin to'liq real checkout oqimi sinaб ko'rilmagan.
+- **Bypass yopilgan:** `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE=false` (render.yaml). Ya'ni Pro'ni Stripe'siz olish o'chirilgan — bu to'g'ri (xavfsiz), lekin haqiqiy to'lov hali to'liq emas.
+
+### 4.5 Boshqa yarim/ochiq ishlar
+- **AI gen frontend (Studio):** Static studio'da rasm/ovoz/video generatsiya UI yo'q — faqat admin AI-kredit boshqaruvi bor.
+- **premiere-uxp:** minimal stub — login + obuna tekshirish + browse/download (tashqi brauzerda), comp import yo'q.
+- **Email** (`RESEND_API_KEY`) — parol tiklash uchun kod bor, lekin kalit o'rnatilmaган bo'lsa ishlamaydi.
+- **AE Admin CEP panel** — brauzer Admin'dan kamroq ishonchli (`Failed to fetch` muammolari, pastga qarang).
+
+---
+
+## 5. DEPLOY va ENV
+
+### Production URL'lar
+> ⚠️ ESKIRGAN — joriy: API `https://api.getframeflow.app` (Cloud Run), Frontend `https://getframeflow.app` (+ `admin.`/`studio.`). Batafsil **§-1**. Quyi qatorlar 2026-06-21 holati (eski Render/Pages hali CORS'da orqaga-moslik uchun).
+- API: `https://assetflow-rqbq.onrender.com` (Render, auto-deploy `render.yaml` dan)
+- Studio: `https://assetflow-20j.pages.dev` (Cloudflare Pages)
+
+### Render build (render.yaml)
+```
+buildCommand: npm install --include=dev
+  && npm run generate -w @creative-tools/database
+  && npm run migrate:deploy -w @creative-tools/database   # ← migratsiyalar build'da deploy bo'ladi
+  && npm run build -w @creative-tools/database
+  && npm run build -w apps/api
+startCommand: node apps/api/dist/index.js
+healthCheckPath: /health
+```
+
+### CF Pages build
+- **Build command:** `node packages/assetflow-studio/scripts/prepare-cf-pages.mjs`
+- **Output dir:** `packages/assetflow-studio/dist`
+
+### Kerakli env'lar (va nima uchun)
+
+| Env | Nima uchun | Eslatma |
+|-----|-----------|---------|
+| `DATABASE_URL` | PostgreSQL (Neon) ulanishi | Render'da `sync:false` |
+| `JWT_SECRET` | JWT + cost-quote + plugin imzo | Render `generateValue:true`; lokalda default xavfli |
+| `API_PORT` / `PORT` | Server porti | Render 10000 |
+| `API_PUBLIC_URL` | OpenRouter Referer + URL fallback | `assetflow-rqbq.onrender.com` |
+| `CORS_ORIGIN` | Ruxsatli frontend domen(lar), vergul bilan | CF Pages + eski Vercel (2026-06-18); birinchi qiymat `getWebUrl()` uchun |
+| `ADMIN_URL` | Admin panel URL | render.yaml |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | R2 kalitlari | `sync:false` |
+| `AWS_S3_BUCKET` | R2 bucket nomi | — |
+| `AWS_REGION` | `auto` (R2) | — |
+| `S3_ENDPOINT` | `https://<acct>.r2.cloudflarestorage.com` | `sync:false` |
+| `CDN_BASE_URL` | R2 public URL (`pub-xxx.r2.dev`) — bandwidth direct | `sync:false` |
+| `OPENROUTER_API_KEY` | Studio Gen (rasm/video/ovoz/embed) | yo'q bo'lsa `/studio/gen` → 503 |
+| `CF_ACCOUNT_ID` / `CF_AI_TOKEN` | Workers AI (eski `/plugin/ai`, qidiruv) | yo'q bo'lsa → 503 |
+| `AI_MODEL_IMAGE/EMBED/TEXT/TTS` | Workers AI model nomlari | namunalar `.env.example` da |
+| `ELEVENLABS_API_KEY` | SFX + ixtiyoriy ovoz | — |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` | To'lov | to'liq emas |
+| `PLUGIN_ALLOW_PRO_WITHOUT_STRIPE` | Stripe'siz Pro bypass | **`false`** (yopiq — to'g'ri) |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Parol tiklash email | ixtiyoriy |
+
+### Auto-deploy holati
+- **API (Render):** `render.yaml` mavjud — git push'da avtomatik build + migrate:deploy. ⚠️ Push qilinmagan API o'zgarishlari productionда yo'q bo'lishi mumkin (avval `npm run build -w apps/api`).
+- **Studio (CF Pages):** git push'da `prepare-cf-pages.mjs` ishlaydi.
+
+---
+
+## 6. LOKAL ISHGA TUSHIRISH
+
+```bash
+# 1. O'rnatish
+npm install
+
+# 2. Muhit
+cp .env.example .env          # DATABASE_URL, JWT_SECRET, R2, AI kalitlarni to'ldiring
+#   AI kalitlarsiz ham ishlaydi — AI route'lar 503 qaytaradi, qolgani normal.
+
+# 3. Ma'lumotlar bazasi (PostgreSQL ishlab turishi kerak)
+npm run db:generate           # Prisma client
+npm run db:push               # schema'ni DB ga (yoki migrate:deploy)
+npm run db:seed               # asosiy admin + namuna asset
+npm run db:seed:assetflow     # AssetFlow demo (3 hisob + demo shablon)
+
+# 4. Ishga tushirish (pm2: api + web + admin)
+npm run pm2:start             # yoki: npm run dev:api / dev:studio-web / dev:studio-admin
+npm run pm2:status
+npm run check:stack           # stack holatini tekshirish
+
+# 5. Pipeline tekshirish
+npm run verify:pipeline
+API_URL=https://assetflow-rqbq.onrender.com node scripts/verify-pipeline.mjs --allow-remote   # prod: yozadi, oxirida tozalaydi
+```
+
+### Portlar (pm2 / ecosystem.config.cjs)
+- API: `4000` (lokal), Contributor Studio: `3000` (dev-studio-server), Admin Studio: `3001` (dev-admin-server).
+
+### Seed hisoblar (seed-assetflow.ts)
+| Rol | Email | Parol |
+|-----|-------|-------|
+| Admin | `admin@assetflow.uz` | `admin123` |
+| Contributor | `dilnoza.k@gmail.com` | `contrib123` |
+| Obunachi | `user@assetflow.uz` | `user123` |
+
+> `seed.ts` alohida admin yaratadi: `admin@creativetools.local` / `admin12345`.
+
+### Plugin (AE CEP)
+```bash
+bash plugins/after-effects-cep/scripts/install-cep.sh
+# CEP debug rejimini yoqadi, fayllarni ~/Library/.../com.assetflow.demo/ ga ko'chiradi,
+# build sanasi + git SHA ni HTML'ga yozadi, AE'ni qayta ishga tushiradi va panelni ochadi.
+```
+
+### Studio (static — manbadan build)
+```bash
+npm run studio:sync           # prepare-vercel: js/ + styles/ (root) → studio/, admin/ artefakt (Vercel)
+# CF Pages: prepare-cf-pages.mjs (manbadan self-regen); lokal: dev-studio-server / dev-admin-server (manbani to'g'ridan serv)
+```
+
+---
+
+## 7. MUHIM SABOQLAR / TUZOQLAR (yangi dev bilishi shart)
+
+1. **CEP panel HTML hot-reload QILMAYDI.** O'zgartirishdan keyin: `install-cep.sh` qayta ishlat → AE `Cmd+Q` → qayta och. Panel build yorlig'i (sana + git SHA) HTML pastida ko'rinadi — eski yorliq = eski kod.
+2. **`host.jsx` ExtendScript engine eski versiya.** Atomik `evalScript` ishlat yoki AE'ni qayta ishga tushir; murakkab JSX o'zgartirishlaridan keyin AE restart kerak bo'lishi mumkin.
+3. **Studio manba `js/` va `styles/` (root)** — faqat shu yerga edit qil. `studio/js`, `studio/styles`, `admin/js`, `admin/styles`, `dist/` — **artefakt**; `prepare-vercel.mjs` / `prepare-cf-pages.mjs` / `studio:sync` ularni qayta yozadi. Artefaktga yozilgan o'zgarish yo'qoladi. Edit → `npm run studio:sync`.
+4. **Render auto-deploy + `migrate:deploy` build'da.** Yangi migratsiya qo'shsang, push'da avtomatik deploy bo'ladi — lekin migratsiya xato bo'lsa butun build yiqiladi.
+5. **Imzolangan cost-quote** — Studio Gen narxini klientga ishonma. Narx serverda `gen-quote.ts` da qayta tekshiriladi. Yangi model qo'shsang, narx hisobini (`computeGenCost`) ham yangila.
+6. **Commit message'ga `Co-Authored-By` YOZMA** — Vercel/CF deploy'ni bloklaydi (xotira: `no-coauthored-by-commits`).
+7. **AI provayderlarni aralashtirma:** qidiruv = Workers AI, Studio Gen = OpenRouter, SFX = ElevenLabs.
+
+---
+
+## 8. MA'LUM MUAMMOLAR / RISKLAR
+
+1. **`hasPack:false`** — pack yo'q shablon katalogda **ko'rinadi, lekin import bloklanadi** (plugin import tugmasini o'chiradi). Sabab: Render bepul instance disk **ephemeral** (qayta deploy/uxlashda yo'qoladi), shuning uchun pack/preview faqat **R2** da turishi shart. `catalog-map.ts` → `templateAssetFlags()` `hasPack`/`hasPreview` ni **disk VA R2** ikkalasidan tekshiradi — R2 da bo'lsa `true`. Agar productionда `hasPack:false` ko'rinsa: pack R2 ga yuklanmagan yoki kalit (`__srv_<id>`) mos emas.
+2. **Render cold-start** — ESKIRGAN: API Cloud Run'ga ko'chirildi (`min-instances 1`, cold-start yo'q). `.github/workflows/keepalive.yml` shu sababli 2026-07-03 da o'chirildi (endi keraksiz edi). Quyidagi izoh tarixiy referens sifatida qoldirilgan (Render'da bepul instance 15 daqiqa harakatsizlikdan keyin uxlardi; birinchi so'rov ~30-60s sekin edi; Upload XHR retry shu sababli qo'shilgan edi).
+3. **OpenRouter end-to-end test yo'q** — model ID'lar tasdiqlandi (4.1), lekin real `/gen` chaqiruvi hali sinab ko'rilmagan.
+4. **CORS_ORIGIN** — render.yaml tuzatildi (CF Pages + eski Vercel, 2026-06-18). Render dashboard'dagi qo'lda env yaml'dan ustun turishi mumkin — sinab ko'ring (2-bo'lim).
+5. **AE Admin CEP `Failed to fetch`** — odatda eski extension yoki `localhost` API. Brauzer Admin ishonchliroq.
+6. **Lokal `JWT_SECRET` default** — `change-me-in-production` xavfli; productionда Render `generateValue` ishlatadi.
+7. **OOM riski + mitigatsiya** — Render instance kichik (512MB). RAM spike manbalari: katta thumb/preview/pack upload va generatsiya. **Mitigatsiya (mavjud):** (a) thumb/preview **presigned PUT** orqali to'g'ridan R2 ga — bayt API server xotirasidan o'tmaydi (`contributor.ts` upload-url); (b) yuklab olish/preview to'g'ridan R2/CDN (`s3.ts`), server orqali oqim emas; (c) upload concurrency cheklovi + XHR retry (5xx/uzilish → 2x). Pack (multer) hali server orqali o'tadi — katta `.aep/.zip` da ehtiyot bo'ling.
+
+---
+
+## 9. KEYINGI USTUVOR VAZIFALAR (yo'l xaritasi)
+
+1. **OpenRouter end-to-end test** — model ID'lar tasdiqlandi (2026-06-18); qoldi: har mode (image/voice/video/sfx) bo'yicha bitta real generatsiya, kredit hisobi + R2 saqlashni tekshirish.
+2. **CORS_ORIGIN** — render.yaml CF Pages'ga yangilandi (2026-06-18); qoldi: Render dashboard env'ini tasdiqlash (qo'lda qiymat yaml'dan ustun bo'lishi mumkin).
+3. **Generatsiya tarixi grid (1e-3)** — Studio Gen frontend (history grid) yaratish (`GET /gen/history` allaqachon bor).
+4. **End-to-end pipeline test** — Contributor upload → Admin approve → AE Sync → import (productionда).
+5. **To'lov** — Stripe checkout/webhook to'liq oqimini sinash; contributor payout.
+6. **Email bildirishnomalar** — `RESEND_API_KEY` ulash (approve/reject, parol tiklash).
+7. **Tema** — Plugin'da allaqachon 3 tema bor (standart/liquid-glass/light-glass). Faqat **Studio** hozir 2 ta (dark/light); agar Studio'ga ham 3-tema kerak bo'lsa, `app.css` + `theme.js` ga qo'shiladi (3.8-bo'lim).
+8. **AE Admin CEP barqarorligi** — `Failed to fetch` muammolarini hal qilish.
+
+---
+
+*Bu hujjat koddan tekshirilgan. Biror narsa moslashmasa — kodga ishon, hujjatni yangila.*

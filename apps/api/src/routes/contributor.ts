@@ -112,6 +112,26 @@ import {
 import { payoutHoldDays } from "../lib/sybil.js";
 import crypto from "crypto";
 
+const UPLOAD_PROGRESS_SECRET = process.env.UPLOAD_PROGRESS_SECRET
+  || `${process.env.JWT_SECRET || "dev-secret-change-me"}:upload-progress`;
+function signUploadProgressToken(templateId: string): string {
+  const exp = Math.floor(Date.now() / 1000) + 5 * 60;
+  const body = `${templateId}.${exp}`;
+  const sig = crypto.createHmac("sha256", UPLOAD_PROGRESS_SECRET).update(body).digest("base64url");
+  return `${exp}.${sig}`;
+}
+function verifyUploadProgressToken(templateId: string, token: unknown): boolean {
+  const [expText, supplied = ""] = String(token || "").split(".");
+  const exp = Number(expText);
+  if (!Number.isSafeInteger(exp) || exp < Math.floor(Date.now() / 1000) || exp > Math.floor(Date.now() / 1000) + 360) return false;
+  const expected = crypto.createHmac("sha256", UPLOAD_PROGRESS_SECRET)
+    .update(`${templateId}.${exp}`)
+    .digest();
+  let actual: Buffer;
+  try { actual = Buffer.from(supplied, "base64url"); } catch { return false; }
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
 /** Moderatsiya natijasini contributor'ga email qiladi (xato bo'lsa jim o'tadi) */
 async function notifyContributorReview(
   contributorId: string,
@@ -153,11 +173,27 @@ async function withAssetFlags<T extends { id: string; assetKeysJson?: unknown }>
   // FAZA 5 (A2): kalitlar DB keshidan bo'lsa S3'ga chiqmaymiz (admin/contributor
   // ro'yxati N+1 fix). Kesh yo'q (eski yozuv) — eski xulq: per-kind HeadObject.
   const stored = assetKeySetFromStored(row.assetKeysJson);
+  const assets = await templateAssetFlags(row.id, stored ?? undefined, {
+    confirmPack: !stored,
+  });
+  // Nashr qilinmagan assetlar ommaviy CDN orqali berilmaydi. Studio ro'yxati esa
+  // faqat autentifikatsiyalangan owner/admin uchun, shuning uchun moderatsiya UI'ga
+  // qisqa muddatli signed URL beramiz. Bu public media route'ni publication gate
+  // bilan yopishga imkon beradi.
+  const mediaUrls: { thumb?: string; preview?: string } = {};
+  if (isS3Configured()) {
+    for (const kind of ["thumb", "preview"] as const) {
+      if (!assets[kind]) continue;
+      const prefix = `templates/${row.id}/${kind}`;
+      const cachedKey = stored ? Array.from(stored).find((key) => key === prefix || key.startsWith(`${prefix}.`)) : null;
+      const key = cachedKey || (await resolveS3AssetKey(row.id, kind));
+      if (key) mediaUrls[kind] = await getSignedDownloadUrl(key, 900);
+    }
+  }
   return {
     ...row,
-    assets: await templateAssetFlags(row.id, stored ?? undefined, {
-      confirmPack: !stored,
-    }),
+    assets,
+    mediaUrls,
   };
 }
 
@@ -238,6 +274,13 @@ const settingsPatchSchema = z.object({
   contributorInstructions: z.string().optional().nullable(),
 });
 
+const SAFE_TEMPLATE_GRADS = ["g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8", "g9", "g10"] as const;
+const templateMetaSchema = z
+  .object({
+    grad: z.enum(SAFE_TEMPLATE_GRADS).optional(),
+  })
+  .passthrough();
+
 const templateBodySchema = z.object({
   externalId: z.string().optional().nullable(),
   name: z.string().min(1).max(200),
@@ -257,7 +300,7 @@ const templateBodySchema = z.object({
   templateType: z
     .enum(["video-templates", "motion-graphics", "graphics", "luts"])
     .optional(),
-  metaJson: z.record(z.unknown()).optional(),
+  metaJson: templateMetaSchema.optional(),
   fileName: z.string().optional().nullable(),
   fileSize: z.number().int().optional().nullable(),
   scenes: z.array(z.unknown()).optional(),
@@ -723,13 +766,21 @@ const uploadAssetsFields = uploadAssets.fields([
  * yozilgan faylini o'chiradi — aks holda truncated pack diskda qolib,
  * katalogda hasPack:true bo'lib AE importni buzadi (production'da kuzatilgan).
  */
-/**
- * SSE — upload bosqichlari real vaqtda (Studio progress bar).
- * Auth: templateId cuid'ning o'zi capability (EventSource header yubora olmaydi; JWT talab
- * qilinsa brauzer SSE buziladi) — faqat bosqich/foiz/xabar uzatiladi, fayl ma'lumoti emas.
- * FAZA 2 (L3): kirish auth o'rniga ABUSE-cheklovlar — ulanish rate-limit + bir vaqtda ochiq
- * oqimlar CAP'i (resurs tugatishни to'sadi).
- */
+/** SSE uchun 5 daqiqalik tor capability token. EventSource Authorization header yubormaydi. */
+contributorRouter.get("/templates/:id/upload-progress-token", requireAuth, async (req, res) => {
+  const id = String(req.params.id);
+  const template = await prisma.contributorTemplate.findUnique({
+    where: { id },
+    select: { contributorId: true },
+  });
+  if (!template) return void res.status(404).json({ error: "Template not found" });
+  if (req.user!.role !== UserRole.ADMIN && template.contributorId !== req.user!.userId) {
+    return void res.status(403).json({ error: "Forbidden" });
+  }
+  res.json({ token: signUploadProgressToken(id), expiresIn: 300 });
+});
+
+/** SSE — upload bosqichlari real vaqtda (Studio progress bar). */
 const MAX_PROGRESS_STREAMS = 200;
 let openProgressStreams = 0;
 const uploadProgressLimiter = rateLimit({
@@ -740,6 +791,10 @@ const uploadProgressLimiter = rateLimit({
 });
 contributorRouter.get("/templates/:id/upload-progress", uploadProgressLimiter, (req, res) => {
   const id = String(req.params.id);
+  if (!verifyUploadProgressToken(id, req.query.token)) {
+    res.status(401).json({ error: "Invalid or expired progress token" });
+    return;
+  }
   if (openProgressStreams >= MAX_PROGRESS_STREAMS) {
     res.status(503).json({ error: "Too many active progress streams — please try again shortly" });
     return;
@@ -1231,6 +1286,7 @@ const uploadUrlSchema = z.object({
         kind: z.enum(["thumb", "preview", "pack"]),
         fileName: z.string().min(1).max(300),
         contentType: z.string().min(1).max(120),
+        sizeBytes: z.number().int().positive().max(3 * 1024 * 1024 * 1024),
       })
     )
     .min(1)
@@ -1260,6 +1316,42 @@ contributorRouter.post(
       res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
       return;
     }
+    // Contributor tasdiqlangan/jonli assetni almashtirishni BOSHLASHI bilanoq
+    // moderatsiya muhri bekor qilinadi. Upload tashlab ketilsa ham eski approval
+    // yangi deterministic keydagi baytlarga hech qachon tatbiq etilmaydi.
+    if (req.user!.role !== UserRole.ADMIN) {
+      const replacingLiveAsset =
+        existing.reviewStatus === TemplateReviewStatus.APPROVED || existing.published;
+      if (replacingLiveAsset) {
+        const includesPack = p.data.files.some((file) => file.kind === "pack");
+        const changed = await prisma.contributorTemplate.updateMany({
+          where: {
+            id,
+            contributorId: req.user!.userId,
+            OR: [
+              { reviewStatus: TemplateReviewStatus.APPROVED },
+              { published: true },
+            ],
+          },
+          data: {
+            reviewStatus: TemplateReviewStatus.PENDING_REVIEW,
+            published: false,
+            ...(includesPack
+              ? { packHash: null, packScanStatus: "pending", packScanDetail: null }
+              : {}),
+          },
+        });
+        if (changed.count > 0) {
+          await writeAuditLog({
+            actorId: req.user!.userId,
+            action: "template.asset_replace_started",
+            targetType: "template",
+            targetId: id,
+            detail: `Approved asset replacement started (${p.data.files.map((file) => file.kind).join(", ")}) → unpublished and re-review required`,
+          }).catch(() => {});
+        }
+      }
+    }
     const uploads = [];
     for (const f of p.data.files) {
       const ext = path.extname(f.fileName).toLowerCase();
@@ -1271,7 +1363,7 @@ contributorRouter.post(
         return;
       }
       const key = s3UploadKeyForFile(id, f.kind, f.fileName);
-      const url = await getSignedUploadUrl(key, f.contentType, 1800);
+      const url = await getSignedUploadUrl(key, f.contentType, 1800, f.sizeBytes);
       uploads.push({ kind: f.kind, key, url, contentType: f.contentType });
     }
     res.json({ uploads });
@@ -1843,7 +1935,7 @@ function mimeForExt(filePath: string): string {
  * yuklansa avvalgisi ustiga yoziladi va /ingest qayta chaqirilsa ham idempotent qoladi.
  */
 const incomingUploadUrlSchema = z.object({
-  files: z.array(z.object({ fileName: z.string().min(1).max(200) })).min(1).max(50),
+  files: z.array(z.object({ fileName: z.string().min(1).max(200), sizeBytes: z.number().int().positive().max(3 * 1024 * 1024 * 1024) })).min(1).max(50),
 });
 contributorRouter.post(
   "/incoming/upload-url",
@@ -1879,7 +1971,7 @@ contributorRouter.post(
       // faqat sanitize'da to'qnashgan farqli nomlar endi ajratiladi.
       const nameDisc = crypto.createHash("sha256").update(f.fileName).digest("hex").slice(0, 8);
       const key = `incoming/${contributorId}/${safeName}-${nameDisc}.zip`;
-      const url = await getSignedUploadUrl(key, "application/zip", 1800);
+      const url = await getSignedUploadUrl(key, "application/zip", 1800, f.sizeBytes);
       uploads.push({ fileName: f.fileName, key, url });
     }
     res.json({ uploads });
@@ -2679,7 +2771,8 @@ contributorRouter.post(
     // done qilganda emas — bu yerda yubormaymiz (partiya tugagach klient ko'radi;
     // per-item admin-notify template-reconcile / worker mas'uliyatida qoladi).
     const batchId = crypto.randomUUID();
-    await enqueueIngestJobs(
+    let queued;
+    try { queued = await enqueueIngestJobs(
       p.data.keys.map((key) => ({
         batchId,
         contributorId,
@@ -2691,8 +2784,11 @@ contributorRouter.post(
         rightsAcceptedAt: rights.rightsAcceptedAt,
         rightsTermsVersion: rights.rightsTermsVersion,
       }))
-    );
-    res.json({ batchId, queued: p.data.keys.length });
+    ); } catch (e) {
+      if ((e as { code?: string }).code === "INGEST_QUOTA_REACHED") return void res.status(429).json({ error: (e as Error).message, code: "INGEST_QUOTA_REACHED" });
+      throw e;
+    }
+    res.json({ batchId, queued: queued.jobIds.length });
   }
 );
 
@@ -2726,7 +2822,7 @@ const RAW_ASSET_CATEGORIES = ["luts", "graphics", "motion-graphics", "music", "s
 const assetUploadUrlSchema = z.object({
   category: z.enum(RAW_ASSET_CATEGORIES),
   files: z
-    .array(z.object({ fileName: z.string().min(1).max(200), contentType: z.string().max(120).optional() }))
+    .array(z.object({ fileName: z.string().min(1).max(200), contentType: z.string().max(120).optional(), sizeBytes: z.number().int().positive().max(3 * 1024 * 1024 * 1024) }))
     .min(1)
     .max(50),
 });
@@ -2775,7 +2871,7 @@ contributorRouter.post(
       const nameDisc = crypto.createHash("sha256").update(f.fileName).digest("hex").slice(0, 8);
       const key = `incoming/${contributorId}/${safeName}-${nameDisc}${ext}`;
       const ct = f.contentType || mimeForExt(f.fileName);
-      const url = await getSignedUploadUrl(key, ct, 1800);
+      const url = await getSignedUploadUrl(key, ct, 1800, f.sizeBytes);
       uploads.push({ fileName: f.fileName, key, url, contentType: ct });
     }
     res.json({ uploads });
@@ -2829,7 +2925,8 @@ contributorRouter.post(
     }
     const contributorId = req.user!.userId;
     const batchId = crypto.randomUUID();
-    await enqueueIngestJobs(
+    let queued;
+    try { queued = await enqueueIngestJobs(
       p.data.keys.map((key) => ({
         batchId,
         contributorId,
@@ -2842,8 +2939,11 @@ contributorRouter.post(
         rightsAcceptedAt: rights.rightsAcceptedAt,
         rightsTermsVersion: rights.rightsTermsVersion,
       }))
-    );
-    res.json({ batchId, queued: p.data.keys.length });
+    ); } catch (e) {
+      if ((e as { code?: string }).code === "INGEST_QUOTA_REACHED") return void res.status(429).json({ error: (e as Error).message, code: "INGEST_QUOTA_REACHED" });
+      throw e;
+    }
+    res.json({ batchId, queued: queued.jobIds.length });
   }
 );
 

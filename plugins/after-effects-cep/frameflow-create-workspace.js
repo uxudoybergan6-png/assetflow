@@ -266,6 +266,8 @@
         params: clone(privateQuote.pricedParams || quoteParams()),
         references: referenceProjection().filter(function (r) { return r.active; }),
         quotedPrice: state.quote.price,
+        costQuoteSignature: privateQuote.signature,
+        quoteExpiresAt: state.quote.expiresAt || null,
         sessionId: state.sessionId
       };
       submitPromise = Promise.resolve().then(function () { return dispatch(clone(payload)); }).finally(function () {

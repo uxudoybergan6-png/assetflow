@@ -25,13 +25,9 @@ import {
  * XAVFSIZLIK / IDEMPOTENTLIK:
  *   • HMAC-SHA256 imzo tekshiruvi (X-Signature, RAW body, WEBHOOK_SECRET) —
  *     imzo noto'g'ri/sekret yo'q bo'lsa hech nima qilinmaydi (401/503).
- *   • CLAIM-FIRST dedup: side-effect'lardan OLDIN WebhookEvent qatorini yaratamiz
- *     (unique kalit). P2002 → allaqachon ishlangan/parallel yetkazish → skip.
- *     Bu ADDITIVE kredit grant'ini parallel takror yetkazishda ham EXACTLY-ONCE
- *     qiladi (Stripe check-then-create naqshidan farqli — chunki topup atomik EMAS
- *     idempotent). B3 (#11): xatoda claim ENDI O'CHIRILMAYDI — har pul harakati
- *     o'z `sourceKey`'i bilan idempotent (CreditLedger/RevenueEvent unique), shu
- *     sabab qisman bajarilgan ishlov retry'da 2× grant bermaydi.
+ *   • WebhookEvent processing/succeeded/failed state machine: transient xatodan
+ *     keyin provider retry eventni qayta ishlaydi; faol lease parallel delivery'ni
+ *     to'sadi. Pul side-effectlari o'z sourceKey/transaction himoyasiga ega.
  *   • order_created uchun kalit = `ls:order:<orderId>` (har order bir marta grant);
  *     subscription_* uchun kalit = raw-body sha256 (literal retry deduped, haqiqiy
  *     holat o'zgarishi qayta ishlanadi — applyBillingPlan baribir idempotent).
@@ -438,17 +434,45 @@ export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
           ? `ls:invoice:${dataId}:refunded`
           : webhookDedupeKey(rawBody);
 
-  // CLAIM-FIRST: side-effect'lardan oldin dedup kalitini atomik egallaymiz.
+  // Retryable claim: succeeded = duplicate; fresh processing = parallel delivery;
+  // failed yoki 5 daqiqadan eski processing lease qayta egallanadi.
+  const leaseCutoff = new Date(Date.now() - 5 * 60_000);
   try {
     await prisma.webhookEvent.create({
-      data: { stripeEventId: dedupeKey, type: eventName || "lemonsqueezy" },
+      data: {
+        stripeEventId: dedupeKey,
+        type: eventName || "lemonsqueezy",
+        status: "processing",
+        attempts: 1,
+        lockedAt: new Date(),
+      },
     });
   } catch (e) {
     if ((e as { code?: string })?.code === "P2002") {
-      res.json({ received: true, duplicate: true });
-      return;
+      const prior = await prisma.webhookEvent.findUnique({ where: { stripeEventId: dedupeKey } });
+      if (prior?.status === "succeeded") {
+        res.json({ received: true, duplicate: true });
+        return;
+      }
+      const reclaimed = await prisma.webhookEvent.updateMany({
+        where: {
+          stripeEventId: dedupeKey,
+          OR: [{ status: "failed" }, { status: "processing", lockedAt: { lt: leaseCutoff } }],
+        },
+        data: {
+          status: "processing",
+          attempts: { increment: 1 },
+          lockedAt: new Date(),
+          lastError: null,
+        },
+      });
+      if (reclaimed.count === 0) {
+        res.status(409).json({ received: false, processing: true });
+        return;
+      }
+    } else {
+      throw e;
     }
-    throw e;
   }
 
   try {
@@ -534,14 +558,21 @@ export async function lemonSqueezyWebhookHandler(req: Request, res: Response) {
       await notifyPaymentEvent(userId, eventName, attrs);
     }
   } catch (err) {
-    // B3 (#11): claim ENDI O'CHIRILMAYDI. Ilgari xatoda claim o'chirilardi —
-    // qisman bajarilgan ishlov (kredit berilgan, keyin email/revenue yiqilgan)
-    // LS retry'da QAYTA bajarilib 2× grant berardi. Endi har pul harakati o'z
-    // sourceKey'i bilan idempotent (CreditLedger/RevenueEvent unique), shuning
-    // uchun claim qoladi va retry side-effect takrorlamaydi.
-    console.error("[ls-webhook] ishlov xatosi (claim saqlanadi):", dedupeKey, err);
+    await prisma.webhookEvent.updateMany({
+      where: { stripeEventId: dedupeKey, status: "processing" },
+      data: {
+        status: "failed",
+        lastError: String(err instanceof Error ? err.message : err).slice(0, 4000),
+      },
+    }).catch(() => {});
+    console.error("[ls-webhook] ishlov xatosi (retryable):", dedupeKey, err);
     throw err;
   }
+
+  await prisma.webhookEvent.update({
+    where: { stripeEventId: dedupeKey },
+    data: { status: "succeeded", processedAt: new Date(), lastError: null },
+  });
 
   res.json({ received: true });
 }

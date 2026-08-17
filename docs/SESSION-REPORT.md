@@ -1,15 +1,13 @@
-Session Report: 2026-08-11
-- Plugin va Web video reference kirish yo‘llari audit qilindi.
-- Web uchun 2–15 soniyali preview, start/end va Selected part trim oynasi qo‘shildi.
-- File, My Library va generation drag/drop videolari trim oqimidan o‘tadi.
-- Plugin metadata yoki preview xatosida to‘liq videoni yuboradigan fallback olib tashlandi.
-- API video upload uchun aniq start/endni majburiy va fail-closed qildi.
-- Server faqat kesilgan, siqilgan va audiosi olib tashlangan clip URL qaytaradi.
-- Provider va Enhance faqat userga tegishli gen-refs/.../clips URLni qabul qiladi.
-- 2–15 soniya va real ffmpeg duration integratsiya testi o‘tdi.
-- API build, Enhance, reference security va 24 provider testlari o‘tdi.
-- Studio parity, session policy va device-auth UI testlari o‘tdi.
-- AE/Premiere shared UI, responsive va session persistence testlari o‘tdi.
-- Studio sync va AF_SKIP_AE=1 shared CEP refresh bajarildi.
-- O‘rnatilgan CEP source bilan bir xil; Adobe avtomatik restart qilinmadi.
-- _to_delete/ va alohida mockup working tree o‘zgarishlariga tegilmadi.
+Session Report: 2026-08-18 — web/plugin audit remediation
+- Public Stock browse/detail va landingdagi no-op/misroute tugmalar tuzatildi.
+- Lemon Squeezy customer portal backend, web va customer pluginga ulandi.
+- CMS notice trap, canonical narx, guest holati, share fallback va release race tuzatildi.
+- Studio Gen retry payloadlari immutable; stale ledger/session/project javoblari bloklandi.
+- Audio eski sessiyadan ham o‘ynaydi; ARIA va xato holati yaxshilandi.
+- Plugin tokeni secure store’dan keyin plaintextga qayta yozilmaydi.
+- Comp/Bin import, blank New session, Auto model va Check for updates ishlaydi.
+- Project template Import real pack oqimiga ulandi; Premiere host-delete da’vosi olib tashlandi.
+- Bulk web download ikkinchi tasdiq talab qiladi; 40 fayl himoyasi saqlandi.
+- studio:sync, API build, public-copy, create, Premiere, updater, responsive, package QA PASS.
+- Marketplace/release/download/dependency contract testlari PASS; npm audit: 0 zaiflik.
+- Commit va production deploy qilinmadi; live Turnstile/billing/signed installer tashqi gate bo‘lib qoladi.

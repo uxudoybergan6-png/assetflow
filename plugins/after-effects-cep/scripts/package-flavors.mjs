@@ -59,6 +59,7 @@ const CUSTOMER_FILES = [
 const ADMIN_FILES = [
   "AssetFlow_Admin.html",
   "assetflow-env.js",
+  "assetflow-zip.js",
   "js/CSInterface.js",
   "jsx/host.jsx",
   "css/tokens.css",

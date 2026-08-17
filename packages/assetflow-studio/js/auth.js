@@ -38,16 +38,6 @@ const AssetFlowAuth = (() => {
     return "user";
   }
 
-  /**
-   * #136 (C14) — SESSIYA IKKI QAVATDA. Ilgari sessiya faqat `sessionStorage`da edi:
-   * havolani yangi tabda ochish (yoki brauzer qayta tiklagan tab) har safar login
-   * so'rardi. Endi `localStorage`da ham nusxa saqlanadi va yangi tab uni bir marta
-   * o'ziga ko'chirib oladi.
-   *
-   * Xavfsizlik: tokenning umrini server tekshiradi; sessiya davomiyligi
-   * (JWT exp) localStorage'da qo'shimcha cheklov bilan bekor bo'lmaydi.
-   */
-
   function readStore(store) {
     try {
       const raw = store.getItem(KEY);
@@ -58,34 +48,16 @@ const AssetFlowAuth = (() => {
   }
 
   function getSession() {
-    const s = readStore(sessionStorage);
-    if (s) return s;
-    const p = readStore(localStorage);
-    if (!p) return null;
-    try {
-      sessionStorage.setItem(KEY, JSON.stringify(p));
-    } catch {
-      /* private rejim — shu tabda sessiya baribir ishlaydi */
-    }
-    return p;
+    return readStore(sessionStorage);
   }
 
   function setSession(session) {
     sessionStorage.setItem(KEY, JSON.stringify(session));
-    try {
-      localStorage.setItem(KEY, JSON.stringify(session));
-    } catch {
-      /* kvota/private rejim — faqat shu tabda qoladi */
-    }
   }
 
   function clearSession() {
     sessionStorage.removeItem(KEY);
-    try {
-      localStorage.removeItem(KEY);
-    } catch {
-      /* ignore */
-    }
+    try { localStorage.removeItem(KEY); } catch { /* eski persistent sessiya migratsiyasi */ }
   }
 
   // Bir tabda chiqilsa boshqa tablar ham sessiyani tashlasin (localStorage `storage`
@@ -189,13 +161,22 @@ const AssetFlowAuth = (() => {
     }
   }
 
-  function logout(redirect = true) {
-    // #76 (W3) — server tomonda ham bekor qilamiz (tokenVersion++), aks holda nusxa
-    // ko'chirilgan JWT chiqishdan keyin ham 30 kun ishlayverardi. Kutmaymiz.
+  async function logout(redirect = true) {
+    // Server revoke tugashini qisqa muddat kutamiz; navigatsiya requestni bekor qilib,
+    // o'g'irlangan JWT'ni tirik qoldirmasin.
+    let revoke = null;
     try {
-      if (typeof StudioApi !== "undefined" && StudioApi.logoutServer) StudioApi.logoutServer().catch(() => {});
-    } catch (e) { /* chiqish hech qachon to'silmasin */ }
+      if (typeof StudioApi !== "undefined" && StudioApi.logoutServer) {
+        // Promise yaratilishi request headeriga joriy tokenni darhol oladi.
+        revoke = StudioApi.logoutServer();
+      }
+    } catch (e) { /* lokal sessiya baribir tozalanadi */ }
     clearSession();
+    if (revoke) {
+      try {
+        await Promise.race([revoke, new Promise((resolve) => setTimeout(resolve, 3000))]);
+      } catch (e) { /* lokal sessiya allaqachon tozalangan */ }
+    }
     localStorage.removeItem("af_remember_email");
     localStorage.removeItem("af_remember_session");
     if (redirect) location.href = loginUrl();

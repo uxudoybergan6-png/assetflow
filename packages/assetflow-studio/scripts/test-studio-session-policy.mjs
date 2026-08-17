@@ -127,17 +127,19 @@ const initialSession = {
 };
 harness.setSession(initialSession);
 
-assert.equal(harness.getSession()?.apiToken, "web-token", "Web can store session in sessionStorage/localStorage layer");
+assert.equal(harness.getSession()?.apiToken, "web-token", "Web stores the session in sessionStorage");
+assert.equal(harness.localStorage.getItem("af_session"), null, "JWT is never persisted in localStorage");
 
-// Browser restart should keep session from localStorage (12h hard expiry gate removed).
+// Browser restart/new tab must not restore a bearer token from persistent storage.
 harness.sessionStorage.removeItem("af_session");
 const resumed = createStudioHarness();
 resumed.localStorage.setItem("af_session", JSON.stringify(initialSession));
 assert.equal(
-  resumed.getSession()?.apiToken,
-  "web-token",
-  "Local session survives reload/restart because localStorage copy is preserved"
+  resumed.getSession(),
+  null,
+  "Persistent legacy JWT is ignored"
 );
+resumed.setSession(initialSession);
 
 // Non-auth 401/403 must not clear browser session.
 resumed.setQueue([fakeResponse(401, { code: "LIMIT_REACHED", error: "locked" })]);
@@ -170,7 +172,7 @@ logoutHarness.setQueue([new Error("server down")]);
 await logoutHarness.auth.logout(false);
 assert.equal(logoutHarness.getSession(), null, "Web logout clears session locally despite server failure");
 
-// A very old persisted browser session should still load (no client 12h gate remains).
+// A very old persistent browser session is ignored; server-backed session is tab-scoped.
 const staleSession = {
   role: "user",
   email: "old@assetflow.uz",
@@ -181,6 +183,6 @@ const staleSession = {
 };
 const staleHarness = createStudioHarness();
 staleHarness.localStorage.setItem("af_session", JSON.stringify(staleSession));
-assert.equal(staleHarness.getSession()?.apiToken, "old-token", "Stale local session still restored when server token still valid");
+assert.equal(staleHarness.getSession(), null, "Stale localStorage JWT is not restored");
 
 console.log("Web session policy checks passed.");

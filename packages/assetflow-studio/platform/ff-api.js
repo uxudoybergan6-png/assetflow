@@ -218,6 +218,7 @@
 
     // Billing (Lemon Squeezy — MoR). body: { plan: "pro"|"studio" } yoki { credits: 500 }
     checkout: function (body) { return req("/api/billing/checkout", { method: "POST", body: body }); },
+    billingPortal: function () { return req("/api/billing/portal", { method: "POST" }); },
 
     // FAZA 1c — GDPR: o'z ma'lumotini eksport / hisobni o'chirish
     // #76 (W3) — server tomonda sessiyani bekor qilish (tokenVersion++). Klient

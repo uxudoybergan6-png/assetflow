@@ -229,7 +229,7 @@ async function falDownload(url: string): Promise<OrResult<Buffer>> {
   try {
     const res = await fetch(url);
     if (!res.ok) return { ok: false, error: `fal download HTTP ${res.status}`, status: res.status };
-    const buf = Buffer.from(await res.arrayBuffer());
+    const buf = await readCappedResponse(res);
     return buf.length ? { ok: true, data: buf } : { ok: false, error: "fal: empty result" };
   } catch (e) {
     return { ok: false, error: (e as Error).message || "fal download error" };
@@ -491,3 +491,4 @@ export async function falEnhancePrompt(
   if (!out) return { ok: false, error: "fal: empty response" };
   return { ok: true, data: out };
 }
+import { readCappedResponse } from "./capped-download.js";

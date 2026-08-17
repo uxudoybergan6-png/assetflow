@@ -9,6 +9,7 @@ import {
   findSubscriptionVariant,
   findCreditVariant,
   createCheckout,
+  getLemonSqueezyCustomerPortalUrl,
 } from "../lib/lemonsqueezy.js";
 
 /**
@@ -18,6 +19,28 @@ import {
  * lekin app endi shu yo'ldan o'tadi.
  */
 export const billingRouter = Router();
+
+billingRouter.post("/portal", requireAuth, async (req, res) => {
+  if (!isLemonSqueezyConfigured()) {
+    res.status(503).json({ error: "Billing is not configured yet", code: "BILLING_NOT_CONFIGURED" });
+    return;
+  }
+  const subscription = await prisma.subscription.findUnique({
+    where: { userId: req.user!.userId },
+    select: { provider: true, lsSubscriptionId: true },
+  });
+  if (!subscription?.lsSubscriptionId || subscription.provider !== "lemonsqueezy") {
+    res.status(404).json({ error: "No Lemon Squeezy subscription was found", code: "SUBSCRIPTION_NOT_FOUND" });
+    return;
+  }
+  try {
+    const url = await getLemonSqueezyCustomerPortalUrl(subscription.lsSubscriptionId);
+    res.json({ url });
+  } catch (err) {
+    console.error("[billing/portal]", err instanceof Error ? err.message : "Unknown error");
+    res.status(502).json({ error: "Could not open subscription management", code: "PORTAL_FAILED" });
+  }
+});
 
 const checkoutSchema = z
   .object({

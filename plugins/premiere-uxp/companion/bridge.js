@@ -3,7 +3,7 @@
   "use strict";
 
   var fs = null, os = null, uxp = null;
-  var timer = 0, activeId = "", secret = "";
+  var timer = 0, active = {};
   var PROTOCOL = 1;
   try { fs = require("fs"); os = require("os"); uxp = require("uxp"); } catch (e) {}
 
@@ -30,31 +30,37 @@
 
   async function tick() {
     if (!fs || !os || typeof root.__ffHostDispatch !== "function") return;
-    var dir = mailboxRoot();
-    var descriptor = readJson(join(dir, "bridge.json"));
-    if (!descriptor || descriptor.protocol !== PROTOCOL || !/^[a-f0-9]{64}$/.test(String(descriptor.secret || ""))) return;
-    if (secret !== descriptor.secret) {
-      secret = descriptor.secret;
-      activeId = "";
-      try { writeJson(join(dir, "ready.json"), { protocol: PROTOCOL, secret: secret, readyAt: Date.now() }); } catch (e) { return; }
+    var rootDir = mailboxRoot(), names = [];
+    try { names = fs.readdirSync(rootDir); } catch (e) { return; }
+    for (var i = 0; i < names.length; i++) {
+      var name = String(names[i] || "");
+      if (!/^session-[a-f0-9]{32}$/.test(name)) continue;
+      var session = name.slice(8), dir = join(rootDir, name);
+      var descriptor = readJson(join(dir, "bridge.json"));
+      if (!descriptor || descriptor.protocol !== PROTOCOL || descriptor.session !== session || !/^[a-f0-9]{64}$/.test(String(descriptor.secret || ""))) continue;
+      try { writeJson(join(dir, "ready.json"), { protocol: PROTOCOL, session: session, secret: descriptor.secret, readyAt: Date.now() }); } catch (e) { continue; }
+      var request = readJson(join(dir, "request.json"));
+      if (!request || request.protocol !== PROTOCOL || request.session !== session || request.secret !== descriptor.secret || request.id === active[session]) continue;
+      if (!/^[a-z0-9-]{6,80}$/i.test(String(request.id || ""))) continue;
+      if (typeof request.script !== "string" || request.script.length > 262144) continue;
+      var now = Date.now();
+      if (!Number(request.createdAt) || !Number(request.deadlineAt) || request.createdAt > now + 5000 || request.deadlineAt < now || request.deadlineAt > now + 200000) continue;
+      if (Number(request.pid) !== Number(descriptor.pid)) continue;
+      active[session] = request.id;
+      var result;
+      try { result = await root.__ffHostDispatch(request.script); }
+      catch (e) { result = JSON.stringify({ ok: false, reason: String((e && e.message) || e) }); }
+      try {
+        writeJson(join(dir, "response.json"), {
+          protocol: PROTOCOL,
+          session: session,
+          id: request.id,
+          secret: descriptor.secret,
+          result: String(result == null ? "" : result),
+          finishedAt: Date.now(),
+        });
+      } catch (e) {}
     }
-    var request = readJson(join(dir, "request.json"));
-    if (!request || request.protocol !== PROTOCOL || request.secret !== secret || request.id === activeId) return;
-    if (!/^[a-z0-9-]{6,80}$/i.test(String(request.id || ""))) return;
-    if (typeof request.script !== "string" || request.script.length > 262144) return;
-    activeId = request.id;
-    var result;
-    try { result = await root.__ffHostDispatch(request.script); }
-    catch (e) { result = JSON.stringify({ ok: false, reason: String((e && e.message) || e) }); }
-    try {
-      writeJson(join(dir, "response.json"), {
-        protocol: PROTOCOL,
-        id: request.id,
-        secret: secret,
-        result: String(result == null ? "" : result),
-        finishedAt: Date.now(),
-      });
-    } catch (e) {}
   }
 
   function start() {

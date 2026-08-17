@@ -155,6 +155,7 @@ type TemplateRow = {
   metaJson?: unknown;
   fileName: string | null;
   fileSize: number | null;
+  packHash: string | null;
   isPro: boolean;
   contributor: { name: string | null; email: string } | null;
   createdAt: Date;
@@ -288,6 +289,7 @@ function cardBase(t: TemplateRow, a: Awaited<ReturnType<typeof resolveCatalogAss
     type: t.templateType ?? "video-templates",
     fileName: a.fileName,
     fileSize: a.hasPack ? t.fileSize : null,
+    packSha256: a.hasPack && /^[0-9a-f]{64}$/i.test(t.packHash || "") ? t.packHash!.toLowerCase() : null,
     hasThumb: a.hasThumb,
     hasPreview: a.hasPreview,
     hasPack: a.hasPack,

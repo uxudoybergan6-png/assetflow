@@ -2749,18 +2749,18 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 /* SC_36 (rule 2): "Use ▾" hover/focus'да ochiladi — audio karta ham (ilgari doim ko'rinardi). */
 .recentgrid .rc .racts{position:absolute;top:5px;right:5px;display:flex;gap:4px;opacity:0;transition:opacity .12s;z-index:3}
 .recentgrid .rc:hover .racts,.recentgrid .rc:focus .racts,.recentgrid .rc:focus-within .racts{opacity:1}
-.recentgrid .rc .racts b.useb{width:auto;height:25px;padding:0 10px;border-radius:999px;background:var(--accent);border:0;color:var(--on-accent);display:grid;place-items:center;cursor:pointer;font:700 9.5px/1 var(--font-sans);white-space:nowrap}
-.recentgrid .rc .racts b.useb:hover{filter:brightness(1.07)}
+.recentgrid .rc .racts button.useb{width:auto;height:25px;padding:0 10px;border-radius:999px;background:var(--accent);border:0;color:var(--on-accent);display:grid;place-items:center;cursor:pointer;font:700 9.5px/1 var(--font-sans);white-space:nowrap}
+.recentgrid .rc .racts button.useb:hover{filter:brightness(1.07)}
 /* Umumiy langar menyu */
 .af-usemenu{position:fixed;z-index:900;width:210px;overflow:auto;border-radius:12px;background:var(--surface-2,#17181c);border:1px solid var(--border,rgba(255,255,255,.1));box-shadow:0 22px 54px rgba(0,0,0,.6);padding:5px}
-.af-usemi{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:var(--text,#eee);font-size:11.5px;font-weight:600;cursor:pointer}
+.af-usemi{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--text,#eee);font:600 11.5px/1.2 var(--font-sans);text-align:left;cursor:pointer}
 .af-usemi:hover{background:rgba(255,255,255,.07)}
 .af-usemi .mic{width:16px;display:flex;justify-content:center;color:var(--muted,#999)}
 .af-usemi.danger{color:#FF9A8E}
 .af-usemi.danger .mic{color:#FF9A8E}
 /* P2 — karta amal ikonlariga ANIQ hover-label (title'dan; ikonka nima qilishi darhol ko'rinadi) */
-.recentgrid .rc .racts b{position:relative}
-.recentgrid .rc .racts b:hover::after{content:attr(title);position:absolute;top:calc(100% + 5px);right:0;background:#0c1017;border:1px solid rgba(255,255,255,.14);color:#e7ecf3;font-size:9.5px;font-weight:600;line-height:1;padding:5px 8px;border-radius:7px;white-space:nowrap;z-index:30;pointer-events:none;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.recentgrid .rc .racts button{position:relative}
+.recentgrid .rc .racts button:hover::after{content:attr(title);position:absolute;top:calc(100% + 5px);right:0;background:#0c1017;border:1px solid rgba(255,255,255,.14);color:#e7ecf3;font-size:9.5px;font-weight:600;line-height:1;padding:5px 8px;border-radius:7px;white-space:nowrap;z-index:30;pointer-events:none;max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .recentgrid .rc .rcb{position:absolute;top:5px;left:5px;width:25px;height:25px;border-radius:7px;background:rgba(0,0,0,.6);border:1px solid var(--line2);display:grid;place-items:center;cursor:pointer;z-index:4;color:transparent}
 .recentgrid .rc.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
 .recentgrid .rc.sel .rcb{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
@@ -2783,7 +2783,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 #afLightbox .lbcount{font-family:var(--font-mono);font-size:10px;color:var(--muted)}
 #afLightbox .lbsp{flex:1}
 #afLightbox .lbesc{font-family:var(--font-mono);font-size:8.5px;color:var(--muted-2);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:2px 6px}
-#afLightbox .lx{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer}
+#afLightbox .lx{width:30px;height:30px;padding:0;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;font:inherit}
 #afLightbox .lx:hover{border-color:rgba(255,255,255,.2)}
 /* SC_44: qora void o'rniga surface token + karta thumbnail'i backdrop (instant); to'liq media decode'da kirib keladi */
 #afLightbox .lbmedia{position:relative;border-radius:12px;overflow:hidden;background:var(--card,#12161E) center/contain no-repeat;flex:1 1 auto;min-height:120px;display:flex;align-items:center;justify-content:center}
@@ -2792,7 +2792,7 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 #afLightbox img.lb-fadein,#afLightbox video.lb-fadein{opacity:0}
 #afLightbox .lbplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:rgba(19,22,28,.72);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;z-index:3}
 #afLightbox .lbnav{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;padding:0 8px;pointer-events:none;z-index:3}
-#afLightbox .lbnavb{width:28px;height:28px;border-radius:50%;background:rgba(8,10,14,.62);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;pointer-events:auto}
+#afLightbox .lbnavb{width:28px;height:28px;padding:0;border-radius:50%;background:rgba(8,10,14,.62);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;pointer-events:auto;font:inherit}
 #afLightbox .lbnavb:hover{border-color:rgba(255,255,255,.3)}
 #afLightbox .lbnavb.off{opacity:.3;pointer-events:none}
 #afLightbox .lbscrub{display:none;align-items:center;gap:8px;margin-top:10px;flex:none;width:100%;max-width:560px;margin-left:auto;margin-right:auto}
@@ -2809,10 +2809,10 @@ html.cep-mode #aiPage{padding:14px 12px 28px}
 #afLightbox .lbchips{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
 #afLightbox .lbchips span{font-family:var(--font-mono);font-size:8.5px;color:var(--muted);padding:3px 8px;border-radius:99px;background:rgba(255,255,255,.05)}
 #afLightbox .lbacts{display:flex;gap:8px;margin-top:12px;flex:none;width:100%;max-width:560px;margin-left:auto;margin-right:auto}
-#afLightbox .lbimp{flex:1;height:42px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;gap:7px;color:var(--on-accent);font-weight:700;font-size:12.5px;cursor:pointer}
+#afLightbox .lbimp{flex:1;height:42px;padding:0;border:0;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;gap:7px;color:var(--on-accent);font:700 12.5px/1 var(--font-sans);cursor:pointer}
 #afLightbox .lbimp:hover{background:var(--accent-hi)}
 #afLightbox .lbimp svg{width:14px;height:14px}
-#afLightbox .lbico{width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex:none}
+#afLightbox .lbico{width:42px;height:42px;padding:0;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:var(--text);cursor:pointer;flex:none;font:inherit}
 /* D6 — qadalgan holat (pin yoqilgan) */
 #afLightbox .lbico.on{background:var(--acc);border-color:transparent;color:var(--acc-ink)}
 #afLightbox .lbico:hover{border-color:rgba(255,255,255,.2)}
@@ -4245,6 +4245,8 @@ html.cep-mode .af-topbar{height:44px}
                   <option value="motion">Motion Graphics</option>
                   <option value="graphics">Graphics</option>
                   <option value="luts">LUTs</option>
+                  <option value="music">Music</option>
+                  <option value="sfx">Sound Effects</option>
                   <option value="ai">AI Tools</option>
                 </select>
               </div>
@@ -5045,6 +5047,7 @@ html.cep-mode .af-topbar{height:44px}
                         <!-- b11: preferenslar (real mavjud sozlamalar) -->
                         <div class="set-seck">PREFERENCES</div>
                         <div class="set-prefrow">Default import <span style="margin-left:auto;display:flex;gap:5px"><span class="cchip" id="impComp" data-imp="comp">Comp</span><span class="cchip" id="impBin" data-imp="bin">Bin</span></span></div>
+                        <div class="set-prefrow">Plugin version <span style="margin-left:auto;display:flex;align-items:center;gap:7px"><span id="afSettingsVersion">—</span><button type="button" class="cchip" onclick="window.afCheckForUpdate&&window.afCheckForUpdate()">Check for updates</button></span></div>
                         <!-- #101 (PX3): "Auto-load (Project selection)" qatori OLIB TASHLANDI — u
                              butunlay dekorativ edi (hech qanday holatga ulanmagan, saqlanmasdi,
                              hech narsani o'zgartirmasdi). Loyiha panelidan referens olish QO'LDA:
@@ -5220,7 +5223,7 @@ html.cep-mode .af-topbar{height:44px}
           <button type="button" class="lg-eye" aria-label="Show password" onclick="var p=document.getElementById('accPass');p.type=p.type==='password'?'text':'password'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
         </div>
         <button type="button" class="lg-google" onclick="accountLogin()">Sign in with email</button>
-        <button type="button" class="lg-forgot" onclick="showToast('Password reset — sign in to your account in the browser')">Forgot password?</button>
+        <button type="button" class="lg-forgot" onclick="AssetFlowAccount.openExternal('https://getframeflow.app/#auth');showToast('Choose Forgot password in the browser','info')">Forgot password?</button>
       </details>
     </div>
 
@@ -6033,6 +6036,55 @@ function hostEvalGuarded(script,opts){
   });
 }
 
+async function reserveImportForHost(pack){
+  if(!pack?.serverTemplateId||typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return {ok:true,id:''};
+  try{
+    const id=await Promise.race([
+      AssetFlowAccount.reserveImport(pack.serverTemplateId),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Import quota check timed out')),10000))
+    ]);
+    if(!id)throw new Error('Import quota reservation was not created');
+    if(typeof refreshAccountUi==='function')refreshAccountUi();
+    return {ok:true,id};
+  }catch(e){
+    hideProgress();
+    if(e&&(e.status===403||e.code==='LIMIT_REACHED')){
+      openLimitSheet('import');
+      return {ok:false,result:'limit'};
+    }
+    showToast('Import quota could not be verified. Check your connection and try again.','error');
+    return {ok:false,result:''};
+  }
+}
+
+async function settleImportForHost(reservationId,success){
+  if(!reservationId||typeof AssetFlowAccount==='undefined')return true;
+  if(!success){
+    await AssetFlowAccount.cancelImport(reservationId);
+    if(typeof refreshAccountUi==='function')refreshAccountUi();
+    return true;
+  }
+  let lastError=null;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      await AssetFlowAccount.commitImport(reservationId);
+      if(typeof refreshAccountUi==='function')refreshAccountUi();
+      return true;
+    }catch(e){
+      lastError=e;
+      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+    }
+  }
+  console.warn('Import reservation commit failed',lastError);
+  showToast('Imported successfully, but usage sync is pending. Keep FrameFlow online and try Sync.','warning');
+  return false;
+}
+
+function hostImportSucceeded(raw){
+  if(!raw)return false;
+  try{return JSON.parse(raw)?.ok===true;}catch(e){return /^ok(?:\b|:)/i.test(String(raw).trim());}
+}
+
 async function importPackFileToAE(pack){
   if(!IS_CEP||!csInterface)return '';
   let importPath='';
@@ -6087,27 +6139,11 @@ async function importPackFileToAE(pack){
     showProgress(0,'Preparing…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
-  // Import limitini AE import qilishdan OLDIN majburlash (kesh'langan qayta-import
-  // ham shu nuqtadan o'tadi). 403 — limit tugadi: import qilinmaydi.
-  if(pack?.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
-    try{
-      const usageRequest=AssetFlowAccount.recordImport(pack.serverTemplateId);
-      await (window.__FF_UXP_RUNTIME
-        ? Promise.race([
-            usageRequest,
-            new Promise((_,reject)=>setTimeout(()=>reject(new Error('Import usage request timed out')),10000))
-          ])
-        : usageRequest);
-      if(typeof refreshAccountUi==='function') refreshAccountUi();
-    }catch(usageErr){
-      if(usageErr&&usageErr.status===403){
-        hideProgress();
-        openLimitSheet('import');   // P21: Free oylik IMPORT limiti tugadi — import sheet (download emas)
-        return 'limit';
-      }
-      // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
-    }
-  }
+  // Kvota host importidan oldin rezerv qilinadi; faqat host muvaffaqiyatidan keyin
+  // commit bo'ladi. Tarmoq xatosida fail-closed — limitni chetlab o'tib bo'lmaydi.
+  const importReservation=await reserveImportForHost(pack);
+  if(!importReservation.ok)return importReservation.result;
+  const reservationId=importReservation.id;
   // P35 — footage-to'plami (zip ichida .aep/.mogrt yo'q, faqat kliplar): host
   // importFootageBundle bilan hammasini shablon nomidagi bin'ga FOOTAGE import.
   // recordImport allaqachon YUQORIDA bitta marta chaqirildi — bu yerda EMAS.
@@ -6119,11 +6155,13 @@ async function importPackFileToAE(pack){
     hideProgress();
     let br=null;try{br=bundleRaw?JSON.parse(bundleRaw):null;}catch(e){br=null;}
     if(br&&br.ok){
+      await settleImportForHost(reservationId,true);
       const n=br.imported||bundleFiles.length;
       window.__afLastImportMeta=br;
       showToast('Imported '+n+' item'+(n===1?'':'s')+' into "'+(br.folder||bundleLabel)+'"'+(br.failed?(' — '+br.failed+' skipped'):''),'success');
       return 'bundle:ok';
     }
+    await settleImportForHost(reservationId,false);
     showToast('Import error: '+((br&&(br.reason||br.message))||(bundleRaw?String(bundleRaw):'no result')),'error');
     return '';
   }
@@ -6132,8 +6170,14 @@ async function importPackFileToAE(pack){
   const mediaKind=packMediaKind(pack);
   // P5.2 — LUT: AE footage sifatida import qilib bo'lmaydi → faylni OS'da ko'rsatamiz + ko'rsatma.
   if(mediaKind==='lut'){
-    await hostEvalGuarded(`revealFileInOS(${JSON.stringify(importPath)})`,{label:'Revealing file',hardMs:30000});
+    const revealRaw=await hostEvalGuarded(`revealFileInOS(${JSON.stringify(importPath)})`,{label:'Revealing file',hardMs:30000});
     hideProgress();
+    if(!hostImportSucceeded(revealRaw)){
+      await settleImportForHost(reservationId,false);
+      showToast('Could not reveal the LUT file.','error');
+      return '';
+    }
+    await settleImportForHost(reservationId,true);
     showToast('LUT downloaded and revealed in your file browser. Apply it via Lumetri Color → Creative → Look, or the “Apply Color LUT” effect.','info');
     return 'lut:downloaded';
   }
@@ -6144,21 +6188,25 @@ async function importPackFileToAE(pack){
     hideProgress();
     let mr=null;try{mr=mediaRaw?JSON.parse(mediaRaw):null;}catch(e){mr=(String(mediaRaw).indexOf('ok')===0)?{ok:true}:null;}
     if(mr&&mr.ok){
+      await settleImportForHost(reservationId,true);
       window.__afLastImportMeta=mr;
       showToast(mr.addedToComp?('Imported — added to '+(mr.compName?('"'+mr.compName+'" '):'')+(AF_IS_PREMIERE?'timeline':'composition')):'Imported to '+AF_HOST_LABEL+' (Project panel)','success');
       return 'media:ok';
     }
     if(AF_IS_PREMIERE&&mr&&mr.partial){
+      await settleImportForHost(reservationId,true);
       window.__afLastImportMeta=mr;
       showToast('Imported to the Premiere Project panel, but not added to the Timeline: '+(mr.reason||mr.message||'open an active sequence and try again'),'warning');
       return 'media:partial';
     }
+    await settleImportForHost(reservationId,false);
     showToast('Import error: '+((mr&&(mr.reason||mr.message))||(mediaRaw?String(mediaRaw):'no result')),'error');
     return '';
   }
   // Default — .aep/.mogrt loyiha (video-templates). #97: hang-guard bilan.
   const projRaw=await hostEvalGuarded(`importTemplateProject(${JSON.stringify(JSON.stringify({filePath:importPath,packLabel}))})`,{label:'Importing template'});
   hideProgress();
+  await settleImportForHost(reservationId,hostImportSucceeded(projRaw));
   return projRaw||'';
 }
 
@@ -6201,21 +6249,9 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     showProgress(0,'Preparing…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
-  // Import limitini AE import qilishdan OLDIN majburlash (kesh'langan/extract
-  // qilingan qayta-import ham shu nuqtadan o'tadi). 403 — limit tugadi.
-  if(pack?.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
-    try{
-      await AssetFlowAccount.recordImport(pack.serverTemplateId);
-      if(typeof refreshAccountUi==='function') refreshAccountUi();
-    }catch(usageErr){
-      if(usageErr&&usageErr.status===403){
-        hideProgress();
-        openLimitSheet('import');   // P21: Free oylik IMPORT limiti tugadi — import sheet (download emas)
-        return 'limit';
-      }
-      // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
-    }
-  }
+  const importReservation=await reserveImportForHost(pack);
+  if(!importReservation.ok)return importReservation.result;
+  const reservationId=importReservation.id;
   // Yuklab olindi — endi host import fazasi (sinxron, vaqt olishi mumkin)
   showProgress(100,'Importing into '+AF_HOST_LABEL+'…',true);
   const compName=(scene?.aeComp||'').trim()||(scene?.n||'').trim();
@@ -6247,7 +6283,9 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
   });
   // #97 (PL-e): umumiy hang-guard — 15s dan keyin «bekor qilish», 180s da o'zi settle.
   // (Ilgari 30s qattiq timeout edi — katta .aep import'ida noto'g'ri "timeout" berardi.)
-  return await hostEvalGuarded(`importSingleSceneFromAep(${JSON.stringify(cfg)})`,{label:'Importing scene'});
+  const sceneRaw=await hostEvalGuarded(`importSingleSceneFromAep(${JSON.stringify(cfg)})`,{label:'Importing scene'});
+  await settleImportForHost(reservationId,hostImportSucceeded(sceneRaw));
+  return sceneRaw;
 }
 let featuredDismissedByNav={};
 let currentNav='video', currentPage='assets', currentSub='all', currentOrient='all', currentRes='all', currentSearch='', currentSort='relevant';
@@ -6359,7 +6397,7 @@ function renderCard(a,i,showDl){
   // SC_14: subtitr — FAQAT kategoriya (contributor nomi kartada ko'rsatilmaydi;
   // detail view'dagi muallif ma'lumoti tegilmagan).
   const subLine=a.t?escHtml(String(a.t)):'';
-  const dlBtn=showDl?`<button class="ck-del" title="Remove from project" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</button>`:'';
+  const dlBtn=showDl?`<button class="ck-del" title="${AF_IS_PREMIERE?'Clear download record':'Remove from project'}" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</button>`:'';
   // SC_14: per-karta Import/Re-import tugmasi O'CHIRILDI — karta bosilishi detail'ni ochadi,
   // import/download detail'ning o'z tugmasida (pd3ImportAll — gated oqim o'zgarmagan).
   // "Downloaded" holati thumb ustidagi ✓ badge'da qoladi (stBadge).
@@ -7591,10 +7629,13 @@ async function deleteDownloadedTemplate(key){
   const pack=packs[key];
   const meta=window.downloadedMeta[key]||{folders:[],comps:[],folderIds:[],compIds:[],itemIds:[],timelineItemIds:[]};
   const name=(pack&&pack.displayName)||meta.displayName||key;
-  if(!(await window.afConfirm('Remove "'+name+'" from your project?\nOnly FrameFlow items recorded by stable IDs will be removed from '+(AF_IS_PREMIERE?'the Premiere Project panel and Timeline.':'the After Effects Project panel and compositions.'),{ok:"Remove",danger:true})))return;
+  const removePrompt=AF_IS_PREMIERE
+    ? 'Clear the FrameFlow download record and cached files for "'+name+'"?\nItems already imported into Premiere will stay in the Project panel and Timeline.'
+    : 'Remove "'+name+'" from your project?\nOnly FrameFlow items recorded by stable IDs will be removed from the After Effects Project panel and compositions.';
+  if(!(await window.afConfirm(removePrompt,{ok:AF_IS_PREMIERE?'Clear':'Remove',danger:true})))return;
 
   // 1) AE loyihasidan olib tashlash (CEP)
-  if(IS_CEP&&csInterface){
+  if(IS_CEP&&csInterface&&!AF_IS_PREMIERE){
     const folders=[];
     const comps=[];
     // #30 (PL-c): yangi importlarda ID bor — host aynan shu elementni o'chiradi.
@@ -7639,6 +7680,8 @@ async function deleteDownloadedTemplate(key){
       }catch(e){ cacheFails++; }
       if(cacheFails>0) showToast('Some cache files could not be removed ('+cacheFails+') — please try again later','warning');
     }
+  }else if(AF_IS_PREMIERE){
+    showToast('Download record cleared. Imported Premiere items were left untouched.','info');
   }else{
     showToast('"'+name+'" removed from the list');
   }
@@ -8142,7 +8185,7 @@ function afLibDlRow(a){
   return `<div class="lib-row"${a._orphan?'':` onclick="openPack('${safe}')" title="Open template" style="cursor:pointer"`}>
     <div class="lib-rthumb" style="background:${escHtml(a.bg||'')}"><span class="lib-rck">✓</span></div>
     <div class="lib-rmid"><div class="lib-rname">${escHtml(a.displayName||a.n)}</div><div class="lib-rmeta">${escHtml(afLibDlMeta(a))}</div></div>
-    <button type="button" class="lib-rtrash" title="Remove from project" onclick="event.stopPropagation();deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</button>
+    <button type="button" class="lib-rtrash" title="${AF_IS_PREMIERE?'Clear download record':'Remove from project'}" onclick="event.stopPropagation();deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</button>
   </div>`;
 }
 function afLibSyncCounts(){
@@ -9022,7 +9065,13 @@ function afCmsApply(){
     }
     // SC_60: guest ekran qo'shimcha matnlari
     afCmsSetText('#homeGuest .sec .kick',g.peekKicker);
-    afCmsSetText('#homeGuest .gu-mk',g.registerNote);
+    var regNote=document.querySelector('#homeGuest .gu-mk');
+    if(regNote&&g.registerNote){
+      var link=regNote.querySelector('a');
+      Array.prototype.slice.call(regNote.childNodes).forEach(function(n){if(n!==link)regNote.removeChild(n);});
+      regNote.insertBefore(document.createTextNode(String(g.registerNote)+' '),link||null);
+      if(link&&!link.parentNode)regNote.appendChild(link);
+    }
     // AI launcher kartalari (title/desc/media override) — render AI IIFE ichida o'qiydi
     window.__afCmsAiCards=(c.aiLauncher&&c.aiLauncher.cards)||null;
     if(typeof window.__afAiRenderCatGrid==='function')window.__afAiRenderCatGrid();
@@ -9056,11 +9105,11 @@ function afCmsAnnounce(a){
   else if(a.tone==='warn')bar.classList.add('tone-warn');
   var t=document.getElementById('afAnnounceText'); if(t)t.textContent=a.text;
   var cta=document.getElementById('afAnnounceCta');
-  var ACT={aistudio:'afSegAi',catalog:'afSegKatalog',home:'afSegHome',account:'afSegHome'};
+  var ACT={aistudio:'afSegAi',catalog:'afSegKatalog',home:'afSegHome'};
   if(cta){
     if(a.ctaLabel&&a.ctaAction&&ACT[a.ctaAction]){
       cta.hidden=false; cta.textContent=a.ctaLabel;
-      cta.onclick=function(){ try{ var b=document.getElementById(ACT[a.ctaAction]); if(b)b.click(); }catch(e){} };
+      cta.onclick=function(){ try{ if(a.ctaAction==='account'&&typeof openAccountSheet==='function'){openAccountSheet();return;} var b=document.getElementById(ACT[a.ctaAction]); if(b)b.click(); }catch(e){} };
     }else{ cta.hidden=true; cta.onclick=null; }
   }
   var x=document.getElementById('afAnnounceX');
@@ -9969,7 +10018,7 @@ window.afPlanChipHTML=function(){
   var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
   if(!u)return '';
   var pro=u.plan==='pro';
-  return ' <span class="hd-plan'+(pro?'':' free')+'" data-hdplan>'+String(u.planLabel||(pro?'Pro':'Free')).toUpperCase()+'</span>';
+  return ' <span class="hd-plan'+(pro?'':' free')+'" data-hdplan>'+escHtml(String(u.planLabel||(pro?'Pro':'Free')).toUpperCase())+'</span>';
 };
 
 function onEnvScopeChange(sel){
@@ -10004,19 +10053,21 @@ function afUuid(){
  *  holat serverdan). Yozuv tugagach o'chiriladi; 6 soatdan eski yozuv o'z-o'zidan tushadi. */
 var afJobStore=(function(){
   var KEY='af_active_jobs',MAX=20,TTL=6*60*60*1000;
+  function uid(){try{var u=AssetFlowAccount&&AssetFlowAccount.getCachedUser&&AssetFlowAccount.getCachedUser();return u&&u.id?String(u.id):'';}catch(e){return '';}}
   function read(){ try{ var raw=localStorage.getItem(KEY); var a=raw?JSON.parse(raw):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
   function write(rows){ try{ localStorage.setItem(KEY,JSON.stringify(rows.slice(0,MAX))); }catch(e){} }
   function prune(rows){ var cut=Date.now()-TTL; return rows.filter(function(r){ return r&&r.jobId&&(r.ts||0)>cut; }); }
   return {
     add:function(tool,rec){
       if(!rec||!rec.jobId)return;
+      var user=uid();if(!user)return;
       var rows=prune(read()).filter(function(r){ return r.jobId!==rec.jobId; });
       rows.unshift({tool:tool,jobId:rec.jobId,prompt:rec.prompt||'',cat:rec.cat||'image',cost:rec.cost||0,
-                    mode:rec.mode||rec.cat||null,sid:rec.sid||null,modelId:rec.modelId||null,params:rec.params||null,ts:Date.now()});
+                    mode:rec.mode||rec.cat||null,sid:rec.sid||null,modelId:rec.modelId||null,params:rec.params||null,user:user,ts:Date.now()});
       write(rows);
     },
     remove:function(jobId){ if(jobId)write(prune(read()).filter(function(r){ return r.jobId!==jobId; })); },
-    list:function(tool){ var rows=prune(read()); write(rows); return tool?rows.filter(function(r){ return r.tool===tool; }):rows; },
+    list:function(tool){ var user=uid(),rows=prune(read()); write(rows); if(!user)return [];rows=rows.filter(function(r){return r.user===user;});return tool?rows.filter(function(r){ return r.tool===tool; }):rows; },
     clear:function(){ write([]); }
   };
 })();
@@ -10182,9 +10233,12 @@ async function aiImportMedia(url,kind,extRaw){
   if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Import only works inside an Adobe host','info');return;}
   try{
     if(typeof showToast==='function')showToast('Downloading…','info');
-    const ext='.'+((extRaw||(kind==='image'?'png':kind==='video'?'mp4':'mp3')).replace(/^\./,''));
+    const extCandidate=String(extRaw||(kind==='image'?'png':kind==='video'?'mp4':'mp3')).replace(/^\./,'').toLowerCase();
+    const allowedExt={image:['png','jpg','jpeg','webp'],video:['mp4','webm','mov'],audio:['mp3','wav','ogg','m4a']};
+    const ext='.'+((allowedExt[kind]||[]).indexOf(extCandidate)>=0?extCandidate:(kind==='image'?'png':kind==='video'?'mp4':'mp3'));
     const tmp=await aiDownloadToTemp(url,ext);
-    const raw=await new Promise(res=>afEvalScript('importMediaFromPath('+JSON.stringify(tmp)+')',r=>res(r||'')));
+    let target='comp';try{target=localStorage.getItem('af_default_import_target')||window.afImportTarget||'comp';}catch(e){target=window.afImportTarget||'comp';}
+    const raw=await new Promise(res=>afEvalScript('importMediaFromPath('+JSON.stringify(tmp)+','+(target==='bin'?'false':'true')+')',r=>res(r||'')));
     // host structured JSON {ok,addedToComp,compName,item} qaytaradi; eski "ok:" string'ga ham moslik
     let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=(String(raw).indexOf('ok')===0)?{ok:true}:null;}
     if(r&&r.ok){
@@ -10210,13 +10264,29 @@ function aiDownloadToTemp(url,ext){
       let dir=os.tmpdir();
       try{if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir){dir=AssetFlowCatalog.downloadDir()||dir;}}catch(e){}
       const dest=path.join(dir,'assetflow_ai_'+Date.now()+ext);
+      const cap=/\.(mp4|webm|mov)$/i.test(ext)?1024*1024*1024:128*1024*1024;
+      const verify=()=>{
+        const fd=fs.openSync(dest,'r'),head=Buffer.alloc(16);let n=0;try{n=fs.readSync(fd,head,0,16,0);}finally{fs.closeSync(fd);}
+        const hex=head.slice(0,n).toString('hex'),ascii=head.slice(0,n).toString('ascii');
+        const ok=/\.png$/i.test(ext)?hex.indexOf('89504e470d0a1a0a')===0:
+          /\.jpe?g$/i.test(ext)?hex.indexOf('ffd8ff')===0:
+          /\.webp$/i.test(ext)?ascii.slice(0,4)==='RIFF'&&ascii.slice(8,12)==='WEBP':
+          /\.(mp4|mov|m4a)$/i.test(ext)?ascii.slice(4,8)==='ftyp':
+          /\.webm$/i.test(ext)?hex.indexOf('1a45dfa3')===0:
+          /\.wav$/i.test(ext)?ascii.slice(0,4)==='RIFF'&&ascii.slice(8,12)==='WAVE':
+          /\.ogg$/i.test(ext)?ascii.slice(0,4)==='OggS':
+          /\.mp3$/i.test(ext)?(ascii.slice(0,3)==='ID3'||(head[0]===0xff&&(head[1]&0xe0)===0xe0)):false;
+        if(!ok){try{fs.rmSync(dest,{force:true});}catch(e){} throw new Error('Downloaded media type does not match the expected format');}
+        return dest;
+      };
       if(url.indexOf('data:')===0){
         const b64=url.slice(url.indexOf(',')+1);
-        fs.writeFileSync(dest,Buffer.from(b64,'base64'));
-        resolve(dest);return;
+        const decoded=Buffer.from(b64,'base64');if(decoded.length>cap)throw new Error('Media exceeds the import size limit');
+        fs.writeFileSync(dest,decoded);
+        resolve(verify());return;
       }
       if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadUrlToFile){
-        AssetFlowCatalog.downloadUrlToFile(url,dest,null,{}).then(()=>resolve(dest)).catch(reject);
+        AssetFlowCatalog.downloadUrlToFile(url,dest,null,{}, {httpsOnly:true,maxBytes:cap,timeoutMs:30000}).then(()=>resolve(verify())).catch(reject);
       }else{reject(new Error('Download module not available'));}
     }catch(e){reject(e);}
   });
@@ -10543,9 +10613,9 @@ function afUseMenuOpen(btn,items){
   afUseMenuClose();
   if(!btn||!btn.getBoundingClientRect||!items||!items.length)return;
   var r=btn.getBoundingClientRect(); if(!r.width&&!r.height)return;
-  var m=document.createElement('div'); m.className='af-usemenu';
+  var m=document.createElement('div'); m.className='af-usemenu'; m.setAttribute('role','menu');
   items.forEach(function(it){
-    var row=document.createElement('div'); row.className='af-usemi'+(it.danger?' danger':'');
+    var row=document.createElement('button'); row.type='button'; row.className='af-usemi'+(it.danger?' danger':''); row.setAttribute('role','menuitem');
     row.innerHTML='<span class="mic">'+(it.ic||'')+'</span><span class="ml"></span>';
     row.querySelector('.ml').textContent=it.label;
     row.addEventListener('click',function(e){ e.stopPropagation(); afUseMenuClose(); try{ it.fn(); }catch(err){} });
@@ -10559,6 +10629,7 @@ function afUseMenuOpen(btn,items){
   if(top+mh>vh-pad)top=r.top-mh-4;                       // yuqoriga flip
   if(top<pad)top=Math.max(pad,Math.min(r.bottom+4,vh-mh-pad)); // clamp — langar yaqin qoladi
   m.style.left=left+'px'; m.style.top=top+'px'; m.style.maxHeight=mh+'px';
+  var first=m.querySelector('.af-usemi'); if(first)first.focus();
   setTimeout(function(){
     document.addEventListener('click',afUseMenuClose,true);
     document.addEventListener('keydown',__afUseMenuEsc,true);
@@ -11866,27 +11937,10 @@ async function accountPickPlan(plan){
     showToast('Already on '+((plan==='pro')?'Pro':'Free'));
     return;
   }
-  // Pro tanlandi, lekin faol Stripe obunasi yo'q → checkout sahifasiga yuboramiz
-  if(plan==='pro' && u && !u.stripeSubscriptionActive){
-    await startProCheckout();
-    return;
-  }
-  setPlanButtonsBusy(true);
-  try{
-    const next=await AssetFlowAccount.setPlan(plan);
-    refreshAccountUi();
-    showToast('✓ '+(next?.planLabel||(plan==='pro'?'Pro':'Free'))+' is active');
-  }catch(e){
-    console.error('accountPickPlan',e);
-    // Backend "Stripe obunasi kerak" desa — checkout'ga o'tamiz
-    if(plan==='pro' && (e.status===403 || /stripe|obuna/i.test(e.message||''))){
-      await startProCheckout();
-    }else{
-      showToast(e.message||'Plan wasn’t changed');
-    }
-  }finally{
-    setPlanButtonsBusy(false);
-  }
+  // Faol pullik reja o'zgarishi/bekor qilinishi Lemon Squeezy portalida bajariladi.
+  if(u&&u.plan&&u.plan!=='free'){await manageBilling();return;}
+  if(plan==='pro'){await startProCheckout();return;}
+  showToast('Free is already active','info');
 }
 
 /** P8 — Pro obuna → Lemon Squeezy checkout (startCreditTopup naqshi). Eski Stripe
@@ -11952,10 +12006,13 @@ window.startCreditTopup=startCreditTopup;
 async function manageBilling(){
   try{
     const url=await AssetFlowAccount.requestBillingPortal();
-    if(url) AssetFlowAccount.openExternal(url);
-    else showToast('No billing account');
+    if(url){
+      if(!AssetFlowAccount.openExternal(url))showToast('Couldn’t open the browser — try again','error');
+    }else showToast('No billing account was found','info');
   }catch(e){
-    showToast(e.message||'Couldn’t open billing');
+    const code=(e&&(e.code||(e.data&&e.data.code)))||'';
+    if(code==='SUBSCRIPTION_NOT_FOUND')showToast('No active subscription was found','info');
+    else showToast('Couldn’t open subscription management — try again','error');
   }
 }
 
@@ -11966,7 +12023,7 @@ async function refreshAccountAndUi(){
     refreshAccountUi();
     showToast('✓ Refreshed');
   }catch(e){
-    showToast(e.message||'Refresh failed');
+    showToast(e.message||'Refresh failed','error');
   }
 }
 
@@ -12170,18 +12227,18 @@ async function publishScan(){
   if(!data||!data.ok){ info.textContent=(data&&data.message)||'Project not found'; return; }
   if(!data.saved){ info.textContent='⚠ Project not saved — use File → Save, then scan again'; return; }
   window.__pubProject={file:data.projectFile,name:data.projectName};
-  info.innerHTML='✓ <b>'+data.projectName+'</b> · '+data.compCount+' comps · '+data.folderCount+' folders';
+  info.innerHTML='✓ <b>'+escHtml(data.projectName)+'</b> · '+Number(data.compCount||0)+' comps · '+Number(data.folderCount||0)+' folders';
   const sel=document.getElementById('pubScenesFolder');
   const folders=data.folders||[];
   sel.innerHTML='<option value="">— choose a folder —</option>'+folders.map(function(f){
-    return '<option value="'+String(f.path).replace(/"/g,'&quot;')+'">'+f.path+'</option>';
+    return '<option value="'+escHtml(f.path)+'">'+escHtml(f.path)+'</option>';
   }).join('');
   const guessPath=pickScenesFolder(folders,data.tree||[]);
   document.getElementById('pubFolderStep').style.display='block';
   document.getElementById('pubName').value=data.projectName||'';
   if(guessPath){
     sel.value=guessPath;
-    info.innerHTML+=' · <b style="color:var(--accent-2)">'+guessPath+'</b> selected automatically';
+    info.innerHTML+=' · <b style="color:var(--accent-2)">'+escHtml(guessPath)+'</b> selected automatically';
     publishDetectScenes();
   }
 }
@@ -12198,16 +12255,16 @@ async function publishDetectScenes(){
   const cfg=JSON.stringify({scenesFolder:folder,exportRoot:exportRoot});
   const raw=await evalP('renderSceneStillFrames('+JSON.stringify(cfg)+')');
   let data;try{data=JSON.parse(raw);}catch(e){data=null;}
-  if(!data||!data.ok){ listEl.innerHTML='<div class="account-hint">'+((data&&data.message)||'No scenes found')+'</div>'; return; }
+  if(!data||!data.ok){ listEl.innerHTML='<div class="account-hint">'+escHtml((data&&data.message)||'No scenes found')+'</div>'; return; }
   window.__pubScenes=data.results;
   document.getElementById('pubScenesCount').textContent='('+data.results.length+')';
   const _checkSvg='<svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z"/></svg>';
   listEl.innerHTML=data.results.map(function(s){
     const meta=(s.width&&s.height?s.width+'×'+s.height:'')+(s.fps?' · '+s.fps+'fps':'');
-    const thumb=(s.ok&&s.path)?'<img class="pub-scene-thumb" src="file://'+encodeURI(s.path)+'">':'<div class="pub-scene-thumb">✦</div>';
+    const thumb=(s.ok&&s.path)?'<img class="pub-scene-thumb" src="'+escHtml('file://'+encodeURI(s.path))+'">':'<div class="pub-scene-thumb">✦</div>';
     return '<div class="pub-scene-row'+(s.ok?'':' fail')+'"><span class="pub-scene-dot"></span>'+thumb+
-      '<div class="pub-scene-txt"><div class="pub-scene-name">'+s.name+'</div>'+
-      '<div class="pub-scene-meta">'+(s.ok?meta:'preview render failed')+'</div></div>'+
+      '<div class="pub-scene-txt"><div class="pub-scene-name">'+escHtml(s.name)+'</div>'+
+      '<div class="pub-scene-meta">'+escHtml(s.ok?meta:'preview render failed')+'</div></div>'+
       (s.ok?'<span class="pub-scene-check">'+_checkSvg+'</span>':'')+'</div>';
   }).join('');
   document.getElementById('pubMetaStep').style.display='block';
@@ -12543,6 +12600,11 @@ async function bootPlugin(){
   }
   window.addEventListener('assetflow:session-expired',()=>{
     try{ refreshAccountUi(); }catch(e){}
+    try{ if(window.afJobStore)window.afJobStore.clear(); }catch(e){}
+    try{ if(window.afActiveSessionStore)window.afActiveSessionStore.clear(); }catch(e){}
+    try{ if(typeof window.afIgClearRecent==='function')window.afIgClearRecent(); }catch(e){}
+    try{ if(typeof window.axVGClearRecent==='function')window.axVGClearRecent(); }catch(e){}
+    try{ if(typeof window.axAGClearRecent==='function')window.axAGClearRecent(); }catch(e){}
     try{ ensureAiSessModal().classList.add('on'); }
     catch(e){ showToast('Session expired — please sign in again','warning'); try{ openAccountSheet(); }catch(_){} }
   });
@@ -12565,6 +12627,15 @@ async function bootPlugin(){
   // Bo'lim mijoz paketida ham jo'natilardi (ZXP `__AF_BUILD__` shtampini urmaydi → gate
   // "dev" deb qarordi), ya'ni obunachi "Demo: low credits" tugmasini ko'rishi mumkin edi.
   var importTarget='comp', toastT;
+  try{importTarget=localStorage.getItem('af_default_import_target')||'comp';}catch(e){}
+  if(importTarget!=='bin')importTarget='comp';
+  window.afImportTarget=importTarget;
+  setTimeout(function(){
+    var comp=document.getElementById('impComp'),bin=document.getElementById('impBin');
+    if(comp){comp.classList.toggle('tg',importTarget==='comp');comp.classList.toggle('on',importTarget==='comp');}
+    if(bin)bin.classList.toggle('on',importTarget==='bin');
+    var ver=document.getElementById('afSettingsVersion');if(ver)ver.textContent='v'+String(window.AF_PLUGIN_VERSION||'—');
+  },0);
   // Yagona toast — asosiy showToast'ga yo'naltiramiz (warn/err → warning/error) → AI Tools va panel bir xil ko'rinish.
   function toast(m,k){
     if(typeof showToast==='function'){ showToast(m,(k==='warn')?'warning':(k==='err')?'error':(k||'info')); return; }
@@ -13091,14 +13162,14 @@ async function bootPlugin(){
       if(lb)return lb;
       lb=document.createElement('div'); lb.className='lightbox'; lb.id='afLightbox';
       lb.innerHTML='<div class="lbinner">'
-        +'<div class="lbtop"><span class="lbcount" id="afLbCount"></span><span class="lbsp"></span><span class="lbesc">ESC</span><div class="lx" id="afLbClose"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></div></div>'
+        +'<div class="lbtop"><span class="lbcount" id="afLbCount"></span><span class="lbsp"></span><span class="lbesc">ESC</span><button type="button" class="lx" id="afLbClose" aria-label="Close preview"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button></div>'
         +'<div class="lbmedia">'
         +  '<video id="afLbVideo" playsinline style="display:none"></video>'
         +  '<img id="afLbImg" alt="" style="display:none"/>'
         +  '<audio id="afLbAudio" style="display:none"></audio>'
         +  '<div class="lbaud" id="afLbAud"><button type="button" class="lbaplay" id="afLbAudPlay"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><div class="lbamid"><div class="lbawave" id="afLbAudWave"><div class="lbabars" id="afLbAudBars"></div><div class="lbaprog" id="afLbAudProg"></div><div class="lbaline" id="afLbAudLine"></div></div><div class="lbatime" id="afLbAudTime">00:00 / 00:00</div></div></div>'
         +  '<div class="lbplay" id="afLbPlay" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z"/></svg></div>'
-        +  '<div class="lbnav" id="afLbNav" style="display:none"><div class="lbnavb" id="afLbPrev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="lbnavb" id="afLbNext"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div></div>'
+        +  '<div class="lbnav" id="afLbNav" style="display:none"><button type="button" class="lbnavb" id="afLbPrev" aria-label="Previous result"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><button type="button" class="lbnavb" id="afLbNext" aria-label="Next result"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button></div>'
         +'</div>'
         +'<div class="lbscrub" id="afLbScrub"><div class="lbtrack" id="afLbTrack"><div class="lbfill" id="afLbFill"></div><span class="lbknob" id="afLbKnob"></span></div><span class="lbtime" id="afLbTime">00:00 / 00:00</span><span class="lbspk" id="afLbSpk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span></div>'
         +'<div class="lbcard" id="afLbCard"><div class="lbprompt" id="afLbPrompt"></div><div class="lbchips" id="afLbChips"></div></div>'
@@ -13151,7 +13222,7 @@ async function bootPlugin(){
     function closeLb(){ if(!lb)return; lb.classList.remove('on'); lbCur=null;
       var v=document.getElementById('afLbVideo'); if(v){try{v.pause();}catch(e){} v.removeAttribute('src'); v.load&&v.load();}
       var a=document.getElementById('afLbAudio'); if(a){try{a.pause();}catch(e){} a.removeAttribute('src');} }
-    function lbIcon(svg,title,fn){ var d=document.createElement('div'); d.className='lbico'; d.title=title; d.innerHTML=svg; d.addEventListener('click',fn); return d; }
+    function lbIcon(svg,title,fn){ var d=document.createElement('button'); d.type='button'; d.className='lbico'; d.title=title; d.setAttribute('aria-label',title); d.innerHTML=svg; d.addEventListener('click',fn); return d; }
     function openLightbox(it,ctx){
       if(!it||!it.url)return; ensureLb(); ctx=ctx||{};
       var cat=it.cat||'image';
@@ -13215,7 +13286,7 @@ async function bootPlugin(){
       card.classList.toggle('on',!!(prompt||chips.children.length));
       // amallar: lime Import + icon-doiralar (ctx handlerlari SAQLANADI)
       acts.innerHTML=''; var cap=[];
-      var imp=document.createElement('div'); imp.className='lbimp';
+      var imp=document.createElement('button'); imp.type='button'; imp.className='lbimp';
       imp.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Import';
       imp.addEventListener('click',function(){ ctx.onImport&&ctx.onImport(it); });
       acts.appendChild(imp); cap.push('Import');
@@ -13244,7 +13315,7 @@ async function bootPlugin(){
     }
 
     // ---- UMUMIY karta ----
-    function actBtn(svg,title,fn,cls){ var b=document.createElement('b'); if(cls)b.className=cls; b.title=title; b.innerHTML=svg; b.addEventListener('click',fn); return b; }
+    function actBtn(svg,title,fn,cls){ var b=document.createElement('button'); b.type='button'; if(cls)b.className=cls; b.title=title; b.setAttribute('aria-label',title); b.innerHTML=svg; b.addEventListener('click',fn); return b; }
     // P5/P14: gen'ning HAQIQIY nisbatini CSS qiymatiga aylantiradi ("16:9"→"16 / 9"). Manba:
     // it.aspect / it.aspectRatio / it.params.aspectRatio. Topilmasa null (default 1/1 qoladi).
     function genAspectCss(it){
@@ -13318,7 +13389,7 @@ async function bootPlugin(){
       // Import→Import to AE · papka→Add to project · kompas→Add to Explore · qisqich→Use as
       // reference · ↻→Regenerate · ⧉→Copy prompt · ⬇→Download (faqat brauzer) · ✕→Delete.
       var ra=document.createElement('div'); ra.className='racts';
-      var useBtn=document.createElement('b'); useBtn.className='useb'; useBtn.textContent='Use ▾'; useBtn.title='Actions';
+      var useBtn=document.createElement('button'); useBtn.type='button'; useBtn.className='useb'; useBtn.textContent='Use ▾'; useBtn.title='Actions'; useBtn.setAttribute('aria-label','Open result actions');
       useBtn.addEventListener('click',function(e){
         e.stopPropagation();
         var items=[];
@@ -13683,7 +13754,7 @@ async function bootPlugin(){
     if(el.hasAttribute('data-refdel')){var rd=el.getAttribute('data-refdel').split('|');axRefRemove(rd[0],parseInt(rd[1],10));return;}
     if(el.hasAttribute('data-refadd')){axRefPicker(el.getAttribute('data-refadd'));return;}
     if(el.hasAttribute('data-refproj')){var rp=el.getAttribute('data-refproj').split('|');axRefProjPick(rp[0],parseInt(rp[1],10));return;}
-    if(el.hasAttribute('data-imp')){importTarget=el.getAttribute('data-imp');document.getElementById('impComp').classList.toggle('tg',importTarget==='comp');document.getElementById('impComp').classList.toggle('on',importTarget==='comp');document.getElementById('impBin').classList.toggle('on',importTarget==='bin');toast('Default import: '+(importTarget==='comp'?'Comp':'Bin'));return;}
+    if(el.hasAttribute('data-imp')){importTarget=el.getAttribute('data-imp')==='bin'?'bin':'comp';window.afImportTarget=importTarget;try{localStorage.setItem('af_default_import_target',importTarget);}catch(x){}document.getElementById('impComp').classList.toggle('tg',importTarget==='comp');document.getElementById('impComp').classList.toggle('on',importTarget==='comp');document.getElementById('impBin').classList.toggle('on',importTarget==='bin');toast('Default import: '+(importTarget==='comp'?'Comp':'Bin'));return;}
     if(el.hasAttribute('data-go'))go(el.getAttribute('data-go'));
     else if(el.hasAttribute('data-ref'))refPicker(el.getAttribute('data-ref'));
     if(el.hasAttribute('data-close'))closeSheet();
@@ -14656,6 +14727,7 @@ window.afGallery=(function(){
     studioPost('/api/studio/gen/ref-upload',{dataUrl:dataUrl}).then(function(u){
       ref.url=(u&&u.url)||null;
       if(!ref.url)throw new Error('Empty upload response');
+      if(typeof window.afAcceptUnifiedReference==='function')window.afAcceptUnifiedReference({id:(u&&u.id)||ref.url,kind:'image',url:ref.url,savedReferenceId:(u&&u.id)||null,title:'Image reference'});
     }).catch(function(err){
       var idx=st.refs.indexOf(ref); if(idx>=0)st.refs.splice(idx,1);
       toast((err&&err.message)||'Failed to upload reference','error');
@@ -14670,6 +14742,7 @@ window.afGallery=(function(){
     if(!meta.refOk){ toast('This model does not accept references','warning'); return; }
     if(st.refs.length>=meta.maxRefs){ toast('Max '+meta.maxRefs+' reference(s)','warning'); return; }
     st.refs.push({dataUrl:url,url:url,loading:false}); renderRefs(); updRefMeta(); refreshGen();
+    if(typeof window.afAcceptUnifiedReference==='function')window.afAcceptUnifiedReference({id:url,kind:'image',url:url,title:'Image reference'});
     toast('Added as @img'+st.refs.length+' reference','success');
   }
 
@@ -14807,14 +14880,14 @@ window.afGallery=(function(){
     $('igProjList').innerHTML='<div class="axighint">Loading…</div>'; openSheet('igProjSheet',$('igRefAdd'));
     hostCall('listProjectFootage').then(function(r){
       if(!$('igProjList'))return;
-      if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Could not get project list'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; repositionSheet('igProjSheet'); return; }
+      if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Could not get project list'+((r&&r.reason)?': '+escHtml(r.reason):'')+'</div>'; if(foot)foot.style.display='none'; repositionSheet('igProjSheet'); return; }
       var items=((r&&r.items)||[]).filter(function(it){ return it.mediaType==='image'||isImg(it.mediaPath); });
       if(!items.length){ $('igProjList').innerHTML='<div class="axighint">No matching images found in the project. Upload from file.</div>'; if(foot)foot.style.display='none'; repositionSheet('igProjSheet'); return; }
       $('igProjList').innerHTML='';
       items.forEach(function(it){
         var mp=it.mediaPath||'';
         var o=document.createElement('div'); o.className='opt';
-        o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||base(mp)).replace(/[<>]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div><span class="igprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>';
+        o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+escHtml(it.name||base(mp))+'</b><small>'+escHtml(it.mediaType||'image')+'</small></div><span class="igprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>';
         (function(path,row){ o.addEventListener('click',function(){
           if(!path)return;
           var chk=row.querySelector('.igprojchk');
@@ -14825,7 +14898,7 @@ window.afGallery=(function(){
         $('igProjList').appendChild(o);
       });
       refreshFoot(); repositionSheet('igProjSheet');
-    }).catch(function(e){ if($('igProjList'))$('igProjList').innerHTML='<div class="axighint">Could not get project list: '+String(e)+'</div>'; repositionSheet('igProjSheet'); });
+    }).catch(function(e){ if($('igProjList'))$('igProjList').innerHTML='<div class="axighint">Could not get project list: '+escHtml(String(e))+'</div>'; repositionSheet('igProjSheet'); });
   });
   // 3) Timeline'dan (joriy kadr → PNG)
   $('igSrcTl').addEventListener('click',function(){
@@ -15027,13 +15100,14 @@ window.afGallery=(function(){
     if(refUrls.length){ params.referenceUrl=refUrls[0]; params.referenceUrls=refUrls; }
     j.params=params; j.modelId=meta.modelId; // Qayta gen: yangi tugagan kartada ham params/model bo'lsin
     var quote=null;
+    var unifiedQuote=(typeof window.afTakeUnifiedQuote==='function')?window.afTakeUnifiedQuote('image',meta.modelId,params):null;
     ensureMeta().then(function(){
       if(j.cancelled)throw new Error('CANCELLED');
       if(meta.modelId==null)throw new Error('No model found');
       return Promise.all([
         // P17 — quote SOF hisob+imzo; idempotencyKey studioPost'ni cold-start'da qayta urinishga majbur
         // qiladi (server bu maydonni e'tiborsiz qoldiradi — DB yozmaydi/consume qilmaydi).
-        studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params,idempotencyKey:afUuid()}),
+        unifiedQuote?Promise.resolve(unifiedQuote):studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params,idempotencyKey:afUuid()}),
         ensureSession()
       ]);
     }).then(function(arr){
@@ -15320,7 +15394,7 @@ window.afGallery=(function(){
     if(!pend.length){
       // SC_46: uch holatli mashina — LOADING (yoki hali yuklanmagan) → skeleton; ERROR → Retry;
       //   READY-EMPTY (fetch tugadi, 0 element) → hech narsa. Bo'sh branch HECH QACHON boshlang'ich holat emas.
-      if(recentError&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML='<div class="empt"><b>Failed to load recent</b>'+String(recentError)+'<br><button type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Retry</button></div>'; updRecentBatch(); return; }
+      if(recentError&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML='<div class="empt"><b>Failed to load recent</b>'+escHtml(String(recentError))+'<br><button type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Retry</button></div>'; updRecentBatch(); return; }
       if((recentLoading||!recentLoaded)&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML=afRecentSkel(); updRecentBatch(); return; }
       if(!uniq.length){ if(_rs)_rs.style.display='none'; r.innerHTML=''; updRecentBatch(); return; }
     }
@@ -16473,6 +16547,7 @@ window.afGallery=(function(){
     if(totalLim&&sizeBytes&&(totalRefBytes(type)+sizeBytes)>totalLim){ toast(mediaRefTotalLimitMsg(type,totalLim),'warning'); return null; }
     var obj={type:type,dataUrl:type==='image'?(payload.thumb||payload.url):null,url:payload.url,loading:false,source:'upload',sizeBytes:sizeBytes||0,savedRefId:(payload&&payload.id)||null,expiresAt:(payload&&payload.expiresAt)||null};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
+    if(typeof window.afAcceptUnifiedReference==='function')window.afAcceptUnifiedReference({id:obj.savedRefId||obj.url,kind:type,url:obj.url,savedReferenceId:obj.savedRefId,title:typeLabel(type)+' reference'});
     return obj;
   }
   function updRefMeta(){
@@ -16614,6 +16689,7 @@ window.afGallery=(function(){
         renderMediaRefs(); updRefMeta(); refreshVgBtn(); return;
       }
       obj.url=r.url; obj.loading=false; obj.sizeBytes=finalBytes; obj.savedRefId=r.id||null; obj.expiresAt=r.expiresAt||null; obj.clip=r.clip||null; renderMediaRefs(); refreshVgBtn(); loadVgSavedRefs(true);
+      if(typeof window.afAcceptUnifiedReference==='function')window.afAcceptUnifiedReference({id:obj.savedRefId||obj.url,kind:type,url:obj.url,savedReferenceId:obj.savedRefId,title:typeLabel(type)+' reference'});
       if(type==='video'&&r.audioRef&&r.audioRef.url){
         var addedAudio=appendUploadedRef('audio',r.audioRef);
         if(addedAudio)toast('Video and its audio added as references','success');
@@ -16637,6 +16713,7 @@ window.afGallery=(function(){
     if(mref.some(function(r){ return r.type===type&&r.url===it.url; })){ toast(typeLabel(type)+' reference already added','info'); return false; }
     var obj={type:type,dataUrl:type==='image'?(it.thumb||it.url):null,url:it.url,loading:false,source:'recent',sizeBytes:sizeBytes||0,savedRefId:it.savedRefId||it.id||null,expiresAt:it.expiresAt||null};
     mref.push(obj); syncMediaRefTokens(); renderMediaRefs(); updRefMeta(); refreshVgBtn();
+    if(typeof window.afAcceptUnifiedReference==='function')window.afAcceptUnifiedReference({id:obj.savedRefId||obj.url,kind:type,url:obj.url,savedReferenceId:obj.savedRefId,title:typeLabel(type)+' reference'});
     insertVgTok(obj.token||tokFor(type,cntRef(type)));
     toast(typeLabel(type)+' reference added','success');
     return true;
@@ -16701,7 +16778,7 @@ window.afGallery=(function(){
     host.innerHTML='<div class="axighint">Loading…</div>'; openVgSheet('vgProjSheet',_vgSrcTarget.anchor);
     hostCall('listProjectFootage').then(function(r){
       if(!$('vgProjList'))return;
-      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Could not get project list'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; repositionVgSheet('vgProjSheet'); return; }
+      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Could not get project list'+((r&&r.reason)?': '+escHtml(r.reason):'')+'</div>'; if(foot)foot.style.display='none'; repositionVgSheet('vgProjSheet'); return; }
       var items=((r&&r.items)||[]).filter(function(it){
         var mp=it&&it.mediaPath||'';
         if(type==='image')return (it.mediaType==='image'||isImg(mp)) && extAllowed(type,mp);
@@ -16711,7 +16788,7 @@ window.afGallery=(function(){
       host.innerHTML='';
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
-        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||type)+'</small></div>'+(multi?'<span class="vgprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>':'');
+        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+escHtml(it.name||it.mediaPath||'')+'</b><small>'+escHtml(it.mediaType||type)+'</small></div>'+(multi?'<span class="vgprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>':'');
         (function(item,row){ d.addEventListener('click',function(){
           var mp=item.mediaPath||''; if(!mp)return;
           if(!multi){ if(!mediaAllowed('video'))return; addOneMediaPath(mp,'video'); closeVgSheets(); return; }
@@ -16723,7 +16800,7 @@ window.afGallery=(function(){
         host.appendChild(d);
       });
       refreshFoot(); repositionVgSheet('vgProjSheet');
-    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Could not get project list: '+String(e)+'</div>'; repositionVgSheet('vgProjSheet'); });
+    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Could not get project list: '+escHtml(String(e))+'</div>'; repositionVgSheet('vgProjSheet'); });
   }
   // Manba 3 — Timeline'dan (joriy kadr → PNG); FAQAT rasm referens uchun
   function pickTlMedia(){
@@ -16945,13 +17022,13 @@ window.afGallery=(function(){
     // igScript bilan bir xil: async hostCall('listProjectFootage') → {items:[{name,mediaPath,mediaType}]}.
     hostCall('listProjectFootage').then(function(r){
       if(!$('vgProjList'))return;
-      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Could not get project list'+((r&&r.reason)?': '+r.reason:'')+'</div>'; repositionVgSheet('vgProjSheet'); return; }
+      if(!r||(r.ok===false)){ host.innerHTML='<div class="axighint">Could not get project list'+((r&&r.reason)?': '+escHtml(r.reason):'')+'</div>'; repositionVgSheet('vgProjSheet'); return; }
       var items=((r&&r.items)||[]).filter(function(it){ return it.mediaType==='image'||isImg(it.mediaPath); });
       if(!items.length){ host.innerHTML='<div class="axighint">No matching image found in the project. Upload from file.</div>'; repositionVgSheet('vgProjSheet'); return; }
       host.innerHTML='';
       items.forEach(function(it){
         var d=document.createElement('div'); d.className='opt';
-        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+String(it.name||it.mediaPath||'').replace(/[<>&]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div>';
+        d.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div><div><b>'+escHtml(it.name||it.mediaPath||'')+'</b><small>'+escHtml(it.mediaType||'image')+'</small></div>';
         (function(item){ d.addEventListener('click',function(){
           var mp=item.mediaPath||''; var du=readDataUrl(mp); // readDataUrl: file:// normalize + Node fs → cep.fs
           if(du){ uploadFrame({path:mp,dataUrl:du},which); } else { toast('Could not read file','error'); }
@@ -16960,7 +17037,7 @@ window.afGallery=(function(){
         host.appendChild(d);
       });
       repositionVgSheet('vgProjSheet');
-    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Could not get project list: '+String(e)+'</div>'; repositionVgSheet('vgProjSheet'); });
+    }).catch(function(e){ if($('vgProjList'))$('vgProjList').innerHTML='<div class="axighint">Could not get project list: '+escHtml(String(e))+'</div>'; repositionVgSheet('vgProjSheet'); });
   }
   function pickTlFrame(which){
     if(typeof csInterface==='undefined'||!csInterface){ toast('Timeline frame only works inside After Effects','info'); closeVgSheets(); return; }
@@ -17393,6 +17470,7 @@ window.afGallery=(function(){
     var f={dataUrl:url,url:url,loading:false}; // gen natijasi allaqachon R2 URL → qayta upload shart emas
     if(which==='start')st.start=f; else st.end=f;
     renderFrameBoxes(); refreshVgBtn();
+    if(typeof window.afAcceptUnifiedReference==='function')window.afAcceptUnifiedReference({id:which+':'+url,kind:'image',url:url,role:which,title:(which==='start'?'Start':'End')+' frame'});
     toast('Added as the '+(which==='start'?"start":"end")+' frame','success');
   }
 
@@ -17417,7 +17495,7 @@ window.afGallery=(function(){
     (window.__axwsLoading=window.__axwsLoading||{}).vidgen=((vgRcState.loading||!vgRcState.loaded)&&!uniq.length&&!vgRcState.error); // SC_46: header "loading…" (0 flash emas)
     if(!pend.length){
       // SC_46: uch holatli mashina — ERROR → Retry; LOADING/hali-yuklanmagan → skeleton; READY-EMPTY → hech narsa.
-      if(vgRcState.error&&!uniq.length){ if(_vrs)_vrs.style.display=''; r.innerHTML='<div class="empt"><b>Failed to load recent</b>'+String(vgRcState.error||'Check your internet or session.')+'<br><button type="button" onclick="retryVgRecent()">↻ Retry</button></div>'; updVgRcBatch(); return; }
+      if(vgRcState.error&&!uniq.length){ if(_vrs)_vrs.style.display=''; r.innerHTML='<div class="empt"><b>Failed to load recent</b>'+escHtml(String(vgRcState.error||'Check your internet or session.'))+'<br><button type="button" onclick="retryVgRecent()">↻ Retry</button></div>'; updVgRcBatch(); return; }
       if((vgRcState.loading||!vgRcState.loaded)&&!uniq.length){ if(_vrs)_vrs.style.display=''; r.innerHTML=afRecentSkel(); updVgRcBatch(); return; }
       if(!uniq.length){ if(_vrs)_vrs.style.display='none'; r.innerHTML=''; updVgRcBatch(); return; }
     }
@@ -17574,13 +17652,14 @@ window.afGallery=(function(){
     syncVgSessionJob(j,'active');
     var _vgb=$('vgGen'); if(_vgb)_vgb.classList.add('busy'); // yuborilmoqda — tugmada spinner
     var quote=null;
+    var unifiedQuote=(typeof window.afTakeUnifiedQuote==='function')?window.afTakeUnifiedQuote('video',vm.model&&vm.model.id,params):null;
     ensureVgMeta().then(function(){
       if(j.cancelled)throw new Error('CANCELLED');
       if(!vm.model)throw new Error('No model found');
       // TEZLIK: preflight + cost-quote + session PARALLEL (kredit faqat /gen'da yechiladi → xavfsiz).
       return Promise.all([
         studioPost('/api/studio/gen/preflight-safety',{mode:'video',modelId:vm.model.id,prompt:prompt,params:params},20000),
-        studioPost('/api/studio/gen/cost-quote',{modelId:vm.model.id,mode:'video',params:params,idempotencyKey:afUuid()}),
+        unifiedQuote?Promise.resolve(unifiedQuote):studioPost('/api/studio/gen/cost-quote',{modelId:vm.model.id,mode:'video',params:params,idempotencyKey:afUuid()}),
         ensureVgSession()
       ]);
     }).then(function(arr){
@@ -17680,7 +17759,7 @@ window.afGallery=(function(){
   if(!$('v-audgen'))return;
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
   function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
-  var ag={mode:'voice',models:{voice:null,sfx:null},loaded:false,_pending:null,voice:'',dur:null,sessions:{},recent:[],recentLoaded:false,pollTimers:{},visCount:0}; // SC_29: visCount — sessiyadagi visual elementlar (Visuals tab sanog'i)
+  var ag={mode:'voice',models:{voice:null,sfx:null},catalogs:{voice:[],sfx:[]},loaded:false,_pending:null,voice:'',dur:null,sessions:{},recent:[],recentLoaded:false,pollTimers:{},visCount:0}; // SC_29: visCount — sessiyadagi visual elementlar (Visuals tab sanog'i)
 
   function ensureAgMeta(){
     if(ag.loaded)return Promise.resolve(ag);
@@ -17690,6 +17769,8 @@ window.afGallery=(function(){
       studioGet('/api/studio/gen/models?mode=sfx')
     ]).then(function(rs){
       var vs=(rs[0]&&rs[0].models)||[], ss=(rs[1]&&rs[1].models)||[];
+      ag.catalogs.voice=vs;
+      ag.catalogs.sfx=ss;
       ag.models.voice=vs.filter(function(x){return x.isDefault;})[0]||vs[0]||null;
       ag.models.sfx=ss.filter(function(x){return x.isDefault;})[0]||ss[0]||null;
       if(!ag.models.voice&&!ag.models.sfx)throw new Error('No audio model found');
@@ -17777,6 +17858,11 @@ window.afGallery=(function(){
     draft=draft||{};
     return ensureAgMeta().then(function(){
       if(draft.mode==='voice'||draft.mode==='sfx')ag.mode=draft.mode;
+      if(draft.modelId!=null){
+        var selected=(ag.catalogs[ag.mode]||[]).filter(function(x){return String(x.id)===String(draft.modelId);})[0];
+        if(!selected)throw new Error('The selected audio model is no longer available');
+        ag.models[ag.mode]=selected;
+      }
       var p=draft.params||{},m=curAgModel();
       if(p.voice&&m&&Array.isArray(m.voices)&&m.voices.some(function(v){return v.id===p.voice;}))ag.voice=p.voice;
       if(p.duration!=null&&m&&Array.isArray(m.durations)&&m.durations.indexOf(p.duration)>=0)ag.dur=p.duration;
@@ -17892,9 +17978,10 @@ window.afGallery=(function(){
     // BATCH4 #4 — Chirp cap: kredit yechilmasdan oldin server 400 beradi; bu yerda aniq UX toast
     if(ag.mode==='voice'&&typeof m.maxChars==='number'&&m.maxChars>0&&prompt.length>m.maxChars){ toast('Max '+m.maxChars+' characters for '+m.label+' (yours: '+prompt.length+') — split the text','warning'); return; }
     var params=agParams(); var mode=ag.mode;
+    var unifiedQuote=(typeof window.afTakeUnifiedQuote==='function')?window.afTakeUnifiedQuote(mode,m.id,params):null;
     setAgBusy(true);
     Promise.all([
-      studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:mode,params:params,idempotencyKey:afUuid()}),
+      unifiedQuote?Promise.resolve(unifiedQuote):studioPost('/api/studio/gen/cost-quote',{modelId:m.id,mode:mode,params:params,idempotencyKey:afUuid()}),
       agSession(mode)
     ]).then(function(rs){
       var quote=rs[0], sid=rs[1];
@@ -18386,7 +18473,7 @@ window.afGallery=(function(){
     if(it.kind==='gen'&&it.gen){ var x=genToItem(it.gen); x._itemId=it.id; return x; }
     if(it.kind==='template'&&it.template){
       var t=it.template;
-      return {id:t.id,_itemId:it.id,_tpl:true,url:t.previewUrl||t.thumbUrl||'',thumb:t.thumbUrl||'',cat:(t.previewUrl?'video':'image'),
+      return {id:t.id,_itemId:it.id,_tpl:true,_tplKey:'__srv_'+t.id,nav:t.nav||'video',url:t.previewUrl||t.thumbUrl||'',thumb:t.thumbUrl||'',cat:(t.previewUrl?'video':'image'),
         title:t.title||t.name||'Template',prompt:'',params:null,cost:null,createdAt:it.addedAt};
     }
     return null;
@@ -18412,7 +18499,19 @@ window.afGallery=(function(){
       isCEP:IS_CEP,
       list:function(){ return items.filter(function(x){return x&&x.url;}); },
       selecting:function(){ return false; }, isSelected:function(){ return false; }, onToggleSelect:function(){},
-      onImport:function(it){ if(it._tpl){ toast('Open the template in Catalog to import its pack','info'); return; } if(typeof aiImportMedia==='function'){ var kind=it.cat==='video'?'video':(it.cat==='audio'||it.cat==='sfx')?'audio':'image'; aiImportMedia(it.url,kind,null); } else toast('AE import only works inside After Effects','info'); },
+      onImport:function(it){
+        if(it._tpl){
+          var key=it._tplKey||('__srv_'+it.id);
+          var run=function(){ if(packs&&packs[key]){downloadAll(key);}else{toast('This template is no longer available in Catalog','error');} };
+          if(packs&&packs[key]){run();return;}
+          if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.fetchTemplateDetail&&AssetFlowCatalog.mergeIntoBrowse){
+            toast('Preparing template…','info');
+            AssetFlowCatalog.fetchTemplateDetail(it.id).then(function(item){AssetFlowCatalog.mergeIntoBrowse([item],{append:true});run();}).catch(function(){toast('Could not load this template','error');});
+          }else toast('Catalog is not available','error');
+          return;
+        }
+        if(typeof aiImportMedia==='function'){ var kind=it.cat==='video'?'video':(it.cat==='audio'||it.cat==='sfx')?'audio':'image'; aiImportMedia(it.url,kind,null); } else toast('Adobe import is only available inside the plugin','info');
+      },
       onDownload:function(it){ try{ var a=document.createElement('a'); a.href=it.downloadUrl||it.url; a.download=window.afGenDlName(it.prompt||it.title,it.url,it.cat); document.body.appendChild(a); a.click(); document.body.removeChild(a); }catch(e){} },
       // Loyihada Delete = loyihadan OLIB TASHLASH (gen o'zi o'chmaydi)
       deleteLabel:'Remove from project', // SC_30: menyu bandi haqiqiy amalni aytadi
@@ -19022,10 +19121,40 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
   function $(id){return document.getElementById(id);}
   if(!$('ffCreateStart')||!window.FrameFlowCreateWorkspace)return;
   var ctl=window.FrameFlowCreateWorkspace.createController({mode:'image'});
-  var quoteTimer=null,quick=null,modal=null,modalTrigger=null,allModels=[],modelLoadError='',modelLoadPromise=null;
+  var quoteTimer=null,quick=null,modal=null,modalTrigger=null,allModels=[],modelLoadError='',modelLoadPromise=null,referenceBridgeUntil=0;
   var modeView={image:'imggen',video:'vidgen',voice:'audgen',sfx:'audgen'};
   var placeholders={image:'Describe the image you want to create…',video:'Describe the shot, motion and camera…',voice:'Write the narration…',sfx:'Describe the sound effect…'};
   var reasonCopy={prompt_required:'Write at least two characters.',model_unavailable:'No enabled model is available for this mode.',reference_required:'This model requires a reference. Use + to add one.',audio_reference_requires_visual:'Audio reference needs at least one image or video reference.',quote_loading:'Getting a secure server quote…',quote_required:'A fresh server quote is required.',quote_expired:'The quote expired. Refreshing it now…',insufficient_credits:'Not enough credits.',missing_dispatch:'Generation could not start.'};
+
+  function canonicalJson(value){
+    if(Array.isArray(value))return '['+value.map(canonicalJson).join(',')+']';
+    if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(function(k){return JSON.stringify(k)+':'+canonicalJson(value[k]);}).join(',')+'}';
+    return JSON.stringify(value);
+  }
+  // Unified composer olgan signed quote faqat aynan shu mode/model/params uchun va
+  // faqat bir marta legacy engine'ga beriladi. Mos kelmasa engine yangi quote oladi.
+  window.afTakeUnifiedQuote=function(mode,modelId,params){
+    var q=window.__ffUnifiedSignedQuote;
+    if(!q)return null;
+    window.__ffUnifiedSignedQuote=null;
+    if(q.quoteExpiresAt&&Date.now()>=Number(q.quoteExpiresAt))return null;
+    if(String(q.mode)!==String(mode)||String(q.modelId)!==String(modelId))return null;
+    if(canonicalJson(q.params||{})!==canonicalJson(params||{}))return null;
+    if(typeof q.quotedPrice!=='number'||!q.costQuoteSignature)return null;
+    return {price:q.quotedPrice,signature:q.costQuoteSignature};
+  };
+  window.afAcceptUnifiedReference=function(ref){
+    if(Date.now()>referenceBridgeUntil)return false;
+    var added=ctl.addReference(ref||{});
+    if(!added.ok){
+      status(added.reason==='reference_limit'?'Reference limit reached for this model.':'This reference is not compatible with the selected model.','err');
+      return false;
+    }
+    if(window.axGo)window.axGo('create');
+    scheduleQuote();render();
+    status('Reference added to the unified composer.','ok');
+    return true;
+  };
 
   function escText(value){return String(value==null?'':value);}
   function status(text,kind){var el=$('ffCreateStatus');if(!el)return;el.textContent=text||'';el.className='ff-create-status'+(kind?' '+kind:'');}
@@ -19154,11 +19283,12 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
       if(payload.mode==='video'&&window.axVGNewSession)window.axVGNewSession();
       if((payload.mode==='voice'||payload.mode==='sfx')&&window.axAGNewSession)window.axAGNewSession();
     }
+    window.__ffUnifiedSignedQuote={mode:payload.mode,modelId:payload.modelId,params:payload.params||{},quotedPrice:payload.quotedPrice,costQuoteSignature:payload.costQuoteSignature,quoteExpiresAt:payload.quoteExpiresAt};
     return Promise.resolve(apply(payload)).then(function(){
       var id=payload.mode==='image'?'igGen':payload.mode==='video'?'vgGen':'agGen',btn=$(id);
-      if(!btn||btn.disabled)throw new Error('Check the prompt, reference and credit requirements in the composer.');
+      if(!btn||btn.disabled){window.__ffUnifiedSignedQuote=null;throw new Error('Check the prompt, reference and credit requirements in the composer.');}
       btn.click();return {accepted:true,view:view};
-    });
+    }).catch(function(e){window.__ffUnifiedSignedQuote=null;throw e;});
   }
   function generate(){
     var s=current(),balance=creditBalance();if(s.quote.status==='ready'&&balance!=null&&s.quote.price>balance){status('Not enough credits for this run.','err');return;}if(!s.validation.ok){status(reasonCopy[s.validation.reason]||'Check the composer.','err');if(s.validation.reason==='quote_expired'||s.validation.reason==='quote_required')scheduleQuote();return;}
@@ -19172,6 +19302,7 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
   function delegateReference(source){
     var s=current();if(s.mode==='voice'||s.mode==='sfx'){status('Audio models do not accept visual references.','err');return;}
     var view=modeView[s.mode],apply=s.mode==='image'?window.axIGApplyDraft:window.axVGApplyDraft,addId=s.mode==='image'?'igRefAdd':'vgRefAdd';
+    referenceBridgeUntil=Date.now()+120000;
     if(s.sessionId){if(s.mode==='image'&&window.axIGSetSession)window.axIGSetSession(s.sessionId);else if(s.mode==='video'&&window.axVGSetSession)window.axVGSetSession(s.sessionId);}
     if(window.axGo)window.axGo(view);
     Promise.resolve(apply({mode:s.mode,prompt:s.prompt,modelId:s.modelId,params:s.settings})).then(function(){var add=$(addId);if(!add)throw new Error('Reference controls are unavailable.');add.click();var prefix=s.mode==='image'?'ig':'vg';var id=prefix+'Src'+(source==='file'?'File':source==='project'?'Proj':source==='timeline'?'Tl':'Lib');var target=$(id);if(!target)throw new Error('The selected reference source is unavailable.');target.click();}).catch(function(e){status((e&&e.message)||'Reference picker could not open.','err');});
@@ -19205,6 +19336,7 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
   function applyOpenDraft(payload){
     payload=payload||{};var mode=normalizeCreateMode(payload.mode),modelId=payload.modelId;
     ctl.setSession(null);ctl.setMode(mode);ctl.setPrompt(payload.prompt||'');mount('ffCreateLauncherSlot');
+    if(payload.autoModel&&modelId==null){var snap=current(),ms=(snap.models&&snap.models[mode])||[],def=ms.filter(function(m){return m.isDefault;})[0]||ms[0];if(def)modelId=def.id;}
     var selected=modelId==null||ctl.selectModel(modelId);scheduleQuote();render();
     var promptEl=$('ffCreatePrompt');if(promptEl)setTimeout(function(){try{promptEl.focus();}catch(e){}},0);
     return selected;

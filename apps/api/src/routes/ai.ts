@@ -46,6 +46,19 @@ aiRouter.use(
   })
 );
 
+// Eski sync image/voice endpointlari transactional Generation pipeline'ga ega emas.
+// Productionda double-charge/lost-refund xavfi sabab fail-closed; klient /api/studio/gen ishlatadi.
+aiRouter.use(["/image", "/voiceover"], (_req, res, next) => {
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_LEGACY_PLUGIN_AI !== "true") {
+    res.status(410).json({
+      error: "Legacy AI endpoint retired; use /api/studio/gen",
+      code: "LEGACY_AI_RETIRED",
+    });
+    return;
+  }
+  next();
+});
+
 /** Natijani saqlash: R2 bo'lsa signed URL, aks holda (lokal dev) data URL. */
 async function persistResult(
   buf: Buffer,

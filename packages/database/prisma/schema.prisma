@@ -209,6 +209,11 @@ model WebhookEvent {
   id            String   @id @default(cuid())
   stripeEventId String   @unique
   type          String
+  status        String   @default("processing") // processing | succeeded | failed
+  attempts      Int      @default(1)
+  lockedAt      DateTime @default(now())
+  processedAt   DateTime?
+  lastError     String?  @db.Text
   createdAt     DateTime @default(now())
 
   @@index([createdAt])
@@ -534,6 +539,8 @@ model Generation {
   category  String?
   cost      Int        @default(0)
   refunded  Boolean    @default(false)       // idempotent refund guard — bir job IKKI marta refund qilinmasin (additive, default false)
+  refundStatus String?                       // pending | applied (transactional refund state)
+  refundApplied Int      @default(0)          // amalda qaytarilgan kredit
   // D6 — foydalanuvchi natijani "qadab" qo'yadi: ro'yxatlarda DOIM birinchi chiqadi
   // (orderBy: pinned desc → createdAt desc). Additive, default false — pul zonasiga tegmaydi.
   pinned    Boolean    @default(false)
@@ -542,6 +549,7 @@ model Generation {
   // qaytaradi (yangi job yaratmaydi, kredit IKKINCHI marta yechilmaydi). null = eski/kalit-siz
   // so'rov (bir nechta NULL — Postgres unique NULL'ni distinct sanaydi). Additive, money-zone TEGMAYDI.
   idempotencyKey String?
+  idempotencyHash String?
   error     String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -1108,4 +1116,16 @@ model IngestJob {
   @@index([status, createdAt])
   @@index([batchId])
   @@index([contributorId, createdAt])
+}
+
+model ImportReservation {
+  id         String   @id @default(cuid())
+  userId     String
+  templateId String?
+  status     String   @default("reserved") // reserved | committed | cancelled | expired
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, status, expiresAt])
 }

@@ -287,7 +287,7 @@ async function byteplusDownloadUrl(url: string, kind: string): Promise<OrResult<
     if (!res.ok) {
       return { ok: false, error: `byteplus download HTTP ${res.status}`, status: res.status };
     }
-    const buf = Buffer.from(await res.arrayBuffer());
+    const buf = await readCappedResponse(res);
     return buf.length ? { ok: true, data: buf } : { ok: false, error: "byteplus: empty result" };
   } catch (e) {
     return { ok: false, error: (e as Error).message || "byteplus download error" };
@@ -459,3 +459,4 @@ export async function byteplusImage(
   }
   return { ok: false, error: "byteplus: image rate limit — please try again shortly" };
 }
+import { readCappedResponse } from "./capped-download.js";

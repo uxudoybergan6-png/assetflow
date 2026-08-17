@@ -207,8 +207,14 @@ check(
 check("`--prerelease` WiX o'rnatmasi YO'Q", !/--prerelease/.test(winJobCode));
 check("o'rnatilgan WiX versiyasi qadalgan qiymatga solishtiriladi (fail-closed)", /wix --version/.test(winJob) && /StartsWith\(\$env:WIX_VERSION\)/.test(winJob));
 check("WiX global tool yo'li PATH'ga aniq qo'shiladi", /GITHUB_PATH/.test(winJob) && /\.dotnet\\tools/.test(winJob));
-check("`.NET` birinchi tomon action bilan o'rnatiladi", /uses:\s*actions\/setup-dotnet@v\d+/.test(winJob));
-check("Node birinchi tomon action bilan o'rnatiladi", /uses:\s*actions\/setup-node@v\d+/.test(winJob));
+check(
+  "`.NET` tasdiqlangan immutable action SHA bilan o'rnatiladi",
+  /uses:\s*actions\/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9/.test(winJob)
+);
+check(
+  "Node tasdiqlangan immutable action SHA bilan o'rnatiladi",
+  /uses:\s*actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/.test(winJob)
+);
 
 // ══ E) Haqiqiy build + haqiqiy validator ════════════════════════════════════
 console.log("\n── E) Haqiqiy build va MSI validatsiyasi ─────────────────────");
@@ -481,8 +487,8 @@ check("ps1 tizim papkasiga YOZMAYDI (ProgramFiles faqat Test-Path bilan o'qiladi
 console.log("\n── I) Linux CI saqlangan · npm skript ────────────────────────");
 
 for (const step of [
-  "uses: actions/checkout@v7",
-  "uses: actions/setup-node@v7",
+  "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+  "uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
   "run: npm ci",
   "run: npm run generate -w @creative-tools/database",
   "run: npm run build -w @creative-tools/database",
@@ -496,7 +502,7 @@ check(`package.json'da "${CONTRACT_SCRIPT}" skripti bor`, new RegExp(`"${CONTRAC
 check("mavjud installer test skriptlari o'chirilmagan", /"test:plugin-installers"/.test(pkg) && /"test:plugin-package"/.test(pkg));
 
 // ══ J) Node 20 Actions deprecation — REPO-KENG barcha workflow ══════════════
-console.log("\n── J) Node 20 deprecation: checkout/setup-node v7, google auth/gcloud v3 ──");
+console.log("\n── J) GitHub Actions supply chain: approved releases pinned by SHA ──");
 
 const WORKFLOWS_DIR = path.join(REPO_ROOT, ".github/workflows");
 const workflowFiles = existsSync(WORKFLOWS_DIR) ? readdirSync(WORKFLOWS_DIR).filter((f) => /\.ya?ml$/.test(f)) : [];
@@ -504,11 +510,12 @@ check("kamida bitta workflow fayli topildi (.github/workflows)", workflowFiles.l
 
 // Rasmiy joriy major'lar (2026-07-22 direktor tekshiruvi): eski Node 20 runtime'ga
 // majburlangan action'lar Node 24'ga o'tgan versiyaga ko'tarilgan.
-const EXPECTED_MAJOR = {
-  "actions/checkout": "v7",
-  "actions/setup-node": "v7",
-  "google-github-actions/auth": "v3",
-  "google-github-actions/setup-gcloud": "v3",
+const EXPECTED_REF = {
+  "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+  "actions/setup-node": "820762786026740c76f36085b0efc47a31fe5020",
+  "actions/setup-dotnet": "67a3573c9a986a3f9c594539f4ab511d57bb3ce9",
+  "google-github-actions/auth": "7c6bc770dae815cd3e89ee6cdf493a5fab2cc093",
+  "google-github-actions/setup-gcloud": "aa5489c8933f4cc7a4f7d45035b3b1440c9c10db",
 };
 const DEPRECATED_REF = /\b(actions\/checkout@v4|actions\/setup-node@v4|google-github-actions\/auth@v2|google-github-actions\/setup-gcloud@v2)\b/;
 
@@ -516,20 +523,17 @@ for (const file of workflowFiles) {
   const src = readOr(path.join(WORKFLOWS_DIR, file));
   const code = codeOnly(src);
   check(`${file}: eskirgan Node 20 action havolasi (checkout@v4/setup-node@v4/auth@v2/setup-gcloud@v2) YO'Q`, !DEPRECATED_REF.test(code), file);
-  for (const [action, major] of Object.entries(EXPECTED_MAJOR)) {
+  for (const [action, expectedRef] of Object.entries(EXPECTED_REF)) {
     const re = new RegExp(`uses:\\s*${action.replace(/\//g, "\\/")}@(\\S+)`, "g");
     for (const m of code.matchAll(re)) {
-      check(`${file}: ${action} aynan ${major} bilan ishlatilgan (topildi: @${m[1]})`, m[1] === major, m[0]);
+      check(`${file}: ${action} tasdiqlangan SHA bilan qadalgan (topildi: @${m[1]})`, m[1] === expectedRef, m[0]);
     }
   }
-  // Birinchi-tomon-yoki-SHA siyosati mavjud tekshiruv (C) bilan bir xil — endi HAR bir
-  // workflow uchun, google-github-actions ham "birinchi tomon"ga tenglashtirilib (u ham
-  // Google rasmiy action'i, ataylab shu ikki tashkilotga ishlatiladi).
+  // Har bir action immutable commit SHA bilan qadaladi. Major teglar faqat yonidagi
+  // izoh sifatida qoladi; bajariladigan ref sifatida ishlatilmaydi.
   const usesAll = [...code.matchAll(/uses:\s*(\S+)/g)].map((m) => m[1]);
-  const badFilePins = usesAll.filter(
-    (u) => !/^(actions|google-github-actions)\/[A-Za-z0-9._-]+@v\d+$/.test(u) && !/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/.test(u)
-  );
-  check(`${file}: har bir action birinchi tomon (actions|google-github-actions)/*@vN yoki to'liq SHA bilan qadalgan`, badFilePins.length === 0, badFilePins.join(", "));
+  const badFilePins = usesAll.filter((u) => !/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/.test(u));
+  check(`${file}: har bir action immutable to'liq SHA bilan qadalgan`, badFilePins.length === 0, badFilePins.join(", "));
   // Loyiha Node versiyasi action major'idan MUSTAQIL — lekin u YAGONA manbadan
   // (root `package.json` → `engines.node`) olinadi, qadalgan literal'dan EMAS.
   // Ilgari bu yerda "20" qattiq yozilgan edi: Node 22'ga ko'tarilganda (Dockerfile +
@@ -558,7 +562,7 @@ check(
 // Windows job'ida setup-node v7 implicit kesh KIRITMASLIGI aniq o'chirilgan bilan kafolatlanadi.
 check(
   `${WIN_JOB}: Setup Node qadamida \`package-manager-cache: false\` aniq o'rnatilgan (implicit kesh YO'Q)`,
-  /Setup Node[\s\S]*?uses:\s*actions\/setup-node@v7[\s\S]*?package-manager-cache:\s*false/.test(winJob)
+  /Setup Node[\s\S]*?uses:\s*actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020[\s\S]*?package-manager-cache:\s*false/.test(winJob)
 );
 
 // Mutatsiya isboti — detektor haqiqatan eski havolalarni ushlaydi va joriy majorlarni
@@ -572,9 +576,9 @@ for (const bad of [
   check(`mutatsiya isboti: detektor "${bad}" eskirganini ushlaydi`, DEPRECATED_REF.test(bad), bad);
 }
 check(
-  "mutatsiya isboti: joriy majorlar (checkout@v7/setup-node@v7/auth@v3/setup-gcloud@v3) detektor tomonidan soxta-pozitiv qilinmaydi",
+  "mutatsiya isboti: tasdiqlangan immutable SHA'lar eski-major detektorida soxta-pozitiv emas",
   !DEPRECATED_REF.test(
-    "uses: actions/checkout@v7\nuses: actions/setup-node@v7\nuses: google-github-actions/auth@v3\nuses: google-github-actions/setup-gcloud@v3"
+    "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1\nuses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020\nuses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093\nuses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db"
   )
 );
 

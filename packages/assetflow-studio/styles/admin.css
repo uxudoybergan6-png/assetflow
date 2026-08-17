@@ -129,7 +129,7 @@
      edilgan (8A93A3 / 5E6675), 2-darajali matn (B7C0CE, 41 joy) esa umuman tokensiz edi —
      portal-admin amber rejimi yoki bo'lajak yorug' tema ularni almashtira olmaydi.
      Endi hammasi shu 4 token. */
-  --text:#F2F5F8; --text2:#B7C0CE; --muted:#8A93A3; --muted2:#5E6675;
+  --text:#F2F5F8; --text2:#B7C0CE; --muted:#9AA4B5; --muted2:#7F899A;
   --border:#2A3140; --hair:rgba(255,255,255,.05); --hair2:rgba(255,255,255,.07);
   /* D6 (#15) — aksentning HAR bir ko'rinishi shu tokenlardan kelib chiqadi. Ilgari qoidalarda
      ham, admin JS'ida ham xom `#d8ff3e` / `rgba(216,255,62,α)` yozilgan edi: `body.portal-admin`
@@ -151,6 +151,13 @@
 body.portal-admin .adx-app{
   --lime:#FFB000; --lime2:#E09A00; --onlime:#1A1200;
   --glow:rgba(255,176,0,.3); --limedim:rgba(255,176,0,.12);
+}
+html[data-theme="light"] .adx-app{
+  --bg:#F4F6F9;--surface:#FFFFFF;--surface2:#F0F3F7;--surface3:#E8EDF3;
+  --rail:#FFFFFF;--pop:#FFFFFF;--media:#E8EDF3;--text:#17202C;--text2:#354155;
+  --muted:#586579;--muted2:#657287;--border:#CBD3DF;--hair:rgba(20,34,52,.10);
+  --hair2:rgba(20,34,52,.14);--f1:rgba(20,34,52,.06);--f2:rgba(20,34,52,.08);--f3:rgba(20,34,52,.13);
+  --scrim:rgba(25,35,48,.45);
 }
 body.portal-admin .adx-eyebrow{color:#FFB000}
 .adx-portal-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font:700 9.5px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;background:var(--limedim);color:var(--lime);border:1px solid rgba(255,176,0,.36);white-space:nowrap}
@@ -450,3 +457,7 @@ textarea.adx-input{height:auto;padding:9px 12px;resize:vertical;line-height:1.5}
 .adx-skel-av{width:38px;height:38px;border-radius:10px;flex:none}
 .adx-skel-ln{height:11px;border-radius:6px}
 .adx-skel-list{display:flex;flex-direction:column}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .adx-skel{animation:none;background:var(--f2)}
+}

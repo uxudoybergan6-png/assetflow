@@ -274,7 +274,7 @@ VIEWS.contributors = function(){
       <div style="overflow-x:auto"><table class="adx-tbl" style="min-width:1020px">
         <thead><tr><th>Contributor</th><th>Status</th><th class="r">Total</th><th class="r">Approved</th><th class="r">Pending</th><th class="r">Rejected</th><th>Last activity</th><th class="r">Action</th></tr></thead>
         <tbody>
-        ${rows.length ? rows.map(({c,total,ap,pe,re})=>`<tr style="cursor:pointer" onclick="route('contributor-detail','${c.id}')">
+        ${rows.length ? rows.map(({c,total,ap,pe,re})=>`<tr style="cursor:pointer" role="link" tabindex="0" onclick="route('contributor-detail','${c.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();route('contributor-detail','${c.id}')}">
           <td><div class="adx-who">${axAv(c.name,c.email,32)}<div style="min-width:0"><div class="nm">${esc(c.name)}</div><div class="em">${esc(c.email)}</div></div></div></td>
           <td>${axStatus(c.status==='blocked'?'blocked':'active')}</td>
           <td class="r adx-num">${total}</td>
@@ -388,6 +388,7 @@ async function selectAdminThread(i) {
 }
 
 async function renderMessaging(){
+  const renderEpoch = (window.__adminMsgEpoch = (window.__adminMsgEpoch || 0) + 1);
   const root = document.getElementById("msgRoot");
   if(!root) return;
   if (!ADMIN_THREADS.length) {
@@ -397,11 +398,14 @@ async function renderMessaging(){
   if (MSG_SEL >= ADMIN_THREADS.length) MSG_SEL = 0;
   const th = ADMIN_THREADS[MSG_SEL];
   const c = cById(th.cid);
-  ADMIN_THREAD_MESSAGES = [];
+  let loadedMessages = [];
   try {
     const data = await StudioApi.getMessageThread(th.id);
-    ADMIN_THREAD_MESSAGES = data.messages || [];
+    if (renderEpoch !== window.__adminMsgEpoch || ADMIN_THREADS[MSG_SEL]?.id !== th.id) return;
+    loadedMessages = data.messages || [];
     await StudioApi.markMessageThreadRead(th.id);
+    if (renderEpoch !== window.__adminMsgEpoch || ADMIN_THREADS[MSG_SEL]?.id !== th.id) return;
+    ADMIN_THREAD_MESSAGES = loadedMessages;
     th.unread = false;
     window._STUDIO_MSG_UNREAD = adminMsgUnread();
     if (typeof renderNav === "function") renderNav();
@@ -1195,6 +1199,7 @@ async function submitBroadcast() {
 let _replyBusy = false; // §G (P29) — reply double-submit guard (Enter + tugma ikkalasi ham chaqiradi)
 async function sendAdminReply() {
   const th = ADMIN_THREADS[MSG_SEL];
+  const threadId = th?.id;
   const input = document.getElementById("adminReplyInput");
   const body = input?.value?.trim();
   if (!th || !body) return;
@@ -1202,9 +1207,9 @@ async function sendAdminReply() {
   _replyBusy = true;
   if (input) input.disabled = true;
   try {
-    await StudioApi.replyMessageThread(th.id, body);
+    await StudioApi.replyMessageThread(threadId, body);
     input.value = "";
-    const data = await StudioApi.getMessageThread(th.id);
+    const data = await StudioApi.getMessageThread(threadId);
     ADMIN_THREAD_MESSAGES = data.messages || [];
     th.last = body;
     th.t = fmtLocalDate(new Date().toISOString()); // §F (P33) — lokal sana (ro'yxatdagi format bilan bir xil)
@@ -1214,7 +1219,8 @@ async function sendAdminReply() {
       ADMIN_THREADS.splice(idx, 1);
       ADMIN_THREADS.unshift(th);
     }
-    MSG_SEL = 0;
+    MSG_SEL = ADMIN_THREADS.findIndex((row) => row.id === threadId);
+    if (MSG_SEL < 0) MSG_SEL = 0;
     await renderMessaging();
     toast("Sent", "Message sent", "success");
   } catch (e) {

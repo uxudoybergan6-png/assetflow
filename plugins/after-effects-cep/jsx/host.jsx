@@ -2276,7 +2276,7 @@ function importTemplateProject(jsonStr) {
 // canImportAs(FOOTAGE) guard — AE format'ni qabul qila olishini OLDIN tekshiradi, keyin
 // importAs=FOOTAGE bilan import qiladi. Structured JSON {ok,reason,item} qaytaradi
 // (frontend aniq sabab ko'rsatadi). importAssetToProject kontrakti tegilmaydi.
-function importMediaFromPath(filePath) {
+function importMediaFromPath(filePath, addToComp) {
   if (!filePath) return JSON.stringify({ ok: false, reason: "No file path provided" });
   if (typeof app === "undefined" || !app.project) {
     return JSON.stringify({ ok: false, reason: "No open After Effects project" });
@@ -2307,7 +2307,7 @@ function importMediaFromPath(filePath) {
       var active = app.project.activeItem;
       var isComp = active && (active instanceof CompItem);
       var addable = item && (item instanceof FootageItem || item instanceof CompItem);
-      if (isComp && addable) {
+      if (addToComp !== false && isComp && addable) {
         try {
           var layer = active.layers.add(item);
           layer.startTime = active.time; // playhead'ga joylash
@@ -2593,12 +2593,6 @@ function exportTimelineFrame() {
           comp = app.project.activeItem;
         }
       } catch (eViewer) {}
-    }
-    // Hali topilmasa — loyihадаги birinchi kompozitsiya (eng yaxshi taxmin).
-    if (!(comp instanceof CompItem)) {
-      for (var i = 1; i <= app.project.numItems; i++) {
-        if (app.project.item(i) instanceof CompItem) { comp = app.project.item(i); break; }
-      }
     }
     if (!(comp instanceof CompItem)) return afFail("No active composition — open a comp in the Timeline");
     var dir = Folder.temp.fsName + "/assetflow-refs";

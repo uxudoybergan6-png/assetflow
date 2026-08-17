@@ -1,13 +1,3 @@
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const monorepoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../.."
-);
-dotenv.config({ path: path.join(monorepoRoot, ".env") });
-dotenv.config({ path: path.join(process.cwd(), ".env") });
 import express from "express";
 import type { ErrorRequestHandler } from "express";
 import cors from "cors";
@@ -185,6 +175,7 @@ async function probeHealth(): Promise<HealthResult> {
     if (!ok) healthy = false;
   } else {
     checks.storage = "not_configured";
+    if (process.env.NODE_ENV === "production") healthy = false;
   }
   return { healthy, checks };
 }
@@ -248,6 +239,22 @@ app.post(
 // - /gen/ref-upload  → R2V image/video/audio referenslar
 // - /gen/describe    → haqiqiy video input (data-URL) yoki bir nechta kadr
 // 100MB binary base64'dа ~133MB+ bo'ladi, shu sabab route-level limit kattaroq.
+// Parserdan OLDIN cheap auth/header+Content-Length gate: anonim 150MB body RAM'ga
+// yig'ilmasin. To'liq token tekshiruvi router ichidagi requireAuth'da qoladi.
+const largeJsonPreflight: express.RequestHandler = (req, res, next) => {
+  if (!req.headers.authorization?.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized", code: "NO_TOKEN" });
+    return;
+  }
+  const declared = Number(req.headers["content-length"] || 0);
+  if (Number.isFinite(declared) && declared > 150 * 1024 * 1024) {
+    res.status(413).json({ error: "Reference is too large", code: "PAYLOAD_TOO_LARGE" });
+    return;
+  }
+  next();
+};
+app.use("/api/studio/gen/ref-upload", largeJsonPreflight);
+app.use("/api/studio/gen/describe", largeJsonPreflight);
 app.use("/api/studio/gen/ref-upload", express.json({ limit: "150mb" }));
 app.use("/api/studio/gen/describe", express.json({ limit: "150mb" }));
 // Qolgan API JSON'lari uchun odatdagi limit.
@@ -276,8 +283,8 @@ app.use((_req, res) => {
 
 // Global xato ishlovchi — async handler throw qilsa yoki Prisma xato bersa
 // so'rov osilib qolmasin. Express 5 async rejection'ni shu yerga uzatadi.
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  if (res.headersSent) return;
+const errorHandler: ErrorRequestHandler = (err, _req, res, next) => {
+  if (res.headersSent) return next(err);
   const code = (err as { code?: string })?.code;
   const status =
     (err as { status?: number; statusCode?: number })?.status ??
@@ -393,6 +400,19 @@ function validateEnv() {
     warnings.push("VIRUSTOTAL_API_KEY yo'q — pack malware skani faqat hash/dedup (yangi fayl tahlil qilinmaydi). docs/PROD-ENV-CHECKLIST.md");
   if (isProd && !process.env.BACKUP_GCS_BUCKET?.trim())
     warnings.push("BACKUP_GCS_BUCKET yo'q — DB backup GCS'ga yuklanmaydi (ma'lumot yo'qotish xavfi). docs/PROD-ENV-CHECKLIST.md");
+
+  if (isProd && !process.env.MODERATION_API_KEY?.trim()) {
+    console.error("[FATAL] MODERATION_API_KEY yo'q — production generativ media moderatsiyasiz ishga tushmaydi.");
+    process.exit(1);
+  }
+  if (isProd && process.env.MODERATION_MODERATE_OUTPUTS !== "true") {
+    console.error("[FATAL] MODERATION_MODERATE_OUTPUTS=true productionda majburiy.");
+    process.exit(1);
+  }
+  if (isProd && (!process.env.TURNSTILE_SECRET_KEY?.trim() || !process.env.TURNSTILE_SITE_KEY?.trim())) {
+    console.error("[FATAL] TURNSTILE_SECRET_KEY va TURNSTILE_SITE_KEY productionda birga majburiy.");
+    process.exit(1);
+  }
 
   // #108 (I6) — SENTRY_DSN yo'qligi ilgari HECH QAYERDA aytilmasdi: `captureException`
   // jimgina no-op bo'lardi, ya'ni productionда xatolar hech kimga yetib bormasdi va buni

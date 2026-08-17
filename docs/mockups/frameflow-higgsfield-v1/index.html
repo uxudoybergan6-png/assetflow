@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>FrameFlow Plugin — Interactive Design Mockup</title>
+  <link rel="stylesheet" href="mockup.css?v=13">
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <header class="topbar">
+      <button class="brand" type="button" data-route="home" aria-label="FrameFlow Home">
+        <span class="brand-mark" aria-hidden="true">ϟ</span>
+        <span class="brand-name">FrameFlow</span>
+        <span class="brand-badge">PLUGINS</span>
+        <span class="brand-version">concept 02</span>
+      </button>
+
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <button type="button" class="nav-item active" data-route="home">Home</button>
+        <button type="button" class="nav-item" data-route="create">Create</button>
+        <button type="button" class="nav-item" data-route="browse">Browse</button>
+      </nav>
+
+      <div class="top-actions">
+        <div class="work-wrap">
+          <button class="icon-button" id="workMenuButton" type="button" aria-label="Open workspace menu" aria-expanded="false">⌘</button>
+          <div class="work-menu" id="workMenu" hidden>
+            <p>Workspace</p>
+            <button type="button" data-route="activity"><span>◌</span>Activity<small>2 active</small></button>
+            <button type="button" data-route="library"><span>▦</span>Library<small>18 items</small></button>
+            <button type="button" data-route="projects"><span>□</span>Projects<small>4</small></button>
+            <button type="button" data-route="settings"><span>⚙</span>Settings</button>
+          </div>
+        </div>
+        <button class="credit-pill" id="creditButton" type="button"><span>✦</span><b id="creditCount">665</b><em>PRO</em></button>
+        <button class="avatar" id="accountButton" type="button" aria-label="Open account"><span>KH</span></button>
+      </div>
+    </header>
+
+    <main>
+      <section class="route active" id="route-home" data-page="home">
+        <div class="page home-page">
+          <section class="command-center">
+            <div class="command-kicker">
+              <span><i></i> Creative engine online</span>
+              <span class="adobe-context">AE · Composition 01 <b>LIVE</b></span>
+            </div>
+            <div class="command-grid">
+              <article class="launch-panel">
+                <span class="eyebrow">NEW CREATIVE SESSION</span>
+                <h1><span>What will you</span> <em>create next?</em></h1>
+                <p>Describe the result. FrameFlow prepares the right model and Adobe-ready output.</p>
+                <div class="quick-modes" id="quickModes" aria-label="Quick creation mode">
+                  <button class="active" type="button" data-quick-mode="image">▦ Image</button>
+                  <button type="button" data-quick-mode="video">▶ Video</button>
+                  <button type="button" data-quick-mode="voice">≋ Voice</button>
+                  <button type="button" data-quick-mode="sfx">⌁ Sound</button>
+                </div>
+                <div class="quick-composer">
+                  <textarea id="quickPrompt" rows="3" placeholder="Describe what you want to make…"></textarea>
+                  <div class="quick-composer-footer">
+                    <button class="quick-auto" type="button" id="quickAutoButton"><span>FF</span><b>FrameFlow Auto</b><small>Best model</small></button>
+                    <button class="quick-create" type="button" id="quickCreateButton">Start creating <span>✦</span></button>
+                  </div>
+                </div>
+                <div class="quick-suggestions">
+                  <span>Try</span>
+                  <button type="button" data-quick-prompt="A premium campaign image with sculpted light and controlled reflections">Campaign visual</button>
+                  <button type="button" data-quick-prompt="Turn this shot into a cinematic night sequence with subtle camera motion">Night sequence</button>
+                </div>
+              </article>
+
+              <aside class="template-showcase" aria-label="Animated trending templates">
+                <div class="showcase-toolbar"><span><i></i> TRENDING TEMPLATES</span><div><button id="showcasePrev" type="button" aria-label="Previous trending template">←</button><button id="showcaseNext" type="button" aria-label="Next trending template">→</button></div></div>
+                <div class="showcase-stage" id="showcaseStage">
+                  <article class="showcase-slide active" data-showcase-index="0"><img src="https://cdn.getframeflow.app/templates/cmsf2sgt3004es6019j8ld7wu/thumb.jpg?v=1786288579598" alt="Cinematic opener trending template"><div><span>01 · TRENDING</span><h3>Cinematic Opener</h3><p>Bold editorial titles and rhythmic cuts.</p><b>12 scenes · 4K</b></div></article>
+                  <article class="showcase-slide" data-showcase-index="1"><img src="https://cdn.getframeflow.app/templates/cmsfnjmvw004ws601q3eqw3ny/thumb.jpg?v=1786288579562" alt="Social promo trending template"><div><span>02 · NEW</span><h3>Social Promo Pack</h3><p>Fast modular stories for campaigns.</p><b>8 scenes · Vertical</b></div></article>
+                  <article class="showcase-slide" data-showcase-index="2"><img src="https://cdn.getframeflow.app/templates/cmrl3pqpu0019s601f0vtozng/thumb.jpg?v=1786285457707" alt="Light trails trending template"><div><span>03 · FREE</span><h3>Light Trails</h3><p>High-energy transitions for any edit.</p><b>16 assets · 4K</b></div></article>
+                </div>
+                <div class="showcase-footer"><div class="showcase-progress" id="showcaseProgress"><button class="active" type="button" data-showcase-go="0" aria-label="Show template 1"></button><button type="button" data-showcase-go="1" aria-label="Show template 2"></button><button type="button" data-showcase-go="2" aria-label="Show template 3"></button></div><span>Auto preview</span><button type="button" data-route="browse">Browse templates ↗</button></div>
+              </aside>
+            </div>
+          </section>
+
+          <div class="home-insights">
+            <section class="content-section recent-section">
+              <div class="section-heading">
+                <div><span class="section-index">01</span><h2>Continue creating</h2><p>Your latest sessions, ready where you left them.</p></div>
+                <div class="rail-actions"><button type="button" data-scroll="recentRail" data-dir="-1" aria-label="Previous generations">←</button><button type="button" data-scroll="recentRail" data-dir="1" aria-label="Next generations">→</button></div>
+              </div>
+              <div class="generation-rail" id="recentRail" aria-label="Recent generations">
+                <button class="new-generation-card" type="button" data-route="create"><span>＋</span><b>New session</b></button>
+                <article class="generation-card" tabindex="0" data-generation="Neon portrait"><img src="https://cdn.getframeflow.app/templates/cmsf2sgt3004es6019j8ld7wu/thumb.jpg?v=1786288579598" alt="Portrait generation"><button type="button" aria-label="Download Neon portrait">↓</button><div><b>Campaign portrait</b><span>Image · 2K · 4m</span></div></article>
+                <article class="generation-card" tabindex="0" data-generation="Pupil study"><img src="https://cdn.getframeflow.app/templates/cmsfnjmvw004ws601q3eqw3ny/thumb.jpg?v=1786288579562" alt="Eye transformation generation"><button type="button" aria-label="Download Pupil study">↓</button><div><b>Macro motion</b><span>Video · 8s · 22m</span></div></article>
+                <article class="generation-card art-blue" tabindex="0" data-generation="Synthetic motion"><span class="art-glyph">◉</span><button type="button" aria-label="Download Synthetic motion">↓</button><div><b>Product loop</b><span>Video · 6s · 1h</span></div></article>
+              </div>
+            </section>
+            <aside class="project-pulse">
+              <div class="pulse-head"><span class="section-index">NOW</span><b>Project pulse</b><button type="button" data-route="activity">View all</button></div>
+              <div class="pulse-item"><span class="pulse-icon">▶</span><div><b>Product Film</b><small>Veo render · 74%</small><i><em style="width:74%"></em></i></div><strong>02:14</strong></div>
+              <div class="pulse-item"><span class="pulse-icon ready">✓</span><div><b>Adobe Bridge</b><small>3 assets ready to import</small></div><strong class="ready-text">READY</strong></div>
+              <button class="project-open" type="button" data-route="projects">Open active project <span>↗</span></button>
+            </aside>
+          </div>
+
+          <section class="tool-browser">
+            <div class="tool-browser-head"><div><span class="section-index">02</span><h2>Essential tools</h2><p>Five focused shortcuts for everyday Adobe work.</p></div><button class="all-tools-button" id="allToolsButton" type="button">All tools <span>23</span> ↗</button></div>
+            <div id="toolSections"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="route" id="route-create" data-page="create">
+        <div class="create-layout page">
+          <header class="page-header create-header">
+            <div><span class="eyebrow">CREATE WORKSPACE</span><h1 id="createTitle">Generate media</h1><p id="createSubtitle">One focused session for prompt, references and results.</p></div>
+            <button class="soft-button" type="button" id="newSessionButton">＋ New session</button>
+          </header>
+
+          <div class="mode-tabs" id="modeTabs" aria-label="Generation mode">
+            <button type="button" class="active" data-mode="image">Image</button>
+            <button type="button" data-mode="video">Video</button>
+            <button type="button" data-mode="voice">Voice</button>
+            <button type="button" data-mode="sfx">Sound FX</button>
+          </div>
+
+          <section class="result-stage" id="resultStage">
+            <div class="empty-state" id="createEmpty">
+              <span>✦</span><h2>Start with an idea</h2><p>Add a prompt or reference. Your result will stay in this session.</p>
+              <div><button type="button" data-suggestion="A cinematic product shot with dramatic rim lighting">Product shot</button><button type="button" data-suggestion="Transform this scene into a rainy neon night">Neon night</button><button type="button" data-suggestion="Smooth editorial motion with subtle camera movement">Editorial motion</button></div>
+            </div>
+            <div class="session-results" id="sessionResults"></div>
+          </section>
+
+          <section class="composer" id="composer">
+            <div class="reference-row" id="referenceRow">
+              <label class="add-reference" for="referenceInput"><span>＋</span><b>Add reference</b><small>Image, video or audio</small></label>
+              <input id="referenceInput" type="file" accept="image/*,video/*,audio/*" hidden>
+              <div class="reference-preview" id="referencePreview" hidden><div id="referenceThumb">REF</div><span><b id="referenceName">Reference</b><small>Ready</small></span><button id="removeReference" type="button" aria-label="Remove reference">×</button></div>
+            </div>
+            <textarea id="promptInput" rows="3" placeholder="What do you want to create? Describe your idea…"></textarea>
+            <div class="composer-controls">
+              <button class="control-pill mode-pill" id="modeButton" type="button"><span>◫</span><b id="modeLabel">Image</b><i>⌄</i></button>
+              <button class="control-pill model-pill" id="modelButton" type="button"><span class="model-mark">FF</span><b id="modelLabel">Nano Banana 2</b><i>⌄</i></button>
+              <button class="control-pill" id="settingsButton" type="button"><span>⌁</span><b id="settingsLabel">16:9 · 2K</b><i>⌄</i></button>
+              <div class="composer-spacer"></div>
+              <button class="enhance-button" id="enhanceButton" type="button" aria-label="Enhance prompt">↗</button>
+              <button class="generate-button" id="generateButton" type="button"><span>✦</span>Generate <small>COST <b id="costLabel">8</b></small></button>
+            </div>
+            <div class="composer-status"><span id="composerStatus">Ready</span><span>Secure quote · mock credits</span></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="route" id="route-browse" data-page="browse">
+        <div class="page browse-page">
+          <header class="page-header"><div><span class="eyebrow">FRAMEFLOW LIBRARY</span><h1>Browse creative assets</h1><p>Search motion, templates, overlays, audio and LUTs.</p></div></header>
+          <form class="browse-search" id="browseSearchForm"><input id="browseSearchInput" type="search" placeholder="Search assets"><button type="submit">Search</button></form>
+          <div class="filter-row" id="browseFilters"><button type="button" class="active" data-asset-filter="all">All</button><button type="button" data-asset-filter="motion">Motion</button><button type="button" data-asset-filter="people">People</button><button type="button" data-asset-filter="overlay">Overlays</button><button type="button" data-asset-filter="audio">Audio</button></div>
+          <div class="asset-grid" id="assetGrid"></div>
+        </div>
+      </section>
+
+      <section class="route" id="route-activity" data-page="activity"><div class="page utility-page"><header class="page-header"><div><span class="eyebrow">WORKSPACE</span><h1>Activity</h1><p>Live generations and recent imports.</p></div></header><div class="activity-list" id="activityList"></div></div></section>
+      <section class="route" id="route-library" data-page="library"><div class="page utility-page"><header class="page-header"><div><span class="eyebrow">YOUR WORK</span><h1>Library</h1><p>Generated media and downloaded assets.</p></div><button class="soft-button" type="button" data-route="create">＋ Create</button></header><div class="library-tabs"><button class="active" type="button">Generations</button><button type="button">Downloads</button><button type="button">Favorites</button></div><div class="asset-grid" id="libraryGrid"></div></div></section>
+      <section class="route" id="route-projects" data-page="projects"><div class="page utility-page"><header class="page-header"><div><span class="eyebrow">ORGANIZE</span><h1>Projects</h1><p>Collect generations and marketplace assets by deliverable.</p></div><button class="soft-button" type="button" id="addProjectButton">＋ New project</button></header><div class="project-grid" id="projectGrid"></div></div></section>
+      <section class="route" id="route-settings" data-page="settings"><div class="page settings-page"><header class="page-header"><div><span class="eyebrow">PREFERENCES</span><h1>Settings</h1><p>Keep the interface focused and predictable.</p></div></header><div class="settings-grid"><section><h2>Adobe integration</h2><label><span><b>Add imports to timeline</b><small>Place generated media at the playhead.</small></span><input type="checkbox" checked></label><label><span><b>Auto-create bins</b><small>Organize FrameFlow imports automatically.</small></span><input type="checkbox" checked></label></section><section><h2>Generation</h2><label><span><b>Remember last model</b><small>Restore model and output settings.</small></span><input type="checkbox" checked></label><label><span><b>Reduced motion</b><small>Disable decorative animation.</small></span><input type="checkbox"></label></section></div></div></section>
+    </main>
+  </div>
+
+  <div class="modal-layer" id="modelModal" hidden>
+    <div class="modal model-modal" role="dialog" aria-modal="true" aria-labelledby="modelModalTitle">
+      <div class="modal-head"><div><span class="eyebrow">MODEL LIBRARY</span><h2 id="modelModalTitle">Choose a model</h2></div><button type="button" data-close-modal aria-label="Close">×</button></div>
+      <input class="modal-search" id="modelSearch" type="search" placeholder="Search models and providers">
+      <div class="model-list" id="modelList"></div>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="settingsModal" hidden>
+    <div class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="outputTitle"><div class="modal-head"><div><span class="eyebrow">OUTPUT</span><h2 id="outputTitle">Generation settings</h2></div><button type="button" data-close-modal aria-label="Close">×</button></div><div class="setting-block"><b>Aspect ratio</b><div class="choice-row" data-setting="ratio"><button class="active" type="button">16:9</button><button type="button">1:1</button><button type="button">9:16</button><button type="button">4:5</button></div></div><div class="setting-block"><b>Quality</b><div class="choice-row" data-setting="quality"><button type="button">1K</button><button class="active" type="button">2K</button><button type="button">4K</button></div></div><button class="modal-primary" id="applySettings" type="button">Apply settings</button></div>
+  </div>
+
+  <div class="modal-layer" id="assetModal" hidden>
+    <div class="modal asset-modal" role="dialog" aria-modal="true" aria-labelledby="assetModalTitle"><button class="asset-close" type="button" data-close-modal aria-label="Close">×</button><div class="asset-modal-media" id="assetModalMedia"></div><div class="asset-modal-copy"><span class="eyebrow" id="assetModalType">ASSET</span><h2 id="assetModalTitle">Asset</h2><p id="assetModalDescription">FrameFlow marketplace asset.</p><div class="asset-meta"><span>Adobe ready</span><span>Licensed</span><span>Instant import</span></div><button class="modal-primary" id="importAssetButton" type="button">Import to Adobe</button></div></div>
+  </div>
+
+  <div class="modal-layer" id="accountModal" hidden>
+    <div class="modal account-modal" role="dialog" aria-modal="true" aria-labelledby="accountTitle"><div class="modal-head"><div><span class="eyebrow">ACCOUNT</span><h2 id="accountTitle">KHudoybergan</h2></div><button type="button" data-close-modal aria-label="Close">×</button></div><div class="account-hero"><div class="account-avatar">KH</div><div><b>FrameFlow Pro</b><span>Creative workspace synced</span></div><strong>✦ 665</strong></div><div class="account-stats"><span><b>18</b>Generations</span><span><b>4</b>Projects</span><span><b>12</b>Downloads</span></div><button class="modal-primary" type="button" data-close-modal>Done</button></div>
+  </div>
+
+  <div class="modal-layer" id="toolsModal" hidden>
+    <div class="modal tools-modal" role="dialog" aria-modal="true" aria-labelledby="toolsModalTitle">
+      <div class="modal-head"><div><span class="eyebrow">TOOL LIBRARY</span><h2 id="toolsModalTitle">All FrameFlow tools</h2></div><button type="button" data-close-modal aria-label="Close">×</button></div>
+      <input class="modal-search" id="allToolsSearch" type="search" placeholder="Search all tools">
+      <div class="tool-catalog" id="allToolsList"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden><span>✓</span><div><b id="toastTitle">Done</b><small id="toastMessage">Action completed.</small></div><button type="button" id="toastClose" aria-label="Close notification">×</button></div>
+
+  <script src="mockup.js?v=13"></script>
+</body>
+</html>

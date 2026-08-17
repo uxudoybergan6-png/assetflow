@@ -32,6 +32,8 @@ import {
   ensurePluginProfile,
   consumeDownload,
   consumeImport,
+  reserveImport,
+  finishImportReservation,
   serializePluginUser,
   setPluginPlan,
   isPaidPlan,
@@ -257,6 +259,7 @@ export const CATALOG_SELECT = {
   metaJson: true,
   fileName: true,
   fileSize: true,
+  packHash: true,
   isPro: true,
   contributor: { select: { name: true, email: true } },
   createdAt: true,
@@ -930,7 +933,20 @@ pluginRouter.get("/assets/:templateId/:kind", async (req: Request, res: Response
     res.status(400).json({ error: "Invalid type" });
     return;
   }
-  await serveTemplateAsset(req, res, String(req.params.templateId), kind);
+  const templateId = String(req.params.templateId);
+  const template = await prisma.contributorTemplate.findUnique({
+    where: { id: templateId },
+    select: { reviewStatus: true, published: true, takedownAt: true },
+  });
+  if (template?.takedownAt) {
+    res.status(451).json({ error: "This media was removed for legal reasons", code: "TAKEDOWN" });
+    return;
+  }
+  if (!template || template.reviewStatus !== TemplateReviewStatus.APPROVED || !template.published) {
+    res.status(404).json({ error: "Media not found or not published" });
+    return;
+  }
+  await serveTemplateAsset(req, res, templateId, kind);
 });
 
 export async function ensurePluginToken(
@@ -1599,6 +1615,10 @@ pluginRouter.post("/usage/download", usageLimiter, requireAuth, async (req: Requ
     qayta-import ham). consumeImport import limitini ATOMIK majburlaydi —
     limit tugasa 403 (LIMIT_REACHED) qaytadi va klient importni bekor qiladi. */
 pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === "production") {
+    res.status(410).json({ error: "Use the import reservation flow", code: "IMPORT_RESERVATION_REQUIRED" });
+    return;
+  }
   const parsed = usageSchema.safeParse(req.body);
   const templateId = parsed.success ? parsed.data.templateId : undefined;
   const result = await consumeImport(req.user!.userId);
@@ -1611,4 +1631,35 @@ pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Reques
   await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "import", source: "plugin", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
   const profile = await ensurePluginProfile(req.user!.userId);
   res.json({ user: serializePluginUser(profile) });
+});
+
+const importReservationSchema = z.object({ templateId: z.string().optional() });
+const importFinishSchema = z.object({ reservationId: z.string().min(8) });
+
+pluginRouter.post("/usage/import/reserve", usageLimiter, requireAuth, async (req, res) => {
+  const parsed = importReservationSchema.safeParse(req.body);
+  if (!parsed.success) return void res.status(400).json({ error: "Invalid request" });
+  const result = await reserveImport(req.user!.userId, parsed.data.templateId);
+  if (!result.ok) return void res.status(result.code === "LIMIT_REACHED" ? 403 : 403).json({ error: result.error, code: result.code });
+  res.json({ reservationId: result.reservationId, expiresAt: result.expiresAt });
+});
+
+pluginRouter.post("/usage/import/commit", usageLimiter, requireAuth, async (req, res) => {
+  const parsed = importFinishSchema.safeParse(req.body);
+  if (!parsed.success) return void res.status(400).json({ error: "Invalid request" });
+  const result = await finishImportReservation(req.user!.userId, parsed.data.reservationId, true);
+  if (!result.ok) return void res.status(409).json({ error: "Import reservation is no longer active", code: "RESERVATION_INVALID" });
+  if (!result.duplicate) {
+    await bumpTemplateCounter(result.templateId || undefined, "importsCount");
+    await recordTemplateDownloadEvent({ templateId: result.templateId || undefined, userId: req.user!.userId, kind: "import", source: "plugin", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
+  }
+  const profile = await ensurePluginProfile(req.user!.userId);
+  res.json({ user: serializePluginUser(profile) });
+});
+
+pluginRouter.post("/usage/import/cancel", usageLimiter, requireAuth, async (req, res) => {
+  const parsed = importFinishSchema.safeParse(req.body);
+  if (!parsed.success) return void res.status(400).json({ error: "Invalid request" });
+  const result = await finishImportReservation(req.user!.userId, parsed.data.reservationId, false);
+  res.json({ ok: result.ok });
 });

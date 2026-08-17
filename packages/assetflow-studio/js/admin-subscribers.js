@@ -152,7 +152,7 @@ function axSubTopbar(){
   tba.innerHTML =
     `<label class="adx-sel"><i class="ph ph-funnel" style="font-size:13px"></i><span>${SUB_PLAN_FILTER==='all'?'All plans':SUB_PLAN_FILTER}</span><i class="ph ph-caret-down" style="font-size:11px;color:var(--muted)"></i><select onchange="SUB_PLAN_FILTER=this.value;route('subscribers')"><option value="all">All plans</option><option value="Free" ${SUB_PLAN_FILTER==='Free'?'selected':''}>Free</option><option value="Pro" ${SUB_PLAN_FILTER==='Pro'?'selected':''}>Pro</option></select></label>`+
     `<button class="adx-btn2 sm" id="aiReindexBtn" onclick="aiReindex()" title="Generates AI semantic search embeddings for approved templates"><i class="ph ph-arrow-clockwise"></i>Re-index AI</button>`+
-    `<button class="adx-btn2 sm" onclick="toast('Export','Preparing subscribers CSV…','info')"><i class="ph ph-export"></i>CSV</button>`;
+    `<button class="adx-btn2 sm" onclick="exportVisibleTableCsv('frameflow-subscribers.csv')"><i class="ph ph-export"></i>CSV</button>`;
 }
 
 VIEWS.subscribers = function () {
@@ -178,7 +178,7 @@ VIEWS.subscribers = function () {
         <tbody id="subTbody">
         ${rows.length ? rows.map(s=>{
           const rowMuted = s.status==='removed' ? 'opacity:.55' : '';
-          return `<tr style="cursor:pointer;${rowMuted}" onclick="route('subscriber-detail','${s.id}')">
+          return `<tr style="cursor:pointer;${rowMuted}" role="link" tabindex="0" onclick="route('subscriber-detail','${s.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();route('subscriber-detail','${s.id}')}">
             <td><div class="adx-who">${axAv(s.name,s.email,32)}<div style="min-width:0"><div class="nm">${esc(s.name)}</div><div class="em">${esc(s.email)}</div></div></div></td>
             <td>${axStatus(s.status)}</td>
             <td>${axPlan(s.plan)}</td>

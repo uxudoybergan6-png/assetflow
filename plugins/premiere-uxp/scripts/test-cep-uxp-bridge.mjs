@@ -53,16 +53,23 @@ try {
   vm.runInContext(cepBridge, cepContext, { filename: "assetflow-uxp-bridge.js" });
 
   const resultPromise = new Promise((resolve) => cepWindow.AF_UXP_BRIDGE.evalScript("listProjectFootage()", resolve));
+  const sessionDir = await until(() => {
+    try {
+      const name = fs.readdirSync(mailbox).find((item) => /^session-[a-f0-9]{32}$/.test(item));
+      return name ? path.join(mailbox, name) : null;
+    } catch { return null; }
+  }, "CEP session mailbox");
   const descriptor = await until(() => {
-    try { return JSON.parse(fs.readFileSync(path.join(mailbox, "bridge.json"), "utf8")); } catch { return null; }
+    try { return JSON.parse(fs.readFileSync(path.join(sessionDir, "bridge.json"), "utf8")); } catch { return null; }
   }, "CEP descriptor");
-  fs.writeFileSync(path.join(mailbox, "ready.json"), JSON.stringify({ protocol: 1, secret: descriptor.secret }));
+  fs.writeFileSync(path.join(sessionDir, "ready.json"), JSON.stringify({ protocol: 1, session: descriptor.session, secret: descriptor.secret }));
   const request = await until(() => {
-    try { return JSON.parse(fs.readFileSync(path.join(mailbox, "request.json"), "utf8")); } catch { return null; }
+    try { return JSON.parse(fs.readFileSync(path.join(sessionDir, "request.json"), "utf8")); } catch { return null; }
   }, "CEP request");
   assert.equal(request.script, "listProjectFootage()");
-  fs.writeFileSync(path.join(mailbox, "response.json"), JSON.stringify({
+  fs.writeFileSync(path.join(sessionDir, "response.json"), JSON.stringify({
     protocol: 1,
+    session: descriptor.session,
     id: request.id,
     secret: descriptor.secret,
     result: JSON.stringify({ ok: true, count: 2 }),
@@ -72,12 +79,19 @@ try {
   fs.rmSync(mailbox, { recursive: true, force: true });
   fs.mkdirSync(mailbox, { recursive: true });
   const companionSecret = "a".repeat(64);
-  fs.writeFileSync(path.join(mailbox, "bridge.json"), JSON.stringify({ protocol: 1, secret: companionSecret }));
-  fs.writeFileSync(path.join(mailbox, "request.json"), JSON.stringify({
+  const companionSession = "b".repeat(32);
+  const companionDir = path.join(mailbox, `session-${companionSession}`);
+  fs.mkdirSync(companionDir);
+  fs.writeFileSync(path.join(companionDir, "bridge.json"), JSON.stringify({ protocol: 1, session: companionSession, secret: companionSecret, pid: 5150, createdAt: Date.now() }));
+  fs.writeFileSync(path.join(companionDir, "request.json"), JSON.stringify({
     protocol: 1,
+    session: companionSession,
     id: "request-123456",
     secret: companionSecret,
+    pid: 5150,
     script: "importMediaFromPath(\"/tmp/a.mov\")",
+    createdAt: Date.now(),
+    deadlineAt: Date.now() + 190000,
   }));
   let lifecycle = null;
   const uxpWindow = {
@@ -103,7 +117,7 @@ try {
   });
   vm.runInContext(uxpBridge, uxpContext, { filename: "companion/bridge.js" });
   const response = await until(() => {
-    try { return JSON.parse(fs.readFileSync(path.join(mailbox, "response.json"), "utf8")); } catch { return null; }
+    try { return JSON.parse(fs.readFileSync(path.join(companionDir, "response.json"), "utf8")); } catch { return null; }
   }, "UXP response");
   assert.equal(response.id, "request-123456");
   assert.deepEqual(JSON.parse(response.result), { ok: true, name: "a.mov" });

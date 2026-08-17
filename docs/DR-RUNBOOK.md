@@ -1,16 +1,16 @@
 # DR-RUNBOOK — FrameFlow tiklash yo'riqnomasi
 
-> Ma'lumotlar bazasi (Neon Postgres) va assetlar (GCS bucket) uchun zaxira + tiklash.
-> Bosqich 1 #8. Yakuniy yangilanish: 2026-07-04.
+> Ma'lumotlar bazasi (Google Cloud SQL for PostgreSQL) va assetlar (GCS bucket) uchun zaxira + tiklash.
+> Bosqich 1 #8. Yangilanish: 2026-08-17. Buyruqlarni avval alohida staging targetda sinang.
 
 ## 1. Nimalar zaxiralanadi
 
 | Manba | Zaxira mexanizmi | Joylashuv |
 |---|---|---|
-| **Postgres (Neon)** | (a) Neon o'z branch/PITR; (b) mustaqil `pg_dump` → GCS | `gs://<BACKUP_GCS_BUCKET>/db/` |
+| **Postgres (Cloud SQL)** | (a) Cloud SQL automated backup/PITR; (b) mustaqil `pg_dump` → GCS | `gs://<BACKUP_GCS_BUCKET>/db/` |
 | **Assetlar (GCS)** | Object versioning + (ixtiyoriy) lifecycle | asosiy bucket (`AWS_S3_BUCKET`) |
 
-Mustaqil DB nusxa provider-lock'siz (Neon hisobiga kirish imkonsiz bo'lsa ham tiklash mumkin).
+Mustaqil DB nusxa Cloud SQL control-plane’dan tashqarida ham tiklash imkonini beradi.
 
 ## 2. DB backup (kod)
 
@@ -50,21 +50,21 @@ gcloud storage buckets add-iam-policy-binding gs://frameflow-db-backups \
 # 1) Kerakli backup'ni GCS'dan oling
 gcloud storage cp gs://frameflow-db-backups/db/frameflow-2026-07-04_03-00-00.dump ./restore.dump
 
-# 2) BO'SH/yangi target DB'ga tiklang (Neon: yangi branch yoki yangi DB yarating).
+# 2) BO'SH/yangi Cloud SQL staging instance/database'ga tiklang.
 #    -Fc dump → pg_restore. --clean --if-exists mavjud obyektlarni almashtiradi (EHTIYOT: to'g'ri
 #    target ekaniga ishonch hosil qiling — bu ma'lumotni ustiga yozadi).
 pg_restore --no-owner --no-acl --clean --if-exists \
-  -d "postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require" ./restore.dump
+  -d "postgresql://user:pass@127.0.0.1:5432/frameflow_restore?sslmode=disable" ./restore.dump
 
 # 3) Sxema/migratsiya holatini tasdiqlang
 DATABASE_URL="<yangi-target>" npm run migrate:deploy -w @creative-tools/database
 ```
 
-### Variant B — Neon PITR (tez, oxirgi nuqtaga)
+### Variant B — Cloud SQL PITR (tez, oxirgi nuqtaga)
 
-Neon konsolida: Project → **Restore** / **Branches** → kerakli vaqt nuqtasiga branch yarating,
-so'ng Cloud Run `DATABASE_URL`'ni yangi branch connection string'iga o'zgartiring
-(`gh secret set CLOUDRUN_ENV_YAML` orqali — [[faza-e-platform-api-2026-07]]) va qayta deploy.
+Google Cloud Console’da Cloud SQL instance → **Backups/Restore** orqali yangi instance’ga kerakli
+vaqt nuqtasini tiklang. Auth Proxy orqali staging smoke bajaring; so‘ng `CLOUDRUN_ENV_YAML`dagi
+Unix-socket `DATABASE_URL`ni yangi instance’ga almashtirib gated deploy qiling.
 
 ### 3.1 Deploydan keyin
 
@@ -97,45 +97,40 @@ gcloud storage cp "gs://<AWS_S3_BUCKET>/<key>#<generation>" "gs://<AWS_S3_BUCKET
 - [ ] Asosiy asset bucket'da versioning yoqish (bo'lim 4).
 - [ ] Kvartalda BIR MARTA restore mashqi (backup haqiqatan tiklanishini tasdiqlash).
 
-## 6. Connection pooling (Neon + Cloud Run — miqyos)
+## 6. Connection pooling (Cloud SQL + Cloud Run — miqyos)
 
 Cloud Run gorizontal scaling'da (min-instances > 1) har instans o'z Prisma pool'ini
-ochadi → Postgres `max_connections`'ni tez tugatishi mumkin. Neon buni **pgbouncer**
-(pooled endpoint) bilan hal qiladi. Hammasi ENV orqali — kod yoki secret o'zgarmaydi.
+ochadi → Postgres `max_connections`'ni tez tugatishi mumkin. Joriy production Cloud SQL Unix
+socketdan foydalanadi; `DATABASE_CONNECTION_LIMIT` har instance Prisma poolini cheklaydi.
 
-**6.1 Pooled `DATABASE_URL` (tavsiya, ops-only).**
-Neon konsolida connection string'ning **Pooled** variantini oling (host `-pooler` bilan
-tugaydi) va Cloud Run `DATABASE_URL`'ni shunga o'rnating:
+**6.1 Runtime `DATABASE_URL`.** Cloud Run’da `--add-cloudsql-instances` mount qilgan socketni ishlating:
 
 ```
-postgresql://user:pass@ep-xxx-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require
+postgresql://user:pass@localhost/frameflow?host=/cloudsql/PROJECT:REGION:INSTANCE
 ```
 
-Runtime so'rovlari pgbouncer orqali multipleks bo'ladi; ko'p instans oz ulanish ishlatadi.
+GitHub migratsiya workflow’i ayni socket yo‘lini Cloud SQL Auth Proxy bilan takrorlaydi.
 
 **6.2 Prisma `connection_limit` (ixtiyoriy kod knob — additive).**
 `DATABASE_CONNECTION_LIMIT=<N>` o'rnatilsa, `packages/database/src/index.ts` datasource
-URL'iga `connection_limit=N` qo'shadi (URL'da allaqachon bo'lmasa). pgbouncer ortida
-har instans uchun kichik qiymat tavsiya etiladi (masalan `1`–`5`). **Env yo'q bo'lsa —
+URL'iga `connection_limit=N` qo'shadi (URL'da allaqachon bo'lmasa). Har instans uchun
+kichik qiymat tavsiya etiladi (masalan `1`–`5`). **Env yo'q bo'lsa —
 hech narsa o'zgarmaydi** (Prisma DATABASE_URL'ni o'zi o'qiydi, bugungi xatti-harakat).
 
-**6.3 Migratsiyalar uchun `DIRECT_URL` (ixtiyoriy).**
-Prisma Migrate pgbouncer orqali ishlamaydi (prepared statement'lar) — u to'g'ridan-to'g'ri
-(non-pooled) ulanish talab qiladi. Pooled `DATABASE_URL`'ga o'tsangiz, migratsiya uchun
-**non-pooled** string'ni `DIRECT_URL`'ga bering va schema'ga `directUrl` qo'shing:
+**6.3 Migratsiyalar uchun `DIRECT_DATABASE_URL`.** Deploy workflow bu qiymatni o‘qiydi;
+berilmasa `DATABASE_URL`ga tushadi. Ikkalasi ham Cloud SQL Auth Proxy/socket orqali yuradi.
 
 ```prisma
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")   // pooled (runtime)
-  directUrl = env("DIRECT_URL")     // non-pooled (migrate/introspect)
+  directUrl = env("DIRECT_DATABASE_URL") // migrate/introspect
 }
 ```
 
-> ⚠️ `directUrl`'ni schema'ga qo'shsangiz, `migrate:deploy` `DIRECT_URL`'ni TALAB qiladi
-> (migrate-gate buziladi). Shu sabab hozir schema'ga qo'shilmagan — pooled URL'ga
-> o'tishda IKKALASINI birga qo'shing. Pooled'siz (bugungi holat) o'zgarish shart emas.
+> Deploydan oldin `.github/workflows/deploy-cloudrun.yml`dagi URL validation, Auth Proxy,
+> `migrate:deploy` va `migrate:status` gate’lari muvaffaqiyatli o‘tishi shart.
 
 **6.4 Cloud Run concurrency.** Har instans `concurrency` (default ~80) so'rovni parallel
 ko'taradi; instans pool hajmi (`connection_limit`) shunga yetarli bo'lsin, lekin
-`max-instances × connection_limit` Neon limitidan oshmasin. pgbouncer bu hisobni yumshatadi.
+`max-instances × connection_limit` Cloud SQL `max_connections` limitidan oshmasin.

@@ -380,7 +380,7 @@ async function topazDownloadUrl(url: string, kind: string): Promise<OrResult<Buf
   try {
     const res = await fetch(url);
     if (!res.ok) return { ok: false, error: `topaz download HTTP ${res.status}`, status: res.status };
-    const buf = Buffer.from(await res.arrayBuffer());
+    const buf = await readCappedResponse(res);
     return buf.length ? { ok: true, data: buf } : { ok: false, error: "topaz: empty result" };
   } catch (e) {
     return { ok: false, error: (e as Error).message || "topaz download error" };
@@ -390,3 +390,4 @@ async function topazDownloadUrl(url: string, kind: string): Promise<OrResult<Buf
 export async function topazVideoUrlToBuffer(url: string): Promise<OrResult<Buffer>> {
   return topazDownloadUrl(url, "video");
 }
+import { readCappedResponse } from "./capped-download.js";

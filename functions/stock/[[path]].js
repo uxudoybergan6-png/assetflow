@@ -131,6 +131,8 @@ export async function onRequest(context) {
     '<link rel="canonical" href="' + esc(canonical) + '">';
 
   const rewriter = new HTMLRewriter()
+    .on('link[rel="canonical"]', { element(el) { el.remove(); } })
+    .on('meta[name="description"],meta[property^="og:"],meta[name^="twitter:"]', { element(el) { el.remove(); } })
     .on("title", {
       element(el) {
         el.setInnerContent(title);

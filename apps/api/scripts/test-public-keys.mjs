@@ -19,10 +19,10 @@ const cases = [
   // ENDI true — admin CMS media (flat kalitlar)
   ["landing/1712-hero.jpg", true],
   ["site/plugin/1712-bg.mp4", true],
-  // Mavjud ommaviy qoidalar buzilmagan
-  ["templates/x/thumb.jpg", true],
-  ["templates/x/preview.mp4", true],
-  ["templates/x/scenes/s1/thumb.jpg", true],
+  // Template media faqat API publication/takedown gate'idan keyin imzolanadi.
+  ["templates/x/thumb.jpg", false],
+  ["templates/x/preview.mp4", false],
+  ["templates/x/scenes/s1/thumb.jpg", false],
   ["gen/u/123-456-thumb.jpg", true],
   ["gen/u/123-456-poster.jpg", true],
   ["gen/u/123-456-preview.mp4", true],

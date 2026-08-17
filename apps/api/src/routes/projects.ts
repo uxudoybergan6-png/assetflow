@@ -47,6 +47,7 @@ const PROJECT_TPL_SELECT = {
   metaJson: true,
   fileName: true,
   fileSize: true,
+  packHash: true,
   isPro: true,
   contributor: { select: { name: true, email: true } },
   createdAt: true,

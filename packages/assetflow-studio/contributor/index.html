@@ -163,6 +163,7 @@ let _routeInited = false;
 
 function route(view, arg, fromHistory){
   CURRENT=view;
+  if (window.AssetFlowTheme) AssetFlowTheme.closeNav();
   // Tarix yozuvi: popstate'dan kelmagan bo'lsa — dastlab replaceState, keyin pushState.
   if (!fromHistory) {
     try {
@@ -185,7 +186,8 @@ function route(view, arg, fromHistory){
   } catch (err) {
     console.error(err);
     if (typeof AssetFlowLog !== "undefined") AssetFlowLog.error(err.message, { action: "view_error", detail: view });
-    host.innerHTML = `<div class="card card-pad empty"><div class="ico">${typeof ic==='function'?ic('alert'):'!'}</div><h3>Failed to load view</h3><p class="body" style="margin-top:8px">${err.message}</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="route('overview')">Retry</button></div>`;
+    const safeErr = window.StudioMedia?.escapeHtml ? StudioMedia.escapeHtml(err?.message || 'Unknown error') : 'Unknown error';
+    host.innerHTML = `<div class="card card-pad empty"><div class="ico">${typeof ic==='function'?ic('alert'):'!'}</div><h3>Failed to load view</h3><p class="body" style="margin-top:8px">${safeErr}</p><button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="route('overview')">Retry</button></div>`;
   }
   host.scrollTop = 0;
 }

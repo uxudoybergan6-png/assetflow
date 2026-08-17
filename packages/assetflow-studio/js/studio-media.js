@@ -2,6 +2,10 @@
  * Template media — API asset URL and preview HTML
  */
 const StudioMedia = (() => {
+  const SAFE_GRADS = new Set(["g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8", "g9", "g10"]);
+  function safeGrad(value) {
+    return SAFE_GRADS.has(value) ? value : "g1";
+  }
   function apiBase() {
     return (
       (typeof window !== "undefined" &&
@@ -46,7 +50,7 @@ const StudioMedia = (() => {
   function renderPreview(t, opts = {}) {
     const aspect = opts.aspect || "16/10";
     const style = `width:100%;aspect-ratio:${aspect};object-fit:${opts.fit || "cover"};background:#0f0f14;border-radius:${opts.radius || "0"};display:block;max-height:${opts.maxHeight || "none"}`;
-    const grad = t.grad || "g1";
+    const grad = safeGrad(t.grad);
     const mc = mediaClassOf(t);
     const previewSrc = escapeAttr(t.previewUrl || assetUrl(t.id, "preview"));
     const thumbSrc = escapeAttr(t.thumbUrl || assetUrl(t.id, "thumb"));
@@ -89,13 +93,13 @@ const StudioMedia = (() => {
       const src = escapeAttr(t.thumbUrl || assetUrl(t.id, "thumb"));
       // Uzbek comment: onerror ichiga HTML kiritish taqiqlangan — atribut buziladi (P4).
       // Gradient span orqa fonda fallback vazifasini bajaradi; img xato bersa shunchaki yashiriladi.
-      return `<span class="thumb ${escapeAttr(t.grad || "g1")} grain" style="display:block;width:${w};height:${h};border-radius:var(--r-sm);overflow:hidden"><img src="${src}" alt="" style="${box}" loading="lazy" onerror="this.style.display='none'" /></span>`;
+      return `<span class="thumb ${safeGrad(t.grad)} grain" style="display:block;width:${w};height:${h};border-radius:var(--r-sm);overflow:hidden"><img src="${src}" alt="" style="${box}" loading="lazy" onerror="this.style.display='none'" /></span>`;
     }
     if (t.id && hasAsset(t, "preview")) {
       const src = escapeAttr(t.previewUrl || assetUrl(t.id, "preview"));
       return `<video src="${src}" muted playsinline preload="metadata" style="${box}"></video>`;
     }
-    return thumbArt(t.grad || "g1", t.dur || "", size);
+    return thumbArt(safeGrad(t.grad), t.dur || "", size);
   }
 
   function filePills(t) {

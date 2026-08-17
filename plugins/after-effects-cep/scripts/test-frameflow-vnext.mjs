@@ -48,17 +48,18 @@ assert.match(css, /\.ffx-showcase-progress button\{position:relative;height:24px
 assert.match(css, /#homeGuest\{/);
 
 assert.match(js, /originalRenderHome/);
-assert.match(js, /window\.afOpenCreateDraft\(\{ mode: mode === "assistant" \? "image" : mode \}\)/);
-assert.match(js, /window\.afOpenCreateDraft\(\{ mode: mode, prompt: prompt \}\)/);
+assert.match(js, /window\.afOpenCreateDraft\(\{ mode: mode === "assistant" \? "image" : mode, autoModel: state\.autoModel \}\)/);
+assert.match(js, /window\.afOpenCreateDraft\(\{ mode: mode, prompt: prompt, autoModel: state\.autoModel \}\)/);
 assert.match(js, /window\.afOpenCreateSession\(session\)/);
 assert.doesNotMatch(js, /window\.ax(?:IG|VG|AG)(?:NewSession|ApplyDraft|SetSession)/);
-assert.match(js, /FrameFlow Auto will use the best live model/);
+assert.match(js, /FrameFlow Auto will use the catalog-default live model/);
+assert.match(js, /localStorage\.setItem\("ff_auto_model", state\.autoModel \? "1" : "0"\)/);
 assert.doesNotMatch(js, /byId\("ffxAutoModel"\)[\s\S]{0,400}openModels/);
 assert.match(js, /window\.axwsGetSessions/);
 assert.match(js, /window\.afJobStore/);
 assert.doesNotMatch(js, /\.click\(\).*ffxStartCreate/);
 assert.doesNotMatch(js, /cost-quote|\/api\/studio\/gen\b/);
-assert.match(js, /if \(!prompt\) \{/);
+assert.doesNotMatch(js, /if \(!prompt\) \{/);
 assert.match(html, /window\.afOpenCreateDraft=openDraft/);
 assert.match(html, /window\.afOpenCreateSession=openCreateSession/);
 assert.match(html, /function openCreateSession\(session\)[\s\S]{0,300}window\.axwsOpenSession\(session\)/);

@@ -51,18 +51,18 @@ const dest = path.join(pluginsDir, folderName);
 /** Registrni o'qib, shu plagin yozuvini olib tashlaydi (qayta yozishdan oldin). */
 function readRegistry() {
   if (!fs.existsSync(infoPath)) return { plugins: [] };
-  try {
-    const j = JSON.parse(fs.readFileSync(infoPath, "utf8"));
-    if (!Array.isArray(j.plugins)) j.plugins = [];
-    return j;
-  } catch {
-    return { plugins: [] };
+  const j = JSON.parse(fs.readFileSync(infoPath, "utf8"));
+  if (!j || !Array.isArray(j.plugins)) {
+    throw new Error(`UXP registry is invalid; refusing to overwrite it: ${infoPath}`);
   }
+  return j;
 }
 
 function writeRegistry(reg) {
   fs.mkdirSync(path.dirname(infoPath), { recursive: true });
-  fs.writeFileSync(infoPath, JSON.stringify(reg), "utf8");
+  const tmp = `${infoPath}.tmp-${process.pid}`;
+  fs.writeFileSync(tmp, JSON.stringify(reg), { encoding: "utf8", mode: 0o600 });
+  fs.renameSync(tmp, infoPath);
 }
 
 if (uninstall) {
@@ -75,20 +75,18 @@ if (uninstall) {
   process.exit(0);
 }
 
-// Papkani toza ko'chirish (eski versiya papkalarini ham tozalaymiz).
-if (fs.existsSync(pluginsDir)) {
-  for (const name of fs.readdirSync(pluginsDir)) {
-    if (name.startsWith(`${pluginId}_`)) {
-      fs.rmSync(path.join(pluginsDir, name), { recursive: true, force: true });
-    }
-  }
-}
+// Avval yangi payload staging papkaga to'liq yoziladi; eski ishlaydigan nusxa
+// registry atomik yangilanmaguncha saqlanadi.
 // Runtime'ga tegishli bo'lmagan papkalar ko'chirilmaydi: `spike/` o'z manifestiga ega
 // (host chalkashmasin), `scripts/`+`dist/` esa Node kodi, `dev/` — brauzer stub
 // harness (fikstura ma'lumot bilan) — UXP paketiga aloqasi yo'q.
 const SKIP_DIRS = new Set(["scripts", "spike", "dist", "dev", "node_modules", ".git"]);
-fs.mkdirSync(dest, { recursive: true });
-fs.cpSync(src, dest, {
+fs.mkdirSync(pluginsDir, { recursive: true });
+const stage = `${dest}.stage-${process.pid}`;
+const backup = `${dest}.backup-${process.pid}`;
+fs.rmSync(stage, { recursive: true, force: true });
+fs.mkdirSync(stage, { recursive: true });
+fs.cpSync(src, stage, {
   recursive: true,
   filter: (from) => {
     const rel = path.relative(src, from);
@@ -99,7 +97,7 @@ fs.cpSync(src, dest, {
 
 // Build shtampi — AE'dagi `install-cep.sh` bilan bir xil mantiq. Shtamp urilmasa
 // panel pastida xom `__AF_BUILD__` matni ko'rinib qoladi.
-stampBuild(path.join(dest, manifest.main || "panel.html"), `dev-${version}-${stampDate()}`);
+stampBuild(path.join(stage, manifest.main || "panel.html"), `dev-${version}-${stampDate()}`);
 
 function stampDate() {
   const d = new Date();
@@ -124,7 +122,24 @@ reg.plugins.push({
   type: "uxp",
   versionString: version,
 });
-writeRegistry(reg);
+try {
+  fs.rmSync(backup, { recursive: true, force: true });
+  if (fs.existsSync(dest)) fs.renameSync(dest, backup);
+  fs.renameSync(stage, dest);
+  writeRegistry(reg);
+  for (const name of fs.readdirSync(pluginsDir)) {
+    if (name.startsWith(`${pluginId}_`) && path.join(pluginsDir, name) !== dest) {
+      fs.rmSync(path.join(pluginsDir, name), { recursive: true, force: true });
+    }
+  }
+} catch (error) {
+  fs.rmSync(stage, { recursive: true, force: true });
+  if (fs.existsSync(backup)) {
+    fs.rmSync(dest, { recursive: true, force: true });
+    fs.renameSync(backup, dest);
+  }
+  throw error;
+}
 
 console.log(`O'rnatildi: ${pluginId} v${version}`);
 console.log(`  papka:   ${dest}`);
