@@ -18,11 +18,17 @@ COPY . .
 # Soxta stub package.json'lar olib tashlandi — .dockerignore endi haqiqiy
 # manifestlarni kiritadi (aks holda `ci` nom/deps nomuvofiqligida yiqilardi).
 # render.yaml buildCommand bilan bir xil tartib: install → prisma generate → build db → build api
+# `npm prune` prisma CLI/@prisma/engines paketlarini devOptional sifatida olib
+# tashlaydi. Generated Client'ning platform query-engine faylini oldindan saqlab,
+# prune'dan keyin qaytarmasak runtime faqat DB so'rovida yiqiladi (server/livez tirik).
 RUN npm ci --include=dev \
  && npm run generate -w @creative-tools/database \
  && npm run build -w @creative-tools/database \
  && npm run build -w apps/api \
- && npm prune --omit=dev --omit=optional
+ && cp -a node_modules/.prisma /tmp/prisma-generated \
+ && npm prune --omit=dev --omit=optional \
+ && cp -a /tmp/prisma-generated/. node_modules/.prisma/ \
+ && test -n "$(find node_modules/.prisma/client -maxdepth 1 -type f -name 'libquery_engine-*.so.node' -print -quit)"
 
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
