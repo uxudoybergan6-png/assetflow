@@ -73,6 +73,9 @@ jobs:
       - name: Install deps (migration)
         run: npm ci
 
+      - name: Generate Prisma client (migration)
+        run: npm run generate -w @creative-tools/database
+
       # Cloud SQL ko'chishi (2026-07-31): Cloud Run konteynerida `/cloudsql/<INSTANCE>`
       # Unix socket'ini `--add-cloudsql-instances` avtomatik mount qiladi, LEKIN Actions
       # runner'ida bunday mount YO'Q — migratsiya qadami esa jonli bazaga ulanishi shart.
