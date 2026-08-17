@@ -80,7 +80,12 @@ import {
 } from "../lib/gen-processor.js";
 import { preflightSafetyCheck } from "../lib/preflight-safety.js";
 import { validateMentionIntegrity, type MentionKey } from "../lib/enhance-mentions.js";
-import { moderateContent, collectImageRefUrls } from "../lib/moderation.js";
+import {
+  moderateContent,
+  collectImageRefUrls,
+  isModerationConfigured,
+  moderateOutputsEnabled,
+} from "../lib/moderation.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { measuredEtaSeconds, fallbackEtaSeconds } from "../lib/gen-eta.js";
 import {
@@ -1565,6 +1570,19 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   const p = genSchema.safeParse(req.body);
   if (!p.success) {
     res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
+    return;
+  }
+  // Productionda ML input+output moderatsiyasi to'liq sozlanmagan bo'lsa yangi provider
+  // job umuman yaratilmaydi, kredit yechilmaydi. Bu xavfsizlikni fail-closed saqlaydi,
+  // ammo tashqi moderatsiya env'i xatosi katalog/auth/health'ni global yiqitmaydi.
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!isModerationConfigured() || !moderateOutputsEnabled())
+  ) {
+    res.status(503).json({
+      error: "AI safety verification is temporarily unavailable",
+      code: "MODERATION_NOT_CONFIGURED",
+    });
     return;
   }
   const { sessionId, mode, prompt, modelId, price, costQuoteSignature, idempotencyKey } = p.data;

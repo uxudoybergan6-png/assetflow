@@ -6,8 +6,8 @@
 > `REJA-*`, `STUDIO-GEN-*`, mockup va archive fayllari bajarilgan holat deb talqin qilinmaydi.
 
 **Yangilangan:** 2026-08-18
-**Holat:** audit hardening committed, CI passed va production rollout gated pipeline orqali chiqarildi;
-Marketplace signed release hali tashqi gate’larda.
+**Holat:** audit hardening committed, CI passed va production DB migratsiyalari qo‘llandi;
+Cloud Run rollout health-gated pipeline orqali chiqariladi, Marketplace signed release tashqi gate’da.
 
 ## Joriy arxitektura
 
@@ -86,7 +86,8 @@ Migratsiyalar:
 - Kredit kamayishi bilan ledger bir transactionda; generation refund idempotent.
 - Public katalog faqat approved + published + takedown bo‘lmagan yozuvlarni beradi.
 - User media to‘g‘ridan public bucket allowlistiga kirmaydi; API ownership/publish gate ishlaydi.
-- Production konfiguratsiyasi moderation, Turnstile, 2FA, storage va billing secretlarisiz fail-closed.
+- Production konfiguratsiyasi moderation, Turnstile, 2FA, storage va billing secretlarisiz fail-closed;
+  moderation/Turnstile yetishmasa xavfli AI/signup funksiyasi bloklanadi, katalog/auth/health esa ishlaydi.
 - ZIP/installer/bridge hech qachon shell interpolation yoki tekshirilmagan tashqi path ishlatmaydi.
 
 ## Lokal tekshiruv

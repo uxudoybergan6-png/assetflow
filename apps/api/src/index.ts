@@ -401,18 +401,21 @@ function validateEnv() {
   if (isProd && !process.env.BACKUP_GCS_BUCKET?.trim())
     warnings.push("BACKUP_GCS_BUCKET yo'q — DB backup GCS'ga yuklanmaydi (ma'lumot yo'qotish xavfi). docs/PROD-ENV-CHECKLIST.md");
 
-  if (isProd && !process.env.MODERATION_API_KEY?.trim()) {
-    console.error("[FATAL] MODERATION_API_KEY yo'q — production generativ media moderatsiyasiz ishga tushmaydi.");
-    process.exit(1);
-  }
-  if (isProd && process.env.MODERATION_MODERATE_OUTPUTS !== "true") {
-    console.error("[FATAL] MODERATION_MODERATE_OUTPUTS=true productionda majburiy.");
-    process.exit(1);
-  }
-  if (isProd && (!process.env.TURNSTILE_SECRET_KEY?.trim() || !process.env.TURNSTILE_SITE_KEY?.trim())) {
-    console.error("[FATAL] TURNSTILE_SECRET_KEY va TURNSTILE_SITE_KEY productionda birga majburiy.");
-    process.exit(1);
-  }
+  // Tashqi abuse-provider env'i yo'q bo'lsa butun katalog/auth API'ni yiqitmaymiz.
+  // Xavfli funksiyalarning o'zi fail-closed: /studio/gen 503 qaytaradi, Turnstile'siz
+  // email signup esa token ololmaydi va backend verifikatsiyasidan o'tmaydi.
+  if (isProd && !process.env.MODERATION_API_KEY?.trim())
+    warnings.push(
+      "MODERATION_API_KEY yo'q — AI generatsiya MODERATION_NOT_CONFIGURED bilan bloklanadi"
+    );
+  if (isProd && process.env.MODERATION_MODERATE_OUTPUTS !== "true")
+    warnings.push(
+      "MODERATION_MODERATE_OUTPUTS=true emas — AI generatsiya MODERATION_NOT_CONFIGURED bilan bloklanadi"
+    );
+  if (isProd && (!process.env.TURNSTILE_SECRET_KEY?.trim() || !process.env.TURNSTILE_SITE_KEY?.trim()))
+    warnings.push(
+      "TURNSTILE_SECRET_KEY va TURNSTILE_SITE_KEY to'liq emas — email signup fail-closed bloklangan"
+    );
 
   // #108 (I6) — SENTRY_DSN yo'qligi ilgari HECH QAYERDA aytilmasdi: `captureException`
   // jimgina no-op bo'lardi, ya'ni productionда xatolar hech kimga yetib bormasdi va buni

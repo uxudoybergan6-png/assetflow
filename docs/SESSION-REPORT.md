@@ -11,5 +11,5 @@ Session Report: 2026-08-18 — web/plugin audit remediation
 - Main commit/push bajarildi; GitHub Linux + real Windows MSI CI PASS.
 - CDN Worker productionga chiqarildi; GitHub Cloudflare secretlari yo‘qligi alohida infra qarzi.
 - Cloud SQL eski ingest dublikatlari migrationda xavfsiz terminal `duplicate` holatga keltirildi.
-- Failed Prisma attempt official rolled-back resolve bilan tiklanib, gated Cloud Run rollout bajarildi.
+- Failed Prisma attempt tiklandi, 4 migratsiya qo‘llandi; env xatosi faqat AI/signupni fail-closed bloklaydi.
 - Live Turnstile/billing canary va signed Marketplace installer tashqi gate bo‘lib qoladi.
