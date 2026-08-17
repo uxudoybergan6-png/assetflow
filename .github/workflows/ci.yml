@@ -46,6 +46,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Video reference trim testi haqiqiy ffmpeg jarayonini ishga tushiradi. Cloud Run
+      # image'ida ffmpeg bor; GitHub Linux runnerida esa kafolatlanmagan, shuning uchun
+      # integration suite'dan oldin shu runtime dependency'ni aniq o'rnatamiz.
+      - name: Install ffmpeg integration dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+
       - name: Production dependency audit (HIGH bloklanadi)
         run: npm audit --omit=dev --omit=optional --audit-level=high
 
