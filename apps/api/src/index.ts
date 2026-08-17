@@ -165,6 +165,11 @@ function dbHealthReason(error: unknown): string {
   if (code === "P1000" || /authentication failed/i.test(message)) return "authentication";
   if (code === "P1001" || /can't reach database server/i.test(message)) return "unreachable";
   if (/permission denied/i.test(message)) return "socket_permission";
+  if (/openssl|libssl/i.test(message)) return "query_engine_openssl";
+  if (/glibc|libc\.so/i.test(message)) return "query_engine_libc";
+  if (/unable to require|failed to load|error loading shared library/i.test(message))
+    return "query_engine_load";
+  if (/could not locate|cannot find|not found/i.test(message)) return "query_engine_missing";
   if (/query engine|libquery_engine/i.test(message)) return "query_engine";
   if (/does not exist/i.test(message)) return "missing_resource";
   return code || name || "unknown";
