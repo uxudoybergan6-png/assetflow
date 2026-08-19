@@ -15,6 +15,9 @@ const AE_PANEL = path.resolve(HERE, "..", "..", "after-effects-cep", "AssetFlow_
 const PORTED_BODY = path.resolve(HERE, "..", "ported", "ae-body.html");
 const PORTED_CORE = path.resolve(HERE, "..", "ported", "ae-inline-05.js");
 const PORTED_SESSIONS = path.resolve(HERE, "..", "ported", "ae-inline-08.js");
+const PORTED_NETWORK = path.resolve(HERE, "..", "ported", "ae-inline-03.js");
+const PORTED_CREATE = path.resolve(HERE, "..", "ported", "ae-src", "frameflow-create-workspace.js");
+const PORTED_VNEXT = path.resolve(HERE, "..", "ported", "ae-src", "frameflow-vnext.js");
 
 const calls = [];
 const source = {
@@ -190,6 +193,9 @@ const aePanel = fs.readFileSync(AE_PANEL, "utf8");
 const portedBody = fs.readFileSync(PORTED_BODY, "utf8");
 const portedCore = fs.readFileSync(PORTED_CORE, "utf8");
 const portedSessions = fs.readFileSync(PORTED_SESSIONS, "utf8");
+const portedNetwork = fs.readFileSync(PORTED_NETWORK, "utf8");
+const portedCreate = fs.readFileSync(PORTED_CREATE, "utf8");
+const portedVnext = fs.readFileSync(PORTED_VNEXT, "utf8");
 for (const html of [aePanel, portedBody]) {
   assert.match(html, /class="ai-seg ai-workspace-nav"/);
   assert.match(html, /data-go="sessions">Sessions</);
@@ -202,5 +208,9 @@ assert.match(portedSessions, /uxpView\.style\.setProperty\('animation','none'\)/
 assert.match(portedCore, /_uxpWorkspacePrepared/);
 assert.match(portedCore, /_uxpComposerTarget=\(id==='imggen'\|\|id==='vidgen'\|\|id==='audgen'\)/);
 assert.match(portedCore, /_cv\.style\.removeProperty\(_p\)/);
+assert.match(portedNetwork, /d\.code!=='MODERATION_NOT_CONFIGURED'/);
+assert.match(portedNetwork, /function enhanceMismatchMessage\(r\)/);
+assert.match(portedCreate, /FrameFlowCreateWorkspace/);
+assert.match(portedVnext, /FrameFlowVNext/);
 
 console.log("✓ host shim: writable path + path + .prproj import + cep.fs + AE/PR session parity o'tdi");

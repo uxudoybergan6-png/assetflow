@@ -5,9 +5,9 @@
 > [`archive/PROJECT-STATUS-LEGACY-THROUGH-2026-08-07.md`](archive/PROJECT-STATUS-LEGACY-THROUGH-2026-08-07.md)da.
 > `REJA-*`, `STUDIO-GEN-*`, mockup va archive fayllari bajarilgan holat deb talqin qilinmaydi.
 
-**Yangilangan:** 2026-08-18
-**Holat:** audit hardening main’ga push qilindi, CI passed, production DB migratsiyalari qo‘llandi;
-health-gated Cloud Run revision 100% trafikda, Marketplace signed release tashqi gate’da.
+**Yangilangan:** 2026-08-20
+**Holat:** audit hardening va AI safety outage remediation joriy kodda; Cloud Run rollout GitHub
+Actions health gate orqali, Marketplace signed release esa tashqi gate’da.
 
 ## Joriy arxitektura
 
@@ -72,6 +72,19 @@ Studio manbasi faqat `packages/assetflow-studio/js/` va `styles/`da tahrirlanadi
   migratsiyasi qo‘llandi; Cloud Run DB/storage health gate’dan o‘tib 100% trafikka chiqarildi; CDN Worker ishlaydi.
 - Live billing canary va signed Marketplace installer tashqi gate bo‘lib qoladi.
 
+## 2026-08-20 Studio Gen outage remediation
+
+- Production AI’ni to‘liq bloklagan faqat-`MODERATION_API_KEY` gate’i mavjud Cloud Run Vertex ADC
+  bilan ishlaydigan Gemini multimodal safety fallbackiga almashtirildi.
+- Prompt va start/end/image/video/audio referenslar kredit yechilishidan oldin tekshiriladi; yaratilgan
+  image/video/audio ham natija berilishidan oldin tekshiriladi. Tekshiruv xatosi fail-closed va refund.
+- `/gen/health` hamda `/gen/models` endi moderation/generation readinessni rost ko‘rsatadi; xavfsizlik
+  tayyor bo‘lmasa klient modelni “Ready” deb ko‘rsatmaydi.
+- Web, AE va generatsiya qilingan Premiere klienti doimiy konfiguratsiya 503’ini to‘rt marta qayta
+  yubormaydi va texnik xato o‘rniga tushunarli xabar beradi.
+- Enhance referens butunligi buzilgan rewrite bekor qilinsa kredit qaytariladi; javob missing/
+  extraneous/changed sababini va authoritative balansni qaytaradi.
+
 Migratsiyalar:
 
 - `20260817120000_audit_money_invariants`
@@ -87,7 +100,8 @@ Migratsiyalar:
 - Public katalog faqat approved + published + takedown bo‘lmagan yozuvlarni beradi.
 - User media to‘g‘ridan public bucket allowlistiga kirmaydi; API ownership/publish gate ishlaydi.
 - Production konfiguratsiyasi moderation, Turnstile, 2FA, storage va billing secretlarisiz fail-closed;
-  moderation/Turnstile yetishmasa xavfli AI/signup funksiyasi bloklanadi, katalog/auth/health esa ishlaydi.
+  moderation uchun Vertex ADC yoki dedicated provider kerak, Turnstile yetishmasa signup bloklanadi,
+  katalog/auth/health esa ishlaydi.
 - ZIP/installer/bridge hech qachon shell interpolation yoki tekshirilmagan tashqi path ishlatmaydi.
 
 ## Lokal tekshiruv
@@ -117,8 +131,8 @@ Audit regressiya skriptlari `apps/api/scripts/test-*.mjs`,
 
 Quyidagilar lokal kod bilan tasdiqlanmaydi va bajarilmaguncha **production/Marketplace ready emas**:
 
-1. Production secret/env: haqiqiy Turnstile site+secret, TOTP key, moderation, Sentry, billing,
-   provider va storage qiymatlarini o‘rnatib boot validation’dan o‘tkazish.
+1. Production secret/env: haqiqiy Turnstile site+secret, TOTP key, Vertex/dedicated moderation
+   readiness, Sentry, billing, provider va storage qiymatlarini boot validation’dan o‘tkazish.
 2. Signed ZXP + notarized PKG + signed MSI; haqiqiy ZXPSignCmd/signtool/notary tekshiruvi.
 3. Clean macOS/Windows profilida install/update/uninstall va AE/Premiere restart/import smoke.
 4. Premiere CEP UI + hidden UXP companion uchun Adobe tasdiqlagan bitta orchestrated release kanali;

@@ -27,7 +27,11 @@ import { prisma } from "@creative-tools/database";
 import { initSentry, captureException } from "./lib/sentry.js";
 import { seedModelPricing } from "./lib/model-pricing.js";
 import { startReconciliationScheduler } from "./lib/pricing-reconcile.js";
-import { moderationStartupWarning } from "./lib/moderation.js";
+import {
+  moderationStartupWarning,
+  isSafetyVerificationConfigured,
+  moderateOutputsEnabled,
+} from "./lib/moderation.js";
 import { findEnabledModelsWithoutCost, DEFAULT_PROVIDER_USD } from "./lib/provider-cost.js";
 import { validateGenModelsOrThrow } from "./lib/gen-models-validate.js";
 import { assertPricingFloorsOrThrow } from "./lib/assert-pricing-floors.js";
@@ -423,13 +427,13 @@ function validateEnv() {
   // Tashqi abuse-provider env'i yo'q bo'lsa butun katalog/auth API'ni yiqitmaymiz.
   // Xavfli funksiyalarning o'zi fail-closed: /studio/gen 503 qaytaradi, Turnstile'siz
   // email signup esa token ololmaydi va backend verifikatsiyasidan o'tmaydi.
-  if (isProd && !process.env.MODERATION_API_KEY?.trim())
+  if (isProd && !isSafetyVerificationConfigured())
     warnings.push(
-      "MODERATION_API_KEY yo'q — AI generatsiya MODERATION_NOT_CONFIGURED bilan bloklanadi"
+      "Moderation provider yo'q — AI generatsiya MODERATION_NOT_CONFIGURED bilan bloklanadi"
     );
-  if (isProd && process.env.MODERATION_MODERATE_OUTPUTS !== "true")
+  if (isProd && !moderateOutputsEnabled())
     warnings.push(
-      "MODERATION_MODERATE_OUTPUTS=true emas — AI generatsiya MODERATION_NOT_CONFIGURED bilan bloklanadi"
+      "Output moderation yo'q — AI generatsiya MODERATION_NOT_CONFIGURED bilan bloklanadi"
     );
   if (isProd && (!process.env.TURNSTILE_SECRET_KEY?.trim() || !process.env.TURNSTILE_SITE_KEY?.trim()))
     warnings.push(

@@ -47,7 +47,7 @@
     var chip=$('igCredit'); if(chip)chip.classList.toggle('low',low);
     return low;
   }
-  function refresh(){ setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); restoreActiveJobs(); }
+  function refresh(){ var saved=window.afActiveSessionStore&&window.afActiveSessionStore.get('imggen');if(!st.sessionId&&saved){st.sessionId=saved.id;window.__axwsSess=window.__axwsSess||{};window.__axwsSess.imggen=saved;} setCreditChip(credits()); recost(); ensureMeta(); renderRecentGrid(); loadRecent(); restoreActiveJobs(); }
   // SC_29: sessiya almashganda feed TOZALANADI — boshqa sessiyaning kartalari qolib ketmasin;
   // faol joblarning pit'i uziladi (natija endi eski sessiya feed'iga tushmaydi, poll fonda davom etadi).
   function igResetFeed(){
@@ -57,8 +57,8 @@
     activeJobs.forEach(function(j){ j.pit=null; });
     renderRecentGrid();
   }
-  window.axIGNewSession=function(){ st.sessionId=null; if(window.__axwsSess)window.__axwsSess.imggen=null; igResetFeed(); }; // P1: New session
-  window.axIGSetSession=function(id){ id=id||null; if(id===st.sessionId)return; st.sessionId=id; igResetFeed(); }; // SC_18: picker'dan sessiya davomi
+  window.axIGNewSession=function(){ st.sessionId=null; if(window.afActiveSessionStore)window.afActiveSessionStore.set('imggen',null); if(window.__axwsSess)window.__axwsSess.imggen=null; igResetFeed(); }; // P1: New session
+  window.axIGSetSession=function(id){ id=id||null; if(id===st.sessionId)return; st.sessionId=id; if(window.afActiveSessionStore)window.afActiveSessionStore.set('imggen',id,'image'); igResetFeed(); }; // SC_18: picker'dan sessiya davomi
   // SC_29: joriy sessiya (fon-toast "View" mos sessiyani aniqlashi uchun) + tab sanoqlari
   window.__axToolSess=window.__axToolSess||{};
   window.__axToolSess.imggen=function(){ return st.sessionId; };
@@ -96,6 +96,15 @@
     if(!sc)return;
     var pad=8,gap=6,vw=window.innerWidth,vh=window.innerHeight;
     sc.style.bottom='auto';
+    var modelHost=sc.parentNode&&(sc.parentNode.id==='igMSheet');
+    if(modelHost){
+      var mw=Math.min(720,vw-pad*2);
+      sc.style.width=mw+'px'; sc.style.maxHeight=(vh-pad*2)+'px';
+      sc.style.left='-9999px'; sc.style.top='0px'; var msh=Math.min(sc.offsetHeight,vh-pad*2);
+      sc.style.left=Math.max(pad,Math.round((vw-mw)/2))+'px';
+      sc.style.top=Math.max(pad,Math.round((vh-msh)/2))+'px';
+      return;
+    }
     if(anchorEl&&anchorEl.getBoundingClientRect){
       var ar=anchorEl.getBoundingClientRect();
       var w=Math.min(Math.max(ar.width,240),380,vw-pad*2);
@@ -261,6 +270,31 @@
     });
     return meta._pending;
   }
+  window.axIGSelectModel=function(id){
+    return ensureMeta().then(function(){
+      var m=(meta.models||[]).filter(function(x){ return String(x.id)===String(id); })[0];
+      if(!m)return false;
+      if(String(meta.modelId)===String(m.id))return true;
+      if(setModel(m)!==false){ renderModelSheet(); return true; }
+      return false;
+    });
+  };
+  window.axIGApplyDraft=function(draft){
+    draft=draft||{};
+    return ensureMeta().then(function(){
+      var selected=Promise.resolve(true);
+      if(draft.modelId!=null)selected=window.axIGSelectModel(draft.modelId);
+      return selected.then(function(){
+        var p=draft.params||{};
+        if(p.aspectRatio!=null&&meta.ars.indexOf(p.aspectRatio)>=0)st.ar=p.aspectRatio;
+        if(p.quality!=null&&meta.quals.indexOf(p.quality)>=0)st.q=p.quality;
+        if(p.count!=null&&meta.counts.indexOf(p.count)>=0)st.n=p.count;
+        var input=$('igPrompt'); if(input){ input.value=String(draft.prompt||''); try{input.dispatchEvent(new Event('input'));}catch(e){} }
+        applyMeta(); recost(); refreshGen();
+        return true;
+      });
+    });
+  };
   function applyMeta(){
     $('igMName').textContent=meta.label; // model = sozlamalar chip
     var _ims=$('igModelSeg'); if(_ims)_ims.title=meta.label||'Choose a model'; // SC_20: to'liq nom tooltip'da
@@ -288,7 +322,7 @@
   }
   function ensureSession(){
     if(st.sessionId)return Promise.resolve(st.sessionId);
-    return studioPost('/api/studio/gen/sessions',{mode:'image'}).then(function(s){ st.sessionId=(s&&s.id)||null; if(s&&s.id){ window.__axwsSess=window.__axwsSess||{}; window.__axwsSess.imggen=s; } return st.sessionId; }); // SC_29: lazy sessiya header'ga ham
+    return studioPost('/api/studio/gen/sessions',{mode:'image'}).then(function(s){ st.sessionId=(s&&s.id)||null; if(s&&s.id){ if(window.afActiveSessionStore)window.afActiveSessionStore.set('imggen',s.id,'image'); window.__axwsSess=window.__axwsSess||{}; window.__axwsSess.imggen=s; } return st.sessionId; }); // SC_29: lazy sessiya header'ga ham
   }
 
   // ---- chip openerlar ----
@@ -398,6 +432,7 @@
     studioPost('/api/studio/gen/ref-upload',{dataUrl:dataUrl}).then(function(u){
       ref.url=(u&&u.url)||null;
       if(!ref.url)throw new Error('Empty upload response');
+      if(typeof window.afAcceptUnifiedReference==='function')window.afAcceptUnifiedReference({id:(u&&u.id)||ref.url,kind:'image',url:ref.url,savedReferenceId:(u&&u.id)||null,title:'Image reference'});
     }).catch(function(err){
       var idx=st.refs.indexOf(ref); if(idx>=0)st.refs.splice(idx,1);
       toast((err&&err.message)||'Failed to upload reference','error');
@@ -412,6 +447,7 @@
     if(!meta.refOk){ toast('This model does not accept references','warning'); return; }
     if(st.refs.length>=meta.maxRefs){ toast('Max '+meta.maxRefs+' reference(s)','warning'); return; }
     st.refs.push({dataUrl:url,url:url,loading:false}); renderRefs(); updRefMeta(); refreshGen();
+    if(typeof window.afAcceptUnifiedReference==='function')window.afAcceptUnifiedReference({id:url,kind:'image',url:url,title:'Image reference'});
     toast('Added as @img'+st.refs.length+' reference','success');
   }
 
@@ -467,8 +503,8 @@
   function hostCall(fn){ return new Promise(function(res){
     if(typeof csInterface==='undefined'||!csInterface){ res(null); return; }
     try{ var ed=csInterface.getSystemPath((typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension');
-      var jp=(ed+'/jsx/host.jsx').replace(/\\/g,'/');
-      csInterface.evalScript('(function(){$.evalFile('+JSON.stringify(jp)+'); return '+fn+'();})()',function(raw){
+      var jp=afHostJsxPath(ed);
+      afEvalScript('(function(){$.evalFile('+JSON.stringify(jp)+'); return '+fn+'();})()',function(raw){
         try{console.log('[ig] host '+fn+' raw:',raw);}catch(_){}
         var r=null; try{ r=raw?JSON.parse(raw):null; }catch(e){ r=null; }
         if(r&&!r.ok&&r.reason){ try{console.warn('[ig] host '+fn+' xato:',r.reason);}catch(_){} }
@@ -549,14 +585,14 @@
     $('igProjList').innerHTML='<div class="axighint">Loading…</div>'; openSheet('igProjSheet',$('igRefAdd'));
     hostCall('listProjectFootage').then(function(r){
       if(!$('igProjList'))return;
-      if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Could not get project list'+((r&&r.reason)?': '+r.reason:'')+'</div>'; if(foot)foot.style.display='none'; repositionSheet('igProjSheet'); return; }
+      if(!r||(r.ok===false)){ $('igProjList').innerHTML='<div class="axighint">Could not get project list'+((r&&r.reason)?': '+escHtml(r.reason):'')+'</div>'; if(foot)foot.style.display='none'; repositionSheet('igProjSheet'); return; }
       var items=((r&&r.items)||[]).filter(function(it){ return it.mediaType==='image'||isImg(it.mediaPath); });
       if(!items.length){ $('igProjList').innerHTML='<div class="axighint">No matching images found in the project. Upload from file.</div>'; if(foot)foot.style.display='none'; repositionSheet('igProjSheet'); return; }
       $('igProjList').innerHTML='';
       items.forEach(function(it){
         var mp=it.mediaPath||'';
         var o=document.createElement('div'); o.className='opt';
-        o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><b>'+String(it.name||base(mp)).replace(/[<>]/g,'')+'</b><small>'+(it.mediaType||'image')+'</small></div><span class="igprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>';
+        o.innerHTML='<div class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><b>'+escHtml(it.name||base(mp))+'</b><small>'+escHtml(it.mediaType||'image')+'</small></div><span class="igprojchk" style="margin-left:auto;font-size:15px;color:var(--acc);width:20px;text-align:center">○</span>';
         (function(path,row){ o.addEventListener('click',function(){
           if(!path)return;
           var chk=row.querySelector('.igprojchk');
@@ -567,7 +603,7 @@
         $('igProjList').appendChild(o);
       });
       refreshFoot(); repositionSheet('igProjSheet');
-    }).catch(function(e){ if($('igProjList'))$('igProjList').innerHTML='<div class="axighint">Could not get project list: '+String(e)+'</div>'; repositionSheet('igProjSheet'); });
+    }).catch(function(e){ if($('igProjList'))$('igProjList').innerHTML='<div class="axighint">Could not get project list: '+escHtml(String(e))+'</div>'; repositionSheet('igProjSheet'); });
   });
   // 3) Timeline'dan (joriy kadr → PNG)
   $('igSrcTl').addEventListener('click',function(){
@@ -665,7 +701,7 @@
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
       // P28.3 (29a) — API mos kelmagan @mention sabab qayta yozishni RAD ETsa (mentionMismatch),
       // asl prompt qaytadi (o'zgarmaydi) → jimgina "softened" DEMAYMIZ (evasion olib tashlandi).
-      if(e&&e.mentionMismatch){ if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Kept your prompt — the rewrite pointed a reference at the wrong image','info'); }
+      if(e&&e.mentionMismatch){ if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast(enhanceMismatchMessage(e),'info'); }
       else if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt enhanced ✨'+(refUrls.length?(' · saw '+refUrls.length+' reference'+(refUrls.length>1?'s':'')):'')+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
       else toast('Could not enhance','error');
     }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Enhance error','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
@@ -677,6 +713,12 @@
   var activeJobs=[]; var jobSeq=0; var MAX_JOBS=5;
   var POLL_CAP=670; // ~20 daqiqa (foydalanuvchi so'rovi) — sekin 4K/Pro genlar uzilmasin (2026-07-01)
   function pollDelay(t){ return t<6?1000:1800; }
+  function syncSessionJob(j,state,statusText){
+    if(typeof window.afSessionJobUpdate!=='function'||!j)return;
+    window.afSessionJobUpdate({key:'image-'+j.seq,state:state||'active',sessionId:j.sid||st.sessionId||null,
+      jobId:j.jobId||null,prompt:j.prompt||'',cat:'image',progress:j.pit?j.pit.progress:2,statusText:statusText||'',
+      onCancel:function(){cancelJob(j);}});
+  }
 
   // Faol job qatorlarini igProg'ga render qiladi.
   // YUQORI progress endi ishlatilmaydi — gen holati pastdagi So'nggi grid kartasida ko'rsatiladi.
@@ -690,16 +732,18 @@
       var el=(Date.now()-j.t0)/1000;
       var pct=Math.min(97,Math.round(97*(1-Math.exp(-el/45))));
       if(j.pit){ j.pit.progress=pct; if(window.afRecent)window.afRecent.updatePending($('igRecent'),j.seq,pct); }
+      syncSessionJob(j,'progress');
     },500);
   }
 
   // Jobni massivdan olib tashlaydi, pending kartani ham tozalaydi, UI yangilaydi.
-  function removeJob(j){
+  function removeJob(j,terminal,statusText){
     var idx=activeJobs.indexOf(j); if(idx>=0)activeJobs.splice(idx,1);
     if(j.jobId&&window.afJobStore)window.afJobStore.remove(j.jobId); // #31: reyestrdan ham chiqadi
     if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
     if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
     if(j.pit){ var pi=st.recent.indexOf(j.pit); if(pi>=0)st.recent.splice(pi,1); j.pit=null; }
+    syncSessionJob(j,terminal||'remove',statusText);
     renderRecentGrid(); refreshGen();
   }
 
@@ -750,6 +794,7 @@
     // GEN ishlamoqda kartasi — YUQORIDA emas, pastdagi So'nggi grid tepasiga (0-100% shkala)
     j.pit={seq:j.seq,pending:true,prompt:prompt,cat:'image',progress:2,job:j};
     st.recent.unshift(j.pit); renderRecentGrid(); refreshGen();
+    syncSessionJob(j,'active');
     var _gb=$('igGen'); if(_gb)_gb.classList.add('busy'); // yuborilmoqda — tugmada spinner
     // @img tartibida URL'lar (@img1=referenceUrls[0]) — P13: FAQAT faollarini (model limitigacha) yuboramiz
     var refUrls=st.refs.slice(0,igActiveRefLimit()).map(function(r){ return r.url; }).filter(Boolean);
@@ -760,25 +805,28 @@
     if(refUrls.length){ params.referenceUrl=refUrls[0]; params.referenceUrls=refUrls; }
     j.params=params; j.modelId=meta.modelId; // Qayta gen: yangi tugagan kartada ham params/model bo'lsin
     var quote=null;
+    var unifiedQuote=(typeof window.afTakeUnifiedQuote==='function')?window.afTakeUnifiedQuote('image',meta.modelId,params):null;
     ensureMeta().then(function(){
       if(j.cancelled)throw new Error('CANCELLED');
       if(meta.modelId==null)throw new Error('No model found');
       return Promise.all([
         // P17 — quote SOF hisob+imzo; idempotencyKey studioPost'ni cold-start'da qayta urinishga majbur
         // qiladi (server bu maydonni e'tiborsiz qoldiradi — DB yozmaydi/consume qilmaydi).
-        studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params,idempotencyKey:afUuid()}),
+        unifiedQuote?Promise.resolve(unifiedQuote):studioPost('/api/studio/gen/cost-quote',{modelId:meta.modelId,mode:'image',params,idempotencyKey:afUuid()}),
         ensureSession()
       ]);
     }).then(function(arr){
       if(j.cancelled)throw new Error('CANCELLED');
       quote=arr[0]; var sid=arr[1];
       j.sid=sid; // SC_29: job qaysi sessiyaga yozilishini eslab qolamiz (sessiya almashsa feed'ga aralashmasin)
+      syncSessionJob(j,'active');
       return studioPost('/api/studio/gen',{sessionId:sid,mode:'image',modelId:meta.modelId,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000);
     }).then(function(res){
       if(j.cancelled)throw new Error('CANCELLED');
       if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
       if(!res||!res.jobId)throw new Error('Job was not created');
       j.jobId=res.jobId; j.submitted=true;
+      syncSessionJob(j,'active');
       // #31 (PX1): panel yopilsa ham job diskda qoladi → keyingi ochilishда tiklanadi
       if(window.afJobStore)window.afJobStore.add('imggen',{jobId:j.jobId,prompt:j.prompt,cat:'image',cost:j.jcost,sid:j.sid,modelId:j.modelId,params:j.params});
       if(_gb)_gb.classList.remove('busy');
@@ -787,7 +835,8 @@
       try{ console.error('[FF][ig] generation start failed status='+String(err&&err.status)+' code='+String(err&&err.code)+' message='+String(err&&err.message)); }catch(e){}
       if(_gb)_gb.classList.remove('busy');
       if(j.cancelled||(err&&err.message==='CANCELLED')){ removeJob(j); return; }
-      removeJob(j); toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Generation error','error');
+      var startMsg=(typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Generation error';
+      removeJob(j,'failed','Failed to start'); toast(startMsg,'error');
     });
   }
   /** #31 (PX1) — panel qayta ochilganda UCHAYOTGAN gen'larni tiklaydi.
@@ -811,6 +860,7 @@
                params:gn.params||rec.params||null,modelId:gn.modelId||rec.modelId||null};
         activeJobs.push(j); added++;
         if(!j.sid||j.sid===st.sessionId){ j.pit={seq:j.seq,pending:true,prompt:j.prompt,cat:'image',progress:2,job:j}; st.recent.unshift(j.pit); }
+        syncSessionJob(j,'active');
         startJobProg(j);
         var ct=Date.parse(gn.createdAt||''); if(ct)j.t0=ct; // progress shkalasi HAQIQIY o'tgan vaqtdan
         pollJob(j,0);
@@ -834,7 +884,7 @@
           // P30 (29c) — status=done LEKIN natija yo'q = provayder kontent rad etdi (success-shaklda!).
           // HALOL ishlaymiz: "Done! charged" ✓ EMAS. Kredit qaytariladi; boshqa-model taklifi.
           if(!first){
-            removeJob(j); setCreditChip(credits());
+            removeJob(j,'failed','Failed · credits refunded'); setCreditChip(credits());
             if(!handleGenRejection(gn, function(id){ var m=(meta.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof setModel==='function'){ if(setModel(m)!==false&&typeof renderModelSheet==='function')renderModelSheet(); } }))
               toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No result was returned — your credits were refunded','error');
             if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },1500);
@@ -854,6 +904,7 @@
           if(j.jobId&&window.afJobStore)window.afJobStore.remove(j.jobId); // #31: tugadi — reyestrdan chiqadi
           if(j.progTimer){clearInterval(j.progTimer);j.progTimer=null;}
           if(j.pollTimer){clearTimeout(j.pollTimer);j.pollTimer=null;}
+          syncSessionJob(j,'done');
           renderRecentGrid(); refreshGen(); setCreditChip(credits());
           // SC_21: foydalanuvchi shu workspace'da bo'lsa — karta joyida yangilandi (kichik charge
           // tasdig'i yetadi); boshqa bo'limda bo'lsa — thumbnail + View'li boy toast.
@@ -863,7 +914,7 @@
           if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },2000); // history bilan id/thumb sinxron
         },200);
       }else if(s==='failed'){
-        removeJob(j); setCreditChip(credits());
+        removeJob(j,'failed','Failed · credits refunded'); setCreditChip(credits());
         // P30 §3+§4 — kontent rad etilishi bo'lsa halol xato + ✦N qaytarildi + boshqa-model taklifi.
         if(!handleGenRejection(gn, function(id){ var m=(meta.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof setModel==='function'){ if(setModel(m)!==false&&typeof renderModelSheet==='function')renderModelSheet(); } }))
           toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):((gn&&gn.error)||'Generation failed — credits refunded'),'error');
@@ -1048,7 +1099,7 @@
     if(!pend.length){
       // SC_46: uch holatli mashina — LOADING (yoki hali yuklanmagan) → skeleton; ERROR → Retry;
       //   READY-EMPTY (fetch tugadi, 0 element) → hech narsa. Bo'sh branch HECH QACHON boshlang'ich holat emas.
-      if(recentError&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML='<div class="empt"><b>Failed to load recent</b>'+String(recentError)+'<br><div role="button" tabindex="0" type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Retry</div></div>'; updRecentBatch(); return; }
+      if(recentError&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML='<div class="empt"><b>Failed to load recent</b>'+escHtml(String(recentError))+'<br><div role="button" tabindex="0" type="button" onclick="if(window.afIgRetryRecent)window.afIgRetryRecent()">↻ Retry</div></div>'; updRecentBatch(); return; }
       if((recentLoading||!recentLoaded)&&!uniq.length){ if(_rs)_rs.style.display=''; r.innerHTML=afRecentSkel(); updRecentBatch(); return; }
       if(!uniq.length){ if(_rs)_rs.style.display='none'; r.innerHTML=''; updRecentBatch(); return; }
     }

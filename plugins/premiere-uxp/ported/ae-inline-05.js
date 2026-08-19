@@ -7,6 +7,15 @@
   // Bo'lim mijoz paketida ham jo'natilardi (ZXP `__AF_BUILD__` shtampini urmaydi → gate
   // "dev" deb qarordi), ya'ni obunachi "Demo: low credits" tugmasini ko'rishi mumkin edi.
   var importTarget='comp', toastT;
+  try{importTarget=localStorage.getItem('af_default_import_target')||'comp';}catch(e){}
+  if(importTarget!=='bin')importTarget='comp';
+  window.afImportTarget=importTarget;
+  setTimeout(function(){
+    var comp=document.getElementById('impComp'),bin=document.getElementById('impBin');
+    if(comp){comp.classList.toggle('tg',importTarget==='comp');comp.classList.toggle('on',importTarget==='comp');}
+    if(bin)bin.classList.toggle('on',importTarget==='bin');
+    var ver=document.getElementById('afSettingsVersion');if(ver)ver.textContent='v'+String(window.AF_PLUGIN_VERSION||'—');
+  },0);
   // Yagona toast — asosiy showToast'ga yo'naltiramiz (warn/err → warning/error) → AI Tools va panel bir xil ko'rinish.
   function toast(m,k){
     if(typeof showToast==='function'){ showToast(m,(k==='warn')?'warning':(k==='err')?'error':(k||'info')); return; }
@@ -14,16 +23,28 @@
   }
   // #143 (PX6): `soon()` ("Coming soon · next phase") o'chirildi — uni faqat o'lik
   // `data-soon` shoxobchasi chaqirardi; panelda bunday atributli element yo'q.
-  // Kredit — YAGONA manba: AssetFlowAccount.aiCredits (demo 606 emas). Header'lar shundan o'qiydi → bir xil qiymat.
-  function aiCredReal(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits; }catch(e){} return null; }
+  // Kredit — YAGONA manba: /credits javobi, u kelguncha AssetFlowAccount.aiCredits.
+  // Alohida UI qiymati kerak: fetchMe kechroq kelib cachedUser obyektini almashtirsa ham
+  // yangi generate/cancel/enhance balansi eski /me qiymatiga qaytib ketmasin.
+  var creditValue=null,creditAccountId='';
+  function aiCredReal(){
+    try{
+      var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
+      var uid=u&&u.id?String(u.id):'';
+      if(creditAccountId&&uid&&creditAccountId!==uid){creditValue=null;creditAccountId='';}
+      if(uid&&creditAccountId===uid&&typeof creditValue==='number'&&isFinite(creditValue))return creditValue;
+      if(u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))return u.aiCredits;
+    }catch(e){}
+    return null;
+  }
   // #143 (PX6): `bal()` (demo 606 / lowDemo 5 zaxirasi) o'chirildi — uni faqat mockup
   // narx mashinasi ishlatardi. Displey: real kredit yoki yuklanmaguncha '—'.
   // #25: kesh bo'sh (— ko'rinishi) + login bor → /credits'dan bir marta olamiz (60s guard).
   var balFetchAt=0;
-  function syncBal(){var v=aiCredReal();var t=(v!=null)?String(v):'—';var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();
-    if(v==null&&(Date.now()-balFetchAt>60000)&&typeof studioGet==='function'&&typeof pubAuthHeaders==='function'){
+  function syncBal(){var v=aiCredReal();var t=(v!=null)?Number(v).toLocaleString('en-US'):'—';var b=document.getElementById('balTop');if(b)b.textContent=t;var s=document.getElementById('balSet');if(s)s.textContent=t;aiLeadSync();
+    if(v==null&&(Date.now()-balFetchAt>60000)&&typeof window.afRefreshCredits==='function'&&typeof pubAuthHeaders==='function'){
       try{ var h=pubAuthHeaders(); if(h&&h.Authorization){ balFetchAt=Date.now();
-        studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){});
+        window.afRefreshCredits().catch(function(){});
         // P3 (step 34) — AI Stock topshiriq holatlarini bir marta yuklaymiz (kartada "yuborilgan").
         if(!window._afExploreLoaded && typeof window.afLoadExploreSubs==='function'){ window._afExploreLoaded=true; window.afLoadExploreSubs(); }
         // R4_08 — yoqilgan Topaz enhance/upscale operatsiyalarini bir marta yuklaymiz (kartada "Use ▾").
@@ -35,13 +56,47 @@
   function aiLeadSync(){ var v=aiCredReal(); var t='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—')+((typeof window.afPlanChipHTML==='function')?window.afPlanChipHTML():''); var a=document.getElementById('aiLeadCredL'); if(a)a.innerHTML=t; var c=document.getElementById('aiLeadCredA'); if(c)c.innerHTML=t; }
   // UMUMIY kredit sinxron — yagona manba (cached aiCredits) → BARCHA chip (balTop/balSet/aiLead/igCredit/vgCredit).
   // Har tool gen/enhance'dan keyin shuni chaqiradi → chiplar bir-biridan farq qilib qolmaydi (drift fix — audit MEDIUM).
-  window.afSyncCredits=function(v){
-    if(typeof v==='number'&&isFinite(v)){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; if(u)u.aiCredits=v; }catch(e){} }
+  window.afSyncCredits=function(v,sourceSeq){
+    // Server refresh boshlanganidan keyin generate/cancel/enhance yangi balans bergan
+    // bo'lsa, kech kelgan eski refresh javobi uni qayta yozmasin.
+    if(sourceSeq!=null&&sourceSeq<creditAppliedSeq)return;
+    if(sourceSeq==null)creditAppliedSeq=++creditRefreshSeq;
+    else creditAppliedSeq=sourceSeq;
+    var u=null;
+    if(typeof v==='number'&&isFinite(v)){
+      try{
+        u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
+        if(u){u.aiCredits=v;creditValue=v;creditAccountId=u.id?String(u.id):'';}
+      }catch(e){}
+    }
     try{ syncBal(); }catch(e){}
     var rv=aiCredReal(); var t='<span class="cs">✦</span> '+((rv!=null)?Number(rv).toLocaleString('en-US'):'—');
     var ig=document.getElementById('igCredit'); if(ig)ig.innerHTML=t;
     var vg=document.getElementById('vgCredit'); if(vg)vg.innerHTML=t;
     var ag=document.getElementById('agCredit'); if(ag)ag.innerHTML=t; // P8: audio tool chip'i ham sinxron
+    var sb=document.getElementById('sbCredit'); if(sb)sb.textContent=(rv!=null)?Number(rv).toLocaleString('en-US'):'—';
+    // Header/Home/Library chiplarini ham aynan shu tranzaksiyada yangilaymiz.
+    // Ilgari ular faqat fetchMe/updateSidebarUser yo'lida yangilanib, Settings bilan drift qilardi.
+    if(u&&typeof setHeaderPlan==='function')setHeaderPlan(u.plan==='pro',u.planLabel||(u.plan==='pro'?'Pro':'Free'),rv);
+  };
+  // Kredit uchun yagona server refresh. Bir paytdagi Account/Settings/Refresh chaqiriqlari
+  // bitta requestni bo'lishadi; kechroq kelgan eski javob yangi balansni qayta yozmaydi.
+  var creditRefreshPromise=null,creditRefreshSeq=0,creditAppliedSeq=0,creditRefreshAt=0;
+  window.afRefreshCredits=function(opts){
+    opts=opts||{};
+    if(typeof studioGet!=='function')return Promise.resolve(null);
+    try{ if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return Promise.resolve(null); }catch(e){return Promise.resolve(null);}
+    if(creditRefreshPromise)return creditRefreshPromise;
+    if(!opts.force&&Date.now()-creditRefreshAt<5000)return Promise.resolve(null);
+    var seq=++creditRefreshSeq;
+    creditRefreshAt=Date.now();
+    creditRefreshPromise=studioGet('/api/studio/credits').then(function(d){
+      if(seq>=creditAppliedSeq&&d&&typeof d.aiCredits==='number'&&isFinite(d.aiCredits)){
+        window.afSyncCredits(d.aiCredits,seq);
+      }
+      return d||null;
+    }).finally(function(){ creditRefreshPromise=null; });
+    return creditRefreshPromise;
   };
   // D7 (#P1-plagin) — UMUMIY "kam kredit" banneri. Ilgari uchta tool (ig/vg/ag) markup'da ham
   // (bir xil 14px SVG + .lt/.ls tuzilishi, faqat id prefiksi farqli), gate kodida ham
@@ -379,7 +434,7 @@
   // Katalog + kredit + tool recents + sessiya/loyiha keshlari birga yangilanadi.
   window.afRefreshAll=function(){
     try{ if(typeof syncServerCatalog==='function')syncServerCatalog(); }catch(e){}
-    try{ studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){}); }catch(e){}
+    try{ if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}).catch(function(){}); }catch(e){}
     try{ if(typeof window.afIgRetryRecent==='function')window.afIgRetryRecent(); }catch(e){}
     try{ if(typeof window.axVGRefresh==='function')window.axVGRefresh(); }catch(e){}
     try{ if(typeof window.axAGRefresh==='function')window.axAGRefresh(); }catch(e){}
@@ -487,14 +542,14 @@
       if(lb)return lb;
       lb=document.createElement('div'); lb.className='lightbox'; lb.id='afLightbox';
       lb.innerHTML='<div class="lbinner">'
-        +'<div class="lbtop"><span class="lbcount" id="afLbCount"></span><span class="lbsp"></span><span class="lbesc">ESC</span><div class="lx" id="afLbClose"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>'
+        +'<div class="lbtop"><span class="lbcount" id="afLbCount"></span><span class="lbsp"></span><span class="lbesc">ESC</span><div role="button" tabindex="0" type="button" class="lx" id="afLbClose" aria-label="Close preview"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>'
         +'<div class="lbmedia">'
         +  '<video id="afLbVideo" playsinline style="display:none"></video>'
         +  '<img id="afLbImg" alt="" style="display:none"/>'
         +  '<audio id="afLbAudio" style="display:none"></audio>'
         +  '<div class="lbaud" id="afLbAud"><div role="button" tabindex="0" type="button" class="lbaplay" id="afLbAudPlay"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></div><div class="lbamid"><div class="lbawave" id="afLbAudWave"><div class="lbabars" id="afLbAudBars"></div><div class="lbaprog" id="afLbAudProg"></div><div class="lbaline" id="afLbAudLine"></div></div><div class="lbatime" id="afLbAudTime">00:00 / 00:00</div></div></div>'
         +  '<div class="lbplay" id="afLbPlay" style="display:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="#fff"><path d="M8 5l11 7-11 7z" fill="#fff"/></svg></div>'
-        +  '<div class="lbnav" id="afLbNav" style="display:none"><div class="lbnavb" id="afLbPrev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="lbnavb" id="afLbNext"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>'
+        +  '<div class="lbnav" id="afLbNav" style="display:none"><div role="button" tabindex="0" type="button" class="lbnavb" id="afLbPrev" aria-label="Previous result"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div role="button" tabindex="0" type="button" class="lbnavb" id="afLbNext" aria-label="Next result"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>'
         +'</div>'
         +'<div class="lbscrub" id="afLbScrub"><div class="lbtrack" id="afLbTrack"><div class="lbfill" id="afLbFill"></div><span class="lbknob" id="afLbKnob"></span></div><span class="lbtime" id="afLbTime">00:00 / 00:00</span><span class="lbspk" id="afLbSpk"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>'
         +'<div class="lbcard" id="afLbCard"><div class="lbprompt" id="afLbPrompt"></div><div class="lbchips" id="afLbChips"></div></div>'
@@ -547,7 +602,7 @@
     function closeLb(){ if(!lb)return; lb.classList.remove('on'); lbCur=null;
       var v=document.getElementById('afLbVideo'); if(v){try{v.pause();}catch(e){} v.removeAttribute('src'); v.load&&v.load();}
       var a=document.getElementById('afLbAudio'); if(a){try{a.pause();}catch(e){} a.removeAttribute('src');} }
-    function lbIcon(svg,title,fn){ var d=document.createElement('div'); d.className='lbico'; d.title=title; d.innerHTML=svg; d.addEventListener('click',fn); return d; }
+    function lbIcon(svg,title,fn){ var d=document.createElement('button'); d.type='button'; d.className='lbico'; d.title=title; d.setAttribute('aria-label',title); d.innerHTML=svg; d.addEventListener('click',fn); return d; }
     function openLightbox(it,ctx){
       if(!it||!it.url)return; ensureLb(); ctx=ctx||{};
       var cat=it.cat||'image';
@@ -611,7 +666,7 @@
       card.classList.toggle('on',!!(prompt||chips.children.length));
       // amallar: lime Import + icon-doiralar (ctx handlerlari SAQLANADI)
       acts.innerHTML=''; var cap=[];
-      var imp=document.createElement('div'); imp.className='lbimp';
+      var imp=document.createElement('button'); imp.type='button'; imp.className='lbimp';
       imp.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Import';
       imp.addEventListener('click',function(){ ctx.onImport&&ctx.onImport(it); });
       acts.appendChild(imp); cap.push('Import');
@@ -640,7 +695,7 @@
     }
 
     // ---- UMUMIY karta ----
-    function actBtn(svg,title,fn,cls){ var b=document.createElement('b'); if(cls)b.className=cls; b.title=title; b.innerHTML=svg; b.addEventListener('click',fn); return b; }
+    function actBtn(svg,title,fn,cls){ var b=document.createElement('button'); b.type='button'; if(cls)b.className=cls; b.title=title; b.setAttribute('aria-label',title); b.innerHTML=svg; b.addEventListener('click',fn); return b; }
     // P5/P14: gen'ning HAQIQIY nisbatini CSS qiymatiga aylantiradi ("16:9"→"16 / 9"). Manba:
     // it.aspect / it.aspectRatio / it.params.aspectRatio. Topilmasa null (default 1/1 qoladi).
     function genAspectCss(it){
@@ -714,7 +769,7 @@
       // Import→Import to Premiere · papka→Add to project · kompas→Add to Explore · qisqich→Use as
       // reference · ↻→Regenerate · ⧉→Copy prompt · ⬇→Download (faqat brauzer) · ✕→Delete.
       var ra=document.createElement('div'); ra.className='racts';
-      var useBtn=document.createElement('b'); useBtn.className='useb'; useBtn.textContent='Use ▾'; useBtn.title='Actions';
+      var useBtn=document.createElement('button'); useBtn.type='button'; useBtn.className='useb'; useBtn.textContent='Use ▾'; useBtn.title='Actions'; useBtn.setAttribute('aria-label','Open result actions');
       useBtn.addEventListener('click',function(e){
         e.stopPropagation();
         var items=[];
@@ -754,14 +809,15 @@
     function pcEsc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
     function pendingCard(it,ctx){
       ctx=ctx||{}; var cat=it.cat||'image';
-      var d=document.createElement('div'); d.className='rc rc-pend'; d.setAttribute('data-pseq',it.seq);
+      var failed=it.state==='failed';
+      var d=document.createElement('div'); d.className='rc rc-pend'+(failed?' is-failed':''); d.setAttribute('data-pseq',it.seq);
       var pct=Math.max(2,Math.min(100,Math.round(it.progress||2)));
       d.innerHTML=''
         +'<span class="rc-cat">'+catIcon(cat)+'</span>'
-        +'<div class="rc-pmid"><span class="rc-spin"></span><span class="rc-ppct">'+pct+'%</span></div>'
+        +'<div class="rc-pmid"><span class="rc-spin"></span><span class="rc-ppct">'+(failed?pcEsc(it.statusText||'Failed · refunded'):(pct+'%'))+'</span></div>'
         +'<div class="rc-pbar"><i style="width:'+pct+'%"></i></div>'
         +'<div class="rc-pprompt">'+pcEsc(it.prompt||'')+'</div>'
-        +'<div class="rc-pcancel">Cancel</div>';
+        +(failed?'':'<div class="rc-pcancel">Cancel</div>');
       var cn=d.querySelector('.rc-pcancel');
       if(cn)cn.addEventListener('click',function(e){ e.stopPropagation(); ctx.onCancel&&ctx.onCancel(it); });
       return d;
@@ -807,7 +863,13 @@
     document.querySelectorAll('.proc').forEach(function(p){p.classList.remove('on');p.innerHTML='';});
     if(id==='history')renderHistory('all');
     if(id==='launcher'&&typeof aiRenderHistStrip==='function')aiRenderHistStrip();
-    if(id==='settings'){ if(typeof renderLedger==='function')renderLedger(); if(typeof renderPlanLine==='function')renderPlanLine(); }
+    if(id==='settings'){
+      if(typeof renderLedger==='function')renderLedger();
+      if(typeof renderPlanLine==='function')renderPlanLine();
+      // Settings har ochilganda balans serverdan olinadi; header va karta bitta
+      // afSyncCredits yo'li orqali bir xil qiymatga o'tadi.
+      if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}).catch(function(){});
+    }
     if(typeof axAuto==='function')axAuto(id);
     // Rasm yaratish tool o'z header'iga ega — AI .pbar'ni yashiramiz; kreditni yangilaymiz.
     // Ixcham header: tool/AI Tools view'lari o'z bitta qatoriga ega → takror brand+kredit pbar yashirin.
@@ -827,6 +889,7 @@
     if(id==='audgen'&&typeof window.axAGRefresh==='function'){try{window.axAGRefresh();}catch(e){}} // P8: audio tool
     if((id==='sessions'||id==='projects')&&typeof window.axSPRefresh==='function'){try{window.axSPRefresh(id);}catch(e){}} // P1
     if(!_uxpWorkspacePrepared&&typeof window.axwsAfterView==='function'){try{window.axwsAfterView(id);}catch(e){}} // #R1: workspace chrome (strip/viewbar/empty) yangilash
+    if(window.afCreateWorkspace&&typeof window.afCreateWorkspace.mountForView==='function'){try{window.afCreateWorkspace.mountForView(id);}catch(e){}}
   }
 
   // #143 (PX6): mockup davrining SOXTA narx/model mashinasi o'chirildi —
@@ -1071,7 +1134,7 @@
     if(el.hasAttribute('data-refdel')){var rd=el.getAttribute('data-refdel').split('|');axRefRemove(rd[0],parseInt(rd[1],10));return;}
     if(el.hasAttribute('data-refadd')){axRefPicker(el.getAttribute('data-refadd'));return;}
     if(el.hasAttribute('data-refproj')){var rp=el.getAttribute('data-refproj').split('|');axRefProjPick(rp[0],parseInt(rp[1],10));return;}
-    if(el.hasAttribute('data-imp')){importTarget=el.getAttribute('data-imp');document.getElementById('impComp').classList.toggle('tg',importTarget==='comp');document.getElementById('impComp').classList.toggle('on',importTarget==='comp');document.getElementById('impBin').classList.toggle('on',importTarget==='bin');toast('Default import: '+(importTarget==='comp'?'Comp':'Bin'));return;}
+    if(el.hasAttribute('data-imp')){importTarget=el.getAttribute('data-imp')==='bin'?'bin':'comp';window.afImportTarget=importTarget;try{localStorage.setItem('af_default_import_target',importTarget);}catch(x){}document.getElementById('impComp').classList.toggle('tg',importTarget==='comp');document.getElementById('impComp').classList.toggle('on',importTarget==='comp');document.getElementById('impBin').classList.toggle('on',importTarget==='bin');toast('Default import: '+(importTarget==='comp'?'Comp':'Bin'));return;}
     if(el.hasAttribute('data-go'))go(el.getAttribute('data-go'));
     else if(el.hasAttribute('data-ref'))refPicker(el.getAttribute('data-ref'));
     if(el.hasAttribute('data-close'))closeSheet();
@@ -1102,8 +1165,8 @@
   function axProbe(fn){return new Promise(function(res){
     if(!IS_CEP||typeof csInterface==='undefined'||!csInterface){res(null);return;}
     try{var ext=csInterface.getSystemPath((typeof SystemPath!=='undefined'&&SystemPath.EXTENSION)?SystemPath.EXTENSION:'extension');
-      var jp=(ext+'/jsx/host.jsx').replace(/\\/g,'/');
-      csInterface.evalScript('(function(){$.evalFile('+JSON.stringify(jp)+'); return '+fn+'();})()',function(raw){
+      var jp=afHostJsxPath(ext);
+      afEvalScript('(function(){$.evalFile('+JSON.stringify(jp)+'); return '+fn+'();})()',function(raw){
         var r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=null;}res((r&&r.ok)?r:null);});
     }catch(e){res(null);}});}
   function axAuto(id){

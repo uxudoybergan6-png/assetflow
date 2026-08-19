@@ -29,20 +29,44 @@ const AssetFlowStore = (() => {
     if (useDisk || diskAttempted || typeof window === "undefined" || !window.__adobe_cep__) return useDisk;
     diskAttempted = true;
     // Premiere UXP exposes a CEP compatibility object, but its fs provider has
-    // no mkdirSync. Treating it as real CEP tries to create
-    // extension/assetflow-data/blobs and logs an exception on every launch.
+    // no mkdirSync. Treating it as real CEP logs an exception on every launch.
     // The UXP indexedDB shim is the supported backend here; Premiere CEP keeps its
     // shared on-disk store unchanged.
     if (window.__FFNodeIO) return false;
     try {
       fs = __ffRequire("fs");
       pathLib = __ffRequire("path");
-      const extPath = new CSInterface().getSystemPath(SystemPath.EXTENSION);
-      dataRoot = pathLib.join(extPath, "assetflow-data");
+      const cs = new CSInterface();
+      const extPath = cs.getSystemPath(SystemPath.EXTENSION);
+      // Signed CEP extension folders are read-only/replaceable. Persistent data
+      // must live in the user's writable application-support directory so an
+      // update cannot erase Sessions, local uploads, favorites or preferences.
+      const settingsRoot =
+        typeof AssetFlowSecret !== "undefined" && AssetFlowSecret.settingsDir
+          ? AssetFlowSecret.settingsDir()
+          : cs.getSystemPath(SystemPath.USER_DATA);
+      if (!settingsRoot) throw new Error("Writable FrameFlow data folder is unavailable");
+      dataRoot = pathLib.join(settingsRoot, "assetflow-data");
       blobDir = pathLib.join(dataRoot, "blobs");
       metaPath = pathLib.join(dataRoot, "meta.json");
       genPath = pathLib.join(dataRoot, ".storage-gen");
       fs.mkdirSync(blobDir, { recursive: true });
+      // One-time migration from the old extension-local store. Copy only when
+      // the durable target is empty; never overwrite newer user data.
+      const legacyRoot = extPath ? pathLib.join(extPath, "assetflow-data") : "";
+      if (legacyRoot && legacyRoot !== dataRoot && fs.existsSync(legacyRoot)) {
+        const copyMissing = (from, to) => {
+          fs.mkdirSync(to, { recursive: true });
+          fs.readdirSync(from).forEach((name) => {
+            const src = pathLib.join(from, name);
+            const dst = pathLib.join(to, name);
+            const st = fs.statSync(src);
+            if (st.isDirectory()) copyMissing(src, dst);
+            else if (!fs.existsSync(dst)) fs.copyFileSync(src, dst);
+          });
+        };
+        copyMissing(legacyRoot, dataRoot);
+      }
       useDisk = true;
     } catch (e) {
       console.warn("AssetFlow disk store unavailable", e);
@@ -69,8 +93,9 @@ const AssetFlowStore = (() => {
     if (typeof window.__adobe_cep__ !== "undefined" && typeof CSInterface !== "undefined") {
       try {
         const cs = new CSInterface();
-        const ev = new CSEvent(CEP_EVENT, "APPLICATION", "AEFT");
-        cs.dispatchEvent(ev);
+        ["AEFT", "PPRO"].forEach((hostId) => {
+          try { cs.dispatchEvent(new CSEvent(CEP_EVENT, "APPLICATION", hostId)); } catch (e) {}
+        });
       } catch (e) {}
     }
   }

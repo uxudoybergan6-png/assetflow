@@ -6,6 +6,8 @@ const route = fs.readFileSync("apps/api/src/routes/studio-gen.ts", "utf8");
 const vertex = fs.readFileSync("apps/api/src/lib/ai/vertex-enhance.ts", "utf8");
 const apiClient = fs.readFileSync("packages/assetflow-studio/platform/ff-api.js", "utf8");
 const web = fs.readFileSync("packages/assetflow-studio/platform/index.html", "utf8");
+const plugin = fs.readFileSync("plugins/after-effects-cep/AssetFlow_Plugin.html", "utf8");
+const credits = fs.readFileSync("apps/api/src/lib/plugin-profile.ts", "utf8");
 
 assert.deepEqual(validateMentionIntegrity("Use @img1 and @video2", "Use @img1 and @video2 carefully"), { ok: true });
 assert.equal(validateMentionIntegrity("Use @img1", "Use @img2").ok, false, "renumbered references are rejected");
@@ -38,6 +40,10 @@ assert.ok(route.includes("model?.maxChars"), "voice output observes the selected
 assert.ok(route.includes("imageRoles: p.data.image_roles"), "reference roles reach multimodal Enhance");
 assert.ok(route.includes("attachedEnhanceMentionKeys"), "attached reference slots inform mention integrity");
 assert.ok(route.includes("validateMentionIntegrity(originalPrompt, trimmed, allowedMentionAdditions)"), "mention validation accepts only attached additions");
+assert.ok(route.includes("mentionMismatchKind"), "API explains why an Enhance rewrite was discarded");
+assert.ok(route.includes("creditsCharged: settled.mentionMismatch ? 0"), "discarded Enhance rewrites are not charged");
+assert.ok(route.includes("creditsRefunded: settled.mentionMismatch ? enhanceCost.cost : 0"), "discarded Enhance rewrites report the refund");
+assert.ok(credits.includes("return after.aiCredits"), "refund returns the authoritative post-transaction balance");
 assert.ok(apiClient.includes("body.enhance_style = opts.style"), "web API client sends Enhance style");
 assert.ok(apiClient.includes("body.image_roles = opts.imageRoles"), "web API client sends image roles");
 assert.ok(apiClient.includes("body.settings = opts.settings"), "selected generation settings reach Enhance");
@@ -46,5 +52,9 @@ assert.ok(web.includes("Enhance style"), "web settings expose Enhance style sele
 assert.ok(web.includes("1 + (enhanceHasImage ? 1 : 0) + (enhanceHasVideo ? 2 : 0) + (enhanceHasAudio ? 1 : 0)"), "web shows modality-aware Enhance cost");
 assert.ok(web.includes("imageRoles.push(x.k === 'start' ? 'start-frame'"), "web labels start/end/image roles explicitly");
 assert.ok(web.includes("enhanceNotEnough"), "web gates Enhance against its real price");
+assert.ok(web.includes("the rewrite dropped an attached reference"), "web shows the exact missing-reference fallback");
+assert.ok(plugin.includes("enhanceMismatchMessage"), "plugin shares accurate Enhance fallback copy");
+assert.ok(apiClient.includes("isPermanentResponseCode"), "web does not retry permanent configuration failures");
+assert.ok(plugin.includes("d.code!=='MODERATION_NOT_CONFIGURED'"), "plugin does not retry a permanent moderation configuration failure");
 
 console.log("Enhance intelligence checks passed.");

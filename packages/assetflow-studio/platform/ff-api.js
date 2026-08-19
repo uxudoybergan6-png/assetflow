@@ -45,6 +45,11 @@
 
   // Qayta-uriniladigan server holatlari — Cloud Run cold-start / instance rotation / deploy.
   function isRetryableStatus(s) { return s === 502 || s === 503 || s === 504 || s === 429; }
+  // Deploy/config xatolari keyingi urinishda o'z-o'zidan tuzalmaydi. Ularni 4 marta yuborish
+  // foydalanuvchini ~12 soniya kuttiradi va serverni bekorga band qiladi.
+  function isPermanentResponseCode(code) {
+    return code === "MODERATION_NOT_CONFIGURED" || code === "AI_NOT_CONFIGURED";
+  }
   // Cold-start uchun sabrli backoff (ms) — jami ~12s + har urinishda timeout.
   function backoffMs(a) { return [1500, 3500, 7000, 10000][a] || 10000; }
 
@@ -99,7 +104,16 @@
         continue;
       }
       // 502/503/504/429 → idempotent bo'lsa sabr bilan qayta uramiz (429 Retry-After'ga rioya).
+      var retryData = null;
       if (idempotent && isRetryableStatus(res.status) && a < maxAttempts - 1) {
+        try { retryData = await res.clone().json(); } catch (e) { retryData = null; }
+      }
+      if (
+        idempotent &&
+        isRetryableStatus(res.status) &&
+        !isPermanentResponseCode(retryData && retryData.code) &&
+        a < maxAttempts - 1
+      ) {
         var ra = parseInt((res.headers && res.headers.get && res.headers.get("Retry-After")) || "", 10);
         var wait = (res.status === 429 && ra > 0) ? Math.min(ra * 1000, 15000) : backoffMs(a);
         await new Promise(function (r) { setTimeout(r, wait); });

@@ -5,6 +5,117 @@ if(IS_CEP){
   document.documentElement.classList.add('cep-mode');
   try{csInterface=new CSInterface();}catch(e){}
 }
+const AF_HOST_ENV=(()=>{try{return csInterface&&csInterface.getHostEnvironment?csInterface.getHostEnvironment():null;}catch(e){return null;}})();
+const AF_HOST_ID=String((AF_HOST_ENV&&(AF_HOST_ENV.appName||AF_HOST_ENV.appId))||'AEFT').toUpperCase();
+const AF_IS_PREMIERE=AF_HOST_ID==='PPRO'||AF_HOST_ID.indexOf('PREMIERE')>=0;
+const AF_HOST_LABEL=AF_IS_PREMIERE?'Premiere Pro':'Premiere Pro';
+const AF_TEMPLATE_APP=AF_IS_PREMIERE?'pr':'ae';
+window.AF_TEMPLATE_APP=AF_TEMPLATE_APP;
+const AF_PREMIERE_COPY_RULES=[
+  [/The Premiere Project list only works inside Premiere Pro/gi,'The Premiere Project list only works inside Premiere Pro'],
+  [/Choose from Premiere Project or upload/gi,'Choose from the Premiere Project panel or upload'],
+  [/Items from the Premiere project/gi,'Items from the Premiere Project panel'],
+  [/Premiere Project items/gi,'Premiere Project items'],
+  [/Premiere Project panel/gi,'Premiere Project panel'],
+  [/Premiere project footage/gi,'Premiere Project media'],
+  [/Premiere project/gi,'Premiere project'],
+  [/selected in Premiere/gi,'selected in Premiere Pro'],
+  [/\bin Premiere\b/g,'in Premiere Pro'],
+  [/Import to Premiere/gi,'Import to Premiere Pro'],
+  [/Premiere import/gi,'Premiere import'],
+  [/Premiere Pro script didn[’']t respond/gi,'Premiere Pro did not respond'],
+  [/Premiere Pro did not respond/gi,'Premiere Pro did not respond'],
+  [/only works inside Premiere Pro/gi,'only works inside Premiere Pro'],
+  [/only available inside Premiere Pro/gi,'only available inside Premiere Pro'],
+  [/works inside Premiere Pro/gi,'works inside Premiere Pro'],
+  [/restart Premiere Pro/gi,'restart Premiere Pro'],
+  [/restart Premiere/gi,'restart Premiere Pro'],
+  [/make sure a comp is open/gi,'make sure a sequence is open'],
+  [/open your own comp/gi,'open your own sequence'],
+  [/frame from (?:the )?active sequence/gi,'frame from the active sequence'],
+  [/frame from sequence/gi,'frame from the active sequence'],
+  [/active sequence/gi,'active sequence'],
+  [/Templates added to your sequence appear here\./gi,'Templates added to your Timeline appear here.'],
+  [/import straight into your sequence/gi,'import straight into your sequence'],
+  [/No pack \(\.aep\)/gi,'No Premiere pack (.mogrt/.prproj/.zip)'],
+  [/Scene has no comp name/gi,'Template has no Premiere item name'],
+  [/Default import: Comp/gi,'Default import: Timeline'],
+  [/Default import: Bin/gi,'Default import: Project panel'],
+  [/\bcompositions\b/gi,'sequences'],
+  [/\bcomposition\b/gi,'sequence'],
+  [/\bComp\b/g,'Sequence'],
+  [/\bcomp\b/g,'sequence']
+];
+function afHostCopyMessage(value){
+  let text=String(value==null?'':value);
+  if(!AF_IS_PREMIERE)return text;
+  AF_PREMIERE_COPY_RULES.forEach(function(rule){text=text.replace(rule[0],rule[1]);});
+  return text;
+}
+window.afHostCopyMessage=afHostCopyMessage;
+function afApplyHostCopyToTree(root){
+  if(!AF_IS_PREMIERE||!root)return;
+  const skip={SCRIPT:1,STYLE:1,NOSCRIPT:1,TEMPLATE:1};
+  const patchElement=function(el){
+    if(!el||el.nodeType!==1||skip[el.tagName])return;
+    ['title','aria-label','placeholder'].forEach(function(attr){
+      if(!el.hasAttribute||!el.hasAttribute(attr))return;
+      const before=el.getAttribute(attr),after=afHostCopyMessage(before);
+      if(after!==before)el.setAttribute(attr,after);
+    });
+  };
+  if(root.nodeType===3){
+    if(root.parentNode&&!skip[root.parentNode.tagName]){
+      const after=afHostCopyMessage(root.nodeValue);
+      if(after!==root.nodeValue)root.nodeValue=after;
+    }
+    return;
+  }
+  patchElement(root);
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT,null,false);
+  let node;
+  while((node=walker.nextNode())){
+    if(node.nodeType===1){patchElement(node);continue;}
+    if(node.parentNode&&skip[node.parentNode.tagName])continue;
+    const after=afHostCopyMessage(node.nodeValue);
+    if(after!==node.nodeValue)node.nodeValue=after;
+  }
+}
+function afInstallHostCopyObserver(){
+  if(!AF_IS_PREMIERE||window.__afPrCopyObserver||typeof MutationObserver==='undefined')return;
+  window.__afPrCopyObserver=new MutationObserver(function(records){
+    records.forEach(function(rec){
+      if(rec.type==='characterData')afApplyHostCopyToTree(rec.target);
+      else if(rec.type==='attributes')afApplyHostCopyToTree(rec.target);
+      else Array.prototype.forEach.call(rec.addedNodes||[],afApplyHostCopyToTree);
+    });
+  });
+  window.__afPrCopyObserver.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['title','aria-label','placeholder']});
+}
+function afApplyHostCopy(){
+  document.title='FrameFlow — '+AF_HOST_LABEL;
+  if(!AF_IS_PREMIERE)return;
+  document.documentElement.classList.add('host-premiere');
+  const setText=(selector,text)=>{const el=document.querySelector(selector);if(el)el.textContent=text;};
+  setText('.fhome-sub','Templates, motion graphics, music, SFX and LUTs.');
+  const hero=document.querySelector('.gu-h1');if(hero)hero.innerHTML='Make Premiere Pro<br><span class="hl">move faster.</span>';
+  document.querySelectorAll('.empty-txt,.lib-empty-s').forEach(el=>{if(/composition/i.test(el.textContent||''))el.textContent='Templates added to your Timeline appear here.';});
+  setText('#igSrcProj small','Items from the Premiere Project panel');
+  setText('#vgSrcProj small','Items from the Premiere Project panel');
+  setText('#igSrcTl small','Frame from the active sequence');
+  setText('#vgSrcTl small','Frame or clip from the active sequence');
+  setText('#impComp','Timeline');
+  setText('#impBin','Project panel');
+  const importPref=document.getElementById('impComp');
+  if(importPref&&importPref.closest('.set-prefrow'))importPref.closest('.set-prefrow').style.display='none';
+  setText('.af-progress-sub','Added to the active Timeline · cancel — ×');
+  const pub=document.getElementById('publishSheet');if(pub)pub.setAttribute('data-host-capability','studio-only');
+  afApplyHostCopyToTree(document.body);
+  afInstallHostCopyObserver();
+}
+function afHostJsxPath(extensionRoot){
+  return (extensionRoot+'/jsx/'+(AF_IS_PREMIERE?'host-premiere.jsx':'host.jsx')).replace(/\\/g,'/');
+}
 
 const packs=window.packs;
 
@@ -217,17 +328,23 @@ function recordImportedMeta(templateKey,sceneName,data){
   const m=window.downloadedMeta[templateKey]||{folders:[],comps:[],displayName:''};
   if(!Array.isArray(m.folderIds))m.folderIds=[];
   if(!Array.isArray(m.compIds))m.compIds=[];
+  if(!Array.isArray(m.itemIds))m.itemIds=[];
+  if(!Array.isArray(m.timelineItemIds))m.timelineItemIds=[];
   const pack=packs[templateKey];
   if(pack&&pack.displayName) m.displayName=pack.displayName;
   // #30 (PL-c): host Premiere item ID qaytarsa NOMNI saqlamaymiz — o'chirish faqat shu
   // aniq elementga tegadi. Nom bo'yicha o'chirish foydalanuvchining bir xil nomli
   // papkasini/comp'ini ham yo'q qilardi.
-  const fid=data&&Number(data.folderId)||0;
-  const cid=data&&Number(data.compId)||0;
-  if(fid){ if(m.folderIds.indexOf(fid)<0) m.folderIds.push(fid); }
+  const fid=data&&data.folderId!=null&&data.folderId!==''?data.folderId:null;
+  const cid=data&&data.compId!=null&&data.compId!==''?data.compId:null;
+  if(fid!=null){ if(m.folderIds.indexOf(fid)<0) m.folderIds.push(fid); }
   else if(data&&data.folder&&m.folders.indexOf(data.folder)<0) m.folders.push(data.folder);
-  if(cid){ if(m.compIds.indexOf(cid)<0) m.compIds.push(cid); }
+  if(cid!=null){ if(m.compIds.indexOf(cid)<0) m.compIds.push(cid); }
   else if(data&&data.comp&&m.comps.indexOf(data.comp)<0) m.comps.push(data.comp);
+  const itemIds=data&&Array.isArray(data.itemIds)?data.itemIds:[];
+  const timelineItemIds=data&&Array.isArray(data.timelineItemIds)?data.timelineItemIds:[];
+  itemIds.forEach(id=>{if(id!=null&&id!==''&&m.itemIds.indexOf(id)<0)m.itemIds.push(id);});
+  timelineItemIds.forEach(id=>{if(id!=null&&id!==''&&m.timelineItemIds.indexOf(id)<0)m.timelineItemIds.push(id);});
   // Demo (CEP emas) holatda data bo'lmaydi — sahna nomini comp sifatida saqlaymiz
   if(!data&&sceneName&&m.comps.indexOf(sceneName)<0) m.comps.push(sceneName);
   m.at=Date.now(); // Home "Continue" qatori uchun oxirgi import vaqti
@@ -236,6 +353,7 @@ function recordImportedMeta(templateKey,sceneName,data){
 
 function packDownloadOpts(pack){
   return{
+    hostApp:AF_TEMPLATE_APP,
     packUrl:pack?.serverPackUrl,
     fileSize:pack?.fileSize||0,
     onProgress(done,total){
@@ -250,6 +368,7 @@ function packDownloadOpts(pack){
 }
 function sceneDownloadOpts(){
   return{
+    hostApp:AF_TEMPLATE_APP,
     onProgress(done,total){
       if(total>0){
         const pct=Math.min(100,Math.floor((done/total)*100));
@@ -278,11 +397,64 @@ function sceneDownloadOpts(){
  * Natija doim string: host javobi yoki `{ok:false,error:'timeout'|'cancelled',message}`
  * JSON'i (chaqiruvchilar allaqachon shu shaklni parse qiladi).
  */
+function afPremiereScriptEngineMessage(){
+  return 'Premiere host bridge is unavailable. Fully quit Premiere Pro, then reopen Premiere and FrameFlow.';
+}
+
+/**
+ * Barcha CEP → ExtendScript chaqiruvlari shu adapterdan o'tadi.
+ *
+ * Premiere 25.6+ da Adobe Stock paneli bilan ma'lum host regressiyasi bor: hatto
+ * `1+1` ham literal `EvalScript error.` qaytaradi. Uni xususiy funksiya xatosi deb
+ * talqin qilish Project/Timeline uchun yolg'on xabarlar chiqarardi. Endi bunday
+ * javob barqaror JSON xatoga aylantiriladi va butun panel bir xil sababni ko'rsatadi.
+ */
+function afEvalScript(script,callback){
+  const done=(typeof callback==='function')?callback:function(){};
+  if(!csInterface||typeof csInterface.evalScript!=='function'){
+    done(JSON.stringify({ok:false,error:'cep_evalscript_unavailable',reason:'CEP host bridge is unavailable',message:'CEP host bridge is unavailable'}));
+    return;
+  }
+  try{
+    csInterface.evalScript(script,function(raw){
+      const value=raw==null?'':String(raw);
+      if(AF_IS_PREMIERE&&/^EvalScript error\.?$/i.test(value.trim())){
+        if(window.AF_UXP_BRIDGE&&typeof window.AF_UXP_BRIDGE.evalScript==='function'){
+          window.AF_UXP_BRIDGE.evalScript(script,function(uxpRaw){
+            const uxpValue=uxpRaw==null?'':String(uxpRaw);
+            let failed=false;
+            try{const parsed=JSON.parse(uxpValue);failed=parsed&&parsed.error==='premiere_uxp_bridge_unavailable';}catch(e){}
+            if(!failed){
+              window.AF_HOST_ENGINE_ERROR=null;
+              try{localStorage.setItem('af_host_health',JSON.stringify({ts:new Date().toISOString(),ok:true,host:'pr',bridge:'uxp'}));}catch(e){}
+              done(uxpValue);
+              return;
+            }
+            const message=afPremiereScriptEngineMessage();
+            window.AF_HOST_CAPABILITIES=null;
+            window.AF_HOST_ENGINE_ERROR={code:'premiere_uxp_bridge_unavailable',message:message};
+            try{localStorage.setItem('af_host_health',JSON.stringify({ts:new Date().toISOString(),ok:false,host:'pr',code:'premiere_uxp_bridge_unavailable',error:message}));}catch(e){}
+            done(JSON.stringify({ok:false,error:'premiere_uxp_bridge_unavailable',reason:message,message:message}));
+          });
+          return;
+        }
+        const message=afPremiereScriptEngineMessage();
+        done(JSON.stringify({ok:false,error:'premiere_uxp_bridge_unavailable',reason:message,message:message}));
+        return;
+      }
+      done(value);
+    });
+  }catch(e){
+    const message=String((e&&e.message)||e||'CEP evalScript failed');
+    done(JSON.stringify({ok:false,error:'evalfail',reason:message,message:message}));
+  }
+}
+
 function hostEvalGuarded(script,opts){
   const o=opts||{};
   const softMs=o.softMs||15000;
   const hardMs=o.hardMs||180000;
-  const label=o.label||'Premiere Pro';
+  const label=o.label||AF_HOST_LABEL;
   return new Promise((resolve)=>{
     let settled=false,softT=0,hardT=0;
     const done=(v)=>{
@@ -294,19 +466,64 @@ function hostEvalGuarded(script,opts){
     };
     softT=setTimeout(()=>{
       if(settled)return;
-      showProgress(100,label+' is taking longer than usual — check Premiere Pro for an open dialog',true,true);
+      showProgress(100,label+' is taking longer than usual — check '+AF_HOST_LABEL+' for an open dialog',true,true);
     },softMs);
     hardT=setTimeout(()=>{
-      done(JSON.stringify({ok:false,error:'timeout',message:'Premiere Pro did not respond in '+Math.round(hardMs/1000)+'s — check Premiere for an open dialog, then try again'}));
+      done(JSON.stringify({ok:false,error:'timeout',message:AF_HOST_LABEL+' did not respond in '+Math.round(hardMs/1000)+'s — check the host for an open dialog, then try again'}));
     },hardMs);
     // onAfCancel shu yerdan kutishni uzadi (yuklab olish emas — host kutuvi)
-    window.__afHostWait={done:done,cancel:()=>done(JSON.stringify({ok:false,error:'cancelled',message:'Stopped waiting — Premiere Pro may still finish the import in the background'}))};
-    try{
-      csInterface.evalScript(script,(raw)=>done(raw==null?'':String(raw)));
-    }catch(e){
-      done(JSON.stringify({ok:false,error:'evalfail',message:String((e&&e.message)||e)}));
-    }
+    window.__afHostWait={done:done,cancel:()=>done(JSON.stringify({ok:false,error:'cancelled',message:'Stopped waiting — '+AF_HOST_LABEL+' may still finish the import in the background'}))};
+    afEvalScript(script,(raw)=>done(raw==null?'':String(raw)));
   });
+}
+
+async function reserveImportForHost(pack){
+  if(!pack?.serverTemplateId||typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return {ok:true,id:''};
+  try{
+    const id=await Promise.race([
+      AssetFlowAccount.reserveImport(pack.serverTemplateId),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Import quota check timed out')),10000))
+    ]);
+    if(!id)throw new Error('Import quota reservation was not created');
+    if(typeof refreshAccountUi==='function')refreshAccountUi();
+    return {ok:true,id};
+  }catch(e){
+    hideProgress();
+    if(e&&(e.status===403||e.code==='LIMIT_REACHED')){
+      openLimitSheet('import');
+      return {ok:false,result:'limit'};
+    }
+    showToast('Import quota could not be verified. Check your connection and try again.','error');
+    return {ok:false,result:''};
+  }
+}
+
+async function settleImportForHost(reservationId,success){
+  if(!reservationId||typeof AssetFlowAccount==='undefined')return true;
+  if(!success){
+    await AssetFlowAccount.cancelImport(reservationId);
+    if(typeof refreshAccountUi==='function')refreshAccountUi();
+    return true;
+  }
+  let lastError=null;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      await AssetFlowAccount.commitImport(reservationId);
+      if(typeof refreshAccountUi==='function')refreshAccountUi();
+      return true;
+    }catch(e){
+      lastError=e;
+      if(attempt<2)await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+    }
+  }
+  console.warn('Import reservation commit failed',lastError);
+  showToast('Imported successfully, but usage sync is pending. Keep FrameFlow online and try Sync.','warning');
+  return false;
+}
+
+function hostImportSucceeded(raw){
+  if(!raw)return false;
+  try{return JSON.parse(raw)?.ok===true;}catch(e){return /^ok(?:\b|:)/i.test(String(raw).trim());}
 }
 
 async function importPackFileToAE(pack){
@@ -363,27 +580,11 @@ async function importPackFileToAE(pack){
     showProgress(0,'Preparing…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
-  // Import limitini Premiere import qilishdan OLDIN majburlash (kesh'langan qayta-import
-  // ham shu nuqtadan o'tadi). 403 — limit tugadi: import qilinmaydi.
-  if(pack?.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
-    try{
-      const usageRequest=AssetFlowAccount.recordImport(pack.serverTemplateId);
-      await (window.__FF_UXP_RUNTIME
-        ? Promise.race([
-            usageRequest,
-            new Promise((_,reject)=>setTimeout(()=>reject(new Error('Import usage request timed out')),10000))
-          ])
-        : usageRequest);
-      if(typeof refreshAccountUi==='function') refreshAccountUi();
-    }catch(usageErr){
-      if(usageErr&&usageErr.status===403){
-        hideProgress();
-        openLimitSheet('import');   // P21: Free oylik IMPORT limiti tugadi — import sheet (download emas)
-        return 'limit';
-      }
-      // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
-    }
-  }
+  // Kvota host importidan oldin rezerv qilinadi; faqat host muvaffaqiyatidan keyin
+  // commit bo'ladi. Tarmoq xatosida fail-closed — limitni chetlab o'tib bo'lmaydi.
+  const importReservation=await reserveImportForHost(pack);
+  if(!importReservation.ok)return importReservation.result;
+  const reservationId=importReservation.id;
   // P35 — footage-to'plami (zip ichida .aep/.mogrt yo'q, faqat kliplar): host
   // importFootageBundle bilan hammasini shablon nomidagi bin'ga FOOTAGE import.
   // recordImport allaqachon YUQORIDA bitta marta chaqirildi — bu yerda EMAS.
@@ -395,20 +596,29 @@ async function importPackFileToAE(pack){
     hideProgress();
     let br=null;try{br=bundleRaw?JSON.parse(bundleRaw):null;}catch(e){br=null;}
     if(br&&br.ok){
+      await settleImportForHost(reservationId,true);
       const n=br.imported||bundleFiles.length;
+      window.__afLastImportMeta=br;
       showToast('Imported '+n+' item'+(n===1?'':'s')+' into "'+(br.folder||bundleLabel)+'"'+(br.failed?(' — '+br.failed+' skipped'):''),'success');
       return 'bundle:ok';
     }
+    await settleImportForHost(reservationId,false);
     showToast('Import error: '+((br&&(br.reason||br.message))||(bundleRaw?String(bundleRaw):'no result')),'error');
     return '';
   }
-  showProgress(100,'Importing into Premiere…',true);
+  showProgress(100,'Importing into '+AF_HOST_LABEL+'…',true);
   const packLabel=String(pack?.displayName||pack?.name||'FrameFlow').trim()||'FrameFlow';
   const mediaKind=packMediaKind(pack);
   // P5.2 — LUT: Premiere footage sifatida import qilib bo'lmaydi → faylni OS'da ko'rsatamiz + ko'rsatma.
   if(mediaKind==='lut'){
-    await hostEvalGuarded(`revealFileInOS(${JSON.stringify(importPath)})`,{label:'Revealing file',hardMs:30000});
+    const revealRaw=await hostEvalGuarded(`revealFileInOS(${JSON.stringify(importPath)})`,{label:'Revealing file',hardMs:30000});
     hideProgress();
+    if(!hostImportSucceeded(revealRaw)){
+      await settleImportForHost(reservationId,false);
+      showToast('Could not reveal the LUT file.','error');
+      return '';
+    }
+    await settleImportForHost(reservationId,true);
     showToast('LUT downloaded and revealed in your file browser. Apply it via Lumetri Color → Creative → Look, or the “Apply Color LUT” effect.','info');
     return 'lut:downloaded';
   }
@@ -419,15 +629,25 @@ async function importPackFileToAE(pack){
     hideProgress();
     let mr=null;try{mr=mediaRaw?JSON.parse(mediaRaw):null;}catch(e){mr=(String(mediaRaw).indexOf('ok')===0)?{ok:true}:null;}
     if(mr&&mr.ok){
-      showToast(mr.addedToComp?('Imported — added to '+(mr.compName?('"'+mr.compName+'" '):'')+'sequence'):'Imported to Premiere (Project panel)','success');
+      await settleImportForHost(reservationId,true);
+      window.__afLastImportMeta=mr;
+      showToast(mr.addedToComp?('Imported — added to '+(mr.compName?('"'+mr.compName+'" '):'')+(AF_IS_PREMIERE?'timeline':'sequence')):'Imported to '+AF_HOST_LABEL+' (Project panel)','success');
       return 'media:ok';
     }
+    if(AF_IS_PREMIERE&&mr&&mr.partial){
+      await settleImportForHost(reservationId,true);
+      window.__afLastImportMeta=mr;
+      showToast('Imported to the Premiere Project panel, but not added to the Timeline: '+(mr.reason||mr.message||'open an active sequence and try again'),'warning');
+      return 'media:partial';
+    }
+    await settleImportForHost(reservationId,false);
     showToast('Import error: '+((mr&&(mr.reason||mr.message))||(mediaRaw?String(mediaRaw):'no result')),'error');
     return '';
   }
   // Default — .aep/.mogrt loyiha (video-templates). #97: hang-guard bilan.
   const projRaw=await hostEvalGuarded(`importTemplateProject(${JSON.stringify(JSON.stringify({filePath:importPath,packLabel}))})`,{label:'Importing template'});
   hideProgress();
+  await settleImportForHost(reservationId,hostImportSucceeded(projRaw));
   return projRaw||'';
 }
 
@@ -470,23 +690,11 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     showProgress(0,'Preparing…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
-  // Import limitini Premiere import qilishdan OLDIN majburlash (kesh'langan/extract
-  // qilingan qayta-import ham shu nuqtadan o'tadi). 403 — limit tugadi.
-  if(pack?.serverTemplateId&&typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn()){
-    try{
-      await AssetFlowAccount.recordImport(pack.serverTemplateId);
-      if(typeof refreshAccountUi==='function') refreshAccountUi();
-    }catch(usageErr){
-      if(usageErr&&usageErr.status===403){
-        hideProgress();
-        openLimitSheet('import');   // P21: Free oylik IMPORT limiti tugadi — import sheet (download emas)
-        return 'limit';
-      }
-      // tarmoq/boshqa xato — bytes allaqachon gate'dan o'tgan, import davom etadi
-    }
-  }
-  // Yuklab olindi — endi Premiere import fazasi (sinxron, vaqt olishi mumkin)
-  showProgress(100,'Importing into Premiere…',true);
+  const importReservation=await reserveImportForHost(pack);
+  if(!importReservation.ok)return importReservation.result;
+  const reservationId=importReservation.id;
+  // Yuklab olindi — endi host import fazasi (sinxron, vaqt olishi mumkin)
+  showProgress(100,'Importing into '+AF_HOST_LABEL+'…',true);
   const compName=(scene?.aeComp||'').trim()||(scene?.n||'').trim();
   // Premiere'da ko'rinadigan nom — shablon title'i; __srv_<id> ichki kalit displeyga chiqmasin
   const isInternalKey=/^__srv_/.test(String(packLabel||''));
@@ -516,7 +724,9 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
   });
   // #97 (PL-e): umumiy hang-guard — 15s dan keyin «bekor qilish», 180s da o'zi settle.
   // (Ilgari 30s qattiq timeout edi — katta .aep import'ida noto'g'ri "timeout" berardi.)
-  return await hostEvalGuarded(`importSingleSceneFromAep(${JSON.stringify(cfg)})`,{label:'Importing scene'});
+  const sceneRaw=await hostEvalGuarded(`importSingleSceneFromAep(${JSON.stringify(cfg)})`,{label:'Importing scene'});
+  await settleImportForHost(reservationId,hostImportSucceeded(sceneRaw));
+  return sceneRaw;
 }
 let featuredDismissedByNav={};
 let currentNav='video', currentPage='assets', currentSub='all', currentOrient='all', currentRes='all', currentSearch='', currentSort='relevant';
@@ -628,7 +838,7 @@ function renderCard(a,i,showDl){
   // SC_14: subtitr — FAQAT kategoriya (contributor nomi kartada ko'rsatilmaydi;
   // detail view'dagi muallif ma'lumoti tegilmagan).
   const subLine=a.t?escHtml(String(a.t)):'';
-  const dlBtn=showDl?`<div role="button" tabindex="0" class="ck-del" title="Remove from project" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</div>`:'';
+  const dlBtn=showDl?`<div role="button" tabindex="0" class="ck-del" title="${AF_IS_PREMIERE?'Clear download record':'Remove from project'}" onclick="event.stopPropagation();deleteDownloadedTemplate('${safeName}')">🗑</div>`:'';
   // SC_14: per-karta Import/Re-import tugmasi O'CHIRILDI — karta bosilishi detail'ni ochadi,
   // import/download detail'ning o'z tugmasida (pd3ImportAll — gated oqim o'zgarmagan).
   // "Downloaded" holati thumb ustidagi ✓ badge'da qoladi (stBadge).
@@ -637,6 +847,7 @@ function renderCard(a,i,showDl){
   // role="button" + tabindex="0" + Enter/Space (delegatsiya `initDrag()` yonida).
   return`<div class="card${noPack?' no-pack':''}" role="button" tabindex="0" data-name="${escHtml(a.n)}" data-ico="${escHtml(a.i)}" data-preview="${escHtml(a.preview||'')}"
     onmouseenter="playCardPreview(this)" onmouseleave="pauseCardPreview(this)"
+    onfocusin="playCardPreview(this)" onfocusout="pauseCardPreview(this)"
     onclick="openPack('${safeName}')">
     <div class="thumb${hasPreview?' has-preview':''}" style="background-color:${escHtml(a.bg)}">
       <span class="ck-plan ${a.isPro?'pro':'free'}">${a.isPro?'PRO':'FREE'}</span>
@@ -840,6 +1051,11 @@ function afGenToast(view,cost,thumb,sessId,sessMode){
     +'<div role="button" tabindex="0" type="button" class="gt-x" title="Dismiss">✕</div>';
   d.querySelector('.gt-view').addEventListener('click',function(){
     d.remove();
+    if(sessId&&typeof window.afOpenCreateSession==='function'){
+      var found=(typeof window.axwsFindSession==='function')?window.axwsFindSession(sessId):null;
+      window.afOpenCreateSession(found||{id:sessId,mode:sessMode||(view==='vidgen'?'video':view==='audgen'?'voice':'image')});
+      return;
+    }
     afNavTab('ai');
     // SC_29: natija O'Z sessiyasiga tushgan — View o'sha sessiyani faollashtirib ochadi
     try{
@@ -860,6 +1076,13 @@ function afGenToast(view,cost,thumb,sessId,sessMode){
 window.afGenDoneNotify=function(view,cost,thumb,sessId,sessMode){
   var cur=document.querySelector('.axroot .view.on');
   var inAi=document.documentElement.classList.contains('ai-mode');
+  try{if(sessId&&typeof window.afSessionGenerationDone==='function')window.afSessionGenerationDone(sessId);}catch(e){}
+  var unifiedSame=false;
+  try{unifiedSame=!!(sessId&&inAi&&cur&&cur.id==='v-session'&&window.afCreateWorkspace&&window.afCreateWorkspace.controller&&window.afCreateWorkspace.controller.snapshot().sessionId===sessId);}catch(e){}
+  if(unifiedSame){
+    if(typeof showToast==='function')showToast(typeof cost==='number'?('Done! ✦'+cost+' charged'):'Audio ready','success');
+    return;
+  }
   // SC_29: "joyida" faqat view HAM sessiya HAM mos bo'lsa — aks holda View'li toast (to'g'ri sessiyaga olib boradi)
   var sameSess=true;
   try{
@@ -1142,18 +1365,12 @@ function axwsOvfSync(row){
 }
 function axwsFitRow(row){
   var sg=row.querySelector('.axws-setgroup'); if(!sg)return;
-  axwsRestoreAll(row); // 1) hammani asl joyiga — to'liq qatordan hisoblaymiz (deterministik)
+  /* ART-COMPOSER: CSS wrapping uzun model nomini o'qiladigan holda saqlaydi.
+     Eski kc-zinapoya chiplarni 64px'gacha siqar va jonli elementlarni ⋯ ichiga
+     ko'chirar edi; endi resize faqat asl DOM tartibini tiklaydi. */
+  axwsRestoreAll(row);
   row.classList.remove('kc1','kc2','kc3','kc4','kc5','kc6');
   row.setAttribute('data-compact','0');
-  // 2) yorliq-kompaktlash zinasi 1..6 (SC_54/SC_55): avval so'zlar tashlanadi, model nomi ellipsis
-  var lvl; for(lvl=1; lvl<=6; lvl++){ if(!axwsRowOverflow(row))break; row.classList.add('kc'+lvl); row.setAttribute('data-compact',String(lvl)); }
-  // 3) hali sig'masa — boshqaruvlarni ⋯ popover'ga ustuvorlik tartibida KO'CHIRAMIZ (yashirmaymiz)
-  var body=axwsOvfBody(row), w=row.querySelector('.axws-ovfwrap');
-  if(body&&axwsRowOverflow(row)){
-    if(w)w.style.display=''; // ⋯ endi kenglik oladi — o'lchov to'g'ri bo'lsin
-    var mv=axwsMovables(row), i, guard=0;
-    for(i=0;i<mv.length&&guard<12;i++,guard++){ if(!axwsRowOverflow(row))break; axwsMoveToOvf(mv[i],body); }
-  }
   axwsOvfSync(row);
 }
 /* SC_56: fit paytida SETgroup MO'sini uzamiz — ko'chirish (childList) o'zi qayta-fit trigger qilmasin
@@ -1244,13 +1461,14 @@ function reloadServerBrowse(){
 
 function getFiltered(){
   return assets.filter(a=>{
+    if(__catAiOn&&!a.ai)return false;
     // Server natijasi `?app=` + joriy nav/filtr bilan allaqachon tekshirilgan.
     // Dasturdan mustaqil stock (LUT/music/SFX) tarixiy DB'da `templateApp=ae`
     // bo'lishi mumkin; uni klientda qayta app-filtrlash Premiere'da yo'qotadi.
     if(a.server) return true;
     // FAZA 5 (§11) — Premiere plagin FAQAT Premiere Pro: dasturi belgilangan va Premiere bo'lmagan shablonlar chiqmaydi
     // (server ?app=ae filtridan tashqari klient zaxirasi). Belgilanmagan (bo'sh) → Premiere deb qabul qilinadi.
-    if(a.templateApp&&String(a.templateApp).toLowerCase()!=='pr')return false;
+    if(a.templateApp&&String(a.templateApp).toLowerCase()!==AF_TEMPLATE_APP)return false;
     // P1 #15 — SERVER itemlari allaqachon server tomonda filtrlangan (nav/cat/orient/
     // res/qidiruv, BUTUN baza bo'yicha) → qayta filtrlamaymiz. Aks holda serverning
     // description-mos yoki boshqa-mezon natijasi bu yerda yo'qolardi. Faqat LOKAL
@@ -1706,7 +1924,7 @@ async function __importSceneWithModeImpl(pack,scene,packName,mode){
         return 'mogrt-picker';
       }else if(data&&(data.error==='cancelled'||data.error==='timeout')){
         // #97 (PL-e): kutish uzildi/tugadi — bu import XATOSI emas, holat xabari
-        showToast(data.message||'Premiere Pro did not respond','warning');
+        showToast(data.message||AF_HOST_LABEL+' did not respond','warning');
       }else{
         const msg=data?.message||raw||'unknown';
         if(String(msg).indexOf('Comp not found')===0){
@@ -1781,7 +1999,7 @@ async function __downloadAllImpl(n){
 
   if(IS_CEP&&packCanAeImport(p)){
     try{
-      showToast('Importing into Premiere…');
+      showToast('Importing into '+AF_HOST_LABEL+'…');
       const result=await importPackFileToAE(p);
       if(result==='limit'){ render();renderDl(); return; }   // import limiti tugadi (toast ko'rsatildi)
       if(result==='mogrt:picker'){
@@ -1792,8 +2010,9 @@ async function __downloadAllImpl(n){
       // qaytaradi va aniq success toastini importPackFileToAE ichida ko'rsatadi.
       // Ularni loyiha-template JSON parseriga yuborsak import muvaffaqiyatidan
       // keyin yolg'on "Import error: unknown" chiqardi.
-      if(result==='media:ok'||result==='bundle:ok'||result==='lut:downloaded'){
+      if(result==='media:ok'||result==='media:partial'||result==='bundle:ok'||result==='lut:downloaded'){
         markPackDownloaded();
+        if(window.__afLastImportMeta){recordImportedMeta(n,null,window.__afLastImportMeta);window.__afLastImportMeta=null;persistUserPrefs();}
         render();renderDl();closePack();
         return;
       }
@@ -1802,17 +2021,17 @@ async function __downloadAllImpl(n){
       if(!result){ render();renderDl(); return; }
       // Host importTemplateProject JSON {ok,folder,movedCount} qaytaradi;
       // eski "ok:aep"/"ok:<name>" string kontrakti ham ehtiyot uchun qabul qilinadi.
-      let ok=false,folder=null,folderId=0,missingFonts=null,failMsg='';
+      let ok=false,folder=null,folderId=null,missingFonts=null,failMsg='',importData=null;
       if(typeof result==='string'){
         if(result.indexOf('ok:')===0) ok=true;
-        else { try{ const d=JSON.parse(result); if(d&&d.ok){ ok=true; folder=d.folder||null; folderId=Number(d.folderId)||0; missingFonts=d.missingFonts||null; }
-          else if(d){ failMsg=String(d.message||d.reason||''); if(d.error==='cancelled'||d.error==='timeout'){ showToast(failMsg||'Premiere Pro did not respond','warning'); render();renderDl(); return; } } }catch(e){} }
+        else { try{ const d=JSON.parse(result); importData=d; if(d&&d.ok){ ok=true; folder=d.folder||null; folderId=d.folderId!=null?d.folderId:null; missingFonts=d.missingFonts||null; }
+          else if(d){ failMsg=String(d.message||d.reason||''); if(d.manual&&d.path){ await hostEvalGuarded(`revealFileInOS(${JSON.stringify(d.path)})`,{label:'Showing downloaded project',hardMs:30000}); showToast(failMsg,'info'); render();renderDl(); return; } if(d.error==='cancelled'||d.error==='timeout'){ showToast(failMsg||AF_HOST_LABEL+' did not respond','warning'); render();renderDl(); return; } } }catch(e){} }
       }
       if(ok){
         markPackDownloaded();
         // #30 (PL-c): folderId bo'lsa nom saqlanmaydi (nom bo'yicha o'chirish xavfli)
-        recordImportedMeta(n,null,(folderId||folder)?{folder,folderId}:null);
-        showToast('✓ "'+(p.displayName||n)+'" imported into the Premiere project','success',__elapsed());
+        recordImportedMeta(n,null,importData||((folderId!=null||folder)?{folder,folderId}:null));
+        showToast('✓ "'+(p.displayName||n)+'" imported into '+(AF_IS_PREMIERE?'the Premiere Project panel':'the Premiere Pro project'),'success',__elapsed());
         // FAZA 4: yetishmagan shriftlarni fon rejimida hal qilamiz (import'ni bloklamaydi)
         if(missingFonts&&missingFonts.length) resolveTemplateFonts(missingFonts);
       }
@@ -1849,21 +2068,26 @@ async function __downloadAllImpl(n){
 /** Yuklab olingan shablonni loyihadan (va keshdan) o'chiradi */
 async function deleteDownloadedTemplate(key){
   const pack=packs[key];
-  const meta=window.downloadedMeta[key]||{folders:[],comps:[],folderIds:[],compIds:[]};
+  const meta=window.downloadedMeta[key]||{folders:[],comps:[],folderIds:[],compIds:[],itemIds:[],timelineItemIds:[]};
   const name=(pack&&pack.displayName)||meta.displayName||key;
-  if(!(await window.afConfirm('Remove "'+name+'" from your project?\nImported folders/comps in the Premiere Project panel and layers inside comps will also be removed.',{ok:"Remove",danger:true})))return;
+  const removePrompt=AF_IS_PREMIERE
+    ? 'Clear the FrameFlow download record and cached files for "'+name+'"?\nItems already imported into Premiere will stay in the Project panel and Timeline.'
+    : 'Remove "'+name+'" from your project?\nOnly FrameFlow items recorded by stable IDs will be removed from the Premiere Pro Project panel and compositions.';
+  if(!(await window.afConfirm(removePrompt,{ok:AF_IS_PREMIERE?'Clear':'Remove',danger:true})))return;
 
   // 1) Premiere loyihasidan olib tashlash (CEP)
-  if(IS_CEP&&csInterface){
-    const folders=Array.isArray(meta.folders)?meta.folders:[];
-    const comps=Array.isArray(meta.comps)?meta.comps:[];
+  if(IS_CEP&&csInterface&&!AF_IS_PREMIERE){
+    const folders=[];
+    const comps=[];
     // #30 (PL-c): yangi importlarda ID bor — host aynan shu elementni o'chiradi.
     // Nom ro'yxatida faqat ID'siz eski yozuvlar qoladi.
     const folderIds=Array.isArray(meta.folderIds)?meta.folderIds:[];
     const compIds=Array.isArray(meta.compIds)?meta.compIds:[];
-    if(folders.length||comps.length||folderIds.length||compIds.length){
+    const itemIds=Array.isArray(meta.itemIds)?meta.itemIds:[];
+    const timelineItemIds=Array.isArray(meta.timelineItemIds)?meta.timelineItemIds:[];
+    if(folderIds.length||compIds.length||itemIds.length||timelineItemIds.length){
       try{
-        const cfg=JSON.stringify({folders,comps,folderIds,compIds});
+        const cfg=JSON.stringify({folders,comps,folderIds,compIds,itemIds,timelineItemIds});
         // #97 (PL-e): o'chirish ham host'da osilib qolishi mumkin — guard bilan
         const raw=await hostEvalGuarded('removeImportedTemplate('+JSON.stringify(cfg)+')',{label:'Removing from project',hardMs:60000});
         hideProgress();   // guard soft-timer overlay ochgan bo'lishi mumkin
@@ -1872,8 +2096,10 @@ async function deleteDownloadedTemplate(key){
         else showToast('Problem removing from project: '+((data&&data.message)||'unknown'));
       }catch(e){
         console.error('removeImportedTemplate',e);
-        showToast('Error removing from Premiere: '+e.message);
+        showToast('Error removing from '+AF_HOST_LABEL+': '+e.message);
       }
+    }else if((Array.isArray(meta.folders)&&meta.folders.length)||(Array.isArray(meta.comps)&&meta.comps.length)){
+      showToast('This older import has no stable item IDs, so FrameFlow left project items untouched and will only clear its download cache.','warning');
     }
     // 2) Keshlangan pack fayllarini tozalash — qisman muvaffaqiyatda ham aniq xabar
     if(pack&&pack.serverTemplateId){
@@ -1895,6 +2121,8 @@ async function deleteDownloadedTemplate(key){
       }catch(e){ cacheFails++; }
       if(cacheFails>0) showToast('Some cache files could not be removed ('+cacheFails+') — please try again later','warning');
     }
+  }else if(AF_IS_PREMIERE){
+    showToast('Download record cleared. Imported Premiere items were left untouched.','info');
   }else{
     showToast('"'+name+'" removed from the list');
   }
@@ -1913,7 +2141,7 @@ window.deleteDownloadedTemplate=deleteDownloadedTemplate;
  *  so'ng UI toza qayta chiziladi (qora karta/xato qolmasin). */
 async function afClearDownloads(){
   const n=(window.downloaded&&window.downloaded.size)||0;
-  const msg='Clear the download cache?'+(n?('\n'+n+' downloaded item(s) will be removed from the list.'):'')+'\nCached template files on disk will be deleted. Items already imported into Premiere projects are not affected.';
+  const msg='Clear the download cache?'+(n?('\n'+n+' downloaded item(s) will be removed from the list.'):'')+'\nCached template files on disk will be deleted. Items already imported into '+AF_HOST_LABEL+' projects are not affected.';
   if(!(await window.afConfirm(msg,{ok:'Clear',danger:true})))return;
   let cacheFails=0;
   if(IS_CEP){
@@ -1977,7 +2205,7 @@ function getGridAssets(){
 
 function shouldShowFeatured(){
   if(featuredDismissedByNav[currentNav]||currentPage!=='assets')return false;
-  if(currentSub!=='all'||currentSearch||currentOrient!=='all'||currentRes!=='all')return false;
+  if(currentSub!=='all'||currentSearch||currentOrient!=='all'||currentRes!=='all'||__catAiOn)return false;
   return getFeaturedAssets().length>0;
 }
 
@@ -2110,7 +2338,7 @@ function hasAnyAssets(){
   return Array.isArray(assets)&&assets.some(a=>a.local||a.server);
 }
 function filtersActive(){
-  return !!(currentSearch||currentSub!=='all'||currentOrient!=='all'||currentRes!=='all');
+  return !!(currentSearch||currentSub!=='all'||currentOrient!=='all'||currentRes!=='all'||__catAiOn);
 }
 /** Faol filtrlar soni (qidiruv + bo'lim + format + sifat) */
 function activeFilterCount(){
@@ -2119,6 +2347,7 @@ function activeFilterCount(){
   if(currentSub!=='all')n++;
   if(currentOrient!=='all')n++;
   if(currentRes!=='all')n++;
+  if(__catAiOn)n++;
   return n;
 }
 /** Filtr bar'da «Tozalash (N)» tugmasini ko'rsatadi/yashiradi */
@@ -2229,7 +2458,9 @@ window.retryCatalog=retryCatalog;
 /** Barcha faol filtrlarni tozalaydi (bo'lim, qidiruv, format, sifat) */
 function clearAllFilters(){
   currentSub='all';currentOrient='all';currentRes='all';currentSearch='';
+  __catAiOn=false;
   const si=document.getElementById('searchInput');if(si)si.value='';
+  const ai=document.getElementById('catAiToggle');if(ai){ai.classList.remove('on');ai.setAttribute('aria-pressed','false');}
   syncFilterDropMenu('orientMenu','all');
   syncFilterDropMenu('resMenu','all');
   updateOrientResPillLabels();
@@ -2395,7 +2626,7 @@ function afLibDlRow(a){
   return `<div class="lib-row"${a._orphan?'':` onclick="openPack('${safe}')" title="Open template" style="cursor:pointer"`}>
     <div class="lib-rthumb" style="background-color:${escHtml(a.bg||'')}"><span class="lib-rck">✓</span></div>
     <div class="lib-rmid"><div class="lib-rname">${escHtml(a.displayName||a.n)}</div><div class="lib-rmeta">${escHtml(afLibDlMeta(a))}</div></div>
-    <div role="button" tabindex="0" type="button" class="lib-rtrash" title="Remove from project" onclick="event.stopPropagation();deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</div>
+    <div role="button" tabindex="0" type="button" class="lib-rtrash" title="${AF_IS_PREMIERE?'Clear download record':'Remove from project'}" onclick="event.stopPropagation();deleteDownloadedTemplate('${safe}')">${AF_LIB_TRASH}</div>
   </div>`;
 }
 function afLibSyncCounts(){
@@ -2740,12 +2971,14 @@ function renderHome(){
   renderHomeGreeting(u);
   homeFetchLastGen();
   fhomeFetchModels();
+  renderHomeTools();
+  renderHomeModels();
   renderHomeHero();
   renderHomeRecent(); // SC_07 — "Jump back in" strip
   renderHomeSessions(); // SC_50 — "Continue a session"
-  renderHomeExplore(); // SC_56 — "Explore" (kuratsiya AI-Stock)
-  renderHomeCategories(); // SC_50 — "Browse by category"
-  renderHomeRails(); // SC_52 — admin-kuratsiya New/Top rellslari (eski shelf o'rniga)
+  renderHomeGrid();
+  renderHomeDiscovery();
+  renderHomeVideoTemplates();
   // SC_04: login'dan keyin ham CMS matnlari qayta qo'llanadi (idempotent, arzon)
   if(typeof afCmsApply==='function')afCmsApply();
   if(typeof window.afCmsTick==='function')window.afCmsTick();
@@ -2782,21 +3015,165 @@ function renderHomeHero(){
   // SC_04: CMS hero media ustuvorligi gen-thumb holati o'zgarganda qayta baholanadi
   if(typeof window.afCmsHeroMedia==='function')window.afCmsHeroMedia();
 }
-/* SC_50: hero prompt-first — matnni AI Tools yangi rasm-sessiyasiga uzatadi (kredit YECHILMAYDI;
-   foydalanuvchi Generate'ni o'zi bosadi). Mavjud yangi-sessiya (axIGSetSession(null)) + kompozer
-   to'ldirish yo'llarini qayta ishlatadi. */
+function fhomeToolMedia(mode,index){
+  var items=(typeof __homeGen!=='undefined'&&__homeGen.items)||[];
+  var wanted=mode==='image'?'image':mode==='video'?'video':mode==='voice'?'audio':'sfx';
+  for(var i=0;i<items.length;i++){
+    if(items[i].cat===wanted&&items[i].thumb&&wanted!=='audio'&&wanted!=='sfx')return "url('"+hmEsc(items[i].thumb)+"')";
+  }
+  var visual=(typeof __fhomeShelves!=='undefined'&&__fhomeShelves.visual)||[];
+  var a=visual[index%Math.max(visual.length,1)];
+  var thumb=a&&(a.thumbUrl||a.thumb);
+  if(thumb&&(mode==='image'||mode==='video'))return "url('"+hmEsc(thumb)+"')";
+  return mode==='image'?HM_GRAD.violet:mode==='video'?HM_GRAD.steel:mode==='voice'?HM_GRAD.amber:HM_GRAD.purple;
+}
+function fhomeOpenTool(mode){
+  if(typeof window.afOpenCreateDraft==='function')return window.afOpenCreateDraft({mode:mode});
+  homeGo('ai');
+  if(typeof window.axGo==='function')window.axGo('launcher');
+}
+function fhomeToolScrollTo(rail,left){
+  try{rail.scrollTo({left:left,behavior:'smooth'});}catch(e){rail.scrollLeft=left;}
+}
+function fhomeSyncToolRail(){
+  var rail=document.getElementById('homeToolGrid'), prev=document.getElementById('homeToolPrev');
+  var next=document.getElementById('homeToolNext'), dots=document.getElementById('homeToolDots');
+  if(!rail||!prev||!next||!dots)return;
+  var max=Math.max(0,rail.scrollWidth-rail.clientWidth);
+  var pages=max>4?Math.max(2,Math.ceil(rail.scrollWidth/Math.max(rail.clientWidth,1))):1;
+  prev.style.display=(pages>1&&rail.scrollLeft>4)?'':'none';
+  next.style.display=pages>1?'':'none'; dots.style.display=pages>1?'flex':'none';
+  if(dots.children.length!==pages){
+    dots.innerHTML='';
+    for(var i=0;i<pages;i++)(function(page){
+      var d=document.createElement('button'); d.type='button'; d.className='fhome-tooldot'; d.setAttribute('aria-label','AI tool page '+(page+1));
+      d.addEventListener('click',function(){fhomeToolScrollTo(rail,pages===1?0:(max*page/(pages-1)));}); dots.appendChild(d);
+    })(i);
+  }
+  var active=pages===1?0:Math.round((rail.scrollLeft/Math.max(max,1))*(pages-1));
+  Array.prototype.forEach.call(dots.children,function(d,i){d.classList.toggle('active',i===active);});
+}
+function fhomeMoveToolRail(dir){
+  var rail=document.getElementById('homeToolGrid'); if(!rail)return;
+  var max=Math.max(0,rail.scrollWidth-rail.clientWidth), step=Math.max(210,rail.clientWidth*.78), left;
+  if(dir>0)left=rail.scrollLeft>=max-4?0:Math.min(max,rail.scrollLeft+step);
+  else left=rail.scrollLeft<=4?max:Math.max(0,rail.scrollLeft-step);
+  fhomeToolScrollTo(rail,left);
+}
+function renderHomeTools(){
+  var host=document.getElementById('homeToolGrid'); if(!host)return;
+  var defs=[
+    {mode:'image',title:'AI Image',index:0},
+    {mode:'video',title:'AI Video',index:1},
+    {mode:'voice',title:'AI Voiceover',index:2,audio:true},
+    {mode:'sfx',title:'AI Sound FX',index:3,audio:true}
+  ];
+  host.innerHTML=defs.map(function(d){
+    var media='<span class="fhome-toolmedia'+(d.audio?' audio':'')+'"'+(d.audio?'':' style="background-image:'+fhomeToolMedia(d.mode,d.index)+'"')+'>';
+    if(d.audio)media+='<span class="fhome-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>';
+    media+='</span>';
+    return '<div role="button" tabindex="0" type="button" class="fhome-toolcard" data-home-tool="'+d.mode+'" aria-label="Open '+d.title+'">'
+      +'<span class="fhome-toolhead"><b>'+d.title+'</b><span class="fhome-toolopen" aria-hidden="true">'
+      +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +'</span></span>'+media+'</div>';
+  }).join('');
+  Array.prototype.forEach.call(host.querySelectorAll('[data-home-tool]'),function(card){
+    card.addEventListener('click',function(){fhomeOpenTool(card.getAttribute('data-home-tool'));});
+  });
+  host.onscroll=fhomeSyncToolRail;
+  var prev=document.getElementById('homeToolPrev'), next=document.getElementById('homeToolNext');
+  if(prev)prev.onclick=function(){fhomeMoveToolRail(-1);};
+  if(next)next.onclick=function(){fhomeMoveToolRail(1);};
+  setTimeout(fhomeSyncToolRail,0);
+}
+window.fhomeOpenTool=fhomeOpenTool;
+function fhomeOpenModel(mode,id){
+  if(typeof window.afOpenCreateDraft==='function')return window.afOpenCreateDraft({mode:mode,modelId:id});
+  return fhomeOpenTool(mode);
+}
+function fhomeModelCapability(m){
+  if(m.mode==='image')return (m.refMode&&m.refMode!=='none')?'Generate and edit with references':'Generate production-ready images';
+  var rk=String(m.refKind||m.refMode||'');
+  return (rk&&rk!=='none')?'Create video with visual references':'Generate production-ready video';
+}
+function fhomeModelMedia(m,index){
+  var items=(typeof __homeGen!=='undefined'&&__homeGen.items)||[];
+  var same=items.filter(function(it){ return it.thumb&&String(it.modelId||'')===String(m.id); });
+  if(!same.length)same=items.filter(function(it){ return it.thumb&&it.cat===m.mode; });
+  if(same.length)return "url('"+hmEsc(same[index%same.length].thumb)+"')";
+  var visual=(typeof __fhomeShelves!=='undefined'&&__fhomeShelves.visual)||[];
+  var a=visual[index%Math.max(visual.length,1)], thumb=a&&(a.thumbUrl||a.thumb);
+  return thumb?"url('"+hmEsc(thumb)+"')":fhomeToolMedia(m.mode,index);
+}
+function fhomeSyncModelRail(){
+  var rail=document.getElementById('fhomeModelRail'), next=document.getElementById('fhomeModelNext'), dots=document.getElementById('fhomeModelDots');
+  if(!rail||!next||!dots)return;
+  var max=Math.max(0,rail.scrollWidth-rail.clientWidth), pages=max>4?Math.min(5,Math.max(2,Math.ceil(rail.scrollWidth/Math.max(rail.clientWidth,1)))):1;
+  next.style.display=pages>1?'':'none'; dots.style.display=pages>1?'flex':'none';
+  if(dots.children.length!==pages){
+    dots.innerHTML='';
+    for(var i=0;i<pages;i++)(function(page){
+      var d=document.createElement('button'); d.type='button'; d.className='fhome-modeldot'; d.setAttribute('aria-label','Model page '+(page+1));
+      d.addEventListener('click',function(){ rail.scrollLeft=pages===1?0:(max*page/(pages-1)); fhomeSyncModelRail(); }); dots.appendChild(d);
+    })(i);
+  }
+  var active=pages===1?0:Math.round((rail.scrollLeft/Math.max(max,1))*(pages-1));
+  Array.prototype.forEach.call(dots.children,function(d,i){ d.classList.toggle('active',i===active); });
+}
+function renderHomeModels(){
+  var sec=document.getElementById('fhomeModelsSec'), rail=document.getElementById('fhomeModelRail'), next=document.getElementById('fhomeModelNext');
+  if(!sec||!rail)return;
+  var list=(__fhomeModels&&__fhomeModels.catalog)||[];
+  if(!list.length){ sec.style.display='none'; rail.innerHTML=''; return; }
+  sec.style.display='';
+  rail.innerHTML=list.map(function(m,index){
+    var label=hmEsc(m.label||String(m.id)), mode=m.mode==='video'?'VIDEO':'IMAGE';
+    return '<div role="button" tabindex="0" type="button" class="fhome-modelcard" data-home-model="'+hmEsc(String(m.id))+'" data-home-model-mode="'+m.mode+'" aria-label="Open '+label+'">'
+      +'<span class="fhome-modelmedia" style="background-image:'+fhomeModelMedia(m,index)+'"></span>'
+      +'<span class="fhome-modelveil"></span><span class="fhome-modeltype">'+mode+(m.isDefault?' · DEFAULT':'')+'</span>'
+      +'<span class="fhome-modelcopy"><b>'+label+'</b><small>'+hmEsc(fhomeModelCapability(m))+'</small></span><span class="fhome-modelopen" aria-hidden="true">↗</span></div>';
+  }).join('');
+  Array.prototype.forEach.call(rail.querySelectorAll('[data-home-model]'),function(card){
+    card.addEventListener('click',function(){ fhomeOpenModel(card.getAttribute('data-home-model-mode'),card.getAttribute('data-home-model')); });
+  });
+  rail.onscroll=fhomeSyncModelRail;
+  if(next)next.onclick=function(){
+    var max=Math.max(0,rail.scrollWidth-rail.clientWidth);
+    rail.scrollLeft=(rail.scrollLeft>=max-4)?0:Math.min(max,rail.scrollLeft+Math.max(180,rail.clientWidth*.78));
+    fhomeSyncModelRail();
+  };
+  setTimeout(fhomeSyncModelRail,0);
+}
+window.fhomeOpenModel=fhomeOpenModel;
+window.addEventListener('resize',function(){
+  if(!document.documentElement.classList.contains('home-mode'))return;
+  fhomeSyncToolRail();
+  fhomeSyncModelRail();
+  var footage=document.querySelector('.fhome-footage-sec'); if(footage)fhomeSyncFootageRail(footage);
+});
+/* Home prompt-first: matn kredit yechmasdan aynan top-nav Create ishlatadigan
+   yagona FINAL-CREATE composeriga uzatiladi. */
 function afHomeHeroSubmit(){
   var inp=document.getElementById('homeHeroPrompt'); var txt=(inp&&inp.value||'').trim(); if(!txt)return;
-  try{ document.documentElement.classList.remove('home-mode'); document.documentElement.classList.add('ai-mode'); }catch(e){}
-  try{ if(typeof window.axIGSetSession==='function')window.axIGSetSession(null); }catch(e){} // yangi sessiya (kreditsiz)
-  if(typeof window.axGo==='function')window.axGo('imggen');
-  setTimeout(function(){
-    var p=document.getElementById('igPrompt');
-    if(p){ p.textContent=txt; try{ p.dispatchEvent(new Event('input',{bubbles:true})); }catch(e){} try{ p.focus(); }catch(e){} }
-    if(inp)inp.value='';
-  },70);
+  if(typeof window.afOpenCreateDraft==='function')window.afOpenCreateDraft({mode:'image',prompt:txt});
+  else{ homeGo('ai'); if(typeof window.axGo==='function')window.axGo('launcher'); }
+  if(inp)inp.value='';
 }
 window.afHomeHeroSubmit=afHomeHeroSubmit;
+/* Artlist-style Home qidiruvi: Home discovery uchun, AI generatsiya alohida Create tabida. */
+function afHomeBrowseSubmit(){
+  var inp=document.getElementById('homeHeroPrompt');
+  var txt=(inp&&inp.value||'').trim();
+  homeGo('video');
+  if(!txt)return;
+  setTimeout(function(){
+    var q=document.getElementById('searchInput');
+    if(q)q.value=txt;
+    try{ currentSearch=txt.toLowerCase(); }catch(e){}
+    if(typeof reloadServerBrowse==='function')reloadServerBrowse();
+  },0);
+}
+window.afHomeBrowseSubmit=afHomeBrowseSubmit;
 /* SC_50: Continue a session — so'nggi sessiyalar (real axwsGetSessions). Bo'sh → bo'lim yashirin. */
 function renderHomeSessions(){
   var sec=document.getElementById('fhomeSessSec'), row=document.getElementById('homeSessRow'); if(!row)return;
@@ -2935,7 +3312,7 @@ function fhomeRailCardHTML(a){
   var res=a.res?String(a.res).toUpperCase():'';
   return '<div role="button" tabindex="0" class="fhome-tcard fhome-railcard" type="button" data-key="'+hmEsc(a.n)+'" data-nav="'+hmEsc(a.nav||'video')+'">'
     +'<span class="fhome-tmedia" style="background-image:'+bg+'">'
-    +'<span class="fhome-tbadge'+(pro?' pro':'')+'">'+(pro?'PRO':'FREE')+'</span>'
+    +(pro?'<span class="fhome-tbadge pro">PRO</span>':'')
     +(res?'<span class="fhome-tres">'+hmEsc(res)+'</span>':'')
     +'</span><h3>'+hmEsc(a.displayName||a.n)+'</h3></div>';
 }
@@ -2979,7 +3356,7 @@ document.addEventListener('visibilitychange',function(){
 /* #H1 — jonli rasm-model katalogi (mavjud /api/studio/gen/models?mode=image endpointi, yangi API emas).
    Featured = isDefault (bo'lmasa 1-chi); narx qoidasi image tool'dagi igModelPrice bilan bir xil
    (quality default darajasi → bo'lmasa flat cost). 5 daqiqa throttle — model katalogi kam o'zgaradi. */
-var __fhomeModels={featured:null,featuredCost:null,minCost:null,at:0,inflight:false};
+var __fhomeModels={featured:null,featuredCost:null,minCost:null,catalog:[],at:0,inflight:false};
 function fhomeModelPrice(m){
   var s=m.imgSettings||null, ql=s&&s.quality;
   var qc=(ql&&ql.cost)||m.qualityCost||null;
@@ -3003,6 +3380,16 @@ function fhomeFetchModels(){
   Promise.all([getMode('image'),getMode('video'),getMode('voice'),getMode('sfx')]).then(function(res){
     __fhomeModels.inflight=false; __fhomeModels.at=Date.now();
     var img=res[0], vid=res[1], voice=res[2], sfx=res[3];
+    img=img.filter(function(m){ return !m.opType; });
+    vid=vid.filter(function(m){ return !m.opType&&m.feature!=='video-upscale'; });
+    var byDefault=function(a,b){ return Number(!!b.isDefault)-Number(!!a.isDefault); };
+    img.sort(byDefault); vid.sort(byDefault);
+    var catalog=[];
+    for(var ci=0;catalog.length<8&&(ci<img.length||ci<vid.length);ci++){
+      if(img[ci])catalog.push(img[ci]);
+      if(vid[ci]&&catalog.length<8)catalog.push(vid[ci]);
+    }
+    __fhomeModels.catalog=catalog;
     // Narx keshi (hero chip) — avvalgi mantiq aynan
     if(img.length){
       var def=img.filter(function(x){ return x.isDefault; })[0]||img[0];
@@ -3027,7 +3414,7 @@ function fhomeFetchModels(){
       window.__afLiveModelNames=names;
       if(typeof window.__afAiRenderCatGrid==='function')window.__afAiRenderCatGrid();
     }
-    if(document.documentElement.classList.contains('home-mode'))renderHomeHero();
+    if(document.documentElement.classList.contains('home-mode')){ renderHomeHero(); renderHomeModels(); }
   }).catch(function(){ __fhomeModels.inflight=false; __fhomeModels.at=Date.now(); });
 }
 /* ══ SC_04: Plugin CMS — admin-tahrir kontent (matnlar + fon media) ══
@@ -3064,20 +3451,36 @@ function afCmsApply(){
   var c=__afCms.cfg; if(!c)return;
   try{
     var h=(c.home&&c.home.hero)||{};
-    afCmsSetText('.fhome-kick',h.kicker);
-    afCmsSetText('.fhome-hero-copy h1',h.title);
-    afCmsSetText('.fhome-sub',h.sub);
-    afCmsSetText('.fhome-btn-ai',h.ctaPrimary);
-    afCmsSetText('.fhome-btn-stock',h.ctaSecondary);
-    // SC_60: hero prompt placeholder (bo'sh = built-in qoladi)
-    if(h.promptPlaceholder){
-      var hp=document.getElementById('homeHeroPrompt');
-      if(hp)hp.setAttribute('placeholder',h.promptPlaceholder);
+    // Minimal production Home has a fixed product hierarchy. The CMS may still preview/edit
+    // legacy marketing copy in draft mode, but saved old copy must not turn the CEP panel back
+    // into a large promotional landing page.
+    if(__afCmsDraftMode){
+      afCmsSetText('.fhome-kick',h.kicker);
+      afCmsSetText('.fhome-hero-copy h1',h.title);
+      afCmsSetText('.fhome-sub',h.sub);
+      afCmsSetText('.fhome-btn-ai',h.ctaPrimary);
+      afCmsSetText('.fhome-btn-stock',h.ctaSecondary);
+    }else{
+      afCmsSetText('.fhome-hero-copy h1','Find the right asset');
+      afCmsSetText('.fhome-sub','Templates, motion graphics, music, SFX and LUTs.');
+    }
+    // Production Home qidiruvi aniq product copy ishlatadi; legacy CMS faqat draft preview'da.
+    var hp=document.getElementById('homeHeroPrompt');
+    if(hp){
+      if(document.getElementById('ffxHome'))hp.setAttribute('placeholder','Describe what you want to make…');
+      else if(__afCmsDraftMode&&h.promptPlaceholder)hp.setAttribute('placeholder',h.promptPlaceholder);
+      else hp.setAttribute('placeholder','Search templates, music, SFX and LUTs…');
     }
     var s=(c.home&&c.home.sections)||{};
-    afCmsSetText('#fhomeRecentSec .fhome-sechd h2',s.recent);
-    afCmsSetText('#fhomeShelfSec .fhome-sechd h2',s.shelf);
-    afCmsSetText('.fhome-browse',s.browseAll);
+    if(__afCmsDraftMode){
+      afCmsSetText('#fhomeRecentSec .fhome-sechd h2',s.recent);
+      afCmsSetText('#fhomeShelfSec .fhome-sechd h2',s.shelf);
+      afCmsSetText('#fhomeShelfSec .fhome-browse',s.browseAll);
+    }else{
+      afCmsSetText('#fhomeRecentSec .fhome-sechd h2','Recent creations');
+      afCmsSetText('#fhomeShelfSec .fhome-sechd h2','Explore featured assets');
+      afCmsSetText('#fhomeShelfSec .fhome-browse','All →');
+    }
     // SC_56: yangi Home bo'lim sarlavhalari (bo'sh → afCmsSetText tegmaydi, plagin default matni qoladi)
     afCmsSetText('#fhomeSessHd',s.continueSessions);
     afCmsSetText('#fhomeExploreHd',s.explore);
@@ -3103,7 +3506,13 @@ function afCmsApply(){
     }
     // SC_60: guest ekran qo'shimcha matnlari
     afCmsSetText('#homeGuest .sec .kick',g.peekKicker);
-    afCmsSetText('#homeGuest .gu-mk',g.registerNote);
+    var regNote=document.querySelector('#homeGuest .gu-mk');
+    if(regNote&&g.registerNote){
+      var link=regNote.querySelector('a');
+      Array.prototype.slice.call(regNote.childNodes).forEach(function(n){if(n!==link)regNote.removeChild(n);});
+      regNote.insertBefore(document.createTextNode(String(g.registerNote)+' '),link||null);
+      if(link&&!link.parentNode)regNote.appendChild(link);
+    }
     // AI launcher kartalari (title/desc/media override) — render AI IIFE ichida o'qiydi
     window.__afCmsAiCards=(c.aiLauncher&&c.aiLauncher.cards)||null;
     if(typeof window.__afAiRenderCatGrid==='function')window.__afAiRenderCatGrid();
@@ -3137,11 +3546,11 @@ function afCmsAnnounce(a){
   else if(a.tone==='warn')bar.classList.add('tone-warn');
   var t=document.getElementById('afAnnounceText'); if(t)t.textContent=a.text;
   var cta=document.getElementById('afAnnounceCta');
-  var ACT={aistudio:'afSegAi',catalog:'afSegKatalog',home:'afSegHome',account:'afSegHome'};
+  var ACT={aistudio:'afSegAi',catalog:'afSegKatalog',home:'afSegHome'};
   if(cta){
     if(a.ctaLabel&&a.ctaAction&&ACT[a.ctaAction]){
       cta.hidden=false; cta.textContent=a.ctaLabel;
-      cta.onclick=function(){ try{ var b=document.getElementById(ACT[a.ctaAction]); if(b)b.click(); }catch(e){} };
+      cta.onclick=function(){ try{ if(a.ctaAction==='account'&&typeof openAccountSheet==='function'){openAccountSheet();return;} var b=document.getElementById(ACT[a.ctaAction]); if(b)b.click(); }catch(e){} };
     }else{ cta.hidden=true; cta.onclick=null; }
   }
   var x=document.getElementById('afAnnounceX');
@@ -3542,7 +3951,7 @@ function homeGenItem(g){
     // P9 — 1280 display (Retina karta) + 720p hover preview + haqiqiy piksellar
     display:a.displayUrl||null, preview:a.previewUrl||null, width:a.width||null, height:a.height||null,
     title:((g.prompt||'').trim()||'Result'), prompt:(g.prompt||'').trim(), params:p,
-    modelLabel:p.modelLabel||'', createdAt:g.createdAt, cost:(typeof g.cost==='number'?g.cost:null) };
+    modelId:g.modelId||p.modelId||null, modelLabel:p.modelLabel||'', createdAt:g.createdAt, cost:(typeof g.cost==='number'?g.cost:null) };
 }
 function homeFetchLastGen(){
   if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return;
@@ -3555,7 +3964,7 @@ function homeFetchLastGen(){
     // SC_07: to'liq ro'yxat saqlanadi (strip) + .it (hero art) avvalgidek birinchi URL'li element
     __homeGen.items=items.map(homeGenItem).filter(function(c){ return !!c.url; });
     __homeGen.it=__homeGen.items[0]||null;
-    if(document.documentElement.classList.contains('home-mode')){ renderHomeHero(); renderHomeRecent(); }
+    if(document.documentElement.classList.contains('home-mode')){ renderHomeHero(); renderHomeTools(); renderHomeModels(); renderHomeRecent(); }
   }).catch(function(){ __homeGen.inflight=false; __homeGen.at=Date.now(); });
 }
 function homeImportGen(it){
@@ -3660,7 +4069,7 @@ function fhomeShelfList(){
   var out=[],seen={},i,a;
   try{
     if(typeof assets==='undefined'||!assets)return out;
-    for(i=0;i<assets.length&&out.length<12;i++){ // SC_07: javon limiti 6→12 (ko'p-qatorli grid)
+    for(i=0;i<assets.length&&out.length<6;i++){
       a=assets[i];
       var nm=String(a.displayName||a.n||'').trim().toLowerCase();
       var au=String((a.author&&(a.author.name||a.author))||'').trim().toLowerCase();
@@ -3683,13 +4092,15 @@ function renderHomeRecent(){
     var isAud=it.cat==='audio'||it.cat==='sfx';
     var bg=it.thumb&&!isAud?("url('"+hmEsc(it.thumb)+"')"):'';
     var meta=it.modelLabel||({video:'Video',audio:'Voice',sfx:'SFX'})[it.cat]||'Image';
-    return '<div role="button" tabindex="0" class="fhome-rcard" type="button" title="'+hmEsc(it.title)+'">'
-      +'<span class="fhome-rmedia'+(isAud?' aud':'')+'"'+(bg?' style="background-image:'+bg+'"':'')+'>'
+    var title=String(it.title||meta).trim();
+    return '<div role="button" tabindex="0" class="fhome-rcard fhome-tcard" type="button" title="'+hmEsc(title)+'">'
+      +'<span class="fhome-rmedia fhome-tmedia'+(isAud?' aud':'')+'"'+(bg?' style="background-image:'+bg+'"':'')+'>'
+      +'<span class="fhome-tveil"></span>'
       +(isVid?'<span class="fhome-rplay">▶</span>':'')
       +(isAud?'<span class="fhome-raud">♪</span>':'')
-      +'</span>'
-      +'<span class="fhome-rmeta"><b>'+hmEsc(meta)+'</b><i>'+hmEsc(afTimeAgo(it.createdAt))+'</i></span>'
-      +'</div>';
+      +'<span class="fhome-topen" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7h9v9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+      +'<span class="fhome-tcopy"><span class="fhome-tname">'+hmEsc(title)+'</span></span>'
+      +'</span></div>';
   }).join('');
   Array.prototype.forEach.call(box.querySelectorAll('.fhome-rcard'),function(c){
     c.addEventListener('click',function(){
@@ -3699,41 +4110,205 @@ function renderHomeRecent(){
     });
   });
 }
+var __fhomeShelves={visual:null,footage:null,music:null,sfx:null,luts:null,at:0,inflight:false};
+function fhomeCardHtml(a,fallbackNav){
+  var raw=!!(a&&a.id&&!a.n);
+  var key=raw?('__srv_'+a.id):a.n;
+  var nav=(a&&a.nav)||fallbackNav||'video';
+  var name=(a&&(a.displayName||a.name||a.n))||'Asset';
+  var thumb=(a&&(a.thumb||a.thumbUrl))||'';
+  var pro=!!(a&&a.isPro);
+  var orient=String((a&&a.orient)||'horizontal').toLowerCase();
+  orient=orient==='portrait'?'vertical':orient==='landscape'?'horizontal':orient;
+  if(['horizontal','vertical','square'].indexOf(orient)<0)orient='horizontal';
+  var bg=thumb?("url('"+thumb+"')"):HM_GRAD[HM_GKEYS[hmHash(name)%HM_GKEYS.length]];
+  return '<div role="button" tabindex="0" class="fhome-tcard" type="button" data-key="'+hmEsc(key)+'" data-nav="'+hmEsc(nav)+'" title="'+hmEsc(name)+'" aria-label="Open '+hmEsc(name)+'">'
+    +'<span class="fhome-tmedia fhome-o-'+orient+'" style="background-image:'+bg+'">'
+    +'<span class="fhome-tveil"></span>'
+    +(pro?'<span class="fhome-tbadge pro">PRO</span>':'')
+    +'<span class="fhome-topen" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7h9v9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+    +'<span class="fhome-tcopy"><span class="fhome-tname">'+hmEsc(name)+'</span></span>'
+    +'</span></div>';
+}
+function fhomeBindCards(box){
+  if(!box)return;
+  Array.prototype.forEach.call(box.querySelectorAll('.fhome-tcard'),function(c){
+    c.addEventListener('click',function(){
+      var key=c.getAttribute('data-key'), nav=c.getAttribute('data-nav')||'video';
+      homeGo(nav);
+      try{ if(key&&typeof packs!=='undefined'&&packs&&packs[key]&&typeof openPack==='function')openPack(key); }catch(e){}
+    });
+  });
+}
 function renderHomeGrid(){
   var sec=document.getElementById('fhomeShelfSec'), box=document.getElementById('homeGrid');
   if(!sec||!box)return;
-  var list=fhomeShelfList();
+  var list=__fhomeShelves.visual||fhomeShelfList().filter(function(a){return ['video','motion','graphics'].indexOf(a.nav||'video')>=0;});
   if(!list.length){
     if(typeof catalogLoadState!=='undefined'&&catalogLoadState==='loading'){
       sec.style.display='';
       // SC_07: skelet — yangi katta karta o'lchamida to'liq bir qator
-      var sk='<div class="fhome-tcard fhome-tskel"><span class="fhome-tskel-media"></span><span class="fhome-tskel-line"></span></div>';
+      var sk='<div class="fhome-tcard fhome-tskel"><span class="fhome-tskel-media"></span><span class="fhome-tskel-line"></span><span class="fhome-tskel-line secondary"></span></div>';
       box.innerHTML=sk+sk+sk+sk;
     }else{ sec.style.display='none'; box.innerHTML=''; }
     return;
   }
   sec.style.display='';
-  // SC_07 karta anatomiyasi: media + chip'lar (FREE/PRO + rezolyutsiya) + BITTA sarlavha
-  // qatori. "AFTER EFFECTS · 1080P" meta qatori O'CHIRILDI (butun javon Premiere — ortiqcha).
-  box.innerHTML=list.map(function(a){
-    var pro=!!a.isPro;
-    var bg=a.thumb?("url('"+a.thumb+"')"):HM_GRAD[HM_GKEYS[hmHash(a.n)%HM_GKEYS.length]];
-    var res=a.res?String(a.res).toUpperCase():'';
-    return '<div role="button" tabindex="0" class="fhome-tcard" type="button" data-key="'+hmEsc(a.n)+'" data-nav="'+hmEsc(a.nav||'video')+'">'
-      +'<span class="fhome-tmedia" style="background-image:'+bg+'">'
-      +'<span class="fhome-tbadge'+(pro?' pro':'')+'">'+(pro?'PRO':'FREE')+'</span>'
-      +(res?'<span class="fhome-tres">'+hmEsc(res)+'</span>':'')
-      +'</span>'
-      +'<h3>'+hmEsc(a.displayName||a.n)+'</h3></div>';
-  }).join('')
-  // "Browse all →" ghost karta — javon oxirida, katalogga o'tadi
-  +'<div role="button" tabindex="0" class="fhome-tcard fhome-tghost" type="button" onclick="homeGo(\'video\')"><span>Browse all →</span></div>';
-  Array.prototype.forEach.call(box.querySelectorAll('.fhome-tcard:not(.fhome-tghost)'),function(c){
-    c.addEventListener('click',function(){
-      var key=c.getAttribute('data-key');
-      homeGo(c.getAttribute('data-nav')||'video');
-      try{ if(key&&typeof packs!=='undefined'&&packs&&packs[key]&&typeof openPack==='function')openPack(key); }catch(e){}
-    });
+  box.innerHTML=list.slice(0,6).map(function(a){return fhomeCardHtml(a,'video');}).join('');
+  fhomeBindCards(box);
+}
+var __fhomeFootageTimer=null;
+function fhomeFootageCardHtml(a){
+  var raw=!!(a&&a.id&&!a.n), key=raw?('__srv_'+a.id):a.n;
+  var name=(a&&(a.displayName||a.name||a.n))||'Footage';
+  var thumb=(a&&(a.thumb||a.thumbUrl))||'', preview=(a&&(a.preview||a.previewUrl))||'';
+  var bg=thumb?("url('"+thumb+"')"):HM_GRAD[HM_GKEYS[hmHash(name)%HM_GKEYS.length]];
+  return '<div role="button" tabindex="0" class="fhome-footage-card fhome-tcard" type="button" data-key="'+hmEsc(key)+'" data-nav="motion" title="'+hmEsc(name)+'" aria-label="Open '+hmEsc(name)+'">'
+    +'<span class="fhome-footage-media" style="background-image:'+bg+'">'
+    +(preview?'<video class="fhome-footage-video" data-src="'+hmEsc(preview)+'" muted loop playsinline preload="none"></video>':'')
+    +'<span class="fhome-tveil"></span><span class="fhome-topen" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 7h9v9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+    +'<span class="fhome-tcopy"><span class="fhome-tname">'+hmEsc(name)+'</span></span></span></div>';
+}
+function fhomeFootageScroll(rail,left){
+  try{ rail.scrollTo({left:left,behavior:'smooth'}); }catch(e){ rail.scrollLeft=left; }
+}
+function fhomeSyncFootageRail(sec){
+  if(!sec)return;
+  var rail=sec.querySelector('.fhome-footage-rail'), dots=sec.querySelector('.fhome-footage-dots');
+  var prev=sec.querySelector('.fhome-footage-prev'), next=sec.querySelector('.fhome-footage-next');
+  if(!rail||!dots)return;
+  var max=Math.max(0,rail.scrollWidth-rail.clientWidth), pages=max>4?Math.min(5,Math.max(2,Math.ceil(rail.scrollWidth/Math.max(rail.clientWidth,1)))):1;
+  if(prev)prev.style.display=pages>1?'':'none'; if(next)next.style.display=pages>1?'':'none';
+  dots.style.display=pages>1?'flex':'none';
+  if(dots.children.length!==pages){
+    dots.innerHTML='';
+    for(var i=0;i<pages;i++)(function(page){
+      var d=document.createElement('button'); d.type='button'; d.className='fhome-footage-dot'; d.setAttribute('aria-label','Footage page '+(page+1));
+      d.addEventListener('click',function(){ fhomeFootageScroll(rail,pages===1?0:(max*page/(pages-1))); }); dots.appendChild(d);
+    })(i);
+  }
+  var active=pages===1?0:Math.round((rail.scrollLeft/Math.max(max,1))*(pages-1));
+  Array.prototype.forEach.call(dots.children,function(d,i){ d.classList.toggle('active',i===active); });
+}
+function fhomeMoveFootage(sec,dir){
+  var rail=sec&&sec.querySelector('.fhome-footage-rail'); if(!rail)return;
+  var max=Math.max(0,rail.scrollWidth-rail.clientWidth), step=Math.max(140,rail.clientWidth*.76), left;
+  if(dir>0)left=rail.scrollLeft>=max-4?0:Math.min(max,rail.scrollLeft+step);
+  else left=rail.scrollLeft<=4?max:Math.max(0,rail.scrollLeft-step);
+  fhomeFootageScroll(rail,left);
+}
+function fhomeStartFootageCarousel(sec){
+  if(__fhomeFootageTimer){ clearInterval(__fhomeFootageTimer); __fhomeFootageTimer=null; }
+  if(!sec)return;
+  try{ if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return; }catch(e){}
+  __fhomeFootageTimer=setInterval(function(){
+    if(document.hidden||!document.documentElement.classList.contains('home-mode')||sec.__footagePaused)return;
+    fhomeMoveFootage(sec,1);
+  },4800);
+}
+function fhomeBindFootage(sec){
+  if(!sec)return;
+  var rail=sec.querySelector('.fhome-footage-rail'); if(!rail)return;
+  var pause=function(){sec.__footagePaused=true;}, resume=function(){sec.__footagePaused=false;};
+  sec.addEventListener('mouseenter',pause); sec.addEventListener('mouseleave',resume);
+  sec.addEventListener('focusin',pause); sec.addEventListener('focusout',resume);
+  Array.prototype.forEach.call(rail.querySelectorAll('.fhome-footage-card'),function(card){
+    var video=card.querySelector('.fhome-footage-video');
+    var open=function(){
+      card.classList.add('is-open');
+      if(video){
+        if(!video.getAttribute('src')){ video.setAttribute('src',video.getAttribute('data-src')||''); try{video.load();}catch(e){} }
+        try{ var p=video.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
+      }
+      setTimeout(function(){fhomeSyncFootageRail(sec);},380);
+    };
+    var close=function(){
+      card.classList.remove('is-open');
+      if(video){ try{video.pause(); video.currentTime=0;}catch(e){} }
+      setTimeout(function(){fhomeSyncFootageRail(sec);},380);
+    };
+    card.addEventListener('mouseenter',open); card.addEventListener('mouseleave',close);
+    card.addEventListener('focus',open); card.addEventListener('blur',close);
+  });
+  var prev=sec.querySelector('.fhome-footage-prev'), next=sec.querySelector('.fhome-footage-next');
+  if(prev)prev.addEventListener('click',function(){fhomeMoveFootage(sec,-1);});
+  if(next)next.addEventListener('click',function(){fhomeMoveFootage(sec,1);});
+  rail.addEventListener('scroll',function(){fhomeSyncFootageRail(sec);});
+  setTimeout(function(){fhomeSyncFootageRail(sec);},0); fhomeStartFootageCarousel(sec);
+}
+function renderHomeDiscovery(){
+  var host=document.getElementById('fhomeDiscovery'), footageHost=document.getElementById('fhomeFootage');
+  if(!host||!footageHost)return;
+  fhomeStartFootageCarousel(null);
+  var footageDef={key:'footage',title:'Footage of the week',nav:'motion',footage:true};
+  var defs=[
+    {key:'music',title:'Music for your edit',nav:'music'},
+    {key:'luts',title:'Popular LUTs',nav:'luts'}
+  ];
+  function sectionHtml(d){
+    var list=__fhomeShelves[d.key]; if(!list||!list.length)return '';
+    if(d.footage)return '<section class="fhome-discovery-sec fhome-footage-sec"><div class="fhome-sechd"><h2>'+d.title+'</h2>'
+      +'<div role="button" tabindex="0" type="button" class="fhome-browse" data-home-nav="'+d.nav+'">Explore all footage ›</div></div>'
+      +'<div class="fhome-footage-wrap"><div class="fhome-footage-rail">'+list.slice(0,10).map(fhomeFootageCardHtml).join('')+'</div>'
+      +'<div role="button" tabindex="0" type="button" class="fhome-footage-arrow fhome-footage-prev" aria-label="Previous footage">‹</div>'
+      +'<div role="button" tabindex="0" type="button" class="fhome-footage-arrow fhome-footage-next" aria-label="Next footage">›</div></div>'
+      +'<div class="fhome-footage-dots" aria-label="Footage carousel pages"></div></section>';
+    return '<section class="fhome-discovery-sec"><div class="fhome-sechd"><h2>'+d.title+'</h2>'
+      +'<div role="button" tabindex="0" type="button" class="fhome-browse" data-home-nav="'+d.nav+'">All →</div></div>'
+      +'<div class="fhome-shelf">'+list.slice(0,6).map(function(a){return fhomeCardHtml(a,d.nav);}).join('')+'</div></section>';
+  }
+  footageHost.innerHTML=sectionHtml(footageDef);
+  host.innerHTML=defs.map(sectionHtml).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('#fhomeFootage [data-home-nav],#fhomeDiscovery [data-home-nav]'),function(b){
+    b.addEventListener('click',function(){homeGo(b.getAttribute('data-home-nav'));});
+  });
+  fhomeBindCards(footageHost);
+  fhomeBindCards(host);
+  fhomeBindFootage(footageHost.querySelector('.fhome-footage-sec'));
+  if(__fhomeShelves.inflight||(Date.now()-__fhomeShelves.at<270000)||typeof AssetFlowCatalog==='undefined'||!AssetFlowCatalog.fetchHomeShelf)return;
+  __fhomeShelves.inflight=true;
+  Promise.all([
+    AssetFlowCatalog.fetchHomeShelf('video-templates,motion-graphics,graphics',6).catch(function(){return [];}),
+    AssetFlowCatalog.fetchHomeShelf('motion-graphics',10).catch(function(){return [];}),
+    AssetFlowCatalog.fetchHomeShelf('music',6).catch(function(){return [];}),
+    AssetFlowCatalog.fetchHomeShelf('luts',6).catch(function(){return [];})
+  ]).then(function(rows){
+    __fhomeShelves.visual=rows[0]; __fhomeShelves.footage=rows[1]; __fhomeShelves.music=rows[2]; __fhomeShelves.sfx=null; __fhomeShelves.luts=rows[3];
+    __fhomeShelves.inflight=false; __fhomeShelves.at=Date.now();
+    renderHomeTools(); renderHomeGrid(); renderHomeDiscovery(); renderHomeVideoTemplates();
+  }).catch(function(){__fhomeShelves.inflight=false;__fhomeShelves.at=Date.now();});
+}
+/* Video Templates demo shelf — katalogda video-template yo'q paytda Home maketini production
+   tarkibida baholash uchun. Media mavjud real thumb'lardan olinadi, karta esa soxta import
+   qilmaydi: faqat kanonik Video Templates browse'ini ochadi. */
+var FHOME_DEMO_VIDEO_TEMPLATES=[
+  {title:'Cinematic Opener',desc:'Bold titles and rhythmic cuts for film intros.',bg:'linear-gradient(135deg,#17263b,#5a3347)'},
+  {title:'Social Promo Pack',desc:'Fast modular scenes for launches and campaigns.',bg:'linear-gradient(135deg,#2b173a,#8a3c4b)'},
+  {title:'Clean Titles Kit',desc:'Minimal editorial typography for polished stories.',bg:'linear-gradient(135deg,#123849,#2f6270)'},
+  {title:'Dynamic Transitions',desc:'Seamless energetic moves for faster edits.',bg:'linear-gradient(135deg,#3a2517,#86522d)'}
+];
+function fhomeDemoVideoMedia(index){
+  var pools=[];
+  if(__fhomeShelves.visual&&__fhomeShelves.visual.length)pools=pools.concat(__fhomeShelves.visual);
+  if(__fhomeShelves.footage&&__fhomeShelves.footage.length)pools=pools.concat(__fhomeShelves.footage);
+  var a=pools.length?pools[index%pools.length]:null;
+  var thumb=a&&(a.thumb||a.thumbUrl);
+  return thumb?("url('"+hmEsc(thumb)+"')"):FHOME_DEMO_VIDEO_TEMPLATES[index].bg;
+}
+function renderHomeVideoTemplates(){
+  var host=document.getElementById('fhomeVideoTemplates'); if(!host)return;
+  host.innerHTML='<section class="fhome-vtpl-sec" aria-labelledby="fhomeVideoTemplatesHd">'
+    +'<div class="fhome-sechd"><h2 id="fhomeVideoTemplatesHd">Video templates picked for you</h2>'
+    +'<div role="button" tabindex="0" type="button" class="fhome-browse" data-vtpl-all>Explore all video templates ›</div></div>'
+    +'<div class="fhome-vtpl-rail">'+FHOME_DEMO_VIDEO_TEMPLATES.map(function(d,index){
+      return '<div role="button" tabindex="0" type="button" class="fhome-vtpl-card" data-vtpl-open aria-label="Browse video templates: '+hmEsc(d.title)+'">'
+        +'<span class="fhome-vtpl-media" style="background-image:'+fhomeDemoVideoMedia(index)+'">'
+        +'<span class="fhome-vtpl-scrim"></span><span class="fhome-vtpl-demo">DEMO</span>'
+        +'<span class="fhome-vtpl-play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m9 7 8 5-8 5z" fill="currentColor"/></svg></span></span>'
+        +'<span class="fhome-vtpl-copy"><b>'+hmEsc(d.title)+'</b><small>'+hmEsc(d.desc)+'</small></span></div>';
+    }).join('')+'</div></section>';
+  Array.prototype.forEach.call(host.querySelectorAll('[data-vtpl-open],[data-vtpl-all]'),function(btn){
+    btn.addEventListener('click',function(){homeGo('video');});
   });
 }
 /* Guest: real katalog peek (2 karta, blur) + shablon soni qatori */
@@ -3849,6 +4424,8 @@ function setHeaderPlan(pro,label,credits){
    o'ng klasteri — logged: kredit+plan+avatar(ring); guest: bitta lime "Sign in" pill (bir xil geometriya). */
 function afHdrSyncAll(){
   const logged=typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn();
+  const guestHome=document.getElementById('homeGuest');
+  const guestHomeVisible=!logged&&guestHome&&guestHome.style.display!=='none';
   // SC_12: guest holatда markaziy seg ko'rinmaydi (guest ekran — istisno);
   // visibility (display emas) — grid markazlash geometriyasi saqlanadi.
   const seg=document.querySelector('.af-tb-seg');
@@ -3868,7 +4445,7 @@ function afHdrSyncAll(){
         // (to'g'ridan grid'ga qo'shilsa yangi qatorga tushib layoutni buzadi)
         (h.querySelector('.af-tb-r')||h).appendChild(si);
       }
-      si.style.display='';
+      si.style.display=(guestHomeVisible&&h.id==='homeHd')?'none':'';
     }else{
       if(cred)cred.style.display='';
       if(ava)ava.style.display='';
@@ -3882,7 +4459,7 @@ window.afPlanChipHTML=function(){
   var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null;
   if(!u)return '';
   var pro=u.plan==='pro';
-  return ' <span class="hd-plan'+(pro?'':' free')+'" data-hdplan>'+String(u.planLabel||(pro?'Pro':'Free')).toUpperCase()+'</span>';
+  return ' <span class="hd-plan'+(pro?'':' free')+'" data-hdplan>'+escHtml(String(u.planLabel||(pro?'Pro':'Free')).toUpperCase())+'</span>';
 };
 
 function onEnvScopeChange(sel){
@@ -3917,23 +4494,40 @@ function afUuid(){
  *  holat serverdan). Yozuv tugagach o'chiriladi; 6 soatdan eski yozuv o'z-o'zidan tushadi. */
 var afJobStore=(function(){
   var KEY='af_active_jobs',MAX=20,TTL=6*60*60*1000;
+  function uid(){try{var u=AssetFlowAccount&&AssetFlowAccount.getCachedUser&&AssetFlowAccount.getCachedUser();return u&&u.id?String(u.id):'';}catch(e){return '';}}
   function read(){ try{ var raw=localStorage.getItem(KEY); var a=raw?JSON.parse(raw):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
   function write(rows){ try{ localStorage.setItem(KEY,JSON.stringify(rows.slice(0,MAX))); }catch(e){} }
   function prune(rows){ var cut=Date.now()-TTL; return rows.filter(function(r){ return r&&r.jobId&&(r.ts||0)>cut; }); }
   return {
     add:function(tool,rec){
       if(!rec||!rec.jobId)return;
+      var user=uid();if(!user)return;
       var rows=prune(read()).filter(function(r){ return r.jobId!==rec.jobId; });
       rows.unshift({tool:tool,jobId:rec.jobId,prompt:rec.prompt||'',cat:rec.cat||'image',cost:rec.cost||0,
-                    sid:rec.sid||null,modelId:rec.modelId||null,params:rec.params||null,ts:Date.now()});
+                    mode:rec.mode||rec.cat||null,sid:rec.sid||null,modelId:rec.modelId||null,params:rec.params||null,user:user,ts:Date.now()});
       write(rows);
     },
     remove:function(jobId){ if(jobId)write(prune(read()).filter(function(r){ return r.jobId!==jobId; })); },
-    list:function(tool){ var rows=prune(read()); write(rows); return tool?rows.filter(function(r){ return r.tool===tool; }):rows; },
+    list:function(tool){ var user=uid(),rows=prune(read()); write(rows); if(!user)return [];rows=rows.filter(function(r){return r.user===user;});return tool?rows.filter(function(r){ return r.tool===tool; }):rows; },
     clear:function(){ write([]); }
   };
 })();
 window.afJobStore=afJobStore;
+/* Active session pointer is user-scoped and contains no token/prompt/media URL.
+   It lets a reopened panel return to the correct server session without mixing
+   another account's gallery into the current workspace. */
+var afActiveSessionStore=(function(){
+  var KEY='af_active_session_v2';
+  function uid(){try{var u=AssetFlowAccount&&AssetFlowAccount.getCachedUser&&AssetFlowAccount.getCachedUser();return u&&u.id?String(u.id):'';}catch(e){return '';}}
+  function read(){try{var x=JSON.parse(localStorage.getItem(KEY)||'{}');return x&&typeof x==='object'?x:{};}catch(e){return {};}}
+  function write(x){try{localStorage.setItem(KEY,JSON.stringify(x));}catch(e){}}
+  return {
+    get:function(tool){var user=uid(),x=read(),r=x[tool];return user&&r&&r.user===user&&r.id?{id:r.id,mode:r.mode||null}:null;},
+    set:function(tool,id,mode){var user=uid(),x=read();if(!user||!id){delete x[tool];write(x);return;}x[tool]={user:user,id:id,mode:mode||null,ts:Date.now()};write(x);},
+    clear:function(){write({});}
+  };
+})();
+window.afActiveSessionStore=afActiveSessionStore;
 /** #141 (PX4) — model `etaSec` (server o'lchagan mediana) → odam o'qiydigan diapazon.
  *  Bitta aniq raqam va'da qilmaymiz: haqiqiy vaqt navbat/provayder yukiga qarab tebranadi,
  *  shuning uchun ~0.7×…1.4× oralig'i ko'rsatiladi. */
@@ -3964,7 +4558,7 @@ async function studioPost(path,body,ms){
       var res=await pubFetch(path,{method:'POST',headers:headers,body:JSON.stringify(body)},ms||60000);
       var t=await res.text();var d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
       if(!res.ok){
-        if(idem&&(res.status===502||res.status===503||res.status===504||res.status===429)&&a<maxAttempts-1){ await afSleep(afBackoff(a)); continue; }
+        if(idem&&(res.status===502||res.status===503||res.status===504||res.status===429)&&d.code!=='MODERATION_NOT_CONFIGURED'&&d.code!=='AI_NOT_CONFIGURED'&&a<maxAttempts-1){ await afSleep(afBackoff(a)); continue; }
         var e2=new Error((d&&d.error)||('HTTP '+res.status));e2.status=res.status;e2.code=d&&d.code;throw e2;
       }
       return d;
@@ -4077,17 +4671,22 @@ async function studioPatch(path,body){
 /** URL'ni tmp'ga yuklab → Premiere'ga import (kind: image/video/audio). */
 async function aiImportMedia(url,kind,extRaw){
   if(!url){if(typeof showToast==='function')showToast('No result to import','warning');return;}
-  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Import only works inside Premiere Pro','info');return;}
+  if(!IS_CEP||!csInterface){if(typeof showToast==='function')showToast('Import only works inside an Adobe host','info');return;}
   try{
     if(typeof showToast==='function')showToast('Downloading…','info');
-    const ext='.'+((extRaw||(kind==='image'?'png':kind==='video'?'mp4':'mp3')).replace(/^\./,''));
+    const extCandidate=String(extRaw||(kind==='image'?'png':kind==='video'?'mp4':'mp3')).replace(/^\./,'').toLowerCase();
+    const allowedExt={image:['png','jpg','jpeg','webp'],video:['mp4','webm','mov'],audio:['mp3','wav','ogg','m4a']};
+    const ext='.'+((allowedExt[kind]||[]).indexOf(extCandidate)>=0?extCandidate:(kind==='image'?'png':kind==='video'?'mp4':'mp3'));
     const tmp=await aiDownloadToTemp(url,ext);
-    const raw=await new Promise(res=>csInterface.evalScript('importMediaFromPath('+JSON.stringify(tmp)+')',r=>res(r||'')));
+    let target='comp';try{target=localStorage.getItem('af_default_import_target')||window.afImportTarget||'comp';}catch(e){target=window.afImportTarget||'comp';}
+    const raw=await new Promise(res=>afEvalScript('importMediaFromPath('+JSON.stringify(tmp)+','+(target==='bin'?'false':'true')+')',r=>res(r||'')));
     // host structured JSON {ok,addedToComp,compName,item} qaytaradi; eski "ok:" string'ga ham moslik
     let r=null;try{r=raw?JSON.parse(raw):null;}catch(e){r=(String(raw).indexOf('ok')===0)?{ok:true}:null;}
     if(r&&r.ok){
-      const msg=r.addedToComp?('Imported — added to '+(r.compName?('"'+r.compName+'" '):'')+'sequence'):'Imported to Premiere (Project panel)';
+      const msg=r.addedToComp?('Imported — added to '+(r.compName?('"'+r.compName+'" '):'')+(AF_IS_PREMIERE?'timeline':'sequence')):'Imported to '+AF_HOST_LABEL+' (Project panel)';
       if(typeof showToast==='function')showToast(msg,'success');
+    }else if(AF_IS_PREMIERE&&r&&r.partial){
+      if(typeof showToast==='function')showToast('Imported to the Premiere Project panel, but not added to the Timeline: '+(r.reason||r.message||'open an active sequence and try again'),'warning');
     }else{
       // ok:false → aniq sabab; raw bo'sh/parse fail bo'lsa generic
       const reason=(r&&r.reason)?r.reason:(raw?String(raw):'no result returned');
@@ -4106,24 +4705,41 @@ function aiDownloadToTemp(url,ext){
       let dir=os.tmpdir();
       try{if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadDir){dir=AssetFlowCatalog.downloadDir()||dir;}}catch(e){}
       const dest=path.join(dir,'assetflow_ai_'+Date.now()+ext);
+      const cap=/\.(mp4|webm|mov)$/i.test(ext)?1024*1024*1024:128*1024*1024;
+      const verify=()=>{
+        const fd=fs.openSync(dest,'r'),head=Buffer.alloc(16);let n=0;try{n=fs.readSync(fd,head,0,16,0);}finally{fs.closeSync(fd);}
+        const hex=head.slice(0,n).toString('hex'),ascii=head.slice(0,n).toString('ascii');
+        const ok=/\.png$/i.test(ext)?hex.indexOf('89504e470d0a1a0a')===0:
+          /\.jpe?g$/i.test(ext)?hex.indexOf('ffd8ff')===0:
+          /\.webp$/i.test(ext)?ascii.slice(0,4)==='RIFF'&&ascii.slice(8,12)==='WEBP':
+          /\.(mp4|mov|m4a)$/i.test(ext)?ascii.slice(4,8)==='ftyp':
+          /\.webm$/i.test(ext)?hex.indexOf('1a45dfa3')===0:
+          /\.wav$/i.test(ext)?ascii.slice(0,4)==='RIFF'&&ascii.slice(8,12)==='WAVE':
+          /\.ogg$/i.test(ext)?ascii.slice(0,4)==='OggS':
+          /\.mp3$/i.test(ext)?(ascii.slice(0,3)==='ID3'||(head[0]===0xff&&(head[1]&0xe0)===0xe0)):false;
+        if(!ok){try{fs.rmSync(dest,{force:true});}catch(e){} throw new Error('Downloaded media type does not match the expected format');}
+        return dest;
+      };
       if(url.indexOf('data:')===0){
         const b64=url.slice(url.indexOf(',')+1);
-        fs.writeFileSync(dest,Buffer.from(b64,'base64'));
-        resolve(dest);return;
+        const decoded=Buffer.from(b64,'base64');if(decoded.length>cap)throw new Error('Media exceeds the import size limit');
+        fs.writeFileSync(dest,decoded);
+        resolve(verify());return;
       }
       if(typeof AssetFlowCatalog!=='undefined'&&AssetFlowCatalog.downloadUrlToFile){
-        AssetFlowCatalog.downloadUrlToFile(url,dest,null,{}).then(()=>resolve(dest)).catch(reject);
+        AssetFlowCatalog.downloadUrlToFile(url,dest,null,{}, {httpsOnly:true,maxBytes:cap,timeoutMs:30000}).then(()=>resolve(verify())).catch(reject);
       }else{reject(new Error('Download module not available'));}
     }catch(e){reject(e);}
   });
 }
 /* F-02 tozalash: o'lik aiRenderCards/aiInit/aiSoon olib tashlandi (aiComposer DOM'da yo'q edi). */
-// Katalog "AI kontent" toggle — vizual holat (filtr mantig'i tegilmaydi, "tez orada").
+// Katalog "AI-generated only" toggle — serverdan kelgan `ai` belgisi bo'yicha real filtr.
 let __catAiOn=false;
 function toggleCatalogAi(btn){
   __catAiOn=!__catAiOn;
   btn.classList.toggle('on',__catAiOn);
-  if(typeof showToast==='function')showToast(__catAiOn?'AI content filter — coming soon':'AI content filter turned off','info');
+  btn.setAttribute('aria-pressed',__catAiOn?'true':'false');
+  render();
 }
 // Filtrlar bottom-sheet (a2) — ochish/yopish. Filtr mantig'i (selectCategory / selectOrientFilter /
 // selectResFilter / toggleCatalogAi / selectSort / clearAllFilters) o'zgarmaydi; faqat markup ko'chdi.
@@ -4136,27 +4752,41 @@ function toggleFilterPanel(){
 function openFilterSheet(){
   const sheet=document.getElementById('filterSheet');
   if(!sheet)return;
+  window.__afFilterTrigger=document.activeElement;
   buildFilterSheetCats();
   syncFilterSheet();
   sheet.classList.add('open');
+  sheet.setAttribute('aria-hidden','false');
+  document.querySelectorAll('.af-topbar,.scroll-area').forEach(function(el){el.setAttribute('aria-hidden','true');});
   const btn=document.getElementById('filterToggleBtn');
   if(btn)btn.classList.add('active');
+  const panel=sheet.querySelector('.fsheet-panel');if(panel)panel.focus();
 }
 function closeFilterSheet(){
   const sheet=document.getElementById('filterSheet');
   if(!sheet)return;
   sheet.classList.remove('open');
+  sheet.setAttribute('aria-hidden','true');
+  document.querySelectorAll('.af-topbar,.scroll-area').forEach(function(el){el.removeAttribute('aria-hidden');});
   const btn=document.getElementById('filterToggleBtn');
   if(btn)btn.classList.remove('active');
+  const trigger=window.__afFilterTrigger;window.__afFilterTrigger=null;
+  if(trigger&&trigger.focus)try{trigger.focus();}catch(e){}
 }
 window.toggleFilterPanel=toggleFilterPanel;
 window.openFilterSheet=openFilterSheet;
 window.closeFilterSheet=closeFilterSheet;
 // Esc — ochiq bo'lsa sheet'ni yopadi
 document.addEventListener('keydown',function(e){
-  if(e.key!=='Escape')return;
   const s=document.getElementById('filterSheet');
-  if(s&&s.classList.contains('open')){ e.stopPropagation(); closeFilterSheet(); }
+  if(!s||!s.classList.contains('open'))return;
+  if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeFilterSheet();return;}
+  if(e.key!=='Tab')return;
+  const focus=s.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])');
+  if(!focus.length)return;
+  const first=focus[0],last=focus[focus.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
 });
 
 /* ===== MOGRT_PACK ko'p-fayl tanlash bottom-sheet (a4) =====
@@ -4377,7 +5007,7 @@ function syncFilterSheet(){
     r.classList.toggle('on',(r.dataset.sort||'relevant')===(currentSort||'relevant'));
   });
   const ai=document.getElementById('catAiToggle');
-  if(ai)ai.classList.toggle('on',!!(typeof __catAiOn!=='undefined'&&__catAiOn));
+  if(ai){ai.classList.toggle('on',!!(typeof __catAiOn!=='undefined'&&__catAiOn));ai.setAttribute('aria-pressed',__catAiOn?'true':'false');}
   // LUTs / Graphics — format+sifat qo'llanmaydi (applyNavSwitch is-hidden bilan bir xil)
   const hideFmt=currentNav==='luts'||currentNav==='graphics';
   const fmtSec=document.getElementById('fsheetFmtSec');if(fmtSec)fmtSec.style.display=hideFmt?'none':'';
@@ -4424,9 +5054,9 @@ function afUseMenuOpen(btn,items){
   afUseMenuClose();
   if(!btn||!btn.getBoundingClientRect||!items||!items.length)return;
   var r=btn.getBoundingClientRect(); if(!r.width&&!r.height)return;
-  var m=document.createElement('div'); m.className='af-usemenu';
+  var m=document.createElement('div'); m.className='af-usemenu'; m.setAttribute('role','menu');
   items.forEach(function(it){
-    var row=document.createElement('div'); row.className='af-usemi'+(it.danger?' danger':'');
+    var row=document.createElement('button'); row.type='button'; row.className='af-usemi'+(it.danger?' danger':''); row.setAttribute('role','menuitem');
     row.innerHTML='<span class="mic">'+(it.ic||'')+'</span><span class="ml"></span>';
     row.querySelector('.ml').textContent=it.label;
     row.addEventListener('click',function(e){ e.stopPropagation(); afUseMenuClose(); try{ it.fn(); }catch(err){} });
@@ -4440,6 +5070,7 @@ function afUseMenuOpen(btn,items){
   if(top+mh>vh-pad)top=r.top-mh-4;                       // yuqoriga flip
   if(top<pad)top=Math.max(pad,Math.min(r.bottom+4,vh-mh-pad)); // clamp — langar yaqin qoladi
   m.style.left=left+'px'; m.style.top=top+'px'; m.style.maxHeight=mh+'px';
+  var first=m.querySelector('.af-usemi'); if(first)first.focus();
   setTimeout(function(){
     document.addEventListener('click',afUseMenuClose,true);
     document.addEventListener('keydown',__afUseMenuEsc,true);
@@ -4639,6 +5270,7 @@ function selectSort(el,key,label){
   document.getElementById('sortLabel').textContent=label||'Sort';
   document.querySelectorAll('#sortMenu .dd-item').forEach(item=>{
     item.classList.toggle('selected',item===el);
+    item.setAttribute('aria-checked',item===el?'true':'false');
   });
   closeAllDropdowns();
   reloadServerBrowse(); // P1 #15 — saralash server tomonda
@@ -4804,6 +5436,7 @@ const TOAST_TYPE_IC={
   info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 function showToast(msg,type,elapsedSec){
+  msg=afHostCopyMessage(msg);
   let t=type||'info';
   if(t==='danger') t='error';           // catalog.js eski "danger" → error
   if(['success','error','warning','info'].indexOf(t)<0) t='info';
@@ -4830,6 +5463,7 @@ function showToast(msg,type,elapsedSec){
  * window.afConfirm(msg,{ok,cancel,danger}) → Promise<boolean>. Overlay/Escape = bekor.
  * DOM ishlamay qolsa xavfsiz fallback: native confirm (funksiya hech qachon reject qilmaydi). */
 window.afConfirm=function(msg,opts){
+  msg=afHostCopyMessage(msg);
   opts=opts||{};
   return new Promise(function(resolve){
     try{
@@ -5065,6 +5699,8 @@ function handleGenRejection(gn, switchFn){
 function friendlyError(e){
   const raw=(e&&e.message)||String(e||'');
   const code=(e&&e.code)||'', status=(e&&e.status)||0;
+  if(code==='MODERATION_NOT_CONFIGURED')return 'AI generation is temporarily unavailable — safety verification needs administrator attention';
+  if(code==='AI_NOT_CONFIGURED')return 'AI generation is temporarily unavailable — contact an administrator';
   if(code==='INSUFFICIENT_CREDITS'||code==='AI_CREDITS_EXHAUSTED'||status===402||/kredit yetarli emas|insufficient credit/i.test(raw))
     return 'Not enough credits — ⚙ Settings › "Top up credits"';
   if(code==='AI_DAILY_CAP'||/kunlik.*(cap|chek|limit)|daily.*cap|cap.*(reached|tugadi)/i.test(raw))
@@ -5072,6 +5708,8 @@ function friendlyError(e){
   if(code==='AI_NOT_CONFIGURED')return 'AI isn’t configured yet — contact an administrator';
   if(status===429||code==='RATE_LIMITED'||/too many requests|rate.?limit/i.test(raw))
     return 'Too many requests — wait a moment and try again';
+  if(/\b429\b|RESOURCE_EXHAUSTED|quota (?:exceeded|exhausted)|DEADLINE_EXCEEDED|\bUNAVAILABLE\b/i.test(raw))
+    return 'The image service reached its current quota — your credits were refunded; try later or choose Seedream';
   // P30 §3 (29c) — HALOL xato, "soften the prompt" (evasion maslahati) OLIB TASHLANDI. Kredit
   // qaytariladi; rad etilishida handleGenRejection() boshqa-model taklifini ko'rsatadi.
   // R4_04 — Google real yuz / mashhur shaxs bloki ("restricted individuals ... Responsible AI ...
@@ -5102,6 +5740,8 @@ function friendlyError(e){
     return 'You don’t have access to that';
   if(/\b5\d\d\b|server error|ETIMEDOUT|timeout/i.test(raw))
     return 'Server isn’t responding — try again shortly (it may be waking up from sleep)';
+  if(/empty image response|no image was returned|returned no image/i.test(raw))
+    return 'The model returned no image — your credits were refunded; try again';
   if(/EvalScript error/i.test(raw))
     return 'Premiere Pro script didn’t respond — restart Premiere';
   if(/redirect limit|Pack HTTP/i.test(raw))
@@ -5110,6 +5750,15 @@ function friendlyError(e){
   if(/\{["']?\s*error\b/i.test(raw) || /^\s*\w[\w .()\/-]*\d{3}\s*:\s*[\[{]/.test(raw))
     return 'The request was rejected by the model — your credits were refunded';
   return raw||'Unknown error';
+}
+function enhanceMismatchMessage(r){
+  var why=r&&r.mentionMismatchKind==='missing'
+    ? 'the rewrite dropped an attached reference'
+    : r&&r.mentionMismatchKind==='extraneous'
+      ? 'the rewrite invented or renumbered a reference'
+      : 'the rewrite changed which reference was used';
+  var refund=r&&r.creditsRefunded?(' · ✦'+r.creditsRefunded+' refunded'):'';
+  return 'Kept your prompt — '+why+', so it was discarded'+refund;
 }
 
 /* ===== Import/Download progress (a4) — label + optional MB counter, else % ===== */
@@ -5181,6 +5830,10 @@ function closeLoginRequired(){
 function openAccountSheet(){
   document.getElementById('accountSheet')?.classList.add('open');
   refreshAccountUi();
+  // Account ochilganda eski /me keshiga tayanib qolmaymiz. Kreditning yagona
+  // avtoritativ manbai /api/studio/credits; u header, Settings va account chiplarini
+  // bitta afSyncCredits funnel'i orqali tenglashtiradi.
+  try{ if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}); }catch(e){}
   try{updateConnStatus();}catch(e){} // SC_35: diagnostika footerini joriy holatga yangilash
 }
 function closeAccountSheet(){
@@ -5351,7 +6004,7 @@ async function chooseDownloadFolder(){
   // 2) Fallback — ExtendScript
   if(path===null&&csInterface){
     try{
-      const raw=await new Promise(res=>csInterface.evalScript('pickDownloadFolder()',r=>res(r||'')));
+      const raw=await new Promise(res=>afEvalScript('pickDownloadFolder()',r=>res(r||'')));
       try{ const d=JSON.parse(raw); path=(d&&d.ok&&d.path)?d.path:''; }catch{ path=''; }
     }catch(e){ showToast('Error choosing folder: '+e.message); return; }
   }
@@ -5455,9 +6108,14 @@ async function refreshAccountFromApi(){
     if(delays[i])await new Promise(r=>setTimeout(r,delays[i]));
     try{
       await AssetFlowAccount.fetchMe();
+      // /me profil ma'lumotini beradi; pul balansi uchun yakuniy haqiqat /credits.
+      // Parallel generatsiya tugagan bo'lsa eski /me javobi yangi balansni bosib ketmasin.
+      if(typeof window.afRefreshCredits==='function')await window.afRefreshCredits({force:true});
       await AssetFlowAccount.heartbeat({
         deviceLabel:navigator.platform||'Mac',
-        aeVersion:'Premiere Pro',
+        aeVersion:AF_HOST_LABEL+((AF_HOST_ENV&&AF_HOST_ENV.appVersion)?(' '+AF_HOST_ENV.appVersion):''),
+        appVersion:(AF_HOST_ENV&&AF_HOST_ENV.appVersion)||'',
+        hostLabel:AF_HOST_LABEL,
       });
       refreshAccountUi();
       return;
@@ -5540,65 +6198,58 @@ async function accountLoginWithGoogle(){
   const setStatus=(html)=>{ if(hint){ hint.style.display='block'; hint.innerHTML=html; } };
   const hideStatus=()=>{ if(hint){ hint.style.display='none'; hint.innerHTML=''; } };
   if(btn) btn.disabled=true;
-  setStatus('Starting secure sign-in…');
+  setStatus('Opening browser…');
   try{
-    // Public (token'siz) device/start — global 401 "sessiya tugadi" ushlagichidan ajratilgan
-    const {code,verificationUrl,expiresIn}=await AssetFlowAccount.startDeviceLogin();
-    // Tizim brauzerida ochamiz — openExternal HAQIQIY muvaffaqiyatni qaytaradi (true/false).
+    const device=await AssetFlowAccount.startDeviceLogin();
+    const requestId=device.requestId||device.code||'';
+    const pollToken=device.pollToken||'';
+    const verificationUrl=device.verificationUrlComplete||device.verificationUrl||'';
+    const expiresIn=device.expiresIn||300;
     let opened=false;
     try{ opened=AssetFlowAccount.openExternal(verificationUrl); }catch(e){ opened=false; }
     console.log('[accountLoginWithGoogle] openExternal returned', opened);
-    // Muvaffaqiyat bo'lsa — qisqa status. Aks holda — havolani BIRINCHI DARAJALI qilib ko'rsatamiz.
-    if(opened){
-      // BATCH8 auth-device: bir martalik kodni ko'zga tashlanadigan mono blok sifatida ko'rsatamiz
-      setStatus(
-        '<span style="display:block;margin-bottom:10px;color:var(--muted);font-size:11px">Browser opened — type this code there, then sign in.</span>'+
-        '<span style="display:block;margin:0 0 10px;padding:14px 10px;border-width:1px;border-style:solid;border-color:var(--accent);border-radius:12px;background-color:var(--accent-soft);text-align:center">'+
-          '<span style="display:block;color:var(--faint);font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;margin-bottom:6px">ONE-TIME CODE</span>'+
-          '<b id="afGsigCode" style="display:block;font-family:var(--font-mono);font-size:17px;font-weight:750;letter-spacing:.1em;color:var(--accent);word-break:break-all"></b>'+
-          '<div role="button" tabindex="0" type="button" id="afGsigCopyCode" style="margin-top:8px;cursor:pointer;font:inherit;font-size:10px;padding:3px 10px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Copy code</div>'+
-        '</span>'+
-        '<span style="display:block;color:var(--faint);font-size:11px;margin-bottom:4px">Didn’t see it? Copy this link into your browser:</span>'+
-        '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:11px;color:var(--muted);margin-bottom:8px"></code>'+
-        '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
-          '<div role="button" tabindex="0" type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:11px;padding:4px 10px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Copy link</div>'+
-          '<div role="button" tabindex="0" type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:4px 10px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Open again</div>'+
-        '</span>'
-      );
-    } else {
-      setStatus(
-        '<span style="display:block;margin-bottom:8px;font-weight:600">Couldn’t open the browser automatically — copy this link and open it manually:</span>'+
-        '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:12px;padding:8px;border-radius:6px;border-width:1px;border-style:solid;border-color:currentColor;margin-bottom:8px"></code>'+
-        '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'+
-          '<div role="button" tabindex="0" type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;border-width:1px;border-style:solid;border-color:var(--accent);background-color:var(--accent);color:var(--on-accent)">Copy link</div>'+
-          '<div role="button" tabindex="0" type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 10px;border-radius:6px;border-width:1px;border-style:solid;border-color:currentColor;background-color:transparent;color:inherit">Try again</div>'+
-          '<span style="font-size:11px;opacity:.7">Code: <b id="afGsigCode"></b></span>'+
-        '</span>'
-      );
-    }
-    // Qiymatlarni textContent orqali qo'yamiz (HTML injection yo'q)
+    setStatus(
+      '<span id="afGsigState" style="display:block;margin-bottom:8px;font-weight:650">'+
+        (opened?'Waiting for confirmation…':'Could not open browser')+
+      '</span>'+
+      '<div role="button" tabindex="0" type="button" id="afGsigCancel" style="cursor:pointer;font:inherit;font-size:11px;padding:5px 11px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Cancel</div>'+
+      '<details style="margin-top:10px;text-align:left">'+
+        '<summary style="cursor:pointer;color:var(--muted);font-size:11px">Having trouble?</summary>'+
+        '<code id="afGsigUrl" style="display:block;word-break:break-all;font-size:10px;color:var(--muted);margin:8px 0"></code>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+          '<div role="button" tabindex="0" type="button" id="afGsigCopyLink" style="cursor:pointer;font:inherit;font-size:10px;padding:4px 9px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Copy secure link</div>'+
+          '<div role="button" tabindex="0" type="button" id="afGsigOpen" style="cursor:pointer;font:inherit;font-size:10px;padding:4px 9px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Try again</div>'+
+          '<div role="button" tabindex="0" type="button" id="afGsigCopyCode" style="cursor:pointer;font:inherit;font-size:10px;padding:4px 9px;border-radius:999px;border-width:1px;border-style:solid;border-color:var(--border);background-color:var(--surface-2);color:var(--text)">Copy request code</div>'+
+        '</div>'+
+      '</details>'
+    );
     const urlEl=document.getElementById('afGsigUrl'); if(urlEl) urlEl.textContent=verificationUrl||'';
-    const codeEl=document.getElementById('afGsigCode'); if(codeEl) codeEl.textContent=code||'';
     document.getElementById('afGsigCopyLink')?.addEventListener('click',()=>afCopyText(verificationUrl||''));
-    document.getElementById('afGsigCopyCode')?.addEventListener('click',()=>afCopyText(code||''));
+    document.getElementById('afGsigCopyCode')?.addEventListener('click',()=>afCopyText(requestId||''));
     document.getElementById('afGsigOpen')?.addEventListener('click',()=>{
       let ok=false; try{ ok=AssetFlowAccount.openExternal(verificationUrl); }catch(e){}
       if(!ok) showToast('Still couldn’t open the browser — please copy the link','warning');
     });
+    document.getElementById('afGsigCancel')?.addEventListener('click',()=>{
+      AssetFlowAccount.stopDevicePolling(true);
+      if(btn)btn.disabled=false;
+      hideStatus();
+    });
 
     const safetyTimeout=setTimeout(()=>{
-      AssetFlowAccount.stopDevicePolling();
+      AssetFlowAccount.stopDevicePolling(true);
       if(btn) btn.disabled=false;
       hideStatus();
-    },(expiresIn||600)*1000+5000);
-    AssetFlowAccount.pollDeviceLogin(code,{
+      showToast('Request expired','warning');
+    },expiresIn*1000+1000);
+    AssetFlowAccount.pollDeviceLogin({requestId,pollToken},{
       onConfirmed:async ()=>{
         clearTimeout(safetyTimeout);
         if(btn) btn.disabled=false;
         hideStatus();
         refreshAccountUi();
         try{ syncFavoritesFromServer(); }catch(e){} // #17: Google login bo'lgach hisob sevimlilari
-        showToast('Signed in successfully','success');
+        showToast('Signed in','success');
         if(typeof AssetFlowCatalog!=='undefined'){
           catalogLoadState='loading';
           render();
@@ -5615,7 +6266,7 @@ async function accountLoginWithGoogle(){
         clearTimeout(safetyTimeout);
         if(btn) btn.disabled=false;
         hideStatus();
-        showToast('Timed out — please try again','warning');
+        showToast('Request expired','warning');
       },
       onDenied:()=>{
         clearTimeout(safetyTimeout);
@@ -5624,7 +6275,8 @@ async function accountLoginWithGoogle(){
         showToast('Sign-in denied','error');
       },
       onError:(e)=>{
-        /* tarmoq xatosi — pollik davom etadi, safetyTimeout oxir-oqibat to'xtatadi */
+        const state=document.getElementById('afGsigState');
+        if(state)state.textContent='Still waiting — reconnecting…';
       },
     });
   }catch(e){
@@ -5645,6 +6297,7 @@ function accountLogout(){
   // #31 (PX1) — uchayotgan gen reyestri ham hisobga bog'liq: boshqa foydalanuvchi kirsa,
   // eski hisobning job'lari tiklanmasin (server baribir 404/foreign qaytaradi).
   try{ if(window.afJobStore)window.afJobStore.clear(); }catch(e){}
+  try{ if(window.afActiveSessionStore)window.afActiveSessionStore.clear(); }catch(e){}
   showToast('Signed out');
 }
 
@@ -5736,27 +6389,10 @@ async function accountPickPlan(plan){
     showToast('Already on '+((plan==='pro')?'Pro':'Free'));
     return;
   }
-  // Pro tanlandi, lekin faol Stripe obunasi yo'q → checkout sahifasiga yuboramiz
-  if(plan==='pro' && u && !u.stripeSubscriptionActive){
-    await startProCheckout();
-    return;
-  }
-  setPlanButtonsBusy(true);
-  try{
-    const next=await AssetFlowAccount.setPlan(plan);
-    refreshAccountUi();
-    showToast('✓ '+(next?.planLabel||(plan==='pro'?'Pro':'Free'))+' is active');
-  }catch(e){
-    console.error('accountPickPlan',e);
-    // Backend "Stripe obunasi kerak" desa — checkout'ga o'tamiz
-    if(plan==='pro' && (e.status===403 || /stripe|obuna/i.test(e.message||''))){
-      await startProCheckout();
-    }else{
-      showToast(e.message||'Plan wasn’t changed');
-    }
-  }finally{
-    setPlanButtonsBusy(false);
-  }
+  // Faol pullik reja o'zgarishi/bekor qilinishi Lemon Squeezy portalida bajariladi.
+  if(u&&u.plan&&u.plan!=='free'){await manageBilling();return;}
+  if(plan==='pro'){await startProCheckout();return;}
+  showToast('Free is already active','info');
 }
 
 /** P8 — Pro obuna → Lemon Squeezy checkout (startCreditTopup naqshi). Eski Stripe
@@ -5822,20 +6458,24 @@ window.startCreditTopup=startCreditTopup;
 async function manageBilling(){
   try{
     const url=await AssetFlowAccount.requestBillingPortal();
-    if(url) AssetFlowAccount.openExternal(url);
-    else showToast('No billing account');
+    if(url){
+      if(!AssetFlowAccount.openExternal(url))showToast('Couldn’t open the browser — try again','error');
+    }else showToast('No billing account was found','info');
   }catch(e){
-    showToast(e.message||'Couldn’t open billing');
+    const code=(e&&(e.code||(e.data&&e.data.code)))||'';
+    if(code==='SUBSCRIPTION_NOT_FOUND')showToast('No active subscription was found','info');
+    else showToast('Couldn’t open subscription management — try again','error');
   }
 }
 
 async function refreshAccountAndUi(){
   try{
     await AssetFlowAccount.fetchMe();
+    if(typeof window.afRefreshCredits==='function')await window.afRefreshCredits({force:true});
     refreshAccountUi();
     showToast('✓ Refreshed');
   }catch(e){
-    showToast(e.message||'Refresh failed');
+    showToast(e.message||'Refresh failed','error');
   }
 }
 
@@ -5852,7 +6492,7 @@ window.accountLogout=accountLogout;
 function evalP(script){
   return new Promise((resolve)=>{
     if(!csInterface){resolve('');return;}
-    csInterface.evalScript(script,(r)=>resolve(r||''));
+    afEvalScript(script,(r)=>resolve(r||''));
   });
 }
 
@@ -6003,6 +6643,10 @@ function buildPackZip(projectFile){
 }
 
 function openPublish(){
+  if(AF_IS_PREMIERE){
+    showToast('Publishing from Premiere Pro is available in Contributor Studio. The in-panel Publisher is disabled because Premiere cannot safely package every sequence through CEP.','info');
+    return;
+  }
   closeAccountSheet();
   document.getElementById('publishSheet').classList.add('open');
   ['pubFolderStep','pubScenesStep','pubMetaStep','pubActionStep'].forEach(function(id){
@@ -6035,18 +6679,18 @@ async function publishScan(){
   if(!data||!data.ok){ info.textContent=(data&&data.message)||'Project not found'; return; }
   if(!data.saved){ info.textContent='⚠ Project not saved — use File → Save, then scan again'; return; }
   window.__pubProject={file:data.projectFile,name:data.projectName};
-  info.innerHTML='✓ <b>'+data.projectName+'</b> · '+data.compCount+' comps · '+data.folderCount+' folders';
+  info.innerHTML='✓ <b>'+escHtml(data.projectName)+'</b> · '+Number(data.compCount||0)+' comps · '+Number(data.folderCount||0)+' folders';
   const sel=document.getElementById('pubScenesFolder');
   const folders=data.folders||[];
   sel.innerHTML='<option value="">— choose a folder —</option>'+folders.map(function(f){
-    return '<option value="'+String(f.path).replace(/"/g,'&quot;')+'">'+f.path+'</option>';
+    return '<option value="'+escHtml(f.path)+'">'+escHtml(f.path)+'</option>';
   }).join('');
   const guessPath=pickScenesFolder(folders,data.tree||[]);
   document.getElementById('pubFolderStep').style.display='block';
   document.getElementById('pubName').value=data.projectName||'';
   if(guessPath){
     sel.value=guessPath;
-    info.innerHTML+=' · <b style="color:var(--accent-2)">'+guessPath+'</b> selected automatically';
+    info.innerHTML+=' · <b style="color:var(--accent-2)">'+escHtml(guessPath)+'</b> selected automatically';
     publishDetectScenes();
   }
 }
@@ -6063,16 +6707,16 @@ async function publishDetectScenes(){
   const cfg=JSON.stringify({scenesFolder:folder,exportRoot:exportRoot});
   const raw=await evalP('renderSceneStillFrames('+JSON.stringify(cfg)+')');
   let data;try{data=JSON.parse(raw);}catch(e){data=null;}
-  if(!data||!data.ok){ listEl.innerHTML='<div class="account-hint">'+((data&&data.message)||'No scenes found')+'</div>'; return; }
+  if(!data||!data.ok){ listEl.innerHTML='<div class="account-hint">'+escHtml((data&&data.message)||'No scenes found')+'</div>'; return; }
   window.__pubScenes=data.results;
   document.getElementById('pubScenesCount').textContent='('+data.results.length+')';
   const _checkSvg='<svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor"><path d="M128 24a104 104 0 1 0 104 104A104.11 104.11 0 0 0 128 24Zm45.66 85.66-56 56a8 8 0 0 1-11.32 0l-24-24a8 8 0 0 1 11.32-11.32L112 148.69l50.34-50.35a8 8 0 0 1 11.32 11.32Z" fill="currentColor"/></svg>';
   listEl.innerHTML=data.results.map(function(s){
     const meta=(s.width&&s.height?s.width+'×'+s.height:'')+(s.fps?' · '+s.fps+'fps':'');
-    const thumb=(s.ok&&s.path)?'<img class="pub-scene-thumb" src="file://'+encodeURI(s.path)+'">':'<div class="pub-scene-thumb">✦</div>';
+    const thumb=(s.ok&&s.path)?'<img class="pub-scene-thumb" src="'+escHtml('file://'+encodeURI(s.path))+'">':'<div class="pub-scene-thumb">✦</div>';
     return '<div class="pub-scene-row'+(s.ok?'':' fail')+'"><span class="pub-scene-dot"></span>'+thumb+
-      '<div class="pub-scene-txt"><div class="pub-scene-name">'+s.name+'</div>'+
-      '<div class="pub-scene-meta">'+(s.ok?meta:'preview render failed')+'</div></div>'+
+      '<div class="pub-scene-txt"><div class="pub-scene-name">'+escHtml(s.name)+'</div>'+
+      '<div class="pub-scene-meta">'+escHtml(s.ok?meta:'preview render failed')+'</div></div>'+
       (s.ok?'<span class="pub-scene-check">'+_checkSvg+'</span>':'')+'</div>';
   }).join('');
   document.getElementById('pubMetaStep').style.display='block';
@@ -6110,7 +6754,7 @@ async function publishGo(){
     };
   });
 
-  const externalId='ae-'+pubSceneKey(name);
+  const externalId=AF_TEMPLATE_APP+'-'+pubSceneKey(name);
 
   btn.disabled=true;
   // Joriy bosqich — xato bo'lsa qaysi qadamda ekani aniq ko'rinadi
@@ -6122,7 +6766,7 @@ async function publishGo(){
 
     const body={
       name:name, description:description, nav:nav, cat:cat, catLabel:catLabel,
-      orient:orient, res:res, tags:tags, templateApp:'ae', externalId:externalId,
+      orient:orient, res:res, tags:tags, templateApp:AF_TEMPLATE_APP, externalId:externalId,
       fileName:zip.name||path.basename(zip.path), fileSize:zip.size,
       metaJson:{ aeScenesFolder:folder }, scenes:manifestScenes,
       rightsAccepted:true, rightsTermsVersion:'2026-07-08'
@@ -6215,11 +6859,54 @@ async function reloadHostScript(){
   if(!IS_CEP||!csInterface)return false;
   try{
     const ext=csInterface.getSystemPath(SystemPath.EXTENSION);
-    const jsxPath=(ext+'/jsx/host.jsx').replace(/\\/g,'/');
-    const raw=await new Promise(res=>csInterface.evalScript('try{$.evalFile('+JSON.stringify(jsxPath)+');"ok"}catch(e){"err"}',r=>res(r||'')));
+    const jsxPath=afHostJsxPath(ext);
+    const probe=await new Promise(res=>afEvalScript('1+1',r=>res(r||'')));
+    if(probe!=='2')return false;
+    const raw=await new Promise(res=>afEvalScript('try{$.evalFile('+JSON.stringify(jsxPath)+');"ok"}catch(e){"err|"+e.toString()+"|line="+e.line+"|file="+e.fileName}',r=>res(r||'')));
+    if(raw!=='ok'){
+      try{if(typeof AssetFlowLog!=='undefined')AssetFlowLog.error('Host adapter reload failed',{action:'host_reload',detail:String(raw).slice(0,500)});}catch(_e){}
+    }
     return raw==='ok';
   }catch(e){ return false; }
 }
+
+async function afLoadHostCapabilities(){
+  if(!IS_CEP||!csInterface)return null;
+  try{
+    const raw=await hostEvalGuarded('getHostCapabilities()',{label:'Checking host capabilities',softMs:5000,hardMs:15000});
+    const caps=raw?JSON.parse(raw):null;
+    if(!caps||!caps.ok)throw new Error((caps&&(caps.message||caps.reason))||'Host adapter did not return capabilities');
+    window.AF_HOST_CAPABILITIES=caps;
+    try{localStorage.setItem('af_host_health',JSON.stringify({ts:new Date().toISOString(),ok:true,host:AF_TEMPLATE_APP,capabilities:caps}));}catch(e){}
+    try{if(typeof AssetFlowLog!=='undefined')AssetFlowLog.info('Host bridge ready',{action:'host_bridge',detail:AF_TEMPLATE_APP+' · '+String(caps.host||'unknown')});}catch(e){}
+    return window.AF_HOST_CAPABILITIES;
+  }catch(e){
+    window.AF_HOST_CAPABILITIES=null;
+    const reason=String((e&&e.message)||e||'unknown');
+    try{localStorage.setItem('af_host_health',JSON.stringify({ts:new Date().toISOString(),ok:false,host:AF_TEMPLATE_APP,error:reason}));}catch(_e){}
+    try{if(typeof AssetFlowLog!=='undefined')AssetFlowLog.error('Host bridge unavailable',{action:'host_bridge',detail:reason});}catch(_e){}
+    if(AF_IS_PREMIERE){
+      const message=(window.AF_HOST_ENGINE_ERROR&&window.AF_HOST_ENGINE_ERROR.message)||'Premiere connection is unavailable — Project panel and Timeline actions are disabled. Fully quit and reopen Premiere Pro, then reopen FrameFlow.';
+      showToast(message,'error');
+    }
+    return null;
+  }
+}
+
+// Runtime xatolari yo'qolib ketmasin: maxfiy ma'lumotsiz oxirgi 12 ta JS xato lokal
+// CEP storage'da qoladi. Computer Usesiz diagnostika uchun o'qiladi.
+(function installRuntimeDiagnostics(){
+  function save(kind,value){
+    try{
+      const key='af_runtime_errors';
+      const rows=JSON.parse(localStorage.getItem(key)||'[]');
+      rows.unshift({ts:new Date().toISOString(),host:AF_TEMPLATE_APP,kind:kind,message:String(value||'unknown').slice(0,500)});
+      localStorage.setItem(key,JSON.stringify(rows.slice(0,12)));
+    }catch(e){}
+  }
+  window.addEventListener('error',function(ev){save('error',(ev&&ev.message)||'window error');});
+  window.addEventListener('unhandledrejection',function(ev){const r=ev&&ev.reason;save('rejection',(r&&r.message)||r||'unhandled rejection');});
+})();
 
 // #143 (PX6) — o'rnatilgan kengaytma versiyasi (CSXS manifestidan). CEP tashqarisida null.
 function afExtVersion(){
@@ -6246,15 +6933,17 @@ async function bootPlugin(){
     // DEV·DEMO gate olib tashlandi — bo'limning o'zi o'chirildi (soxta demo holatlari
     // mijoz paketiga tushmasin). Bu yerda faqat build yorlig'i qoladi.
   }catch(e){}
+  afApplyHostCopy();
   initEnvFilterUi();
   initAccountUi();
   try{ afInitAllStrips(); afFitTopbar(); }catch(e){} // SC_35: pill strip'lar + top-bar fit boshlang'ich
-  if(typeof AssetFlowLog!=='undefined') AssetFlowLog.init({ source:'ae_plugin' });
+  if(typeof AssetFlowLog!=='undefined') AssetFlowLog.init({ source:AF_IS_PREMIERE?'pr_plugin':'ae_plugin' });
   if(IS_CEP){
     const c=document.getElementById('container');
     if(c){c.style.width='100%';c.style.height='100vh';}
     setupCepMetaListener();
-    reloadHostScript();
+    await reloadHostScript();
+    await afLoadHostCapabilities();
   }
   try{
     // BIRINCHI ekran = Asosiy (Home). Katalog cold-start (~50s) await'idan OLDIN ko'rsatamiz,
@@ -6277,6 +6966,20 @@ async function bootPlugin(){
       if(typeof AssetFlowCatalog!=='undefined'){
         try{
           serverN=await AssetFlowCatalog.refreshBrowse(catalogFilters());
+          // Premiere katalogida Video Templates vaqtincha bo'sh bo'lishi mumkin, lekin
+          // boshqa PR/stock bo'limlarida assetlar bor. Birinchi bo'limni "0" deb ko'rib
+          // butun Library'ni empty demaymiz — birinchi bo'sh bo'lmagan bo'limni topamiz.
+          if(AF_IS_PREMIERE&&serverN===0&&currentNav==='video'&&currentSub==='all'&&!currentSearch){
+            const originalNav=currentNav;
+            const fallbacks=['motion','graphics','luts','music','sfx'];
+            let found=false;
+            for(let fi=0;fi<fallbacks.length;fi++){
+              currentNav=fallbacks[fi];
+              serverN=await AssetFlowCatalog.refreshBrowse(catalogFilters(),{reset:true});
+              if(serverN>0){found=true;break;}
+            }
+            if(!found)currentNav=originalNav;
+          }
           catalogLoadState='ready';
         }catch(catErr){
           catalogLoadState='error';   // grid'da «Qayta urinish» tugmasi chiqadi
@@ -6292,7 +6995,7 @@ async function bootPlugin(){
       if(document.documentElement.classList.contains('home-mode')){
         // SC_38 — noReload: katalog yuqorida shu filtrlar bilan yuklangan; ikkinchi
         // (takroriy) catalog+featured so'rovi endi otilmaydi (boot double-fetch fix).
-        applyNavSwitch('video',{noReload:true}); // currentNav + yuklangan katalog grid render
+        applyNavSwitch(currentNav,{noReload:true}); // currentNav + yuklangan katalog grid render
         try{ goHome(); }catch(e){} // home-mode'ni qaytaramiz (foydalanuvchi hali Home'da edi)
       }
       const total=localN+serverN;

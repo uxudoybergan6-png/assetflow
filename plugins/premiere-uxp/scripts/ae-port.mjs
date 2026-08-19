@@ -1979,6 +1979,7 @@ function main() {
     /<div id="(igPrompt|vgPrompt)" class="chipedit" contenteditable="true" role="textbox" aria-multiline="true" data-ph="([^"]*)"><\/div>/g,
     '<textarea id="$1" class="chipedit" aria-multiline="true" placeholder="$2"></textarea>',
   );
+  body = body.trimEnd() + "\n";
   stats.inlineHandlers = (body.match(/\son[a-z]+\s*=/gi) || []).length;
   write(path.join(OUT, "ae-body.html"), body);
   const inlineFiles = [];
@@ -1987,6 +1988,9 @@ function main() {
   for (const s of scripts) {
     if (s.ext) {
       if (/CSInterface\.js$/i.test(s.ext)) { order.push("js/ae-shim/csinterface-shim.js"); continue; }
+      // CEP ko'rinadigan panel → yashirin UXP companion mailbox'i. UXP panelining o'zi
+      // host bilan native shim orqali gaplashadi; CEP bridge'ni UXP paketiga ko'chirmaymiz.
+      if (/assetflow-uxp-bridge\.js(?:[?#].*)?$/i.test(s.ext)) continue;
       order.push(`ae-src/${path.basename(s.ext)}`);
       continue;
     }
@@ -2000,7 +2004,8 @@ function main() {
   // ── 5. AE tashqi JS + shriftlar ───────────────────────────────────────
   let copied = 0;
   for (const f of fs.readdirSync(AE)) {
-    if (!/^assetflow-.*\.js$/.test(f)) continue;
+    if (!/^(?:assetflow-|frameflow-).*\.js$/.test(f)) continue;
+    if (f === "assetflow-uxp-bridge.js") continue;
     fs.mkdirSync(path.join(OUT, "ae-src"), { recursive: true });
     write(path.join(OUT, "ae-src", f), transformJs(read(path.join(AE, f))));
     copied++;

@@ -57,6 +57,7 @@
                 <div class="sb-brand">
                   <span class="sb-mark" aria-hidden="true"><span class="sb-mark-inner"></span></span>
                   <span class="sb-brand-text">FrameFlow</span>
+                  <span class="sb-host-badge" aria-label="Premiere Pro edition">Pr</span>
                 </div>
                 <div role="button" tabindex="0" class="sb-collapse" onclick="toggleSidebar()" title="Collapse / expand sidebar" aria-label="Sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><line x1="10" y1="5" x2="10" y2="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
               </div>
@@ -124,13 +125,13 @@
                     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.2c-.4.5 0 1.3.7 1.3H11l-1 8.3c-.1.7.8 1.1 1.2.5L19.5 12c.4-.5 0-1.3-.7-1.3H13l1-8.3c.1-.7-.8-1.1-1-.4Z" fill="currentColor"/></svg>
                   </div>
                   <!-- BATCH8 P3 — 2-qatorli brand copy: mahsulot nomi + faol pane konteksti (afSetPaneCtx yozadi) -->
-                  <div class="af-tb-brand"><strong>FrameFlow</strong></div><!-- SC_08 (b): kontekst mikro-yorlig'i o'chirildi — markaziy seg buni allaqachon ko'rsatadi (afSetPaneCtx null-guard bilan xavfsiz) -->
+                  <div class="af-tb-brand"><strong>FrameFlow</strong><small class="af-tb-host">Premiere Pro</small></div>
                 </div>
                 <div class="af-tb-seg">
                   <div class="ff-seg" id="afPillarSeg" role="tablist" aria-label="Section">
                     <div role="button" tabindex="0" class="ff-seg__item" id="afSegHome" role="tab" aria-selected="false" onclick="afNavTab('home')" title="Home"><span class="lf">Home</span><span class="ls">Home</span></div>
-                    <div role="button" tabindex="0" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="AI Tools — Gen Studio"><span class="lf">AI Tools</span><span class="ls">AI</span><span class="seg-gendot" id="afSegAiDot" style="display:none"></span></div>
-                    <div role="button" tabindex="0" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Stock Catalog — templates"><span class="lf">Stock Catalog</span><span class="ls">Stock</span></div>
+                    <div role="button" tabindex="0" class="ff-seg__item" id="afSegAi" role="tab" aria-selected="false" onclick="afNavTab('ai')" title="Create with AI"><span class="lf">Create</span><span class="ls">Create</span><span class="seg-gendot" id="afSegAiDot" style="display:none"></span></div>
+                    <div role="button" tabindex="0" class="ff-seg__item is-on" id="afSegKatalog" role="tab" aria-selected="true" onclick="afNavTab('catalog')" title="Browse assets"><span class="lf">Browse</span><span class="ls">Browse</span></div>
                   </div>
                   <!-- SC_28: Sessions/Projects entrylari top-bar'dan Account sheet WORKSPACE guruhiga ko'chdi -->
                 </div>
@@ -139,6 +140,7 @@
                   <!-- SC_48: yagona global Refresh — afRefreshAll ochiq sub-view'ni (katalog/lib/sessions/
                        projects/recent/credits) yangilaydi. Sub-view header'laridagi dublikat refresh'lar olib tashlandi. -->
                   <div role="button" tabindex="0" class="af-tb-icon" onclick="if(window.afRefreshAll)window.afRefreshAll();else syncServerCatalog()" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 3v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 21v-5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                  <div role="button" tabindex="0" class="af-tb-icon ff-activity-btn" id="ffActivityBtn" title="Activity" aria-label="Generation activity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h4l2-7 4 11 2-6h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ff-activity-dot" id="ffActivityCount" hidden>0</span></div>
                   <div role="button" tabindex="0" class="af-tb-cred" id="hdrPlanPill" tabindex="0" title="Buy credits" onclick="afOpenTopup()"><span class="s">✦</span><span class="cred" id="hdrCred">—</span><span class="hd-plan free" data-hdplan>FREE</span></div>
                   <div role="button" tabindex="0" class="af-tb-ava" id="hdrAva" title="Account" aria-label="Account" onclick="openAccountSheet()"></div>
                   <!-- a1'da yo'q: Downloads/Sevimli — wiring saqlanadi (keyingi bosqichda joylashtiriladi) -->
@@ -187,10 +189,10 @@
                   <span class="af-cathead-sep" aria-hidden="true">·</span>
                   <div class="dropdown cmp-sort" id="sortDrop">
                     <div role="button" tabindex="0" class="af-sortbtn" id="sortBtn" title="Sort" aria-label="Sort"><span id="sortLabel">RELEVANT</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                    <div class="dd-menu" id="sortMenu">
-                      <div class="dd-item selected" data-sort="relevant">Relevant <span class="dd-check">✓</span></div>
-                      <div class="dd-item" data-sort="newest">Newest</div>
-                      <div class="dd-item" data-sort="name">Name A–Z</div>
+                    <div class="dd-menu" id="sortMenu" role="menu" aria-label="Sort templates">
+                      <div role="button" tabindex="0" class="dd-item selected" role="menuitemradio" aria-checked="true" data-sort="relevant">Relevant <span class="dd-check">✓</span></div>
+                      <div role="button" tabindex="0" class="dd-item" role="menuitemradio" aria-checked="false" data-sort="newest">Newest</div>
+                      <div role="button" tabindex="0" class="dd-item" role="menuitemradio" aria-checked="false" data-sort="name">Name A–Z</div>
                     </div>
                   </div>
                 </div>
@@ -204,6 +206,8 @@
                   <option value="motion">Motion Graphics</option>
                   <option value="graphics">Graphics</option>
                   <option value="luts">LUTs</option>
+                  <option value="music">Music</option>
+                  <option value="sfx">Sound Effects</option>
                   <option value="ai">AI Tools</option>
                 </select>
               </div>
@@ -237,61 +241,69 @@
                          project" kartalari (hero CTA dublikatlari) va greet-balans O'CHIRILDI;
                          "Jump back in" strip qo'shildi; javon endi ko'p-qatorli katta grid. -->
                     <div id="homeMain">
-                      <div class="fhome">
-                        <div class="fhome-top">
-                          <div class="fhome-greet" id="homeGreet">Good afternoon</div>
-                        </div>
-                        <article class="fhome-hero">
-                          <div class="fhome-hero-art" id="homeBArt"></div>
-                          <span class="fhome-hero-chip" id="homeBModel" style="display:none"></span>
-                          <div class="fhome-hero-copy">
-                            <p class="fhome-kick">Your next frame</p>
-                            <h1>Make something worth replaying.</h1>
-                            <p class="fhome-sub">Generate a key visual or start from a production-ready Premiere Pro template.</p>
-                            <!-- SC_50: hero prompt-first — Enter/✦ → AI Tools yangi sessiya, kompozer to'ldirilgan (kredit YECHILMAYDI) -->
-                            <div class="fhome-heroprompt">
-                              <input type="text" id="homeHeroPrompt" placeholder="Describe your next shot…" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();afHomeHeroSubmit();}">
-                              <div role="button" tabindex="0" class="fhome-heroprompt-go" title="Open in AI Tools" aria-label="Open in AI Tools" onclick="afHomeHeroSubmit()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                            </div>
-                            <div class="fhome-cta">
-                              <div role="button" tabindex="0" class="fhome-btn-ai" onclick="homeGo('ai')">✦ Open AI Studio</div>
-                              <div role="button" tabindex="0" class="fhome-btn-stock" onclick="homeGo('video')">Open Stock Catalog</div>
-                            </div>
+                      <div class="fhome ffx-home" id="ffxHome">
+                        <div class="fhome-top" hidden aria-hidden="true"><div class="fhome-greet" id="homeGreet">Good afternoon</div></div>
+
+                        <section class="ffx-command" aria-labelledby="ffxCommandTitle">
+                          <div class="ffx-command-kicker">
+                            <span><i aria-hidden="true"></i> Creative engine online</span>
+                            <span class="ffx-host-context" id="ffxHostContext">Premiere · Active composition <b>CHECKING</b></span>
                           </div>
-                        </article>
-                        <!-- SC_52: Director tartibi — hero → New rail → Jump back → Continue → Top rail → Browse by category.
-                             "Fresh for your next cut" javoni O'CHIRILDI (New rellsi uning kuratsiyalangan vorisi). -->
-                        <!-- NEW RELEASES rail (admin-kuratsiya, chapga auto-scroll) -->
-                        <div id="fhomeNewRail" class="fhome-railsec" style="display:none">
-                          <div class="fhome-sechd"><h2 id="fhomeNewHd">New releases</h2></div>
-                          <div class="fhome-rail" data-dir="left"><div class="fhome-rail-track" id="homeNewTrack"></div></div>
+                          <div class="ffx-command-grid">
+                            <article class="ffx-launch-panel">
+                              <span class="ffx-eyebrow">NEW CREATIVE SESSION</span>
+                              <h1 id="ffxCommandTitle"><span>What will you</span> <em>create next?</em></h1>
+                              <p>Describe the result. FrameFlow prepares the right model and Adobe-ready output.</p>
+                              <div class="ffx-quick-modes" id="ffxQuickModes" role="tablist" aria-label="Quick creation mode">
+                                <div role="button" tabindex="0" class="active" data-ffx-mode="image" role="tab" aria-selected="true"><span aria-hidden="true">IMG</span> Image</div>
+                                <div role="button" tabindex="0" data-ffx-mode="video" role="tab" aria-selected="false"><span aria-hidden="true">VID</span> Video</div>
+                                <div role="button" tabindex="0" data-ffx-mode="voice" role="tab" aria-selected="false"><span aria-hidden="true">VO</span> Voice</div>
+                                <div role="button" tabindex="0" data-ffx-mode="sfx" role="tab" aria-selected="false"><span aria-hidden="true">SFX</span> Sound</div>
+                              </div>
+                              <div class="ffx-quick-composer">
+                                <textarea id="homeHeroPrompt" rows="3" placeholder="Describe what you want to make…" spellcheck="true"></textarea>
+                                <div class="ffx-quick-footer">
+                                  <div role="button" tabindex="0" class="ffx-auto" id="ffxAutoModel"><span>FF</span><b>FrameFlow Auto</b><small>Best live model</small></div>
+                                  <div role="button" tabindex="0" class="ffx-start" id="ffxStartCreate">Start creating <span>✦</span></div>
+                                </div>
+                              </div>
+                              <div class="ffx-suggestions"><span>Try</span><div role="button" tabindex="0" data-ffx-prompt="A premium campaign image with sculpted light and controlled reflections">Campaign visual</div><div role="button" tabindex="0" data-ffx-prompt="Turn this shot into a cinematic night sequence with subtle camera motion">Night sequence</div></div>
+                            </article>
+
+                            <aside class="ffx-showcase" aria-label="Trending templates">
+                              <div class="ffx-showcase-toolbar"><span><i aria-hidden="true"></i> TRENDING TEMPLATES</span><div><div role="button" tabindex="0" id="ffxShowcasePrev" aria-label="Previous template">←</div><div role="button" tabindex="0" id="ffxShowcaseNext" aria-label="Next template">→</div></div></div>
+                              <div class="ffx-showcase-stage" id="ffxShowcaseStage"></div>
+                              <div class="ffx-showcase-footer"><div class="ffx-showcase-progress" id="ffxShowcaseProgress"></div><span>Auto preview</span><div role="button" tabindex="0" id="ffxBrowseTemplates">Browse templates ↗</div></div>
+                            </aside>
+                          </div>
+                        </section>
+
+                        <div class="ffx-insights">
+                          <section class="ffx-continue" id="ffxContinueSection">
+                            <div class="ffx-section-head"><div><span class="ffx-index">01</span><h2>Continue creating</h2><p>Your latest sessions, ready where you left them.</p></div><div><div role="button" tabindex="0" id="ffxRecentPrev" aria-label="Previous sessions">←</div><div role="button" tabindex="0" id="ffxRecentNext" aria-label="Next sessions">→</div></div></div>
+                            <div class="ffx-session-rail" id="ffxSessionRail"></div>
+                          </section>
+                          <aside class="ffx-pulse">
+                            <div class="ffx-pulse-head"><span class="ffx-index">NOW</span><b>Project pulse</b><div role="button" tabindex="0" id="ffxOpenActivity">View all</div></div>
+                            <div class="ffx-pulse-item"><span>▶</span><div><b id="ffxPulseTitle">No active render</b><small id="ffxPulseMeta">Your queue is clear</small><i><em id="ffxPulseProgress"></em></i></div><strong id="ffxPulseState">READY</strong></div>
+                            <div class="ffx-pulse-item"><span>…</span><div><b>Adobe project</b><small id="ffxAdobeState">Checking Adobe bridge…</small></div><strong>CHECKING</strong></div>
+                            <div role="button" tabindex="0" class="ffx-project-open" id="ffxOpenProjects">Open active project <span>↗</span></div>
+                          </aside>
                         </div>
-                        <div id="fhomeRecentSec" style="display:none">
-                          <div class="fhome-sechd"><h2>Jump back in</h2></div>
-                          <div class="fhome-recent" id="homeRecent"></div>
+
+                        <section class="ffx-tools" aria-labelledby="ffxToolsTitle">
+                          <div class="ffx-tools-head"><div><span class="ffx-index">02</span><h2 id="ffxToolsTitle">Essential tools</h2><p>Five focused shortcuts for everyday Adobe work.</p></div><div role="button" tabindex="0" id="ffxAllTools">All tools <span>—</span> ↗</div></div>
+                          <div class="ffx-tool-grid" id="ffxToolGrid"></div>
+                        </section>
+
+                        <!-- Existing render hooks stay mounted but invisible so catalog/model/session/CMS
+                             refresh code remains backward-compatible while the vNext Home owns presentation. -->
+                        <div class="ffx-legacy-hooks" hidden aria-hidden="true">
+                          <div id="homeToolGrid"></div><div role="button" tabindex="0" id="homeToolPrev"></div><div role="button" tabindex="0" id="homeToolNext"></div><div id="homeToolDots"></div>
+                          <section id="fhomeModelsSec"><h2 id="fhomeModelsHd">Models</h2><div id="fhomeModelRail"></div><div role="button" tabindex="0" id="fhomeModelNext"></div><div id="fhomeModelDots"></div></section>
+                          <div id="fhomeFootage"></div><div id="fhomeSessSec"><h2 id="fhomeSessHd">Sessions</h2><div id="homeSessRow"></div></div><div id="fhomeDiscovery"></div><div id="fhomeVideoTemplates"></div>
+                          <div id="homeBArt"></div><span id="homeBModel"></span><div id="homeCatTiles"></div>
                         </div>
-                        <!-- SC_50: CONTINUE A SESSION — so'nggi sessiyalar (real axwsGetSessions); bo'sh bo'lsa yashirin -->
-                        <div id="fhomeSessSec" style="display:none">
-                          <div class="fhome-sechd"><h2 id="fhomeSessHd">Continue a session</h2></div>
-                          <div class="fhome-sessrow" id="homeSessRow"></div>
-                        </div>
-                        <!-- TOP TEMPLATES rail (admin-kuratsiya, o'ngga auto-scroll — qarama-qarshi yo'nalish) -->
-                        <div id="fhomeTopRail" class="fhome-railsec" style="display:none">
-                          <div class="fhome-sechd"><h2 id="fhomeTopHd">Top templates</h2></div>
-                          <div class="fhome-rail" data-dir="right"><div class="fhome-rail-track" id="homeTopTrack"></div></div>
-                        </div>
-                        <!-- SC_56: EXPLORE — kuratsiya qilingan AI-Stock qatori (Stock katalog "AI Stock" manbasidan
-                             qayta ishlatiladi; manba bo'sh → butun bo'lim yashirin). Director tartibi: Top rail → Explore → Categories. -->
-                        <div id="fhomeExploreSec" style="display:none">
-                          <div class="fhome-sechd"><h2 id="fhomeExploreHd">Explore</h2></div>
-                          <div class="fhome-sessrow fhome-explorerow" id="homeExploreRow"></div>
-                        </div>
-                        <!-- SC_50: BROWSE BY CATEGORY — 6 katalog turi (real navigatsiya) -->
-                        <div id="fhomeCatSec">
-                          <div class="fhome-sechd"><h2 id="fhomeCatHd">Browse by category</h2></div>
-                          <div class="fhome-cattiles" id="homeCatTiles"></div>
-                        </div>
-                        <!-- SC_52: eski "Fresh" javoni (homeGrid) O'CHIRILDI — New rellsi bilan almashtirildi -->
                       </div>
                     </div>
 
@@ -308,8 +320,8 @@
                         <div class="gu-f"><span class="ic blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 7h16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="m16 21 4-4-4-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 17H4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="tx"><b>One library, everywhere</b><small>Imports, projects and gens sync with getframeflow.app.</small></span></div>
                       </div>
                       <div class="gu-ctas">
-                        <div role="button" tabindex="0" class="gu-primary" onclick="openAccountSheet()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 17l5-5-5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12H3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Sign in</div>
-                        <div role="button" tabindex="0" class="gu-google" onclick="homeGuestGoogle()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.98h5.28c-.23 1.48-1.72 4.33-5.28 4.33-3.18 0-5.77-2.63-5.77-5.87s2.59-5.87 5.77-5.87c1.81 0 3.02.77 3.72 1.43l2.53-2.44C16.9 4.04 14.76 3 12.18 3 7.03 3 2.86 7.17 2.86 12.32s4.17 9.32 9.32 9.32c5.38 0 8.94-3.78 8.94-9.11 0-.61-.07-1.08-.17-1.43z" fill="currentColor"/></svg>Continue with Google</div>
+                        <div role="button" tabindex="0" class="gu-primary" onclick="homeGuestGoogle()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.98h5.28c-.23 1.48-1.72 4.33-5.28 4.33-3.18 0-5.77-2.63-5.77-5.87s2.59-5.87 5.77-5.87c1.81 0 3.02.77 3.72 1.43l2.53-2.44C16.9 4.04 14.76 3 12.18 3 7.03 3 2.86 7.17 2.86 12.32s4.17 9.32 9.32 9.32c5.38 0 8.94-3.78 8.94-9.11 0-.61-.07-1.08-.17-1.43z" fill="currentColor"/></svg>Continue with Google</div>
+                        <div role="button" tabindex="0" class="gu-google" onclick="openAccountSheet()">Use email instead</div>
                       </div>
                       <div class="gu-mk">New here? <a onclick="openAccountSheet()">Create a free account</a> — takes a minute.</div>
                       <div class="sec"><span class="kick">A PEEK AT THE CATALOG</span></div>
@@ -367,9 +379,47 @@
                           <div role="button" tabindex="0" class="ai-seg-i" role="tab" aria-selected="false" data-go="sessions">Sessions</div>
                           <div role="button" tabindex="0" class="ai-seg-i" role="tab" aria-selected="false" data-go="projects">Projects</div>
                         </div>
+                        <section class="ff-create-start" id="ffCreateStart" aria-labelledby="ffCreateTitle">
+                          <h1 class="ff-create-title" id="ffCreateTitle">Start with your idea<span class="ff-create-sub">Choose a format, describe the result, then keep building in one persistent session.</span></h1>
+                          <div class="ff-create-slot" id="ffCreateLauncherSlot">
+                          <div class="ff-create-composer" id="ffCreateComposer">
+                            <div class="ff-create-write">
+                              <div role="button" tabindex="0" class="ff-create-add" id="ffCreateAdd" aria-haspopup="menu" aria-expanded="false" title="Add a reference">+</div>
+                              <textarea class="ff-create-prompt" id="ffCreatePrompt" rows="3" placeholder="Describe the image you want to create…" aria-describedby="ffCreateStatus"></textarea>
+                            </div>
+                            <div class="ff-create-refmenu" id="ffCreateRefMenu" role="menu" hidden>
+                              <div role="button" tabindex="0" role="menuitem" data-ff-ref="file">Upload file</div>
+                              <div role="button" tabindex="0" role="menuitem" data-ff-ref="project">From Project panel</div>
+                              <div role="button" tabindex="0" role="menuitem" data-ff-ref="timeline">From Timeline selected clip / current frame</div>
+                              <div role="button" tabindex="0" role="menuitem" data-ff-ref="library">My Library / generated results</div>
+                            </div>
+                            <div class="ff-create-controls">
+                              <div class="ff-create-setgroup">
+                                <div class="ff-create-modewrap">
+                                  <div role="button" tabindex="0" class="ff-create-control ff-create-modebtn" id="ffCreateMode" aria-haspopup="menu" aria-expanded="false">Image ▾</div>
+                                  <div class="ff-create-modemenu" id="ffCreateModeMenu" role="menu" hidden>
+                                    <div role="button" tabindex="0" class="ff-create-mode" role="menuitemradio" data-ff-mode="image" aria-selected="true">Image</div>
+                                    <div role="button" tabindex="0" class="ff-create-mode" role="menuitemradio" data-ff-mode="video" aria-selected="false">Video</div>
+                                    <div role="button" tabindex="0" class="ff-create-mode" role="menuitemradio" data-ff-mode="voice" aria-selected="false">Voiceover</div>
+                                    <div role="button" tabindex="0" class="ff-create-mode" role="menuitemradio" data-ff-mode="sfx" aria-selected="false">SFX</div>
+                                  </div>
+                                </div>
+                                <div role="button" tabindex="0" class="ff-create-control ff-create-model" id="ffCreateModel" aria-haspopup="dialog" title="Choose a model">Loading models…</div>
+                                <div role="button" tabindex="0" class="ff-create-control ff-create-settings" id="ffCreateSettings" title="Output settings">Output settings</div>
+                              </div>
+                              <div class="ff-create-actions">
+                                <div role="button" tabindex="0" class="ff-create-control ff-create-enhance" id="ffCreateEnhance" title="Enhance prompt" aria-label="Enhance prompt">✦</div>
+                                <div role="button" tabindex="0" class="ff-create-generate" id="ffCreateGenerate" disabled="" aria-disabled="true">Generate <span class="ff-create-cost" id="ffCreateCost">✦—</span></div>
+                              </div>
+                            </div>
+                            <div class="ff-create-status" id="ffCreateStatus" aria-live="polite">Loading the live model catalog…</div>
+                          </div>
+                          </div>
+                          <div class="ff-create-ideas">Your recent sessions and results remain available below and in Sessions.</div>
+                        </section>
                         <!-- SC_08 (b): "Prompt → result → ..." explainer o'chirildi -->
                         <!-- My Library remains the generation-asset surface (v-history). -->
-                        <div class="cats" id="aiCatGrid"></div>
+                        <div class="cats" id="aiCatGrid" hidden aria-hidden="true"></div>
                         <div class="ai-soontoast" id="aiSoonToast"><svg width="15" height="15" viewBox="0 0 24 24" fill="#7CC4FF"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 12 7zm1.2 10h-2.4v-6h2.4z" fill="#7CC4FF"/></svg><span>No tools yet — coming soon.</span></div>
                       </section>
 
@@ -456,7 +506,7 @@
                               <div class="axws-limitnote" id="igLimitNote"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="igLimitNoteTx">Reference limit reached</span></div>
                               <div class="mention" id="igMention"></div>
                               <div class="axws-promptwrap"><div class="chipwrap">
-                                <textarea id="igPrompt" class="chipedit" aria-multiline="true" placeholder="Describe the image… @ for references"></textarea>
+                                <textarea id="igPrompt" class="chipedit" aria-multiline="true" placeholder="Describe your image… Use @ for references"></textarea>
                                 <div role="button" tabindex="0" class="chipexp" id="igPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                               </div></div>
                               <div class="ai-polnote" id="igPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
@@ -482,7 +532,7 @@
                                   <!-- SC_56: torlik ⋯ overflow — sig'may qolgan boshqaruvlar shu popover'ga KO'CHIRILADI (yashirilmaydi) -->
                                   <div class="axws-ovfwrap" style="display:none"><div role="button" tabindex="0" class="axws-ovf" data-modepop title="More settings" aria-label="More settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg></div><div class="axws-pop axws-ovfpop"><div class="lb">SETTINGS</div><div class="axws-ovfbody"></div></div></div>
                                   <div role="button" tabindex="0" class="ai-set enhance" id="igEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></div>
-                                  <div role="button" tabindex="0" class="axws-clear" id="igClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="axws-clr-lbl">Clear</span></div>
+                                  <div role="button" tabindex="0" class="axws-clear" id="igClearBtn" title="Clear prompt and references"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.4 10A7.5 7.5 0 1 0 7.2 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="axws-clr-lbl">Clear</span></div>
                                   <div role="button" tabindex="0" class="gensend" id="igGen" title="Generate" aria-label="Generate image" disabled="" aria-disabled="true">Generate<span class="costtag" id="igCost">✦—</span></div>
                                 </div>
                               </div>
@@ -491,8 +541,8 @@
                           </div>
 
                           <!-- model sheet (b2) — FIX4: pill yonida popover -->
-                          <div class="sheet pop" id="igMSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Choose a model</b><span class="shnote">price — per result</span></div>
+                          <div class="sheet pop axws-modelsheet" id="igMSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Choose an image model</b><span class="shnote">price — per result</span><span class="x" data-igclose aria-label="Close model picker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></div>
                             <input class="mdl-srch" id="igMSrch" type="text" placeholder="Search models…" autocomplete="off" spellcheck="false">
                             <div id="igMList"><div class="axighint">Loading…</div></div>
                             <div class="axighint mdl-none" id="igMNone" style="display:none">No models found</div>
@@ -622,7 +672,7 @@
                               <div class="vg-editpresets" id="vgEditPresets" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
                               <div class="mention" id="vgMention"></div>
                               <div class="axws-promptwrap"><div class="chipwrap">
-                                <textarea id="vgPrompt" class="chipedit" aria-multiline="true" placeholder="Describe the shot… @ for references"></textarea>
+                                <textarea id="vgPrompt" class="chipedit" aria-multiline="true" placeholder="Describe your video… Use @ for references"></textarea>
                                 <div role="button" tabindex="0" class="chipexp" id="vgPromptExp" title="Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                               </div></div>
                               <div class="ai-polnote" id="vgPolNote" style="display:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Strict content policy — you won't be charged if it's refused.</span></div>
@@ -647,7 +697,7 @@
                                   <!-- SC_56: torlik ⋯ overflow — sig'may qolgan boshqaruvlar shu popover'ga KO'CHIRILADI -->
                                   <div class="axws-ovfwrap" style="display:none"><div role="button" tabindex="0" class="axws-ovf" data-modepop title="More settings" aria-label="More settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg></div><div class="axws-pop axws-ovfpop"><div class="lb">SETTINGS</div><div class="axws-ovfbody"></div></div></div>
                                   <div role="button" tabindex="0" class="ai-set enhance" id="vgEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></div>
-                                  <div role="button" tabindex="0" class="axws-clear" id="vgClearBtn" title="Clear prompt and references"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="axws-clr-lbl">Clear</span></div>
+                                  <div role="button" tabindex="0" class="axws-clear" id="vgClearBtn" title="Clear prompt and references"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.4 10A7.5 7.5 0 1 0 7.2 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="axws-clr-lbl">Clear</span></div>
                                   <div role="button" tabindex="0" class="gensend" id="vgGen" title="Generate video" aria-label="Generate video" disabled="" aria-disabled="true">Generate<span class="costtag" id="vgCost">✦—</span></div>
                                 </div>
                               </div>
@@ -734,8 +784,8 @@
                           </div></div>
 
                           <!-- Model sheet (b2) — FIX4: pill yonida popover -->
-                          <div class="sheet pop" id="vgMSheet"><div class="sheetc">
-                            <div class="sheeth"><b>Choose a model</b><span class="shnote">price — per result</span></div>
+                          <div class="sheet pop axws-modelsheet" id="vgMSheet"><div class="sheetc">
+                            <div class="sheeth"><b>Choose a video model</b><span class="shnote">price — per result</span><span class="x" data-vgclose aria-label="Close model picker"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span></div>
                             <input class="mdl-srch" id="vgMSrch" type="text" placeholder="Search models…" autocomplete="off" spellcheck="false">
                             <div id="vgMList"><div class="axighint">Loading…</div></div>
                             <div class="axighint mdl-none" id="vgMNone" style="display:none">No models found</div>
@@ -842,7 +892,7 @@
                                   <!-- SC_56: torlik ⋯ overflow — sig'may qolgan boshqaruvlar shu popover'ga KO'CHIRILADI -->
                                   <div class="axws-ovfwrap" style="display:none"><div role="button" tabindex="0" class="axws-ovf" data-modepop title="More settings" aria-label="More settings"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg></div><div class="axws-pop axws-ovfpop"><div class="lb">SETTINGS</div><div class="axws-ovfbody"></div></div></div>
                                   <div role="button" tabindex="0" class="ai-set enhance" id="agEnhance" title="Enhance prompt"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7L19 20l-.7-1.8L16.5 17.5l1.8-.7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="enh-lbl"><span class="enh-word">Enhance</span><span class="enh-sep"> · </span><span class="enh-cr">✦1</span></span></div>
-                                  <div role="button" tabindex="0" class="axws-clear" id="agClearBtn" title="Clear text"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 8a9 9 0 1 0 2.6-5.7L3 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="axws-clr-lbl">Clear</span></div>
+                                  <div role="button" tabindex="0" class="axws-clear" id="agClearBtn" title="Clear text"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.4 10A7.5 7.5 0 1 0 7.2 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> <span class="axws-clr-lbl">Clear</span></div>
                                   <div role="button" tabindex="0" class="gensend" id="agGen" title="Generate" aria-label="Generate audio" disabled="" aria-disabled="true">Generate<span class="costtag" id="agCost">✦—</span></div>
                                 </div>
                               </div>
@@ -884,6 +934,7 @@
                         <div class="axsp">
                           <div class="sp-lead"><span class="meta" id="spSessDetMeta"></span></div>
                           <div class="recentgrid" id="spSessGrid"></div>
+                          <div class="ff-create-slot ff-create-session-slot" id="ffCreateSessionSlot"></div>
                         </div>
                       </section>
 
@@ -957,6 +1008,7 @@
                         <!-- b11: preferenslar (real mavjud sozlamalar) -->
                         <div class="set-seck">PREFERENCES</div>
                         <div class="set-prefrow">Default import <span style="margin-left:auto;display:flex;gap:5px"><span class="cchip" id="impComp" data-imp="comp">Comp</span><span class="cchip" id="impBin" data-imp="bin">Bin</span></span></div>
+                        <div class="set-prefrow">Plugin version <span style="margin-left:auto;display:flex;align-items:center;gap:7px"><span id="afSettingsVersion">—</span><div role="button" tabindex="0" class="cchip" onclick="window.afCheckForUpdate&&window.afCheckForUpdate()">Check for updates</div></span></div>
                         <!-- #101 (PX3): "Auto-load (Project selection)" qatori OLIB TASHLANDI — u
                              butunlay dekorativ edi (hech qanday holatga ulanmagan, saqlanmasdi,
                              hech narsani o'zgartirmasdi). Loyiha panelidan referens olish QO'LDA:
@@ -1120,19 +1172,20 @@
       <div class="lg-logo"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 13.5H11l-1 8.5L19 10.5H12L13 2z" fill="currentColor"/></svg></div>
       <div class="lg-title">Sign in to FrameFlow</div>
       <div class="lg-sub">Sign in with your cloud account — unlocks the catalog and AI Tools</div>
-      <div class="lg-flabel" style="margin-top:18px">EMAIL</div>
-      <input class="lg-input" type="email" id="accEmail"
-        placeholder="email@frameflow.app" autocomplete="username">
-      <div class="lg-flabel">PASSWORD</div>
-      <div class="lg-passwrap">
-        <input class="lg-passinput" type="password" id="accPass"
-          placeholder="••••••••" autocomplete="current-password">
-        <div role="button" tabindex="0" class="lg-eye" aria-label="Show password" onclick="var p=document.getElementById('accPass');p.type=p.type==='password'?'text':'password'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      </div>
-      <div role="button" tabindex="0" class="lg-primary" onclick="accountLogin()">Sign in</div>
-      <div role="button" tabindex="0" class="lg-google" id="accGoogleBtn" onclick="accountLoginWithGoogle()"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.98h5.28c-.23 1.48-1.72 4.33-5.28 4.33-3.18 0-5.77-2.63-5.77-5.87s2.59-5.87 5.77-5.87c1.81 0 3.02.77 3.72 1.43l2.53-2.44C16.9 4.04 14.76 3 12.18 3 7.03 3 2.86 7.17 2.86 12.32s4.17 9.32 9.32 9.32c5.38 0 8.94-3.78 8.94-9.11 0-.61-.07-1.08-.17-1.43z" fill="currentColor"/></svg>Sign in with Google</div>
+      <div role="button" tabindex="0" class="lg-primary" id="accGoogleBtn" onclick="accountLoginWithGoogle()"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21.35 11.1h-9.17v2.98h5.28c-.23 1.48-1.72 4.33-5.28 4.33-3.18 0-5.77-2.63-5.77-5.87s2.59-5.87 5.77-5.87c1.81 0 3.02.77 3.72 1.43l2.53-2.44C16.9 4.04 14.76 3 12.18 3 7.03 3 2.86 7.17 2.86 12.32s4.17 9.32 9.32 9.32c5.38 0 8.94-3.78 8.94-9.11 0-.61-.07-1.08-.17-1.43z" fill="currentColor"/></svg>Continue with Google</div>
       <p class="lg-hint" id="accGoogleHint" style="display:none">Open your browser and confirm with Google…</p>
-      <div role="button" tabindex="0" class="lg-forgot" onclick="showToast('Password reset — sign in to your account in the browser')">Forgot password?</div>
+      <details style="margin-top:12px;text-align:left">
+        <summary class="lg-forgot" style="display:block;text-align:center;cursor:pointer">Use email instead</summary>
+        <div class="lg-flabel" style="margin-top:16px">EMAIL</div>
+        <input class="lg-input" type="email" id="accEmail" placeholder="email@frameflow.app" autocomplete="username">
+        <div class="lg-flabel">PASSWORD</div>
+        <div class="lg-passwrap">
+          <input class="lg-passinput" type="password" id="accPass" placeholder="••••••••" autocomplete="current-password">
+          <div role="button" tabindex="0" class="lg-eye" aria-label="Show password" onclick="var p=document.getElementById('accPass');p.type=p.type==='password'?'text':'password'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        </div>
+        <div role="button" tabindex="0" class="lg-google" onclick="accountLogin()">Sign in with email</div>
+        <div role="button" tabindex="0" class="lg-forgot" onclick="AssetFlowAccount.openExternal('https://getframeflow.app/#auth');showToast('Choose Forgot password in the browser','info')">Forgot password?</div>
+      </details>
     </div>
 
     <!-- PROFIL -->
@@ -1270,11 +1323,11 @@
 </div>
 
 <!-- Filtrlar bottom-sheet — a2 (bo'lim · kategoriya · format · sifat · AI · saralash). Filtr mantig'i o'zgarmaydi. -->
-<div class="fsheet" id="filterSheet" onclick="if(event.target===this)closeFilterSheet()">
-  <div class="fsheet-panel" onclick="event.stopPropagation()" role="dialog" aria-label="Filters" aria-modal="true">
+<div class="fsheet" id="filterSheet" onclick="if(event.target===this)closeFilterSheet()" aria-hidden="true">
+  <div class="fsheet-panel" onclick="event.stopPropagation()" role="dialog" aria-labelledby="filterSheetTitle" aria-modal="true" tabindex="-1">
     <div class="fsheet-grip"></div>
     <div class="fsheet-head">
-      <span class="fsheet-title">Filters</span>
+      <span class="fsheet-title" id="filterSheetTitle">Filters</span>
       <div role="button" tabindex="0" class="fsheet-reset" onclick="clearAllFilters()">Clear filters</div>
     </div>
 
@@ -1284,6 +1337,8 @@
       <div role="button" tabindex="0" class="fsheet-segi" data-scope="motion" onclick="afFilterSheetScope('motion')">Motion</div>
       <div role="button" tabindex="0" class="fsheet-segi" data-scope="graphics" onclick="afFilterSheetScope('graphics')">Graphics</div>
       <div role="button" tabindex="0" class="fsheet-segi" data-scope="luts" onclick="afFilterSheetScope('luts')">LUTs</div>
+      <div role="button" tabindex="0" class="fsheet-segi" data-scope="music" onclick="afFilterSheetScope('music')">Music</div>
+      <div role="button" tabindex="0" class="fsheet-segi" data-scope="sfx" onclick="afFilterSheetScope('sfx')">SFX</div>
       <div role="button" tabindex="0" class="fsheet-segi" data-scope="ai" onclick="afFilterSheetScope('ai')">AI</div>
     </div>
 
@@ -1313,8 +1368,8 @@
         </div>
       </div>
       <div class="fsheet-aicol">
-        <div class="fsheet-lbl" style="margin-bottom:0">SEPARATE AI CONTENT</div>
-        <div role="button" tabindex="0" class="fsheet-aitoggle" id="catAiToggle" onclick="toggleCatalogAi(this)" title="Separate AI content">
+        <div class="fsheet-lbl" style="margin-bottom:0">AI-GENERATED ONLY</div>
+        <div role="button" tabindex="0" class="fsheet-aitoggle" id="catAiToggle" onclick="toggleCatalogAi(this)" title="Show only AI-assisted catalog items" aria-pressed="false">
           <span class="fsheet-aitrack"><span class="fsheet-aiknob"></span></span>
           <span class="fsheet-aistate"><span class="fsheet-aion">On</span><span class="fsheet-aioff">Off</span></span>
         </div>
@@ -1451,20 +1506,3 @@
     </div>
   </div>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

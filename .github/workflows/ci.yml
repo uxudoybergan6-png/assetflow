@@ -126,12 +126,14 @@ jobs:
             apps/api/scripts/test-gen-reference-security.mjs \
             apps/api/scripts/test-gen-param-contract.mjs \
             apps/api/scripts/test-reference-moderation.mjs \
+            apps/api/scripts/test-vertex-moderation.mjs \
             apps/api/scripts/test-public-keys.mjs \
             apps/api/scripts/test-enhance-intelligence.mjs \
             apps/api/scripts/test-video-reference-trim.mjs \
             packages/assetflow-studio/scripts/test-studio-session-policy.mjs \
             packages/assetflow-studio/scripts/test-aistudio-create-init.mjs \
             packages/assetflow-studio/scripts/test-aistudio-create-parity.mjs \
+            packages/assetflow-studio/scripts/test-api-retry-policy.mjs \
             packages/assetflow-studio/scripts/test-device-auth-ui.mjs \
             plugins/after-effects-cep/scripts/test-create-workspace.mjs \
             plugins/after-effects-cep/scripts/test-frameflow-vnext.mjs \

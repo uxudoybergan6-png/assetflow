@@ -38,13 +38,14 @@
     "ported/ae-inline-01.js",
     "ported/ae-inline-02.js",
     "js/ae-shim/csinterface-shim.js",
+    "ae-src/frameflow-create-workspace.js",
     "ae-src/assetflow-env.js",
     "ae-src/assetflow-secret-store.js",
     "ae-src/assetflow-log.js",
     "ae-src/assetflow-zip.js",
     "ae-src/assetflow-local-store.js",
     "ae-src/assetflow-client.js",
-    "ae-src/assetflow-account.js",
+    "ae-src/assetflow-account.js?v=2",
     "ae-src/assetflow-init.js",
     "ported/ae-inline-03.js",
     "ae-src/assetflow-catalog.js",
@@ -52,6 +53,7 @@
     "ported/ae-inline-05.js",
     "ported/ae-inline-06.js",
     "ported/ae-inline-07.js",
-    "ported/ae-inline-08.js"
+    "ported/ae-inline-08.js",
+    "ae-src/frameflow-vnext.js?v=3"
   ]
 }

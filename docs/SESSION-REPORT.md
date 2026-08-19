@@ -1,15 +1,11 @@
-Session Report: 2026-08-18 — web/plugin audit remediation
-- Public Stock browse/detail va landingdagi no-op/misroute tugmalar tuzatildi.
-- Lemon Squeezy customer portal backend, web va customer pluginga ulandi.
-- CMS notice trap, canonical narx, guest holati, share fallback va release race tuzatildi.
-- Studio Gen retry payloadlari immutable; stale javoblar bloklandi; eski session audio/ARIA tuzatildi.
-- Plugin tokeni secure store’dan keyin plaintextga qayta yozilmaydi.
-- Comp/Bin import, blank New session, Auto model va Check for updates ishlaydi.
-- Project template Import real packga ulandi; Premiere host-delete da’vosi olib tashlandi; bulk tasdiq qo‘shildi.
-- studio:sync, API build, public-copy, create, Premiere, updater, responsive, package QA PASS.
-- Marketplace/release/download/dependency contract testlari PASS; npm audit: 0 zaiflik.
-- Audit commitlari main’ga push, Linux/Windows MSI CI PASS; CDN Worker productionda (Actions secretlari infra qarzi).
-- Cloud SQL eski ingest dublikatlari migrationda xavfsiz terminal `duplicate` holatga keltirildi.
-- 4 migratsiya qo‘llandi; Prisma OpenSSL engine tuzatildi; yangi Cloud Run revision health PASS va 100% trafikda.
-- Turnstile runtime holati faqat site+secret ikkalasi bo‘lsa `enabled`; yetishmasa signup fail-closed.
-- Live Turnstile/billing canary va signed Marketplace installer tashqi gate bo‘lib qoladi.
+Session Report: 2026-08-20 — Studio Gen production outage
+- Root cause: production’da `MODERATION_API_KEY` yo‘q, blanket gate barcha AI rejimlarini 503 bilan bloklagan.
+- Mavjud Cloud Run Vertex ADC/Gemini text+image+video+audio safety fallbackiga ulandi.
+- Input kreditdan oldin, image/video/audio output foydalanuvchiga berilishidan oldin fail-closed tekshiriladi.
+- Health/model katalogi moderation va generation readinessni rost qaytaradi; nosoz holatda “Ready” yo‘q.
+- Web va AE/Premiere doimiy config 503’ini qayta-qayta yubormaydi, tushunarli xabar ko‘rsatadi.
+- Enhance rewrite referensni tushirsa/ixtiro qilsa/almashtirsa asl prompt qoladi va kredit qaytariladi.
+- AE manbasidan Premiere UXP porti qayta generatsiya qilindi; generator trailing-whitespace deterministik.
+- API build, moderation/reference/preflight/enhance testlari PASS.
+- CEP package/responsive/session va Premiere host/bridge/integration testlari PASS.
+- Public copy va plugin download-state testlari PASS; production canary rolloutdan keyin tekshiriladi.

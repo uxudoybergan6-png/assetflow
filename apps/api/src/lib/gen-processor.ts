@@ -90,7 +90,7 @@ import { vertexImage, vertexImageEdit, vertexImageUpscale } from "./ai/vertex-im
 import { googleTtsSynthesize } from "./ai/google-tts.js";
 import { refundAiCredits, releaseGenerationSlot } from "./plugin-profile.js";
 import { fetchSafe } from "./fetch-safe.js";
-import { moderateContent, moderateOutputsEnabled } from "./moderation.js";
+import { moderateGenerationContent, moderateOutputsEnabled } from "./moderation.js";
 import { writeAuditLog } from "./audit-log.js";
 import { classifyGenRejection } from "./gen-rejection.js";
 import { noteBlockedAttempt } from "./spend-guard.js";
@@ -1375,13 +1375,9 @@ async function runFalImage(
       }),
   });
 }
-/**
- * Chiqish moderatsiyasi (Bosqich 2 #1, env-gated MODERATION_MODERATE_OUTPUTS) — generatsiya
- * NATIJASIDAGI rasm assetlarini ML klassifikatorga yuboradi. Og'ir kategoriya aniqlansa
- * assetlar o'chiriladi va Error otiladi → processGeneration catch → fail()=failed+refund
- * (bloklangan gen'ga charge qolmaydi). Video/audio bu API'da tekshirilmaydi. API xatosi →
- * fail-open (input moderatsiya allaqachon og'ir kategoriyalarni gate qilgan). Best-effort.
- */
+/** Chiqish moderatsiyasi — image/video/audio'ning barchasi Vertex multimodal safety gate'dan
+ * o'tadi. Block YOKI tekshiruv imkonsiz bo'lsa DB assetlar yashiriladi, throw → mavjud
+ * fail()+refund+storage-prefix cleanup yo'li ishlaydi. Productionda hech qachon fail-open emas. */
 async function moderateGeneratedOutput(gen: {
   id: string;
   userId: string;
@@ -1392,20 +1388,42 @@ async function moderateGeneratedOutput(gen: {
   let result;
   try {
     const assets = await prisma.genAsset.findMany({
-      where: { generationId: gen.id, type: ASSET_TYPE.image },
-      select: { url: true },
+      where: { generationId: gen.id },
+      select: { url: true, type: true },
     });
-    const urls = assets
-      .map((a) => a.url)
-      .filter((u): u is string => typeof u === "string" && /^https?:\/\//i.test(u));
-    if (!urls.length) return;
-    result = await moderateContent({ imageUrls: urls });
+    const media = assets.flatMap((a) => {
+      const kind = a.type === ASSET_TYPE.image
+        ? "image" as const
+        : a.type === ASSET_TYPE.video
+          ? "video" as const
+          : a.type === ASSET_TYPE.audio
+            ? "audio" as const
+            : null;
+      return kind && typeof a.url === "string" && a.url.length > 0
+        ? [{ kind, url: a.url }]
+        : [];
+    });
+    if (!media.length) throw new Error("generated media is missing");
+    result = await moderateGenerationContent({ media });
   } catch (e) {
     console.warn("[moderation] output check xato:", e instanceof Error ? e.message : e);
     if (process.env.NODE_ENV === "production") {
+      await prisma.genAsset.deleteMany({ where: { generationId: gen.id } });
       throw new Error("MODERATION_OUTPUT_UNVERIFIED: output moderation could not complete");
     }
     return;
+  }
+  if (!result.ok) {
+    await prisma.genAsset.deleteMany({ where: { generationId: gen.id } });
+    await writeAuditLog({
+      actorId: gen.userId,
+      action: "moderation.unavailable",
+      targetType: "generation",
+      targetId: gen.id,
+      detail: result.reason || "output moderation unavailable",
+      meta: { layer: "ml-output", mode: gen.mode, modelId: gen.modelId },
+    });
+    throw new Error("MODERATION_OUTPUT_UNVERIFIED: output moderation could not complete");
   }
   if (!result.blocked) return;
   await prisma.genAsset.deleteMany({ where: { generationId: gen.id } });

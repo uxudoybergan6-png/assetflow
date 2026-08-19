@@ -20,7 +20,7 @@ const AssetFlowCatalog = (() => {
   }
 
   function catalogHeaders() {
-    const h = { Accept: "application/json" };
+    const h = { Accept: "application/json", "X-FF-App": hostTemplateApp() };
     if (typeof AssetFlowAccount !== "undefined") {
       Object.assign(h, AssetFlowAccount.authHeaders());
     }
@@ -29,11 +29,12 @@ const AssetFlowCatalog = (() => {
 
   /** Pack/MOGRT yuklab olish uchun Authorization header (gate'langan route) */
   function downloadHeaders() {
+    const h = { "X-FF-App": hostTemplateApp() };
     if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.authHeaders) {
-      const h = AssetFlowAccount.authHeaders();
-      if (h && h.Authorization) return h;
+      const auth = AssetFlowAccount.authHeaders();
+      if (auth && auth.Authorization) h.Authorization = auth.Authorization;
     }
-    return null;
+    return h;
   }
 
   /** 30s timeout bilan fetch — Render cold start cheksiz osilib qolmasin */
@@ -198,9 +199,24 @@ const AssetFlowCatalog = (() => {
   let browseSig = "";
 
   const BROWSE_FILTER_KEYS = ["templateType", "cat", "orient", "res", "q", "sort"];
+  function hostTemplateApp(forced) {
+    const requested = String(forced || "").toLowerCase();
+    if (requested === "pr" || requested === "ae") return requested;
+    try {
+      const globalApp = String((typeof window !== "undefined" && window.AF_TEMPLATE_APP) || "").toLowerCase();
+      if (globalApp === "pr" || globalApp === "ae") return globalApp;
+    } catch {}
+    try {
+      const env = typeof CSInterface !== "undefined" ? new CSInterface().getHostEnvironment() : null;
+      const id = String((env && (env.appName || env.appId)) || "AEFT").toUpperCase();
+      return id === "PPRO" || id.indexOf("PREMIERE") >= 0 ? "pr" : "ae";
+    } catch {
+      return "ae";
+    }
+  }
   function browseQueryStr(filters, cursor) {
     const p = new URLSearchParams();
-    p.set("app", "pr"); // Premiere plagin FAQAT Premiere Pro shablonlari (§11)
+    p.set("app", hostTemplateApp()); // dual-host CEP: Premiere → ae, Premiere → pr
     p.set("take", "48");
     const f = filters || {};
     BROWSE_FILTER_KEYS.forEach((k) => {
@@ -298,11 +314,26 @@ const AssetFlowCatalog = (() => {
   }
 
   async function fetchFeatured(limit = 6) {
-    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/featured?limit=${limit}`, {
+    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/featured?limit=${limit}&app=${hostTemplateApp()}`, {
       headers: catalogHeaders(),
     });
     if (!res.ok) throw new Error(`Featured HTTP ${res.status}`);
     return res.json();
+  }
+
+  /** Home javonlari uchun katalogni browse holatiga tegmasdan ixcham yuklaydi. */
+  async function fetchHomeShelf(templateType, limit = 6) {
+    const take = Math.max(1, Math.min(12, Number(limit) || 6));
+    const p = new URLSearchParams();
+    p.set("app", hostTemplateApp());
+    p.set("take", String(take));
+    if (templateType) p.set("templateType", String(templateType));
+    const res = await fetchWithTimeout(`${apiBase()}/api/plugin/catalog?${p.toString()}`, {
+      headers: catalogHeaders(),
+    });
+    if (!res.ok) throw new Error(`Home shelf HTTP ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data && data.items) ? data.items : [];
   }
 
   /** Featured shablonlarni server assetlarida `nw` (NEW/Featured) bilan belgilash */
@@ -401,6 +432,7 @@ const AssetFlowCatalog = (() => {
         hasPack: u.hasPack !== false,
         serverPackUrl: u.packUrl || undefined,
         fileSize: u.fileSize || 0,
+        packSha256: u.packSha256 || "",
         fileName: u.hasPack ? u.fileName || "template.aep" : "template.aep",
         templateApp: u.templateApp || "ae",
         catLabel: u.catLabel,
@@ -491,7 +523,11 @@ const AssetFlowCatalog = (() => {
       data = await fetchCatalogPage(reset ? null : browseCursor, filters);
     } catch (e) {
       browseLoading = false;
+      const pendingAfterError = browsePending;
       browsePending = null;
+      if (pendingAfterError && filtersSig(pendingAfterError) !== sig) {
+        return refreshBrowse(pendingAfterError, { reset: true });
+      }
       // P4: foydalanuvchiga do'stona xabar (URL/xom xato YO'Q) — texnik tafsilot konsolda.
       try { console.warn("refreshBrowse xatosi · API:", apiBase(), e); } catch (_) {}
       if (typeof showToast === "function") {
@@ -502,6 +538,12 @@ const AssetFlowCatalog = (() => {
         showToast(friendly, "error");
       }
       throw e;
+    }
+    if (browsePending && filtersSig(browsePending) !== sig) {
+      const newest = browsePending;
+      browsePending = null;
+      browseLoading = false;
+      return refreshBrowse(newest, { reset: true });
     }
     const items = Array.isArray(data.items) ? data.items : [];
     const n = mergeIntoBrowse(items, { append: !reset });
@@ -538,18 +580,19 @@ const AssetFlowCatalog = (() => {
 
   function findServerPackMeta(templateId) {
     const packs = browsePacks();
-    if (!packs) return { url: null, fileSize: 0, name: "" };
+    if (!packs) return { url: null, fileSize: 0, name: "", sha256: "" };
     for (const key of Object.keys(packs)) {
       const p = packs[key];
       if (p.serverTemplateId === templateId) {
         return {
           url: p.serverPackUrl || null,
           fileSize: p.fileSize || 0,
+          sha256: p.packSha256 || "",
           name: p.displayName || key || "", // P9: papka nomi shablon NOMIdan
         };
       }
     }
-    return { url: null, fileSize: 0, name: "" };
+    return { url: null, fileSize: 0, name: "", sha256: "" };
   }
 
   /**
@@ -860,7 +903,7 @@ const AssetFlowCatalog = (() => {
   /** Tanlangan .mogrt elementni import uchun .aep ga tayyorlaydi */
   async function extractMogrtItem(templateId, mogrtPath) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Import only works inside Premiere Pro");
+      throw new Error("Import requires the FrameFlow Adobe extension");
     }
     const fs = __ffRequire("fs");
     const path = __ffRequire("path");
@@ -869,6 +912,7 @@ const AssetFlowCatalog = (() => {
     if (!mogrtPath || !fs.existsSync(mogrtPath)) {
       throw new Error("MOGRT file not found — please re-download the pack.");
     }
+    if (hostTemplateApp() === "pr") return mogrtPath;
     const baseDir = downloadDir() || os.tmpdir();
     return extractMogrtFileToAep(
       fs, path, NodeBuffer, baseDir, templateId, mogrtPath
@@ -902,7 +946,7 @@ const AssetFlowCatalog = (() => {
 
   /** Streaming sha256 (200MB'ni xotiraga yig'masdan — download oqim naqshiga mos). */
   function sha256FileAsync(filePath) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       try {
         const fs = __ffRequire("fs");
         const crypto = __ffRequire("crypto");
@@ -910,9 +954,9 @@ const AssetFlowCatalog = (() => {
         const rs = fs.createReadStream(filePath);
         rs.on("data", (c) => h.update(c));
         rs.on("end", () => resolve(h.digest("hex")));
-        rs.on("error", () => resolve("")); // hash yo'q — yaxlitlik jimgina o'tkaziladi
-      } catch {
-        resolve("");
+        rs.on("error", reject);
+      } catch (e) {
+        reject(e);
       }
     });
   }
@@ -931,20 +975,18 @@ const AssetFlowCatalog = (() => {
   function zipCacheMarker(path, cacheDir) {
     return path.join(cacheDir, ".assetflow_pack_size");
   }
-  function zipCacheFresh(fs, path, cacheDir, expectedSize) {
-    if (!(expectedSize > 0)) return true; // hajm noma'lum — keshni saqlaymiz
+  function zipCacheFresh(fs, path, cacheDir, expectedSize, expectedSha256) {
+    if (!expectedSha256) return false;
     try {
-      const rec = Number(
-        String(fs.readFileSync(zipCacheMarker(path, cacheDir), "utf8")).trim()
-      );
-      return rec === expectedSize;
+      const rec = JSON.parse(String(fs.readFileSync(zipCacheMarker(path, cacheDir), "utf8")));
+      return rec && rec.size === expectedSize && rec.sha256 === String(expectedSha256).toLowerCase();
     } catch {
       return false;
     }
   }
-  function writeZipCacheMarker(fs, path, cacheDir, expectedSize) {
+  function writeZipCacheMarker(fs, path, cacheDir, expectedSize, expectedSha256) {
     try {
-      fs.writeFileSync(zipCacheMarker(path, cacheDir), String(expectedSize || 0), "utf8");
+      fs.writeFileSync(zipCacheMarker(path, cacheDir), JSON.stringify({ size: expectedSize || 0, sha256: String(expectedSha256 || "").toLowerCase() }), "utf8");
     } catch {
       /* marker yozilmadi — keyingi import qayta yuklab oladi, xolos */
     }
@@ -976,11 +1018,9 @@ const AssetFlowCatalog = (() => {
    */
   function cacheValid(fs, filePath, expectedSize, expectedSha256) {
     if (!cachedFileOk(fs, filePath, expectedSize)) return false;
-    if (expectedSha256) {
-      const rec = recordedHash(fs, filePath);
-      if (rec && rec.toLowerCase() !== String(expectedSha256).toLowerCase()) return false;
-    }
-    return true;
+    if (!expectedSha256) return false;
+    const rec = recordedHash(fs, filePath);
+    return !!rec && rec.toLowerCase() === String(expectedSha256).toLowerCase();
   }
 
   /**
@@ -991,16 +1031,18 @@ const AssetFlowCatalog = (() => {
    * `X-Pack-Sha256` header'i (yoki chaqiruvchi bergan `opts.expectedSha256`).
    */
   async function verifyDownloadedFile(fs, filePath, expectedSha256) {
+    if (!/^[0-9a-f]{64}$/i.test(String(expectedSha256 || ""))) {
+      try { fs.rmSync(filePath, { force: true }); } catch {}
+      throw new Error("Pack integrity metadata is missing — refresh the catalog and try again.");
+    }
     const hash = await sha256FileAsync(filePath);
-    if (expectedSha256 && hash) {
-      if (hash.toLowerCase() !== String(expectedSha256).toLowerCase()) {
+    if (hash.toLowerCase() !== String(expectedSha256).toLowerCase()) {
         try {
           fs.rmSync(filePath, { force: true });
         } catch {}
         const err = new Error("Pack integrity check failed (sha256 mismatch) — please try downloading again.");
         err.integrity = true;
         throw err;
-      }
     }
     recordHash(fs, filePath, hash);
     return hash;
@@ -1039,19 +1081,20 @@ const AssetFlowCatalog = (() => {
    * `headers` — faqat BIRINCHI (o'z API) so'roviga qo'shiladi; redirect boshqa
    * origin'ga (R2/CDN) ketsa Authorization TASHLANADI (token sizib chiqmasin).
    *
-   * `opts` (ixtiyoriy, ORQAGA MOS — berilmasa bugungi xulq bayt-bayt o'zgarmaydi):
+   * `opts` ixtiyoriy; xavfsiz defaultlar HTTPS, 3 GiB va 30 soniya timeoutni
+   * majbur qiladi. Lokal test/dev transporti kerak bo'lsa `httpsOnly:false` aniq beriladi.
    *   opts.httpsOnly — boshlang'ich URL ham, HAR BIR redirect ham https bo'lishi SHART;
    *     downgrade (https→http) yoki https bo'lmagan sxema = darhol uzish + temp o'chirish.
    *   opts.maxBytes  — qattiq hajm chegarasi: Content-Length undan katta bo'lsa umuman
    *     yozilmaydi, oqim chegaradan oshgan zahoti uziladi va qisman fayl o'chiriladi.
-   * Updater AYNAN shu ikkisini yoqadi (installer artefakti uchun); pack/mogrt
-   * chaqiruvlari opts bermaydi va o'zgarishsiz ishlaydi.
+   * Updater va pack/mogrt oqimlari bir xil fail-closed downloaderdan foydalanadi.
    */
   function downloadUrlToFile(url, destPath, onProgress, headers, opts) {
     return new Promise((resolve, reject) => {
       const fs = __ffRequire("fs");
-      const httpsOnly = !!(opts && opts.httpsOnly);
-      const maxBytes = opts && Number(opts.maxBytes) > 0 ? Number(opts.maxBytes) : 0;
+      const httpsOnly = !opts || opts.httpsOnly !== false;
+      const maxBytes = opts && Number(opts.maxBytes) > 0 ? Number(opts.maxBytes) : 3 * 1024 * 1024 * 1024;
+      const timeoutMs = opts && Number(opts.timeoutMs) > 0 ? Number(opts.timeoutMs) : 30000;
       const isHttps = (u) => /^https:\/\//i.test(String(u || ""));
       const startOrigin = urlOrigin(url);
       // #96 (PL-d): server yuklab olinadigan AYNAN shu obyektning sha256'ini
@@ -1202,6 +1245,9 @@ const AssetFlowCatalog = (() => {
         };
         const req = sameOrigin ? lib.get(u, { headers: hdrs }, reqCb) : lib.get(u, reqCb);
         holder.req = req;
+        if(req&&typeof req.setTimeout==="function"){
+          req.setTimeout(timeoutMs, () => abortStrict("Download timed out"));
+        }
         req.on("error", (e) => {
           cleanup();
           if (holder.cancelled) failCancelled(); else reject(e);
@@ -1218,7 +1264,7 @@ const AssetFlowCatalog = (() => {
    */
   async function downloadSceneMogrt(templateId, scene, opts) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Import only works inside Premiere Pro");
+      throw new Error("Import requires the FrameFlow Adobe extension");
     }
     if (!scene || !scene.mogrtUrl) {
       throw new Error("Scene has no MOGRT URL");
@@ -1241,6 +1287,9 @@ const AssetFlowCatalog = (() => {
       let sceneSha = ""; // #96 (PL-d) — server hash bersa (X-Pack-Sha256) tekshiriladi
       await downloadUrlToFile(scene.mogrtUrl, out, onProgress, downloadHeaders(), {
         onServerSha: (h) => { sceneSha = h; },
+        httpsOnly: true,
+        maxBytes: 512 * 1024 * 1024,
+        timeoutMs: 30000,
       });
       if (!cachedFileOk(fs, out, 0)) {
         try {
@@ -1252,6 +1301,7 @@ const AssetFlowCatalog = (() => {
       await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || sceneSha || "");
       _freshDownload = true;
     }
+    if (hostTemplateApp(opts && opts.hostApp) === "pr") return out;
     const result = await extractMogrtFileToAep(
       fs, path, NodeBuffer, baseDir, templateId, out
     );
@@ -1264,30 +1314,46 @@ const AssetFlowCatalog = (() => {
 
   async function downloadPackToTemp(templateId, fileName, opts) {
     if (typeof window.__adobe_cep__ === "undefined") {
-      throw new Error("Import only works inside Premiere Pro");
+      throw new Error("Import requires the FrameFlow Adobe extension");
     }
     const fs = __ffRequire("fs");
     const path = __ffRequire("path");
     const os = __ffRequire("os");
     const { Buffer: NodeBuffer } = __ffRequire("buffer");
     const ext = path.extname(fileName || "") || ".aep";
+    const extLower = ext.toLowerCase();
+    const templateApp = hostTemplateApp(opts && opts.hostApp);
     const baseDir = downloadDir() || os.tmpdir();
     const out = path.join(baseDir, `assetflow_${templateId}${ext}`);
     const meta = findServerPackMeta(templateId);
     const expectedSize = (opts && opts.fileSize) || meta.fileSize || 0;
+    const expectedSha256 = (opts && opts.expectedSha256) || meta.sha256 || "";
     const onProgress = opts && opts.onProgress;
 
     // ZIP bo'lsa — unzip papkasini tekshiramiz (kesh)
-    if (ext.toLowerCase() === ".zip") {
+    if (extLower === ".zip") {
       const cacheDir = unzipDirFor(fs, path, baseDir, templateId, meta.name); // P9: nom bilan
       // QA-FIX #7: pack serverда yangilangan bo'lsa (fileSize o'zgargan) eski
       // ochilgan keshni tashlab, yangisini yuklab olamiz.
-      if (fs.existsSync(cacheDir) && !zipCacheFresh(fs, path, cacheDir, expectedSize)) {
+      if (fs.existsSync(cacheDir) && !zipCacheFresh(fs, path, cacheDir, expectedSize, expectedSha256)) {
         try {
           fs.rmSync(cacheDir, { recursive: true, force: true });
         } catch {}
       }
       if (fs.existsSync(cacheDir)) {
+        if (templateApp === "pr") {
+          const projects = findAllFilesByExtInDir(fs, path, cacheDir, [".prproj"]);
+          if (projects.length === 1) return projects[0];
+          if (projects.length > 1) {
+            throw new Error("This pack contains multiple Premiere projects. Choose a project in Contributor Studio before importing.");
+          }
+          const nativeMogrts = findAllFilesByExtInDir(fs, path, cacheDir, [".mogrt"]);
+          if (nativeMogrts.length === 1) return nativeMogrts[0];
+          if (nativeMogrts.length > 1) throw mogrtPackError(mogrtItemsFromDir(fs, path, cacheDir));
+          if (findAepInDir(fs, path, cacheDir)) {
+            throw new Error("This is an Premiere Pro project pack and cannot be imported into Premiere Pro.");
+          }
+        }
         const cached = findAepInDir(fs, path, cacheDir);
         if (cached) return cached;
         // .aep yo'q — ochilgan papkadan kengaytma bo'yicha topamiz (papka nomi muhim emas)
@@ -1308,21 +1374,27 @@ const AssetFlowCatalog = (() => {
         }
       }
     } else if (
-      ext.toLowerCase() !== ".mogrt" &&
-      cacheValid(fs, out, expectedSize, opts && opts.expectedSha256)
+      extLower !== ".mogrt" &&
+      cacheValid(fs, out, expectedSize, expectedSha256)
     ) {
-      // .mogrt bu yerdan o'tmaydi — kesh bo'lsa ham har import yangi extract oladi
+      if (templateApp === "pr" && extLower === ".aep") {
+        throw new Error("This is an Premiere Pro project pack and cannot be imported into Premiere Pro.");
+      }
+      if (templateApp === "ae" && extLower === ".prproj") {
+        throw new Error("This is a Premiere Pro project pack and cannot be imported into Premiere Pro.");
+      }
+      // .mogrt bu yerdan o'tmaydi — Premiere kesh bo'lsa ham har import yangi extract oladi
       return out;
     }
 
     // Idempotent: yaroqli kesh bo'lsa qayta yuklamaymiz; yo'q/buzuq bo'lsa yuklaymiz
-    const needDownload = !cacheValid(fs, out, expectedSize, opts && opts.expectedSha256);
+    const needDownload = !cacheValid(fs, out, expectedSize, expectedSha256);
 
     let _needRecord = false;
     if (needDownload) {
       const directUrl = (opts && opts.packUrl) || meta.url;
-      const url =
-        directUrl || `${apiBase()}/api/plugin/assets/${templateId}/pack`;
+      // Har doim API gate orqali boshlaymiz: u immutable X-Pack-Sha256 headerini beradi.
+      const url = `${apiBase()}/api/plugin/assets/${templateId}/pack`;
       if (typeof showToast === "function") {
         const mb =
           expectedSize > 0
@@ -1334,25 +1406,21 @@ const AssetFlowCatalog = (() => {
       // shu qiymat bilan solishtiriladi. Ilgari `expectedSha256`ni hech kim
       // bermasdi → yaxlitlik tekshiruvi abadiy no-op edi.
       let serverSha = "";
-      const shaOpts = { onServerSha: (h) => { serverSha = h; } };
+      const shaOpts = { onServerSha: (h) => { serverSha = h; }, httpsOnly: true, maxBytes: 3 * 1024 * 1024 * 1024, timeoutMs: 30000 };
       try {
         await downloadUrlToFile(url, out, onProgress, downloadHeaders(), shaOpts);
       } catch (e) {
         // Limit/nashr/sessiya xatosi (403/401) — fallback bilan yashirmaymiz
         if (e && (e.status === 401 || e.status === 403)) throw e;
-        if (directUrl && url === directUrl) {
-          const fallback = `${apiBase()}/api/plugin/assets/${templateId}/pack`;
-          await downloadUrlToFile(fallback, out, onProgress, downloadHeaders(), shaOpts);
-        } else {
-          throw e;
-        }
+        void directUrl;
+        throw e;
       }
       if (!cachedFileOk(fs, out, 0)) {
         throw new Error("Pack failed to download or file is empty");
       }
       // Yaxlitlik: sha256 hisobla + kutilgan hash bo'lsa tekshir (aks holda yozib qo'y).
       // Server hash bermasa (eski API / hosila kesh hali hash'siz) — eski xulq.
-      await verifyDownloadedFile(fs, out, (opts && opts.expectedSha256) || serverSha || "");
+      await verifyDownloadedFile(fs, out, expectedSha256 || serverSha || "");
       _needRecord = true;
     }
 
@@ -1364,10 +1432,12 @@ const AssetFlowCatalog = (() => {
     const _record = async () => { void _needRecord; };
 
     // Premiere can’t import .zip directly. If pack is a zip, extract and return first .aep inside.
-    if (ext.toLowerCase() === ".zip") {
-      const dir = unzipDirFor(fs, path, baseDir, templateId, meta.name); // P9: nom bilan
+    if (extLower === ".zip") {
+      const finalDir = unzipDirFor(fs, path, baseDir, templateId, meta.name); // P9: nom bilan
+      const stageDir = finalDir + ".part-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+      let dir = stageDir;
       try {
-        fs.mkdirSync(dir, { recursive: true });
+        fs.mkdirSync(stageDir, { recursive: true });
       } catch {}
       // zip ichidagi .mogrt yo’llarini o’chirishdan OLDIN olamiz — papka nomi muhim emas
       const zipMogrts = listEntriesInZip(out, ".mogrt");
@@ -1375,7 +1445,7 @@ const AssetFlowCatalog = (() => {
       try {
         // Papka strukturasi SAQLANADI (.aep'ning nisbiy footage/audio havolalari
         // buzilmaydi). Katta pack oqim bilan ochiladi — xotiraga to'liq yuklanmaydi.
-        await zipLib().extractAll(out, dir, {
+        await zipLib().extractAll(out, stageDir, {
           onProgress: function (done, total) {
             if (typeof showToast === "function" && total > 40 && done % 25 === 0) {
               showToast(`Extracting pack… ${done}/${total}`);
@@ -1383,21 +1453,44 @@ const AssetFlowCatalog = (() => {
           },
         });
       } catch (e) {
+        try { fs.rmSync(stageDir, { recursive: true, force: true }); } catch {}
         throw new Error("Could not open ZIP. The pack must contain an .aep or .mogrt file.");
       }
       // Robustlik: ochish nol fayl chiqarsa (buzuq/bo'sh arxiv) — jimgina emas, aniq xato
       let __extracted = [];
-      try { __extracted = fs.readdirSync(dir); } catch {}
+      try { __extracted = fs.readdirSync(stageDir); } catch {}
       if (!__extracted.length) {
+        try { fs.rmSync(stageDir, { recursive: true, force: true }); } catch {}
         throw new Error("ZIP is empty or could not be opened — the pack may be corrupted.");
       }
+      try {
+        if (fs.existsSync(finalDir)) fs.rmSync(finalDir, { recursive: true, force: true });
+        fs.renameSync(stageDir, finalDir);
+        dir = finalDir;
+      } catch (e) {
+        try { fs.rmSync(stageDir, { recursive: true, force: true }); } catch {}
+        throw new Error("Could not publish the extracted pack atomically.");
+      }
       // QA-FIX #7: kesh markeri — bu papka aynan shu fileSize'li pack'dan ochilgan.
-      writeZipCacheMarker(fs, path, dir, expectedSize);
+      writeZipCacheMarker(fs, path, dir, expectedSize, expectedSha256 || serverSha);
       // Zip endi kerak emas — faqat ochilgan papka qoladi (sidecar hash ham)
       try {
         fs.rmSync(out, { force: true });
         fs.rmSync(sha256Sidecar(out), { force: true });
       } catch {}
+      if (templateApp === "pr") {
+        const projects = findAllFilesByExtInDir(fs, path, dir, [".prproj"]);
+        if (projects.length === 1) { await _record(); return projects[0]; }
+        if (projects.length > 1) {
+          throw new Error("This pack contains multiple Premiere projects. Choose a project in Contributor Studio before importing.");
+        }
+        const nativeMogrts = findAllFilesByExtInDir(fs, path, dir, [".mogrt"]);
+        if (nativeMogrts.length === 1) { await _record(); return nativeMogrts[0]; }
+        if (nativeMogrts.length > 1) throw mogrtPackError(mogrtItemsFromDir(fs, path, dir));
+        if (findAepInDir(fs, path, dir)) {
+          throw new Error("This is an Premiere Pro project pack and cannot be imported into Premiere Pro.");
+        }
+      }
       const aep = findAepInDir(fs, path, dir);
       if (aep) { await _record(); return aep; }
       // .aep yo’q — zip entry yo’llari bo’yicha .mogrt’larni topamiz
@@ -1428,7 +1521,8 @@ const AssetFlowCatalog = (() => {
 
     // .mogrt — to’g’ridan yuklangan yakka fayl: extract (unikal papka,
     // .mogrt’ning o’zi kesh bo’lib qoladi, qayta yuklab olinmaydi).
-    if (ext.toLowerCase() === ".mogrt") {
+    if (extLower === ".mogrt") {
+      if (templateApp === "pr") { await _record(); return out; }
       const r = await extractMogrtFileToAep(
         fs, path, NodeBuffer, baseDir, templateId, out
       );
@@ -1436,6 +1530,12 @@ const AssetFlowCatalog = (() => {
       return r;
     }
 
+    if (templateApp === "pr" && extLower === ".aep") {
+      throw new Error("This is an Premiere Pro project pack and cannot be imported into Premiere Pro.");
+    }
+    if (templateApp === "ae" && extLower === ".prproj") {
+      throw new Error("This is a Premiere Pro project pack and cannot be imported into Premiere Pro.");
+    }
     await _record();
     return out;
   }
@@ -1474,8 +1574,18 @@ const AssetFlowCatalog = (() => {
   }
 
   // Oddiy GET (kichik javob) — status + tanani qaytaradi. Redirect'ni kuzatadi.
+  function safeFontUrl(url, binary) {
+    try {
+      const u = new URL(url);
+      const host = u.hostname.toLowerCase();
+      const allowed = binary ? ["fonts.gstatic.com"] : ["fonts.googleapis.com", "fonts.adobe.com"];
+      if (u.protocol !== "https:" || allowed.indexOf(host) < 0) throw new Error("Untrusted font host");
+      return u.toString();
+    } catch (e) { throw new Error("Untrusted font URL"); }
+  }
   function httpGetText(url, extraHeaders, redirectsLeft) {
     return new Promise((resolve, reject) => {
+      try { url = safeFontUrl(url, false); } catch (e) { reject(e); return; }
       if (redirectsLeft == null) redirectsLeft = 5;
       if (redirectsLeft <= 0) { reject(new Error("Redirect limit")); return; }
       const lib = url.indexOf("https") === 0 ? __ffRequire("https") : __ffRequire("http");
@@ -1488,6 +1598,7 @@ const AssetFlowCatalog = (() => {
           res.resume();
           let next = res.headers.location;
           try { next = new URL(next, url).toString(); } catch (e) {}
+          try { next = safeFontUrl(next, false); } catch (e) { reject(e); return; }
           httpGetText(next, extraHeaders, redirectsLeft - 1).then(resolve, reject);
           return;
         }
@@ -1523,6 +1634,7 @@ const AssetFlowCatalog = (() => {
   function downloadBinaryToFile(url, destPath, redirectsLeft) {
     return new Promise((resolve, reject) => {
       const fs = __ffRequire("fs");
+      try { url = safeFontUrl(url, true); } catch (e) { reject(e); return; }
       if (redirectsLeft == null) redirectsLeft = 5;
       if (redirectsLeft <= 0) { reject(new Error("Redirect limit")); return; }
       const lib = url.indexOf("https") === 0 ? __ffRequire("https") : __ffRequire("http");
@@ -1531,6 +1643,7 @@ const AssetFlowCatalog = (() => {
           res.resume();
           let next = res.headers.location;
           try { next = new URL(next, url).toString(); } catch (e) {}
+          try { next = safeFontUrl(next, true); } catch (e) { reject(e); return; }
           downloadBinaryToFile(next, destPath, redirectsLeft - 1).then(resolve, reject);
           return;
         }
@@ -1539,11 +1652,25 @@ const AssetFlowCatalog = (() => {
           reject(new Error("HTTP " + res.statusCode));
           return;
         }
+        const maxBytes = 20 * 1024 * 1024;
+        const declared = parseInt(res.headers["content-length"], 10) || 0;
+        const contentType = String(res.headers["content-type"] || "").toLowerCase();
+        if (declared > maxBytes || (contentType && !/(font|octet-stream|truetype|opentype)/.test(contentType))) {
+          res.destroy(); reject(new Error("Invalid or oversized font response")); return;
+        }
         const partPath = destPath + ".part";
         const ws = fs.createWriteStream(partPath);
+        let written = 0;
+        res.on("data", (chunk) => {
+          written += chunk.length;
+          if (written > maxBytes) { res.destroy(); ws.destroy(); try { fs.rmSync(partPath,{force:true}); } catch(e){} reject(new Error("Font exceeds size limit")); }
+        });
         res.pipe(ws);
         ws.on("finish", () => {
           try {
+            const fd=fs.openSync(partPath,"r"),head=Buffer.alloc(4);try{fs.readSync(fd,head,0,4,0);}finally{fs.closeSync(fd);}
+            const magic=head.toString("ascii"),hex=head.toString("hex");
+            if (!(hex==="00010000"||magic==="OTTO"||magic==="true"||magic==="ttcf")) throw new Error("Downloaded file is not a valid TTF/OTF font");
             try { if (fs.existsSync(destPath)) fs.rmSync(destPath, { force: true }); } catch (e) {}
             fs.renameSync(partPath, destPath);
           } catch (e) { reject(e); return; }
@@ -1676,6 +1803,7 @@ const AssetFlowCatalog = (() => {
     resolveMissingFonts,
     fetchCatalog,
     fetchFeatured,
+    fetchHomeShelf,
     refreshFeatured,
     refreshBrowse,
     loadMoreBrowse,

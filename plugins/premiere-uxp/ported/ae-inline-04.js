@@ -25,6 +25,11 @@
   }
   window.addEventListener('assetflow:session-expired',()=>{
     try{ refreshAccountUi(); }catch(e){}
+    try{ if(window.afJobStore)window.afJobStore.clear(); }catch(e){}
+    try{ if(window.afActiveSessionStore)window.afActiveSessionStore.clear(); }catch(e){}
+    try{ if(typeof window.afIgClearRecent==='function')window.afIgClearRecent(); }catch(e){}
+    try{ if(typeof window.axVGClearRecent==='function')window.axVGClearRecent(); }catch(e){}
+    try{ if(typeof window.axAGClearRecent==='function')window.axAGClearRecent(); }catch(e){}
     try{ ensureAiSessModal().classList.add('on'); }
     catch(e){ showToast('Session expired — please sign in again','warning'); try{ openAccountSheet(); }catch(_){} }
   });

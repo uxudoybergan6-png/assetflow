@@ -10117,7 +10117,7 @@ async function studioPost(path,body,ms){
       var res=await pubFetch(path,{method:'POST',headers:headers,body:JSON.stringify(body)},ms||60000);
       var t=await res.text();var d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
       if(!res.ok){
-        if(idem&&(res.status===502||res.status===503||res.status===504||res.status===429)&&a<maxAttempts-1){ await afSleep(afBackoff(a)); continue; }
+        if(idem&&(res.status===502||res.status===503||res.status===504||res.status===429)&&d.code!=='MODERATION_NOT_CONFIGURED'&&d.code!=='AI_NOT_CONFIGURED'&&a<maxAttempts-1){ await afSleep(afBackoff(a)); continue; }
         var e2=new Error((d&&d.error)||('HTTP '+res.status));e2.status=res.status;e2.code=d&&d.code;throw e2;
       }
       return d;
@@ -11258,6 +11258,8 @@ function handleGenRejection(gn, switchFn){
 function friendlyError(e){
   const raw=(e&&e.message)||String(e||'');
   const code=(e&&e.code)||'', status=(e&&e.status)||0;
+  if(code==='MODERATION_NOT_CONFIGURED')return 'AI generation is temporarily unavailable — safety verification needs administrator attention';
+  if(code==='AI_NOT_CONFIGURED')return 'AI generation is temporarily unavailable — contact an administrator';
   if(code==='INSUFFICIENT_CREDITS'||code==='AI_CREDITS_EXHAUSTED'||status===402||/kredit yetarli emas|insufficient credit/i.test(raw))
     return 'Not enough credits — ⚙ Settings › "Top up credits"';
   if(code==='AI_DAILY_CAP'||/kunlik.*(cap|chek|limit)|daily.*cap|cap.*(reached|tugadi)/i.test(raw))
@@ -11307,6 +11309,15 @@ function friendlyError(e){
   if(/\{["']?\s*error\b/i.test(raw) || /^\s*\w[\w .()\/-]*\d{3}\s*:\s*[\[{]/.test(raw))
     return 'The request was rejected by the model — your credits were refunded';
   return raw||'Unknown error';
+}
+function enhanceMismatchMessage(r){
+  var why=r&&r.mentionMismatchKind==='missing'
+    ? 'the rewrite dropped an attached reference'
+    : r&&r.mentionMismatchKind==='extraneous'
+      ? 'the rewrite invented or renumbered a reference'
+      : 'the rewrite changed which reference was used';
+  var refund=r&&r.creditsRefunded?(' · ✦'+r.creditsRefunded+' refunded'):'';
+  return 'Kept your prompt — '+why+', so it was discarded'+refund;
 }
 
 /* ===== Import/Download progress (a4) — label + optional MB counter, else % ===== */
@@ -14996,7 +15007,7 @@ window.afGallery=(function(){
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
       // P28.3 (29a) — API mos kelmagan @mention sabab qayta yozishni RAD ETsa (mentionMismatch),
       // asl prompt qaytadi (o'zgarmaydi) → jimgina "softened" DEMAYMIZ (evasion olib tashlandi).
-      if(e&&e.mentionMismatch){ if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Kept your prompt — the rewrite pointed a reference at the wrong image','info'); }
+      if(e&&e.mentionMismatch){ if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast(enhanceMismatchMessage(e),'info'); }
       else if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt enhanced ✨'+(refUrls.length?(' · saw '+refUrls.length+' reference'+(refUrls.length>1?'s':'')):'')+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
       else toast('Could not enhance','error');
     }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Enhance error','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
@@ -17187,7 +17198,7 @@ window.afGallery=(function(){
       audio_urls:audRefs,
       idempotencyKey:afUuid() // P17 — cold-start qayta urinish bitta consume
     }).then(function(r){
-      if(r&&r.mentionMismatch){ if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Kept your prompt — the rewrite pointed a reference at the wrong clip','info'); }
+      if(r&&r.mentionMismatch){ if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast(enhanceMismatchMessage(r),'info'); }
       else if(r&&r.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(r.prompt):r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt enhanced ✨'+(nref?(' · saw '+nref+' reference'+(nref>1?'s':'')):'')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
       else toast('Could not enhance','warning');
     }).catch(function(e){ toast((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance error','error');
@@ -19297,7 +19308,7 @@ window.AF_PLUGIN_VERSION='1.2.0'; // CSXS/manifest.xml ExtensionBundleVersion bi
   function enhance(){
     var s=current(),prompt=s.prompt.trim();if(!prompt){status('Write a prompt first.','err');return;}
     var b=$('ffCreateEnhance');if(b)b.disabled=true;status('Enhancing the prompt…');
-    studioPost('/api/studio/gen/prompt/enhance',{prompt:prompt,mode:s.mode,format:'text',idempotencyKey:afUuid()}).then(function(r){if(r&&r.prompt){ctl.setPrompt(typeof afCleanEnhancedPrompt==='function'?afCleanEnhancedPrompt(r.prompt):String(r.prompt).trim());if(typeof r.creditsLeft==='number'&&window.afSyncCredits)window.afSyncCredits(r.creditsLeft);render();status('Prompt enhanced'+(r.creditsCharged?' · ✦'+r.creditsCharged:''),'ok');}else throw new Error('No enhanced prompt was returned');}).catch(function(e){status((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance failed.','err');}).then(function(){if(b)b.disabled=false;});
+    studioPost('/api/studio/gen/prompt/enhance',{prompt:prompt,mode:s.mode,format:'text',idempotencyKey:afUuid()}).then(function(r){if(r&&r.mentionMismatch){if(typeof r.creditsLeft==='number'&&window.afSyncCredits)window.afSyncCredits(r.creditsLeft);render();status(enhanceMismatchMessage(r),'err');}else if(r&&r.prompt){ctl.setPrompt(typeof afCleanEnhancedPrompt==='function'?afCleanEnhancedPrompt(r.prompt):String(r.prompt).trim());if(typeof r.creditsLeft==='number'&&window.afSyncCredits)window.afSyncCredits(r.creditsLeft);render();status('Prompt enhanced'+(r.creditsCharged?' · ✦'+r.creditsCharged:''),'ok');}else throw new Error('No enhanced prompt was returned');}).catch(function(e){status((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance failed.','err');}).then(function(){if(b)b.disabled=false;});
   }
   function delegateReference(source){
     var s=current();if(s.mode==='voice'||s.mode==='sfx'){status('Audio models do not accept visual references.','err');return;}

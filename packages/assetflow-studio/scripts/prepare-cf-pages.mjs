@@ -75,9 +75,14 @@ copyDir(SRC_STYLES, path.join(dist, "admin", "styles"));
   for (const d of ["css", "icons", "js"]) copyDir(path.join(cep, d), path.join(pv, d));
   if (fs.existsSync(cep)) {
     for (const name of fs.readdirSync(cep)) {
-      if (name.startsWith("assetflow-") && name.endsWith(".js")) {
+      if ((name.startsWith("assetflow-") || name.startsWith("frameflow-")) && name.endsWith(".js")) {
         copyFile(path.join(cep, name), path.join(pv, name));
       }
+    }
+  }
+  for (const runtime of ["frameflow-create-workspace.js", "frameflow-vnext.js"]) {
+    if (!fs.existsSync(path.join(pv, runtime))) {
+      throw new Error(`Plugin preview runtime topilmadi: ${runtime}`);
     }
   }
 }

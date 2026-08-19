@@ -880,21 +880,21 @@ export async function refundAiCredits(
   userId: string,
   cost: number,
   opts: { generationId?: string } = {}
-) {
-  if (cost <= 0) return;
-  await prisma.$transaction(async (tx) => {
+): Promise<number | null> {
+  if (cost <= 0) return null;
+  return prisma.$transaction(async (tx) => {
     const prof = await tx.pluginProfile.findUnique({
       where: { userId },
       include: { user: { select: { role: true } } },
     });
-    if (!prof || prof.user.role === "ADMIN") return;
+    if (!prof || prof.user.role === "ADMIN") return prof?.aiCredits ?? null;
 
     if (opts.generationId) {
       const claim = await tx.generation.updateMany({
         where: { id: opts.generationId, userId, refunded: false },
         data: { refunded: true, refundStatus: "pending" },
       });
-      if (claim.count === 0) return;
+      if (claim.count === 0) return prof.aiCredits;
     }
 
     const allot = aiMonthlyAllotment(prof.plan);
@@ -927,6 +927,7 @@ export async function refundAiCredits(
     if (applied < cost) {
       console.warn(`[credits] refund capped: user=${userId} requested=${cost} credited=${applied} gen=${opts.generationId ?? "-"}`);
     }
+    return after.aiCredits;
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }
 

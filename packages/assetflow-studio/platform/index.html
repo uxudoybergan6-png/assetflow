@@ -19930,6 +19930,11 @@ class Component extends DCLogic {
   }
   errMsg(e) {
     if (e && e.message === 'NETWORK') return "Can't reach the server — check your connection";
+    const code = (e && (e.code || (e.data && e.data.code))) || '';
+    if (code === 'MODERATION_NOT_CONFIGURED')
+      return 'AI generation is temporarily unavailable — safety verification needs administrator attention';
+    if (code === 'AI_NOT_CONFIGURED')
+      return 'AI generation is temporarily unavailable — contact an administrator';
     const raw = (e && e.message) || String((e && e.error) || '') || 'Something went wrong';
     // R4_04 — Google real yuz / mashhur shaxs bloki (Responsible AI): toza xabar, xom JSON emas.
     if (/restricted individual|responsible ai|could not be submitted|real (?:person|people|face)|public figure|\bcelebrit/i.test(raw))
@@ -21457,7 +21462,13 @@ class Component extends DCLogic {
   }
   applyEnhanceResult(r, nref, undoKey) {
     if (r && r.mentionMismatch) {
-      this.toast('Kept your prompt — the rewrite pointed a reference at the wrong image, so it was discarded', 'warning');
+      const why = r.mentionMismatchKind === 'missing'
+        ? 'the rewrite dropped an attached reference'
+        : r.mentionMismatchKind === 'extraneous'
+          ? 'the rewrite invented or renumbered a reference'
+          : 'the rewrite changed which reference was used';
+      const refund = r.creditsRefunded ? (' · ✦' + r.creditsRefunded + ' refunded') : '';
+      this.toast('Kept your prompt — ' + why + ', so it was discarded' + refund, 'warning');
     } else if (r && r.prompt) {
       this.setState({ aiPrompt: r.prompt }); setTimeout(() => this.afSizePromptTa(), 60);
       const seen = typeof r.referencesUsed === 'number' ? r.referencesUsed : nref;

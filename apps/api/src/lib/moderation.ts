@@ -29,6 +29,12 @@
  *     → sozlanmagan holatda ham rasmli generatsiya prodda bloklanadi (fail-closed).
  */
 
+import {
+  isVertexModerationConfigured,
+  vertexModerateContent,
+  type VertexModerationMedia,
+} from "./ai/vertex-enhance.js";
+
 const DEFAULT_URL = "https://api.openai.com/v1/moderations";
 const DEFAULT_MODEL = "omni-moderation-latest";
 
@@ -49,20 +55,18 @@ function requireImageVerification(): boolean {
 }
 
 /**
- * Boot'da bir marta chaqiriladi (index.ts). Produksiyada moderatsiya ML kaliti
- * sozlanmagan bo'lsa — BALAND, ko'rinadigan ogohlantirish chiqaradi (fail-open holati
- * jimgina o'tib ketmasin). Malware-skan/VirusTotal boot ogohlantirishi bilan bir uslub.
+ * Boot'da bir marta chaqiriladi (index.ts). Produksiyada na dedicated moderation,
+ * na Vertex ADC safety fallback tayyor bo'lsa — BALAND ogohlantirish chiqaradi.
  */
 export function moderationStartupWarning(): void {
   if (!isProduction()) return;
-  if (isModerationConfigured()) return;
+  if (isSafetyVerificationConfigured()) return;
   console.warn(
     "\n" +
       "══════════════════════════════════════════════════════════════════════\n" +
-      " ⚠️  MODERATION_API_KEY sozlanmagan — ML kontent moderatsiyasi O'CHIQ.\n" +
-      "     Matn kalit-so'z qatlami (preflight) ishlaydi, ammo RASM piksellari\n" +
-      "     ML bilan TEKSHIRILMAYDI. Prod uchun MODERATION_API_KEY o'rnating\n" +
-      "     (yoki rasm oqimini bloklash uchun MODERATION_REQUIRE_IMAGE_VERIFICATION=true).\n" +
+      " ⚠️  AI safety verification provayderi tayyor emas.\n" +
+      "     Vertex ADC/IAM yoki MODERATION_API_KEY sozlang. Yangi Studio Gen\n" +
+      "     so'rovlari MODERATION_NOT_CONFIGURED bilan fail-closed bloklanadi.\n" +
       "     Batafsil: docs/PROD-ENV-CHECKLIST.md\n" +
       "══════════════════════════════════════════════════════════════════════\n"
   );
@@ -100,10 +104,16 @@ export function isModerationConfigured(): boolean {
 }
 
 export function moderateOutputsEnabled(): boolean {
-  return (
+  const dedicatedEnabled =
     isModerationConfigured() &&
-    /^(1|true|yes|on)$/i.test(String(process.env.MODERATION_MODERATE_OUTPUTS || "").trim())
-  );
+    /^(1|true|yes|on)$/i.test(String(process.env.MODERATION_MODERATE_OUTPUTS || "").trim());
+  // Local dev eski opt-in xatti-harakatini saqlaydi. Productionda esa mavjud Vertex ADC
+  // fallback output image/video/audio'ni amalda tekshiradi — bo'sh env sabab hamma gen 503 emas.
+  return dedicatedEnabled || (isProduction() && isVertexModerationConfigured());
+}
+
+export function isSafetyVerificationConfigured(): boolean {
+  return isModerationConfigured() || isVertexModerationConfigured();
 }
 
 function moderationStrict(): boolean {
@@ -225,6 +235,51 @@ export async function moderateContent(opts: {
     console.warn("[moderation] xato — fail-open:", e instanceof Error ? e.message : e);
     return { ...CLEAN, ok: false, configured: true };
   }
+}
+
+export type ModerationMedia = VertexModerationMedia;
+
+/**
+ * Generation uchun yagona multimodal gate. OpenAI-mos dedicated endpoint text/image'ni
+ * tekshira olsa undan foydalanadi; kalit yo'q, endpoint xato yoki video/audio mavjud bo'lsa
+ * allaqachon sozlangan Vertex ADC safety filteriga o'tadi. Ikkala yo'l ham ishlamasa
+ * `ok:false + blocked:true` — caller kredit/provider ishidan OLDIN 503 beradi.
+ */
+export async function moderateGenerationContent(opts: {
+  text?: string;
+  media?: ModerationMedia[];
+  resolveImageUrl?: (url: string) => Promise<string | null>;
+}): Promise<ModerationResult> {
+  const media = Array.from(
+    new Map(
+      (opts.media || [])
+        .filter((m) => m && typeof m.url === "string" && m.url.length > 0)
+        .map((m) => [`${m.kind}:${m.url}`, m] as const)
+    ).values()
+  );
+  const canUseDedicated = isModerationConfigured() && media.every((m) => m.kind === "image");
+  if (canUseDedicated) {
+    const dedicated = await moderateContent({
+      text: opts.text,
+      imageUrls: media.map((m) => m.url),
+      resolveImageUrl: opts.resolveImageUrl,
+    });
+    // Haqiqiy verdict final. Faqat provider/unverified xatosida Vertex fallbackga o'tamiz.
+    if (dedicated.ok || (dedicated.blocked && !dedicated.categories.some((c) => c.startsWith("unverified-")))) {
+      return dedicated;
+    }
+  }
+
+  const vertex = await vertexModerateContent({ text: opts.text, media });
+  return {
+    ok: vertex.ok,
+    configured: isSafetyVerificationConfigured(),
+    flagged: vertex.blocked && vertex.ok,
+    blocked: vertex.blocked,
+    severity: vertex.blocked ? "high" : "low",
+    categories: vertex.categories,
+    reason: vertex.reason,
+  };
 }
 
 /** Prodda rasm inputi ML bilan tekshirilmaganida qaytariladigan fail-closed natija. */

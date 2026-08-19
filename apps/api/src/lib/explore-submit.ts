@@ -12,7 +12,7 @@ import {
 import { syncTemplateAssetKeys } from "./asset-state.js";
 import { generateStockWatermarkedDerivatives } from "./stock-derivatives.js";
 import { generateAssetMetadata } from "./ai/asset-metadata.js";
-import { moderateContent, moderateOutputsEnabled } from "./moderation.js";
+import { moderateGenerationContent, moderateOutputsEnabled } from "./moderation.js";
 
 /**
  * P3 (step 34) — "Add to Explore": foydalanuvchi GENERATSIYASINI ommaviy AI Stock
@@ -164,22 +164,31 @@ export async function submitGenerationToExplore(opts: ExploreSubmitOpts): Promis
 
   const { mediaClass, stockType, templateType } = classifyMode(gen.mode);
 
-  // 5) MODERATSIYA (ochiq foydalanuvchi kontenti — NSFW/IP xavfi). Prompt (matn) + rasm.
+  // 5) MODERATSIYA (ochiq foydalanuvchi kontenti — NSFW/IP xavfi). Prompt + haqiqiy
+  //    image/video/audio natija Vertex multimodal gate'dan o'tadi.
   //    Bloklansa → topshiriq rad etiladi (navbatga TUSHMAYDI). Yumshoq flag → admin ko'radi.
   if (moderateOutputsEnabled()) {
-    const imgUrls: string[] = [];
-    const imgKey =
-      mediaClass === "image"
-        ? asset.resultKey || asset.displayKey
-        : asset.thumbKey || asset.displayKey;
-    if (imgKey) {
-      try {
-        imgUrls.push(await getPublicOrSignedUrl(imgKey, 3600));
-      } catch {
-        /* imzo xatosi — matn moderatsiyasi baribir ishlaydi */
-      }
+    let mediaUrl = "";
+    try {
+      mediaUrl = await getPublicOrSignedUrl(asset.resultKey, 3600);
+    } catch {
+      throw new ExploreError(
+        "MODERATION_UNAVAILABLE",
+        503,
+        "Content safety verification is temporarily unavailable"
+      );
     }
-    const verdict = await moderateContent({ text: gen.prompt || "", imageUrls: imgUrls });
+    const verdict = await moderateGenerationContent({
+      text: gen.prompt || "",
+      media: [{ kind: mediaClass, url: mediaUrl }],
+    });
+    if (!verdict.ok) {
+      throw new ExploreError(
+        "MODERATION_UNAVAILABLE",
+        503,
+        "Content safety verification is temporarily unavailable"
+      );
+    }
     if (verdict.blocked) {
       throw new ExploreError(
         "MODERATION_BLOCKED",

@@ -22,6 +22,12 @@
   var SIG_EOCD64 = 0x06064b50;
   var SIG_LOC64 = 0x07064b50;
   var SIG_CDH = 0x02014b50;
+  var DEFAULT_LIMITS = {
+    maxEntries: 20000,
+    maxEntryBytes: 4 * 1024 * 1024 * 1024,
+    maxTotalBytes: 12 * 1024 * 1024 * 1024,
+    maxCompressionRatio: 200,
+  };
 
   function nodeAvailable() {
     return typeof require === "function" && typeof window.__adobe_cep__ !== "undefined";
@@ -105,11 +111,13 @@
       while (off + 46 <= cd.length && entries.length < count + 8) {
         if (cd.readUInt32LE(off) !== SIG_CDH) break;
         var method = cd.readUInt16LE(off + 10);
+        var flags = cd.readUInt16LE(off + 8);
         var compSize = cd.readUInt32LE(off + 20);
         var uncompSize = cd.readUInt32LE(off + 24);
         var nameLen = cd.readUInt16LE(off + 28);
         var extraLen = cd.readUInt16LE(off + 30);
         var commentLen = cd.readUInt16LE(off + 32);
+        var externalAttrs = cd.readUInt32LE(off + 38);
         var localOffset = cd.readUInt32LE(off + 42);
         var name = cd.toString("utf8", off + 46, off + 46 + nameLen);
 
@@ -137,6 +145,8 @@
           size: uncompSize,
           compSize: compSize,
           method: method,
+          flags: flags,
+          externalAttrs: externalAttrs,
           localOffset: localOffset,
         });
         off += 46 + nameLen + extraLen + commentLen;
@@ -144,6 +154,50 @@
       return entries;
     } finally {
       try { fs.closeSync(fd); } catch (e) {}
+    }
+  }
+
+  function limitValue(options, key) {
+    var value = options && Number(options[key]);
+    return Number.isFinite(value) && value > 0 ? value : DEFAULT_LIMITS[key];
+  }
+
+  /** Arxivni yozishdan OLDIN to'liq tekshiradi; bitta xavfli entry butun packni rad etadi. */
+  function validateEntries(entries, pathLib, options) {
+    var maxEntries = limitValue(options, "maxEntries");
+    var maxEntryBytes = limitValue(options, "maxEntryBytes");
+    var maxTotalBytes = limitValue(options, "maxTotalBytes");
+    var maxCompressionRatio = limitValue(options, "maxCompressionRatio");
+    if (entries.length > maxEntries) throw new Error("ZIP entry limit exceeded");
+    var total = 0;
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      if (!safeRelPath(pathLib, e.name)) throw new Error("Unsafe ZIP path: " + String(e.name || "(empty)"));
+      if (e.method !== 0 && e.method !== 8) throw new Error("Unsupported ZIP compression method: " + e.method);
+      if ((e.flags & 1) !== 0) throw new Error("Encrypted ZIP entries are not supported");
+      if (!Number.isSafeInteger(e.size) || !Number.isSafeInteger(e.compSize) || e.size < 0 || e.compSize < 0) {
+        throw new Error("Invalid ZIP entry size");
+      }
+      var unixMode = (e.externalAttrs >>> 16) & 0xffff;
+      if ((unixMode & 0xf000) === 0xa000) throw new Error("ZIP symbolic links are not allowed");
+      if (!e.isDir && e.size > maxEntryBytes) throw new Error("ZIP entry is too large: " + e.name);
+      total += e.isDir ? 0 : e.size;
+      if (total > maxTotalBytes) throw new Error("ZIP expanded size limit exceeded");
+      if (!e.isDir && e.size > 0) {
+        if (e.compSize === 0 || e.size / e.compSize > maxCompressionRatio) {
+          throw new Error("ZIP compression ratio limit exceeded: " + e.name);
+        }
+      }
+    }
+    return total;
+  }
+
+  function ensureFreeSpace(fs, destDir, requiredBytes) {
+    if (!fs.statfsSync || requiredBytes <= 0) return;
+    var statfs = fs.statfsSync(destDir);
+    var free = Number(statfs.bavail) * Number(statfs.bsize);
+    if (Number.isFinite(free) && requiredBytes > free * 0.9) {
+      throw new Error("Not enough free disk space for this ZIP");
     }
   }
 
@@ -162,19 +216,42 @@
   /** Bitta entry'ni oqim orqali yozadi (xotiraga to'liq yuklamaydi). */
   function writeEntryStream(fs, zlib, zipPath, entry, start, outPath) {
     return new Promise(function (resolve, reject) {
+      var stream = __ffRequire("stream");
       var rs = fs.createReadStream(zipPath, { start: start, end: start + entry.compSize - 1 });
       var ws = fs.createWriteStream(outPath);
+      var count = 0;
+      var guard = new stream.Transform({
+        transform: function (chunk, enc, cb) {
+          count += chunk.length;
+          if (count > entry.size) return cb(new Error("ZIP entry expanded beyond declared size"));
+          cb(null, chunk);
+        },
+        flush: function (cb) {
+          if (count !== entry.size) return cb(new Error("ZIP entry size mismatch"));
+          cb();
+        },
+      });
       var done = false;
-      function fail(e) { if (!done) { done = true; try { rs.destroy(); } catch (x) {} reject(e); } }
+      function fail(e) {
+        if (!done) {
+          done = true;
+          try { rs.destroy(); } catch (x) {}
+          try { guard.destroy(); } catch (x) {}
+          try { ws.destroy(); } catch (x) {}
+          try { fs.unlinkSync(outPath); } catch (x) {}
+          reject(e);
+        }
+      }
       ws.on("error", fail);
       rs.on("error", fail);
+      guard.on("error", fail);
       ws.on("close", function () { if (!done) { done = true; resolve(); } });
       if (entry.method === 0) {
-        rs.pipe(ws);
+        rs.pipe(guard).pipe(ws);
       } else if (entry.method === 8) {
         var inf = zlib.createInflateRaw();
         inf.on("error", fail);
-        rs.pipe(inf).pipe(ws);
+        rs.pipe(inf).pipe(guard).pipe(ws);
       } else {
         fail(new Error("Unsupported ZIP compression method: " + entry.method));
       }
@@ -198,6 +275,8 @@
     var zlib = __ffRequire("zlib");
     var entries = readCentralDirectory(zipPath);
     fs.mkdirSync(destDir, { recursive: true });
+    var totalBytes = validateEntries(entries, pathLib, options);
+    ensureFreeSpace(fs, destDir, totalBytes);
 
     var fd = fs.openSync(zipPath, "r");
     var written = 0;
@@ -208,7 +287,7 @@
         if (!options.keepJunk && isJunk(e.name)) continue;
         if (options.filter && !options.filter(e.name)) continue;
         var rel = safeRelPath(pathLib, e.name);
-        if (!rel) continue; // zip-slip / noto'g'ri nom — jimgina tashlab ketamiz
+        if (!rel) throw new Error("Unsafe ZIP path: " + e.name);
         var outPath = pathLib.join(destDir, rel);
         if (/\/$/.test(e.name)) {
           fs.mkdirSync(outPath, { recursive: true });
@@ -245,6 +324,7 @@
     (names || []).forEach(function (n) { want[String(n).toLowerCase()] = true; });
     var entries = readCentralDirectory(zipPath);
     fs.mkdirSync(destDir, { recursive: true });
+    validateEntries(entries, pathLib, options);
     var fd = fs.openSync(zipPath, "r");
     var written = 0;
     try {
@@ -254,7 +334,7 @@
         var base = e.name.split("/").pop().toLowerCase();
         if (!want[e.name.toLowerCase()] && !want[base]) continue;
         var rel = options.flatten ? pathLib.basename(e.name) : safeRelPath(pathLib, e.name);
-        if (!rel) continue;
+        if (!rel) throw new Error("Unsafe ZIP path: " + e.name);
         var outPath = pathLib.join(destDir, rel);
         ensureDirFor(fs, pathLib, outPath);
         if (e.compSize === 0 && e.size === 0) {
@@ -266,6 +346,7 @@
         var raw = Buffer.alloc(e.compSize);
         fs.readSync(fd, raw, 0, e.compSize, start);
         var out = e.method === 0 ? raw : zlib.inflateRawSync(raw);
+        if (out.length !== e.size) throw new Error("ZIP entry size mismatch: " + e.name);
         fs.writeFileSync(outPath, out);
         written++;
       }
@@ -278,7 +359,10 @@
   /** Entry ro'yxati (axlat chiqarilgan). Xato bo'lsa — bo'sh massiv. */
   function listEntries(zipPath) {
     try {
-      return readCentralDirectory(zipPath)
+      var pathLib = __ffRequire("path");
+      var entries = readCentralDirectory(zipPath);
+      validateEntries(entries, pathLib, {});
+      return entries
         .filter(function (e) { return !/\/$/.test(e.name) && !isJunk(e.name); })
         .map(function (e) { return { name: e.name, size: e.size, isDir: false }; });
     } catch (e) {

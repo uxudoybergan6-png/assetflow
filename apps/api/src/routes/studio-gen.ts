@@ -81,9 +81,8 @@ import {
 import { preflightSafetyCheck } from "../lib/preflight-safety.js";
 import { validateMentionIntegrity, type MentionKey } from "../lib/enhance-mentions.js";
 import {
-  moderateContent,
-  collectImageRefUrls,
-  isModerationConfigured,
+  moderateGenerationContent,
+  isSafetyVerificationConfigured,
   moderateOutputsEnabled,
 } from "../lib/moderation.js";
 import { writeAuditLog } from "../lib/audit-log.js";
@@ -585,9 +584,12 @@ studioGenRouter.get("/downloads", async (req: Request, res: Response) => {
 /** GET /gen/health — AI sozlamalari holati (faqat boolean — kalitlar QAYTARILMAYDI). */
 studioGenRouter.get("/gen/health", (_req: Request, res: Response) => {
   const providerStatus = providerConfigurationSnapshot();
+  const moderationReady = isSafetyVerificationConfigured() && moderateOutputsEnabled();
   res.json({
     ...providerStatus,
     s3: isS3Configured(),
+    moderationReady,
+    generationReady: moderationReady && Object.values(providerStatus).some(Boolean),
     catalogVersion: genCatalogVersion(),
   });
 });
@@ -868,13 +870,14 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
     model,
     availability: resolveModelAvailability(model, providerStatus),
   }));
+  const moderationReady = isSafetyVerificationConfigured() && moderateOutputsEnabled();
   // #141 (PX4) — etaSec: O'LCHANGAN mediana (oxirgi 7 kun tarixi), ma'lumot yetmasa
   // feature bo'yicha zaxira. Klient "≈ 1–2 min" qattiq matni o'rniga shuni ko'rsatadi.
   const eta = await measuredEtaSeconds();
   res.json({
     // refKind'ni HAR modelga qo'shamiz (So'nggi-grid "Referens" model-aware bo'lishi uchun).
     // P30 (29c) — policyStrictness ham (klient "qattiq siyosat" ogohlantirishi + boshqa-model taklifi uchun).
-    models: withAvailability.filter((x) => x.availability.available).map(({ model: m, availability }) => ({
+    models: moderationReady ? withAvailability.filter((x) => x.availability.available).map(({ model: m, availability }) => ({
       ...m,
       ...availability,
       refKind: getRefKind(m),
@@ -882,14 +885,21 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
       policyStrictness: modelPolicyStrictness(m),
       etaSec: eta[m.id] ?? fallbackEtaSeconds(m),
       etaMeasured: eta[m.id] != null,
-    })),
-    unavailableModels: withAvailability.filter((x) => !x.availability.available).map(({ model, availability }) => ({
+    })) : [],
+    unavailableModels: withAvailability.filter((x) => !moderationReady || !x.availability.available).map(({ model, availability }) => ({
       id: model.id,
       mode: model.mode,
       label: model.label,
-      ...availability,
+      ...(moderationReady ? availability : {
+        available: false,
+        provider: model.provider ?? null,
+        unavailableCode: "MODERATION_NOT_CONFIGURED",
+        unavailableReason: "AI safety verification is temporarily unavailable",
+      }),
     })),
-    configured: withAvailability.some((x) => x.availability.available),
+    configured: moderationReady && withAvailability.some((x) => x.availability.available),
+    moderationReady,
+    generationReady: moderationReady && withAvailability.some((x) => x.availability.available),
     providerStatus,
     catalogVersion: genCatalogVersion(catalogModels),
   });
@@ -1577,7 +1587,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   // ammo tashqi moderatsiya env'i xatosi katalog/auth/health'ni global yiqitmaydi.
   if (
     process.env.NODE_ENV === "production" &&
-    (!isModerationConfigured() || !moderateOutputsEnabled())
+    (!isSafetyVerificationConfigured() || !moderateOutputsEnabled())
   ) {
     res.status(503).json({
       error: "AI safety verification is temporarily unavailable",
@@ -1703,29 +1713,36 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     });
     return;
   }
-  // 2) ML klassifikator (env-configured) — matn prompt + referens RASM'lar. Sozlanmagan → no-op.
-  //    Og'ir kategoriya → FAIL-CLOSED blok; API xatosi → fail-open (kalit-so'z qatlami baribir gate).
-  const moderation = await moderateContent({
+  // 2) Multimodal ML gate — matn + image/video/audio. Dedicated moderation yo'q bo'lsa
+  //    mavjud Vertex ADC ishlaydi; provider/auth/materializatsiya xatosi productionda FAIL-CLOSED.
+  const refManifest = normalized.referenceManifest;
+  const moderationMedia = [
+    ...(refManifest.startUrl ? [{ kind: "image" as const, url: refManifest.startUrl }] : []),
+    ...(refManifest.endUrl ? [{ kind: "image" as const, url: refManifest.endUrl }] : []),
+    ...refManifest.imageUrls.map((url) => ({ kind: "image" as const, url })),
+    ...refManifest.videoUrls.map((url) => ({ kind: "video" as const, url })),
+    ...refManifest.audioUrls.map((url) => ({ kind: "audio" as const, url })),
+  ];
+  const moderation = await moderateGenerationContent({
     text: prompt,
-    imageUrls: collectImageRefUrls(params),
+    media: moderationMedia,
     resolveImageUrl: (url) => moderationImageDataUrl(req.user!.userId, url),
   });
+  if (!moderation.ok) {
+    await writeAuditLog({
+      actorId: req.user!.userId,
+      action: "moderation.unavailable",
+      targetType: "generation",
+      detail: moderation.reason || "multimodal moderation unavailable",
+      meta: { layer: "ml", mode, modelId },
+    });
+    res.status(503).json({
+      error: "AI safety verification is temporarily unavailable — please try again",
+      code: "MODERATION_UNAVAILABLE",
+    });
+    return;
+  }
   if (moderation.blocked) {
-    const unavailable = !moderation.ok && moderation.categories.includes("unverified-image");
-    if (unavailable) {
-      await writeAuditLog({
-        actorId: req.user!.userId,
-        action: "moderation.unavailable",
-        targetType: "generation",
-        detail: moderation.reason || "reference moderation unavailable",
-        meta: { layer: "ml", mode, modelId },
-      });
-      res.status(503).json({
-        error: "Reference safety verification is temporarily unavailable — please try again",
-        code: "MODERATION_UNAVAILABLE",
-      });
-      return;
-    }
     await noteBlockedAttempt(req.user!.userId).catch(() => {}); // P30.4 rate-limit sanog'i
     await writeAuditLog({
       actorId: req.user!.userId,
@@ -2158,20 +2175,52 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
   // NA "xavfsizlik uchun" so'z almashtirib evasion qiladi (softenPromptForSafety OLIB TASHLANDI).
   //  · Mention butunligi: chiqishda kirishda YO'Q @mention bo'lsa (renumber/ixtiro) → RAD ET,
   //    asl promptni qoldiramiz (jimgina "tuzatish" boshqa rasmga ishora qilardi — P28.3).
-  const finalizeEnhanced = (rawPrompt: string, originalPrompt: string) => {
+  type SettledEnhancement = {
+    prompt: string;
+    mentionMismatch: boolean;
+    mentionMismatchKind: "missing" | "extraneous" | "changed" | null;
+    missingMentions: MentionKey[];
+    extraneousMentions: MentionKey[];
+  };
+  const finalizeEnhanced = (rawPrompt: string, originalPrompt: string): SettledEnhancement => {
     const maxChars = mode === "voice" && model?.maxChars
       ? Math.min(ENHANCE_PROMPT_MAX, model.maxChars)
       : ENHANCE_PROMPT_MAX;
     let trimmed = String(rawPrompt || "").trim();
-    if (!trimmed) return { prompt: originalPrompt, mentionMismatch: false };
+    if (!trimmed) return {
+      prompt: originalPrompt,
+      mentionMismatch: false,
+      mentionMismatchKind: null,
+      missingMentions: [],
+      extraneousMentions: [],
+    };
     if (trimmed.length > maxChars) {
       const clipped = trimmed.slice(0, maxChars + 1);
       const cut = clipped.lastIndexOf(" ");
       trimmed = clipped.slice(0, cut > Math.floor(maxChars * 0.75) ? cut : maxChars).trim();
     }
     const integrity = validateMentionIntegrity(originalPrompt, trimmed, allowedMentionAdditions);
-    if (!integrity.ok) return { prompt: originalPrompt, mentionMismatch: true };
-    return { prompt: trimmed, mentionMismatch: false };
+    if (!integrity.ok) {
+      const mentionMismatchKind = integrity.missing.length && integrity.extraneous.length
+        ? "changed"
+        : integrity.missing.length
+          ? "missing"
+          : "extraneous";
+      return {
+        prompt: originalPrompt,
+        mentionMismatch: true,
+        mentionMismatchKind,
+        missingMentions: integrity.missing,
+        extraneousMentions: integrity.extraneous,
+      };
+    }
+    return {
+      prompt: trimmed,
+      mentionMismatch: false,
+      mentionMismatchKind: null,
+      missingMentions: [],
+      extraneousMentions: [],
+    };
   };
 
   if (format === "json") {
@@ -2235,12 +2284,19 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
     const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
     const settled = finalizeEnhanced(promptStr, p.data.prompt);
     json.prompt = settled.prompt;
+    const refundedBalance = settled.mentionMismatch
+      ? await refundAiCredits(req.user!.userId, enhanceCost.cost)
+      : null;
     return { status: 200, body: {
       prompt: settled.prompt,
       json,
       mentionMismatch: settled.mentionMismatch,
-      creditsLeft: gate.remaining,
-      creditsCharged: enhanceCost.cost,
+      mentionMismatchKind: settled.mentionMismatchKind,
+      missingMentions: settled.missingMentions,
+      extraneousMentions: settled.extraneousMentions,
+      creditsLeft: refundedBalance ?? gate.remaining,
+      creditsCharged: settled.mentionMismatch ? 0 : enhanceCost.cost,
+      creditsRefunded: settled.mentionMismatch ? enhanceCost.cost : 0,
       referencesUsed,
       referencesSkipped,
     } };
@@ -2264,11 +2320,18 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
     return { status: 502, body: { error: out.error } };
   }
   const settled = finalizeEnhanced(out.data, p.data.prompt);
+  const refundedBalance = settled.mentionMismatch
+    ? await refundAiCredits(req.user!.userId, enhanceCost.cost)
+    : null;
   return { status: 200, body: {
     prompt: settled.prompt,
     mentionMismatch: settled.mentionMismatch,
-    creditsLeft: gate.remaining,
-    creditsCharged: enhanceCost.cost,
+    mentionMismatchKind: settled.mentionMismatchKind,
+    missingMentions: settled.missingMentions,
+    extraneousMentions: settled.extraneousMentions,
+    creditsLeft: refundedBalance ?? gate.remaining,
+    creditsCharged: settled.mentionMismatch ? 0 : enhanceCost.cost,
+    creditsRefunded: settled.mentionMismatch ? enhanceCost.cost : 0,
     referencesUsed: out.referencesUsed,
     referencesSkipped: out.referencesSkipped,
   } };
