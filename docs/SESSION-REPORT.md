@@ -8,4 +8,6 @@ Session Report: 2026-08-20 — Studio Gen production outage
 - AE manbasidan Premiere UXP porti qayta generatsiya qilindi; generator trailing-whitespace deterministik.
 - API build, moderation/reference/preflight/enhance testlari PASS.
 - CEP package/responsive/session va Premiere host/bridge/integration testlari PASS.
-- Public copy va plugin download-state testlari PASS; production canary rolloutdan keyin tekshiriladi.
+- Commit `1298e1a` CI’dan o‘tdi; Cloud Run `assetflow-api-00178-xax` 100% trafikda, web build jonli.
+- Production canary PASS: moderation/generation ready, Vertex tekshiruvi ishladi, kredit/provider job sarflanmadi.
+- Lokal AE customer paneli `1298e1a` build bilan qayta o‘rnatildi; AE’ni to‘liq qayta ochish kutilmoqda.
