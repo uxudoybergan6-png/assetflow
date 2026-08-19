@@ -304,7 +304,7 @@ check('output settings are capability-driven',
   'unsupported model controls must stay hidden');
 check('secure live quote gates unified Generate',
   html.includes("studioPost('/api/studio/gen/cost-quote'") &&
-  html.includes("gen.disabled=!s.validation.ok||s.submitting") &&
+  html.includes("gen.disabled=!ready||!s.validation.ok||s.submitting") &&
   html.includes("s.quote.status==='ready'?'✦'+s.quote.price"),
   'Generate must wait for a current server quote');
 check('unified submit delegates to existing signed generation handlers',

@@ -14,6 +14,9 @@
 
   var TOKEN_KEY = "ff_token";
   var USER_KEY = "ff_user";
+  // Every authenticated request captures this value. A logout/account switch
+  // invalidates the capture so a late response cannot mutate the next user.
+  var authSessionEpoch = 0;
 
   function getToken() {
     try { return window.localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; }
@@ -22,16 +25,27 @@
     try { return JSON.parse(window.localStorage.getItem(USER_KEY) || "null"); } catch (e) { return null; }
   }
   function setSession(token, user) {
+    var nextToken = token || "";
+    // /me/profile refresh can update user metadata under the same token; that
+    // is still the same authenticated session and must not cancel parallel reads.
+    if (getToken() !== nextToken) authSessionEpoch += 1;
     try {
-      window.localStorage.setItem(TOKEN_KEY, token || "");
+      window.localStorage.setItem(TOKEN_KEY, nextToken);
       window.localStorage.setItem(USER_KEY, JSON.stringify(user || null));
     } catch (e) {}
   }
   function clearSession() {
+    if (getToken() || getUser()) authSessionEpoch += 1;
     try {
       window.localStorage.removeItem(TOKEN_KEY);
       window.localStorage.removeItem(USER_KEY);
     } catch (e) {}
+  }
+  function sessionEpoch() { return authSessionEpoch; }
+  function sessionChangedError() {
+    var err = new Error("Account changed while the request was running");
+    err.code = "SESSION_CHANGED";
+    return err;
   }
 
   // UUID (idempotency kaliti) — crypto.randomUUID bo'lsa o'sha, aks holda zaxira generator.
@@ -48,7 +62,16 @@
   // Deploy/config xatolari keyingi urinishda o'z-o'zidan tuzalmaydi. Ularni 4 marta yuborish
   // foydalanuvchini ~12 soniya kuttiradi va serverni bekorga band qiladi.
   function isPermanentResponseCode(code) {
-    return code === "MODERATION_NOT_CONFIGURED" || code === "AI_NOT_CONFIGURED";
+    return (
+      code === "MODERATION_NOT_CONFIGURED" ||
+      code === "AI_NOT_CONFIGURED" ||
+      code === "S3_NOT_CONFIGURED" ||
+      code === "GEN_KILL_SWITCH" ||
+      code === "SPEND_CEILING_REACHED" ||
+      code === "GOOGLE_NOT_CONFIGURED" ||
+      code === "BILLING_NOT_CONFIGURED" ||
+      code === "BILLING_STORE_MISSING"
+    );
   }
   // Cold-start uchun sabrli backoff (ms) — jami ~12s + har urinishda timeout.
   function backoffMs(a) { return [1500, 3500, 7000, 10000][a] || 10000; }
@@ -66,6 +89,63 @@
   }
 
   /**
+   * `/gen/health` va `/gen/models` javoblarini bitta UI haqiqatiga birlashtiradi.
+   * Health aniq "false" desa model ro'yxati eski/keshdan kelgan bo'lsa ham Ready bo'lmaydi.
+   * Health vaqtincha olinmasa, yangi models javobidagi readiness bitlari xavfsiz fallback.
+   */
+  function assessAiReadiness(health, modelResponses) {
+    var rows = Array.isArray(modelResponses) ? modelResponses.filter(Boolean) : [];
+    var unavailable = [];
+    rows.forEach(function (r) {
+      if (Array.isArray(r.unavailableModels)) unavailable = unavailable.concat(r.unavailableModels);
+    });
+    var modelCount = rows.reduce(function (n, r) {
+      return n + (Array.isArray(r.models) ? r.models.length : 0);
+    }, 0);
+    var modelModerationReady = rows.some(function (r) { return r.moderationReady === true; });
+    var modelModerationConfigured = rows.some(function (r) { return r.moderationConfigured === true; });
+    var modelGenerationReady = rows.some(function (r) {
+      return r.generationReady === true || (r.configured === true && Array.isArray(r.models) && r.models.length > 0);
+    });
+    var hasHealth = !!(health && typeof health === "object");
+    var moderationReady = hasHealth ? health.moderationReady === true : modelModerationReady;
+    var moderationConfigured = hasHealth ? health.moderationConfigured === true : modelModerationConfigured;
+    var storageReady = hasHealth
+      ? (health.storageReady !== false && health.s3 !== false)
+      : !rows.some(function (r) { return r.storageReady === false; });
+    var generationReady = hasHealth ? health.generationReady === true : modelGenerationReady;
+
+    if (!moderationReady) {
+      return moderationConfigured
+        ? { ready: false, retryable: true, code: "MODERATION_UNAVAILABLE", message: "AI safety verification is temporarily unavailable — retrying shortly", modelCount: modelCount }
+        : { ready: false, retryable: false, code: "MODERATION_NOT_CONFIGURED", message: "AI safety verification is unavailable — generation is disabled", modelCount: modelCount };
+    }
+    if (!storageReady) {
+      return { ready: false, retryable: false, code: "S3_NOT_CONFIGURED", message: "AI result storage is unavailable — generation is disabled", modelCount: modelCount };
+    }
+    if (!generationReady) {
+      var transient = unavailable.find(function (item) {
+        return item && (item.retryable === true || item.unavailableCode === "PROVIDER_UNAVAILABLE" || item.unavailableCode === "MODERATION_UNAVAILABLE");
+      });
+      if (transient) {
+        return { ready: false, retryable: true, code: transient.unavailableCode || "PROVIDER_UNAVAILABLE", message: transient.unavailableReason || "AI providers are temporarily unavailable — retrying shortly", modelCount: modelCount };
+      }
+      return { ready: false, retryable: false, code: "AI_NOT_CONFIGURED", message: "AI providers are unavailable — generation is disabled", modelCount: modelCount };
+    }
+    if (!modelCount) {
+      return { ready: false, retryable: true, code: "MODELS_UNAVAILABLE", message: "No AI models are available — retry the service check", modelCount: 0 };
+    }
+    return { ready: true, retryable: false, code: "", message: "", modelCount: modelCount };
+  }
+
+  // Charge-only absolute balance response'lari teskari kelsa eski balandroq qiymat qaytmasin.
+  function reconcileChargedBalance(current, next, loaded) {
+    if (typeof next !== "number" || !isFinite(next)) return current;
+    if (!loaded || typeof current !== "number" || !isFinite(current)) return next;
+    return Math.min(current, next);
+  }
+
+  /**
    * So'rov. opts: { method, body(obyekt), auth:false, idempotencyKey, idempotent, timeout }.
    * Muvaffaqiyatsiz HTTP → Error{status, code, data}. Tarmoq uzilishi/timeout → Error('NETWORK').
    *
@@ -78,6 +158,8 @@
     opts = opts || {};
     var headers = Object.assign({}, opts.headers || {});
     var t = getToken();
+    var requestEpoch = authSessionEpoch;
+    var authScoped = opts.auth !== false;
     if (t && opts.auth !== false) headers.Authorization = "Bearer " + t;
     var method = (opts.method || "GET").toUpperCase();
     if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey;
@@ -91,6 +173,7 @@
     var timeoutMs = opts.timeout || 20000;
     var res = null;
     for (var a = 0; a < maxAttempts; a++) {
+      if (authScoped && (requestEpoch !== authSessionEpoch || getToken() !== t)) throw sessionChangedError();
       var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
       var timer = ctrl ? setTimeout((function (c) { return function () { try { c.abort(); } catch (e) {} }; })(ctrl), timeoutMs) : null;
       try {
@@ -123,6 +206,7 @@
     }
     var data = null;
     try { data = await res.json(); } catch (e) { data = null; }
+  if (authScoped && (requestEpoch !== authSessionEpoch || getToken() !== t)) throw sessionChangedError();
   // P8 #4 + P29 (29b) — sessiyani FAQAT server token O'LGANINI AYTGANDA tozalaymiz.
   // requireAuth (yagona sessiya-o'lim manbai) HAR DOIM aniq `code` yuboradi
   // (TOKEN_EXPIRED/INVALID/REVOKED/NO_TOKEN), lekin WEB JWT sessiyasida ACCOUNT_BLOCKED/
@@ -148,18 +232,21 @@
     getUser: getUser,
     setSession: setSession,
     clearSession: clearSession,
+    sessionEpoch: sessionEpoch,
     req: req,
+    uuid: uuid,
+    assessAiReadiness: assessAiReadiness,
+    reconcileChargedBalance: reconcileChargedBalance,
 
     // Auth
-    // FIX A3 (P6) — bu 5 auth POST'i cold-start'ga qarshi qayta uriladi (idempotent:true → 4
-    //   urinish, timeout 30s). Server IP-rate-limited, shu bois klient qayta urinishi xavfsiz.
-    //   Bularsiz sovuq Cloud Run/Neon uyg'onishida bitta urinish = kafolatli "Can't reach server".
-    //   Checkout/gen'ga TEGMAYMIZ (pul zonasi — o'z idempotency kaliti bilan alohida).
+    // Faqat haqiqatan takror-xavfsiz auth POST'lar retry qilinadi. Register/forgot/resend
+    // javobi yo'qolganidan keyin avtomatik takrorlansa hisob yaratilgan bo'lsa 409 ko'rinishi
+    // yoki bir nechta email yuborilishi mumkin; ular foydalanuvchi nazoratidagi bitta urinish.
     login: function (email, password) { return req("/api/auth/login", { method: "POST", body: { email: email, password: password }, auth: false, idempotent: true, timeout: 30000 }); },
-    register: function (email, password, name, turnstileToken) { return req("/api/auth/register", { method: "POST", body: { email: email, password: password, name: name || undefined, turnstileToken: turnstileToken || undefined }, auth: false, idempotent: true, timeout: 30000 }); },
-    forgot: function (email) { return req("/api/auth/forgot-password", { method: "POST", body: { email: email }, auth: false, idempotent: true, timeout: 30000 }); },
+    register: function (email, password, name, turnstileToken) { return req("/api/auth/register", { method: "POST", body: { email: email, password: password, name: name || undefined, turnstileToken: turnstileToken || undefined }, auth: false, timeout: 30000 }); },
+    forgot: function (email) { return req("/api/auth/forgot-password", { method: "POST", body: { email: email }, auth: false, timeout: 30000 }); },
     google: function (credential) { return req("/api/auth/google", { method: "POST", body: { credential: credential }, auth: false, idempotent: true, timeout: 30000 }); },
-    resendVerification: function (email) { return req("/api/auth/resend-verification", { method: "POST", body: { email: email }, auth: false, idempotent: true, timeout: 30000 }); },
+    resendVerification: function (email) { return req("/api/auth/resend-verification", { method: "POST", body: { email: email }, auth: false, timeout: 30000 }); },
     me: function () { return req("/api/auth/me"); },
     saveName: function (name) { return req("/api/auth/me", { method: "PATCH", body: { name: name } }); },
     // Avatar — FormData (req() JSON'lashtiradi, shu sabab to'g'ridan fetch)
@@ -228,7 +315,12 @@
     // §F (P33) — shablon sevimlilari SERVER-sinxron (qurilmalar aro; plagin ham shu endpoint).
     favorites: function () { return req("/api/plugin/favorites"); },
     favoriteToggle: function (templateId, on) { return req("/api/plugin/favorites", { method: "POST", body: { templateId: templateId, on: !!on } }); },
-    packLink: function (templateId) { return req("/api/plugin/assets/" + encodeURIComponent(templateId) + "/pack?json=1"); },
+    // Quota yozadigan GET: bitta mantiqiy download uchun stable Idempotency-Key. req() ichki
+    // retry'lari ham ayni headerni ishlatadi; caller NETWORK'dan keyingi qo'lda retryga kalitni saqlashi mumkin.
+    packLink: function (templateId, requestId) {
+      var key = requestId || uuid();
+      return req("/api/plugin/assets/" + encodeURIComponent(templateId) + "/pack?json=1", { idempotencyKey: key });
+    },
 
     // Billing (Lemon Squeezy — MoR). body: { plan: "pro"|"studio" } yoki { credits: 500 }
     checkout: function (body) { return req("/api/billing/checkout", { method: "POST", body: body }); },
@@ -243,6 +335,7 @@
 
     // Studio Gen
     credits: function () { return req("/api/studio/credits"); },
+    genHealth: function () { return req("/api/studio/gen/health"); },
     models: function (mode) { return req("/api/studio/gen/models?mode=" + encodeURIComponent(mode)); },
     // QA-FIX #12 — sessiya modeli: yaratishda title (birinchi prompt) ham ketadi
     session: function (mode, title) { return req("/api/studio/gen/sessions", { method: "POST", body: { mode: mode, title: title || undefined } }); },

@@ -122,9 +122,9 @@ const LOCAL_RE = /\b(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])\b/gi;
  * tekshiruv yiqiladi va odam qayta ko'rib chiqishga majbur bo'ladi.
  */
 const LOCAL_OK = {
-  // `LOCAL_API`/`LOCAL_ADMIN` + `isLocalDev()` — faqat `location.hostname`
-  // localhost bo'lganda ishlatiladi; UXP panelida hech qachon emas.
-  "ported/ae-src/assetflow-env.js": 4,
+  // `LOCAL_API`/`LOCAL_ADMIN` + `isLocalDev()` va `sanitizeApi()` loopback
+  // himoyasi — UXP production panelida lokal manzil hech qachon so'rovga aylanmaydi.
+  "ported/ae-src/assetflow-env.js": 6,
   // `publicApiBase()` HIMOYASI: prefs'da qolib ketgan localhost bazani aniqlab
   // production'ga qaytaradi — ya'ni bu uchrashlar xavf emas, xavfning davosi.
   "ported/ae-src/assetflow-account.js": 6,

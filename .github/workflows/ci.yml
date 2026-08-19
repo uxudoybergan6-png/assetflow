@@ -122,6 +122,7 @@ jobs:
             apps/api/scripts/test-plugin-device-auth.mjs \
             apps/api/scripts/test-plugin-session-policy.mjs \
             apps/api/scripts/test-gen-provider-availability.mjs \
+            apps/api/scripts/test-idempotent-side-effects.mjs \
             apps/api/scripts/test-gen-provider-adapters.mjs \
             apps/api/scripts/test-gen-reference-security.mjs \
             apps/api/scripts/test-gen-param-contract.mjs \
@@ -130,12 +131,15 @@ jobs:
             apps/api/scripts/test-public-keys.mjs \
             apps/api/scripts/test-enhance-intelligence.mjs \
             apps/api/scripts/test-video-reference-trim.mjs \
+            scripts/test-production-gen-smoke-contract.mjs \
             packages/assetflow-studio/scripts/test-studio-session-policy.mjs \
             packages/assetflow-studio/scripts/test-aistudio-create-init.mjs \
             packages/assetflow-studio/scripts/test-aistudio-create-parity.mjs \
             packages/assetflow-studio/scripts/test-api-retry-policy.mjs \
+            packages/assetflow-studio/scripts/test-web-reliability-contract.mjs \
             packages/assetflow-studio/scripts/test-device-auth-ui.mjs \
             plugins/after-effects-cep/scripts/test-create-workspace.mjs \
+            plugins/after-effects-cep/scripts/test-gen-runtime.mjs \
             plugins/after-effects-cep/scripts/test-frameflow-vnext.mjs \
             plugins/after-effects-cep/scripts/test-frameflow-session-persistence.mjs \
             plugins/after-effects-cep/scripts/test-premiere-cep-host.mjs \

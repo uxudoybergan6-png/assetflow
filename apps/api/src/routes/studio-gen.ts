@@ -84,6 +84,7 @@ import {
   moderateGenerationContent,
   isSafetyVerificationConfigured,
   moderateOutputsEnabled,
+  safetyVerificationReadiness,
 } from "../lib/moderation.js";
 import { writeAuditLog } from "../lib/audit-log.js";
 import { measuredEtaSeconds, fallbackEtaSeconds } from "../lib/gen-eta.js";
@@ -98,6 +99,17 @@ import {
   type GenParamError,
   type ReferenceManifest,
 } from "../lib/gen-param-validation.js";
+import {
+  assistIdentity,
+  readAssistReplay,
+  settleAssistOperation,
+  type AssistIdentity,
+  type AssistHttpResult,
+} from "../lib/assist-idempotency.js";
+import {
+  hasUnsettledGenerationRefund,
+  isActiveSessionGeneration,
+} from "../lib/generation-state.js";
 
 export const studioGenRouter = Router();
 
@@ -425,6 +437,7 @@ studioGenRouter.get("/credits", async (req: Request, res: Response) => {
 // READ-ONLY: money-zona (consume/refund/qiymatlar) TEGILMAYDI — faqat mavjud yozuvlar.
 const LEDGER_PAGE = 25;
 const DOWNLOADS_PAGE = 25;
+const USER_VISIBLE_CREDIT_REASONS = ["consume", "refund", "topup", "clawback"] as const;
 
 // Keyset kursor: "<createdAtMillis>_<id>" (createdAt desc, id tie-break). Offset
 // paginatsiyaning yangi qator qo'shilganda dublikat/o'tkazib yuborish muammosi yo'q.
@@ -458,10 +471,10 @@ studioGenRouter.get("/credits/ledger", async (req: Request, res: Response) => {
       ? ["refund"]
       : filter === "purchased"
       ? ["topup", "clawback"]
-      : null;
+      : [...USER_VISIBLE_CREDIT_REASONS];
   const where = {
     userId,
-    ...(reasonFilter ? { reason: { in: reasonFilter } } : {}),
+    reason: { in: reasonFilter },
     ...keysetCursorWhere(String(req.query.cursor || "")),
   };
   const rows = await prisma.creditLedger.findMany({
@@ -520,7 +533,7 @@ studioGenRouter.get("/credits/ledger", async (req: Request, res: Response) => {
   // Agregatlar — BUTUN tarix bo'yicha (sahifadan qat'i nazar), READ-ONLY.
   const agg = await prisma.creditLedger.groupBy({
     by: ["reason"],
-    where: { userId },
+    where: { userId, reason: { in: [...USER_VISIBLE_CREDIT_REASONS] } },
     _sum: { delta: true },
   });
   let totalSpent = 0;
@@ -582,15 +595,27 @@ studioGenRouter.get("/downloads", async (req: Request, res: Response) => {
 });
 
 /** GET /gen/health — AI sozlamalari holati (faqat boolean — kalitlar QAYTARILMAYDI). */
-studioGenRouter.get("/gen/health", (_req: Request, res: Response) => {
+studioGenRouter.get("/gen/health", async (_req: Request, res: Response) => {
   const providerStatus = providerConfigurationSnapshot();
-  const moderationReady = isSafetyVerificationConfigured() && moderateOutputsEnabled();
+  const catalogModels = await resolveCatalogModels(GEN_MODELS);
+  const availableModels = catalogModels.filter(
+    (model) => !model.opType && resolveModelAvailability(model, providerStatus).available
+  );
+  const safety = await safetyVerificationReadiness();
+  const moderationReady = safety.ready && moderateOutputsEnabled();
+  const storageReady = process.env.NODE_ENV !== "production" || isS3Configured();
   res.json({
     ...providerStatus,
     s3: isS3Configured(),
+    storageReady,
+    moderationConfigured: safety.configured,
     moderationReady,
-    generationReady: moderationReady && Object.values(providerStatus).some(Boolean),
-    catalogVersion: genCatalogVersion(),
+    moderationCheckedAt: safety.checkedAt,
+    generationReady: moderationReady && storageReady && availableModels.length > 0,
+    availableModelCount: availableModels.length,
+    availableModes: Array.from(new Set(availableModels.map((model) => model.mode))).sort(),
+    providerConfigured: providerStatus,
+    catalogVersion: genCatalogVersion(catalogModels),
   });
 });
 
@@ -692,49 +717,101 @@ studioGenRouter.patch("/gen/sessions/:id", async (req: Request, res: Response) =
   res.json(updated);
 });
 
-/** P6 — DELETE /gen/sessions/:id: sessiya + BARCHA gen'lari o'chadi (schema cascade).
- *  Avval GCS obyektlar (asset resultKey/thumbKey + bog'langan saved ref'lar) tozalanadi —
- *  yetim fayl qolmasin. MONEY-ZONE: kredit refund/charge YO'Q (sarflangan kredit tarixi
- *  CreditLedger'da qoladi — u FK'siz). Egalik: boshqa user → 404 (PATCH bilan bir xil). */
+/** P6 — DELETE /gen/sessions/:id: sessiya + terminal gen'lari o'chadi (schema cascade).
+ *  DB transactiondan keyin GCS obyektlar (asset resultKey/thumbKey + bog'langan saved ref'lar)
+ *  best-effort tozalanadi. Faol job yoki tugallanmagan refund bo'lsa o'chirish bloklanadi.
+ *  MONEY-ZONE: bu endpoint refund/charge QILMAYDI; CreditLedger FK'siz saqlanadi.
+ *  Egalik: boshqa user → 404 (PATCH bilan bir xil). */
 studioGenRouter.delete("/gen/sessions/:id", async (req: Request, res: Response) => {
   const id = String(req.params.id);
-  const session = await prisma.genSession.findUnique({ where: { id } });
-  if (!session || session.userId !== req.user!.userId) {
+  // Session qatorini FOR UPDATE bilan qulflab, faol avlodlarni tekshirish va
+  // cascade-delete'ni BIR transactionda qilamiz. Generation insert FK uchun shu
+  // parent qatoriga key-share oladi: parallel yangi job tekshiruvdan keyin sirg'alib
+  // kirib, cascade bilan kredit/refundsiz o'chib ketolmaydi.
+  const deletion = await prisma.$transaction(async (tx) => {
+    const locked = await tx.$queryRaw<Array<{ id: string; userId: string }>>`
+      SELECT "id", "userId"
+      FROM "GenSession"
+      WHERE "id" = ${id}
+      FOR UPDATE
+    `;
+    const session = locked[0];
+    if (!session || session.userId !== req.user!.userId) {
+      return { state: "not_found" as const };
+    }
+    const gens = await tx.generation.findMany({
+      where: { sessionId: id },
+      include: { assets: true },
+    });
+    const active = gens.filter((g) => isActiveSessionGeneration(g.status));
+    const unsettledRefunds = gens.filter((g) => hasUnsettledGenerationRefund(g));
+    if (active.length > 0 || unsettledRefunds.length > 0) {
+      return {
+        state: "blocked" as const,
+        activeCount: active.length,
+        unsettledRefundCount: unsettledRefunds.length,
+        statuses: Array.from(new Set(active.map((g) => g.status))).sort(),
+      };
+    }
+    const genIds = gens.map((g) => g.id);
+    const linkedRefs = genIds.length
+      ? await tx.savedReference.findMany({
+          where: { generationId: { in: genIds }, userId: session.userId },
+          select: { id: true, resultKey: true },
+        })
+      : [];
+    if (linkedRefs.length) {
+      await tx.savedReference.deleteMany({ where: { id: { in: linkedRefs.map((r) => r.id) } } });
+    }
+    await tx.genSession.delete({ where: { id } });
+    return {
+      state: "deleted" as const,
+      genIds,
+      assetKeys: gens
+        .flatMap((g) => g.assets.flatMap((a) => [a.resultKey, a.thumbKey, a.displayKey, a.previewKey, a.watermarkKey]))
+        .filter((k): k is string => typeof k === "string" && k.length > 0),
+      referenceKeys: linkedRefs
+        .map((r) => r.resultKey)
+        .filter((k): k is string => typeof k === "string" && k.length > 0),
+    };
+  });
+  if (deletion.state === "not_found") {
     res.status(404).json({ error: "Session not found" });
     return;
   }
-  const gens = await prisma.generation.findMany({
-    where: { sessionId: id },
-    include: { assets: true },
-  });
-  const genIds = gens.map((g) => g.id);
-  // Storage tozalash — single-gen delete bilan bir xil qamrov (asset + poster + wm + linked ref)
-  const keys = gens
-    .flatMap((g) => g.assets.flatMap((a) => [a.resultKey, a.thumbKey, a.displayKey, a.previewKey, a.watermarkKey]))
-    .filter((k): k is string => typeof k === "string" && k.length > 0);
+  if (deletion.state === "blocked") {
+    const refundPending = deletion.unsettledRefundCount > 0;
+    res.status(409).json({
+      error: deletion.activeCount > 0
+        ? "This session still has active generations — wait for them to finish or cancel queued jobs first"
+        : "This session has generations awaiting a credit refund — try again after reconciliation completes",
+      code: deletion.activeCount > 0
+        ? "SESSION_HAS_ACTIVE_GENERATIONS"
+        : "SESSION_HAS_UNSETTLED_REFUNDS",
+      activeCount: deletion.activeCount,
+      unsettledRefundCount: deletion.unsettledRefundCount,
+      retryable: refundPending,
+      statuses: deletion.statuses,
+    });
+    return;
+  }
+  // Storage tozalash — single-gen delete bilan bir xil qamrov (asset + poster + wm + linked ref).
+  // DB oldin o'chirildi: session row lock yangi Generation insert bilan race'ni yopadi;
+  // storage best-effort bo'lib, eski xatti-harakat kabi xatosi API delete'ni qaytarmaydi.
   let r2deleted = 0;
-  if (keys.length) {
+  if (deletion.assetKeys.length) {
     try {
-      r2deleted = await deleteS3Objects(keys);
+      r2deleted = await deleteS3Objects(deletion.assetKeys);
     } catch (e) {
       console.error("[studio-gen] session delete: R2 xato:", e);
     }
   }
-  try {
-    if (genIds.length) {
-      const linkedRefs = await prisma.savedReference.findMany({
-        where: { generationId: { in: genIds }, userId: session.userId },
-      });
-      const refKeys = linkedRefs.map((r) => r.resultKey).filter((k): k is string => typeof k === "string" && k.length > 0);
-      if (refKeys.length) await deleteS3Objects(refKeys).catch(() => {});
-      if (linkedRefs.length) await prisma.savedReference.deleteMany({ where: { id: { in: linkedRefs.map((r) => r.id) } } });
-    }
-  } catch (e) {
-    console.error("[studio-gen] session delete: linked refs xato:", e);
+  if (deletion.referenceKeys.length) {
+    await deleteS3Objects(deletion.referenceKeys).catch((e) =>
+      console.error("[studio-gen] session delete: linked refs R2 xato:", e)
+    );
   }
-  // DB: sessiya o'chishi Generation+GenAsset'ni CASCADE o'chiradi (schema onDelete: Cascade)
-  await prisma.genSession.delete({ where: { id } });
-  res.json({ ok: true, deletedGenerations: genIds.length, r2deleted });
+  res.json({ ok: true, deletedGenerations: deletion.genIds.length, r2deleted });
 });
 
 /** GET /gen/sessions/:id/generations — sessiya tarixi (paginatsiya + status filtri). */
@@ -861,23 +938,45 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
   // R4_07 — Topaz enhance/upscale OPERATSIYALARI (opType) composer model picker'ida KO'RINMAYDI
   // (ular generativ model emas; R4_08 gen/library kartalarida "Use ▾" bilan ochiladi). Katalogda
   // qoladi (cost-quote/pricing panel getModelById orqali ko'radi) — faqat bu ro'yxatdan filtrlanadi.
-  const base = (mode ? getModelsByMode(mode) : GEN_MODELS).filter((m) => !m.opType);
   // Picker ham quote/gen bilan bir xil DB narxi va enabled holatini ko'rsatsin.
   // Aks holda katalogdagi ✦N bilan imzolangan quote o'rtasida yashirin farq chiqadi.
-  const catalogModels = await resolveCatalogModels(base);
+  // To'liq katalog BIR MARTA resolve qilinadi: response subset bo'lsa ham models/ops va
+  // har xil `?mode=` so'rovlari aynan bitta catalogVersion qaytaradi.
+  const fullCatalog = await resolveCatalogModels(GEN_MODELS);
+  const catalogModels = fullCatalog.filter((m) => !m.opType && (!mode || m.mode === mode));
   const providerStatus = providerConfigurationSnapshot();
   const withAvailability = catalogModels.map((model) => ({
     model,
     availability: resolveModelAvailability(model, providerStatus),
   }));
-  const moderationReady = isSafetyVerificationConfigured() && moderateOutputsEnabled();
+  const safety = await safetyVerificationReadiness();
+  const moderationReady = safety.ready && moderateOutputsEnabled();
+  const storageReady = process.env.NODE_ENV !== "production" || isS3Configured();
+  const generationReady = moderationReady && storageReady && withAvailability.some((x) => x.availability.available);
+  const platformUnavailable = !storageReady
+    ? {
+        available: false as const,
+        provider: null,
+        unavailableCode: "S3_NOT_CONFIGURED",
+        unavailableReason: "Generation storage is temporarily unavailable",
+        retryable: false,
+      }
+    : !moderationReady
+      ? {
+          available: false as const,
+          provider: null,
+          unavailableCode: safety.configured ? "MODERATION_UNAVAILABLE" : "MODERATION_NOT_CONFIGURED",
+          unavailableReason: "AI safety verification is temporarily unavailable",
+          retryable: safety.configured,
+        }
+      : null;
   // #141 (PX4) — etaSec: O'LCHANGAN mediana (oxirgi 7 kun tarixi), ma'lumot yetmasa
   // feature bo'yicha zaxira. Klient "≈ 1–2 min" qattiq matni o'rniga shuni ko'rsatadi.
   const eta = await measuredEtaSeconds();
   res.json({
     // refKind'ni HAR modelga qo'shamiz (So'nggi-grid "Referens" model-aware bo'lishi uchun).
     // P30 (29c) — policyStrictness ham (klient "qattiq siyosat" ogohlantirishi + boshqa-model taklifi uchun).
-    models: moderationReady ? withAvailability.filter((x) => x.availability.available).map(({ model: m, availability }) => ({
+    models: generationReady ? withAvailability.filter((x) => x.availability.available).map(({ model: m, availability }) => ({
       ...m,
       ...availability,
       refKind: getRefKind(m),
@@ -886,22 +985,21 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
       etaSec: eta[m.id] ?? fallbackEtaSeconds(m),
       etaMeasured: eta[m.id] != null,
     })) : [],
-    unavailableModels: withAvailability.filter((x) => !moderationReady || !x.availability.available).map(({ model, availability }) => ({
+    unavailableModels: withAvailability.filter((x) => !generationReady || !x.availability.available).map(({ model, availability }) => ({
       id: model.id,
       mode: model.mode,
       label: model.label,
-      ...(moderationReady ? availability : {
-        available: false,
-        provider: model.provider ?? null,
-        unavailableCode: "MODERATION_NOT_CONFIGURED",
-        unavailableReason: "AI safety verification is temporarily unavailable",
-      }),
+      ...(platformUnavailable || { ...availability, retryable: availability.unavailableCode === "PROVIDER_UNAVAILABLE" }),
     })),
-    configured: moderationReady && withAvailability.some((x) => x.availability.available),
+    configured: generationReady,
+    moderationConfigured: safety.configured,
     moderationReady,
-    generationReady: moderationReady && withAvailability.some((x) => x.availability.available),
+    moderationCheckedAt: safety.checkedAt,
+    storageReady,
+    generationReady,
     providerStatus,
-    catalogVersion: genCatalogVersion(catalogModels),
+    providerConfigured: providerStatus,
+    catalogVersion: genCatalogVersion(fullCatalog),
   });
 });
 
@@ -910,9 +1008,15 @@ studioGenRouter.get("/gen/models", async (req: Request, res: Response) => {
  *  Remove BG" bir-bosishlik amallari uchun. Klient shu ro'yxatdan qaysi op mavjudligini biladi
  *  (o'chirilgan/entitlement yo'q op umuman ko'rinmaydi). Katalog `enabled` + provayder sozlamasi
  *  IKKALASI shart (D11.a) — kalitsiz op ko'rinsa, bosilganda 503 bo'lardi. */
-studioGenRouter.get("/gen/ops", (_req: Request, res: Response) => {
+studioGenRouter.get("/gen/ops", async (_req: Request, res: Response) => {
   const providerStatus = providerConfigurationSnapshot();
-  const ops = GEN_MODELS.filter((m) => m.opType && resolveModelAvailability(m, providerStatus).available).map((m) => ({
+  const fullCatalog = await resolveCatalogModels(GEN_MODELS);
+  const safety = await safetyVerificationReadiness();
+  const moderationReady = safety.ready && moderateOutputsEnabled();
+  const storageReady = process.env.NODE_ENV !== "production" || isS3Configured();
+  const ops = fullCatalog.filter(
+    (m) => moderationReady && storageReady && m.opType && resolveModelAvailability(m, providerStatus).available
+  ).map((m) => ({
     id: m.id,
     opType: m.opType,
     mode: m.mode,
@@ -924,7 +1028,17 @@ studioGenRouter.get("/gen/ops", (_req: Request, res: Response) => {
     // video-upscale 2×/4× faktorni qo'llaydi (video-upscale.ts params.factor); rasm op'lari yo'q.
     supportsFactor: m.feature === "video-upscale",
   }));
-  res.json({ ops, providerStatus, catalogVersion: genCatalogVersion() });
+  res.json({
+    ops,
+    configured: moderationReady && storageReady && ops.length > 0,
+    moderationConfigured: safety.configured,
+    moderationReady,
+    moderationCheckedAt: safety.checkedAt,
+    storageReady,
+    providerStatus,
+    providerConfigured: providerStatus,
+    catalogVersion: genCatalogVersion(fullCatalog),
+  });
 });
 
 // params hajmi cheklanadi — z.record(z.any()) cheksiz; ulkan obyekt DB'ga yoziladi + har quote/gen'da
@@ -1120,6 +1234,24 @@ studioGenRouter.post("/gen/cost-quote", async (req: Request, res: Response) => {
       error: availability.unavailableReason,
       code: availability.unavailableCode,
       modelId: model.id,
+      retryable: availability.unavailableCode === "PROVIDER_UNAVAILABLE",
+    });
+    return;
+  }
+  if (process.env.NODE_ENV === "production" && !isS3Configured()) {
+    res.status(503).json({
+      error: "Generation storage is not configured",
+      code: "S3_NOT_CONFIGURED",
+      retryable: false,
+    });
+    return;
+  }
+  const safety = await safetyVerificationReadiness();
+  if (!safety.ready || !moderateOutputsEnabled()) {
+    res.status(503).json({
+      error: "AI safety verification is temporarily unavailable",
+      code: safety.configured ? "MODERATION_UNAVAILABLE" : "MODERATION_NOT_CONFIGURED",
+      retryable: safety.configured,
     });
     return;
   }
@@ -1190,6 +1322,7 @@ studioGenRouter.post("/gen/preflight-safety", async (req: Request, res: Response
       res.status(503).json({
         error: availability.unavailableReason || "Unknown model",
         code: availability.unavailableCode || "MODEL_UNAVAILABLE",
+        retryable: availability.unavailableCode === "PROVIDER_UNAVAILABLE",
       });
       return;
     }
@@ -1582,19 +1715,6 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
     return;
   }
-  // Productionda ML input+output moderatsiyasi to'liq sozlanmagan bo'lsa yangi provider
-  // job umuman yaratilmaydi, kredit yechilmaydi. Bu xavfsizlikni fail-closed saqlaydi,
-  // ammo tashqi moderatsiya env'i xatosi katalog/auth/health'ni global yiqitmaydi.
-  if (
-    process.env.NODE_ENV === "production" &&
-    (!isSafetyVerificationConfigured() || !moderateOutputsEnabled())
-  ) {
-    res.status(503).json({
-      error: "AI safety verification is temporarily unavailable",
-      code: "MODERATION_NOT_CONFIGURED",
-    });
-    return;
-  }
   const { sessionId, mode, prompt, modelId, price, costQuoteSignature, idempotencyKey } = p.data;
   let params = { ...((p.data.params ?? {}) as Record<string, unknown>) };
 
@@ -1609,21 +1729,6 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(400).json({ error: "Unknown or disabled model" });
     return;
   }
-  // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; fal → FAL_KEY; vertex* → Google ADC;
-  // aks holda OpenRouter). AUDIT FIX: vertex modellari ilgari OpenRouter kalitiga bog'lanib qolardi —
-  // OPENROUTER_API_KEY olib tashlansa barcha Google modellar 503 bo'lardi.
-  // D11.a — `/gen/ops` bilan BIR XIL availability resolver: ro'yxat va guard ajralib
-  // qolmasin, aks holda ko'rinadigan-lekin-ishlamaydigan op qaytadi.
-  const availability = resolveModelAvailability(model);
-  if (!availability.available) {
-    res.status(503).json({
-      error: availability.unavailableReason,
-      code: availability.unavailableCode,
-      modelId: model.id,
-    });
-    return;
-  }
-
   // BATCH4 #2 — video-upscale: quote'dagi kabi SERVER derivatsiyasi (kesh tufayli arzon).
   // canonicalize server qiymatlarini yozadi → tampered params ph'ni buzadi → BAD_QUOTE;
   // xato holatlar (egalik/uzunlik/probe) KREDITDAN OLDIN aniq 4xx bilan qaytadi.
@@ -1665,6 +1770,71 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
       error: `Text is too long for "${model.label}" — max ${model.maxChars} characters per generation (yours: ${prompt.length}). Split it into parts.`,
       code: "VOICE_TEXT_TOO_LONG",
       maxChars: model.maxChars,
+    });
+    return;
+  }
+
+  // Idempotent replay provider/moderation/kill-switch/quote-expiry gate'laridan OLDIN.
+  // Javob yo'qolgan tayyor job yangi tashqi chaqiruv emas: uni outage paytida ham aynan
+  // oldingi holati bilan qaytarish kerak. Payload hash canonical paramsga bog'langan.
+  const ph = genParamsHash(modelId, mode, params);
+  const idempotencyHash = crypto.createHash("sha256")
+    .update(JSON.stringify({ sessionId, mode, prompt, modelId, price, ph }))
+    .digest("hex");
+  const replay = await prisma.generation.findFirst({
+    where: { userId: req.user!.userId, idempotencyKey },
+    select: { id: true, status: true, idempotencyHash: true },
+  });
+  if (replay) {
+    if (replay.idempotencyHash && replay.idempotencyHash !== idempotencyHash) {
+      res.status(409).json({
+        error: "Idempotency key was already used for a different request",
+        code: "IDEMPOTENCY_CONFLICT",
+        retryable: false,
+      });
+      return;
+    }
+    const prof = await ensurePluginProfile(req.user!.userId);
+    res.status(replay.status === "reserving" ? 202 : 200).json({
+      jobId: replay.id,
+      status: replay.status,
+      creditsLeft: prof.aiCredits,
+      idempotentReplay: true,
+    });
+    return;
+  }
+
+  // Yangi job uchun platforma dependency gate'lari. Replay yuqorida ulardan mustaqil.
+  if (process.env.NODE_ENV === "production" && !isS3Configured()) {
+    res.status(503).json({
+      error: "Generation storage is not configured",
+      code: "S3_NOT_CONFIGURED",
+      retryable: false,
+    });
+    return;
+  }
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!isSafetyVerificationConfigured() || !moderateOutputsEnabled())
+  ) {
+    res.status(503).json({
+      error: "AI safety verification is temporarily unavailable",
+      code: "MODERATION_NOT_CONFIGURED",
+      retryable: false,
+    });
+    return;
+  }
+
+  // Provayder-asosli sozlama tekshiruvi (sfx → ElevenLabs; fal → FAL_KEY; vertex* → Google ADC;
+  // aks holda OpenRouter). Runtime auth/config xatosi ko'rilgan provider qisqa circuit bilan
+  // yashiriladi, shu bois ketma-ket so'rovlar charge→refund sikliga kirmaydi.
+  const availability = resolveModelAvailability(model);
+  if (!availability.available) {
+    res.status(503).json({
+      error: availability.unavailableReason,
+      code: availability.unavailableCode,
+      modelId: model.id,
+      retryable: availability.unavailableCode === "PROVIDER_UNAVAILABLE",
     });
     return;
   }
@@ -1739,6 +1909,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(503).json({
       error: "AI safety verification is temporarily unavailable — please try again",
       code: "MODERATION_UNAVAILABLE",
+      retryable: true,
     });
     return;
   }
@@ -1772,6 +1943,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(503).json({
       error: "AI generation is temporarily paused — please try again shortly",
       code: "GEN_KILL_SWITCH",
+      retryable: true,
     });
     return;
   }
@@ -1781,11 +1953,11 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     res.status(503).json({
       error: ceil.reason || "Daily spend limit reached — please try again tomorrow",
       code: "SPEND_CEILING_REACHED",
+      retryable: false,
     });
     return;
   }
   // Imzolangan narxni tekshir — klient `price`ni soxtalashtira olmaydi (blueprint §7.3).
-  const ph = genParamsHash(modelId, mode, params);
   const v = verifyCostQuote(costQuoteSignature, { modelId, mode, price, ph });
   if (!v.ok) {
     res.status(400).json({ error: v.reason || "Price signature is invalid", code: "BAD_QUOTE" });
@@ -1812,9 +1984,6 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
   }
 
   // Unique reservation barcha quota/slot/kredit side-effectidan OLDIN yaratiladi.
-  const idempotencyHash = crypto.createHash("sha256")
-    .update(JSON.stringify({ sessionId, mode, prompt, modelId, price, ph }))
-    .digest("hex");
   let gen: { id: string; status: string };
   try {
     gen = await prisma.generation.create({
@@ -1853,10 +2022,14 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     });
     return;
   }
-  const failReservation = async (message: string) => {
+  const failReservation = async (message: string, charged = false) => {
     await prisma.generation.updateMany({
       where: { id: gen.id, status: "reserving" },
-      data: { status: "failed", error: message },
+      data: {
+        status: "failed",
+        error: message,
+        ...(!charged ? { refundStatus: "not_required", refundApplied: 0 } : {}),
+      },
     });
   };
 
@@ -1931,7 +2104,7 @@ studioGenRouter.post("/gen", async (req: Request, res: Response) => {
     await refundAiCredits(req.user!.userId, price, { generationId: gen.id }).catch((err) =>
       console.error("[studio-gen] reservation finalize xatosidan keyin refund muvaffaqiyatsiz:", err)
     );
-    await failReservation("RESERVATION_FINALIZE_FAILED");
+    await failReservation("RESERVATION_FINALIZE_FAILED", true);
     await releaseSlot();
     throw e;
   }
@@ -2009,8 +2182,31 @@ const enhanceSchema = z.object({
   references: z.array(z.string().min(8)).max(10).optional(),
   // P17 — bir "click" idempotency kaliti: cold-start'da javob yo'qolsa klient shu kalit bilan qayta
   // uriladi → server keshdan qaytaradi, IKKINCHI marta consume QILMAYDI (double-charge himoyasi).
-  idempotencyKey: z.string().trim().min(8).max(80).optional(),
+  idempotencyKey: z.string().trim().min(8).max(128).optional(),
 });
+
+function assistRequestKey(req: Request): { key: string | null; error?: "INVALID" | "CONFLICT" } {
+  const header = req.get("Idempotency-Key")?.trim() || "";
+  const body = typeof (req.body as { idempotencyKey?: unknown })?.idempotencyKey === "string"
+    ? String((req.body as { idempotencyKey?: unknown }).idempotencyKey).trim()
+    : "";
+  const values = [header, body].filter(Boolean);
+  if (!values.length) return { key: null };
+  if (values.some((value) => value.length < 8 || value.length > 128)) return { key: null, error: "INVALID" };
+  if (new Set(values).size > 1) return { key: null, error: "CONFLICT" };
+  return { key: values[0] };
+}
+
+function assistKeyError(error: "INVALID" | "CONFLICT"): AssistHttpResult {
+  return {
+    status: error === "CONFLICT" ? 409 : 400,
+    body: {
+      error: error === "CONFLICT" ? "Conflicting idempotency keys" : "Invalid idempotency key",
+      code: error === "CONFLICT" ? "IDEMPOTENCY_CONFLICT" : "INVALID_IDEMPOTENCY_KEY",
+      retryable: false,
+    },
+  };
+}
 
 /** Enhance chiqishida qonuniy qo'shilishi mumkin bo'lgan @mention slotlari.
  * Foydalanuvchi tile biriktirib, promptda @img1 deb yozmagan bo'lsa ham Vision uni tilga olishi
@@ -2063,11 +2259,9 @@ function enhanceModelContext(
   return ` Target-model capabilities (use silently): ${bits.join("; ")}.`;
 }
 
-// P17 — ENHANCE idempotency keshi (in-memory, single-instance — daily-cap/rate-limit bilan bir xil
-// falsafa; YANGI JADVAL YO'Q). Bitta kalit = bitta mantiqiy "click". Kesh butun operatsiya PROMISE'ini
-// saqlaydi: shu bois (a) uchuvchi dublikat AYNI promise'ni kutadi (bitta consume), (b) tugagach TTL
-// ichida keshlangan javob qaytadi (consume YO'Q). Faqat MUVAFFAQIYAT (200) keshlanadi — xato holatida
-// entry o'chiriladi (transient Vertex/5xx xatosini yangi urinish qayta sinasin; xatoda refund bo'lgan).
+// L1 tezkor kesh: ayni instansdagi uchuvchi dublikat bitta promise'ni kutadi. Asosiy
+// cross-instance haqiqat esa AiGeneration durable assist row + CreditLedger.sourceKey claim;
+// bu Map yo'qolsa/cold-start bo'lsa ham ikkinchi charge/provider call bo'lmaydi.
 type EnhanceIdemEntry = { promise: Promise<{ status: number; body: unknown }>; expiresAt: number };
 const enhanceIdemCache = new Map<string, EnhanceIdemEntry>();
 const ENHANCE_IDEM_TTL_MS = 10 * 60 * 1000; // 10 daq
@@ -2103,16 +2297,26 @@ function enhanceJsonSchema(mode: string): string {
   );
 }
 
-// P17 — enhance ASOSIY mantiqi. `res` YO'Q: {status, body} qaytaradi — idempotency o'ramчиси
-// (pastdagi route) natijani keshlaydi va javob beradi. Consume/refund/Vertex O'ZGARMAGAN.
-async function enhanceCore(req: Request): Promise<{ status: number; body: unknown }> {
-  // 100% Google: matn ham JSON ham Vertex Gemini (gemini-2.5-flash) ko'p-modal — fal/OpenRouter EMAS.
-  if (!isVertexEnhanceConfigured()) {
-    return { status: 503, body: { error: "AI is not configured", code: "AI_NOT_CONFIGURED" } };
-  }
+// Enhance ASOSIY mantiqi. Durable operation javobni ham saqlaydi: boshqa Cloud Run
+// instansi ayni kalitni olsa provider'ni qayta chaqirmay oldingi javobni qaytaradi.
+async function enhanceCore(req: Request, requestKey?: string | null): Promise<AssistHttpResult> {
   const p = enhanceSchema.safeParse(req.body);
   if (!p.success) {
     return { status: 400, body: { error: p.error.issues[0]?.message || "Invalid request" } };
+  }
+  const payloadForHash = { ...p.data } as Record<string, unknown>;
+  delete payloadForHash.idempotencyKey;
+  const operation = requestKey
+    ? assistIdentity(req.user!.userId, "enhance", requestKey, payloadForHash)
+    : null;
+  if (operation) {
+    const replay = await readAssistReplay(req.user!.userId, operation, 12_000);
+    if (replay.state !== "missing") return replay.result;
+  }
+  // Replay joriy provider outage/config gate'idan OLDIN qaytdi. Yangi operatsiyagina
+  // haqiqiy provider konfiguratsiyasidan o'tadi.
+  if (!isVertexEnhanceConfigured()) {
+    return { status: 503, body: { error: "AI is not configured", code: "AI_NOT_CONFIGURED", retryable: false } };
   }
   const mode = p.data.mode || "image";
   const format = p.data.format || "text";
@@ -2131,13 +2335,6 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
     enhanceModelContext(model, mode, p.data.settings);
   const keepRefs =
     " Preserve any @img / @image / @video / @audio references verbatim (do not rename or remove them).";
-  // Abuza nazorati + kredit (pulli gpt-4o-mini chaqiruvi) — /gen naqshi.
-  if (!(await withinDailyCap(req.user!.userId))) {
-    return { status: 429, body: {
-      error: "Daily AI assist limit reached — please try again tomorrow",
-      code: "DAILY_CAP_REACHED",
-    } };
-  }
   const refUrls = publicUrls(p.data.image_urls || p.data.references);
   const videoRefUrls = publicUrls(p.data.video_urls);
   const audioRefUrls = publicUrls(p.data.audio_urls);
@@ -2163,9 +2360,65 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
     videoUrls: videoRefUrls,
     audioUrls: audioRefUrls,
   });
-  const gate = await consumeAiCredits(req.user!.userId, enhanceCost.cost);
+  const gate = await consumeAiCredits(req.user!.userId, enhanceCost.cost, operation ? {
+    generationId: operation.id,
+    sourceKey: operation.consumeSourceKey,
+    operation: { id: operation.id, requestHash: operation.requestHash },
+  } : {});
   if (!gate.ok) {
-    return { status: 402, body: { error: gate.error, code: gate.code, remaining: gate.remaining } };
+    return {
+      status: gate.code === "IDEMPOTENCY_CONFLICT" ? 409 : 402,
+      body: { error: gate.error, code: gate.code, remaining: gate.remaining, retryable: false },
+    };
+  }
+  if (gate.idempotentReplay && operation) {
+    const replay = await readAssistReplay(req.user!.userId, operation, 12_000);
+    return replay.state === "missing"
+      ? { status: 409, body: { error: "AI assist claim exists but its result is not ready", code: "IDEMPOTENCY_IN_PROGRESS", retryable: true } }
+      : replay.result;
+  }
+  const settleResult = async (result: AssistHttpResult): Promise<AssistHttpResult> => {
+    if (!operation) return result;
+    if (await settleAssistOperation(req.user!.userId, operation, result)) return result;
+    // Stale reconciler refundni yutgan bo'lsa provider success'ni foydalanuvchiga
+    // qaytarmaymiz. Durable FAILED/ASSIST_INTERRUPTED haqiqatini replay qilamiz.
+    const replay = await readAssistReplay(req.user!.userId, operation, 4_000);
+    return replay.state === "missing" ? {
+      status: 409,
+      body: { error: "AI assist settlement was superseded", code: "ASSIST_SETTLEMENT_LOST", retryable: false },
+    } : replay.result;
+  };
+  const refundCost = async (): Promise<{ balance: number | null; applied: number | null }> => {
+    const balance = await refundAiCredits(req.user!.userId, enhanceCost.cost, operation ? {
+      generationId: operation.id,
+      consumeSourceKey: operation.consumeSourceKey,
+      sourceKey: operation.refundSourceKey,
+    } : { topupConsumed: gate.topupConsumed });
+    if (!operation) return { balance, applied: null };
+    const ledger = await prisma.creditLedger.findUnique({ where: { sourceKey: operation.refundSourceKey } });
+    return {
+      balance,
+      applied: ledger?.userId === req.user!.userId && ledger.reason === "refund"
+        ? Math.max(0, ledger.delta)
+        : 0,
+    };
+  };
+  const failResult = async (result: AssistHttpResult): Promise<AssistHttpResult> => {
+    await refundCost();
+    return settleResult(result);
+  };
+  // Cap side-effect durable consume claimdan KEYIN: parallel boshqa instans ayni
+  // operation'ni yutqazsa yuqorida replay qiladi va helper count'ni 2× oshirmaydi.
+  // Barcha 4xx/reference validatsiya ham bu nuqtadan oldin — invalid clip cap yemaydi.
+  if (!(await withinDailyCap(req.user!.userId))) {
+    return failResult({
+      status: 429,
+      body: {
+        error: "Daily AI assist limit reached — please try again tomorrow",
+        code: "DAILY_CAP_REACHED",
+        retryable: false,
+      },
+    });
   }
   // 100% Vertex Gemini — rasm+video+audio+matn bitta ko'p-modal chaqiruvda (vositasiz).
   const spendModel = "vertex/gemini-2.5-flash";
@@ -2240,8 +2493,7 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
         modelContext: ctx.replace(/^\s+/, ""),
       });
       if (!enhanced.ok) {
-        await refundAiCredits(req.user!.userId, enhanceCost.cost);
-        return { status: 502, body: { error: enhanced.error } };
+        return failResult({ status: 502, body: { error: enhanced.error, code: "ENHANCE_PROVIDER_FAILED", retryable: true } });
       }
       ideaForJson = enhanced.data.trim();
       referencesUsed = enhanced.referencesUsed;
@@ -2267,8 +2519,7 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
       ` Enhancement style: ${enhanceStyle}.${keepRefs}${ctx}`;
     const out = await vertexEnhanceJson(system, ideaForJson);
     if (!out.ok) {
-      await refundAiCredits(req.user!.userId, enhanceCost.cost);
-      return { status: 502, body: { error: out.error } };
+      return failResult({ status: 502, body: { error: out.error, code: "ENHANCE_PROVIDER_FAILED", retryable: true } });
     }
     let json: Record<string, unknown> | null = null;
     try {
@@ -2278,28 +2529,37 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
       /* ignore — pastda 502 */
     }
     if (!json) {
-      await refundAiCredits(req.user!.userId, enhanceCost.cost);
-      return { status: 502, body: { error: "Could not get a JSON prompt — please try again" } };
+      return failResult({
+        status: 502,
+        body: { error: "Could not get a JSON prompt — please try again", code: "ENHANCE_INVALID_RESULT", retryable: true },
+      });
     }
     const promptStr = typeof json.prompt === "string" ? json.prompt : p.data.prompt;
     const settled = finalizeEnhanced(promptStr, p.data.prompt);
     json.prompt = settled.prompt;
-    const refundedBalance = settled.mentionMismatch
-      ? await refundAiCredits(req.user!.userId, enhanceCost.cost)
+    const refundResult = settled.mentionMismatch
+      ? await refundCost()
       : null;
-    return { status: 200, body: {
+    return settleResult({ status: 200, body: {
       prompt: settled.prompt,
       json,
       mentionMismatch: settled.mentionMismatch,
       mentionMismatchKind: settled.mentionMismatchKind,
       missingMentions: settled.missingMentions,
       extraneousMentions: settled.extraneousMentions,
-      creditsLeft: refundedBalance ?? gate.remaining,
-      creditsCharged: settled.mentionMismatch ? 0 : enhanceCost.cost,
-      creditsRefunded: settled.mentionMismatch ? enhanceCost.cost : 0,
+      creditsLeft: refundResult?.balance ?? gate.remaining,
+      ...(settled.mentionMismatch
+        ? refundResult?.applied == null
+          ? { refundConfirmed: false }
+          : {
+              creditsCharged: Math.max(0, enhanceCost.cost - refundResult.applied),
+              creditsRefunded: refundResult.applied,
+              refundConfirmed: true,
+            }
+        : { creditsCharged: enhanceCost.cost, creditsRefunded: 0 }),
       referencesUsed,
       referencesSkipped,
-    } };
+    } });
   }
 
   // text — UNIVERSAL multimodal oqim, 100% Vertex Gemini. Rasm+video+audio+matn BITTA generateContent
@@ -2316,34 +2576,48 @@ async function enhanceCore(req: Request): Promise<{ status: number; body: unknow
     modelContext: ctx.replace(/^\s+/, ""),
   });
   if (!out.ok) {
-    await refundAiCredits(req.user!.userId, enhanceCost.cost);
-    return { status: 502, body: { error: out.error } };
+    return failResult({ status: 502, body: { error: out.error, code: "ENHANCE_PROVIDER_FAILED", retryable: true } });
   }
   const settled = finalizeEnhanced(out.data, p.data.prompt);
-  const refundedBalance = settled.mentionMismatch
-    ? await refundAiCredits(req.user!.userId, enhanceCost.cost)
+  const refundResult = settled.mentionMismatch
+    ? await refundCost()
     : null;
-  return { status: 200, body: {
+  return settleResult({ status: 200, body: {
     prompt: settled.prompt,
     mentionMismatch: settled.mentionMismatch,
     mentionMismatchKind: settled.mentionMismatchKind,
     missingMentions: settled.missingMentions,
     extraneousMentions: settled.extraneousMentions,
-    creditsLeft: refundedBalance ?? gate.remaining,
-    creditsCharged: settled.mentionMismatch ? 0 : enhanceCost.cost,
-    creditsRefunded: settled.mentionMismatch ? enhanceCost.cost : 0,
+    creditsLeft: refundResult?.balance ?? gate.remaining,
+    ...(settled.mentionMismatch
+      ? refundResult?.applied == null
+        ? { refundConfirmed: false }
+        : {
+            creditsCharged: Math.max(0, enhanceCost.cost - refundResult.applied),
+            creditsRefunded: refundResult.applied,
+            refundConfirmed: true,
+          }
+      : { creditsCharged: enhanceCost.cost, creditsRefunded: 0 }),
     referencesUsed: out.referencesUsed,
     referencesSkipped: out.referencesSkipped,
-  } };
+  } });
 }
 
 studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) => {
-  // P17 — idempotency o'rami: bir "click" kaliti bilan cold-start qayta-urinishlari BITTA consume
-  // qiladi. Kalit yo'q (eski klient) → oddiy oqim (orqaga moslik).
-  const rawKey = typeof (req.body as { idempotencyKey?: unknown })?.idempotencyKey === "string"
-    ? String((req.body as { idempotencyKey?: unknown }).idempotencyKey).trim()
+  const parsedKey = assistRequestKey(req);
+  if (parsedKey.error) {
+    const r = assistKeyError(parsedKey.error);
+    res.status(r.status).json(r.body);
+    return;
+  }
+  // Kalit yo'q (eski klient) → eski oqim. Yangi klient header/body UUID yuboradi.
+  const rawKey = parsedKey.key || "";
+  // L1 kalit payload digestini ham o'z ichiga oladi: bir UUID boshqa payload bilan
+  // reuse qilinsa eski promise jimgina qaytmaydi, durable layer 409 conflict beradi.
+  const l1PayloadHash = rawKey
+    ? crypto.createHash("sha256").update(JSON.stringify(req.body ?? {})).digest("hex")
     : "";
-  const idemKey = rawKey.length >= 8 ? req.user!.userId + ":" + rawKey : "";
+  const idemKey = rawKey ? `${req.user!.userId}:${rawKey}:${l1PayloadHash}` : "";
   if (!idemKey) {
     const r = await enhanceCore(req);
     res.status(r.status).json(r.body);
@@ -2357,11 +2631,15 @@ studioGenRouter.post("/gen/prompt/enhance", async (req: Request, res: Response) 
     return;
   }
   // Yangi kalit — operatsiya promise'ini keshga OLDIN qo'yamiz (uchuvchi dublikat topsin), keyin kutamiz.
-  const promise = enhanceCore(req).catch(() => ({ status: 500, body: { error: "Enhance failed" } as unknown }));
+  const promise = enhanceCore(req, rawKey).catch(() => ({
+    status: 500,
+    body: { error: "Enhance failed; an unfinished charged request will be refunded automatically", code: "ENHANCE_FAILED", retryable: true } as unknown,
+  }));
   enhanceIdemCache.set(idemKey, { promise, expiresAt: Date.now() + ENHANCE_IDEM_TTL_MS });
   const r = await promise;
-  // Faqat MUVAFFAQIYAT keshda qoladi; xato → o'chiramiz (yangi urinish transient xatoni qayta sinasin).
-  if (r.status !== 200) enhanceIdemCache.delete(idemKey);
+  // L1 faqat in-flight coalescing uchun. Tugagan javob durable DB'dan replay qilinadi;
+  // u joriy kredit balansini qayta o'qiydi va stale creditsLeft qaytarmaydi.
+  enhanceIdemCache.delete(idemKey);
   res.status(r.status).json(r.body);
 });
 
@@ -2379,39 +2657,84 @@ const describeSchema = z.object({
   durationSec: z.number().positive().max(600).optional(), // video TIMELINE oralig'i
   frameTimes: z.array(z.number().nonnegative()).max(8).optional(), // har kadr vaqt belgisi (soniya)
   videoUrl: z.string().min(8).max(16_000_000).optional(), // H1: HAQIQIY video (base64 data-URL/URL)
+  idempotencyKey: z.string().trim().min(8).max(128).optional(),
 });
-studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
-  if (!isOpenRouterConfigured()) {
-    res.status(503).json({ error: "AI is not configured", code: "AI_NOT_CONFIGURED" });
-    return;
-  }
+
+async function describeCore(req: Request, requestKey?: string | null): Promise<AssistHttpResult> {
   const p = describeSchema.safeParse(req.body);
   if (!p.success) {
-    res.status(400).json({ error: p.error.issues[0]?.message || "Invalid request" });
-    return;
+    return { status: 400, body: { error: p.error.issues[0]?.message || "Invalid request" } };
+  }
+  // 150MB gacha video data-URI'ni stable JSON sifatida yana nusxalamaymiz: katta
+  // maydonlarni avval digestga aylantirib, kichik canonical payloadni hash qilamiz.
+  const payloadForHash = {
+    ...p.data,
+    images: p.data.images.map((value) => crypto.createHash("sha256").update(value).digest("hex")),
+    ...(p.data.videoUrl
+      ? { videoUrl: crypto.createHash("sha256").update(p.data.videoUrl).digest("hex") }
+      : {}),
+  } as Record<string, unknown>;
+  delete payloadForHash.idempotencyKey;
+  const operation = requestKey
+    ? assistIdentity(req.user!.userId, "describe", requestKey, payloadForHash)
+    : null;
+  if (operation) {
+    const replay = await readAssistReplay(req.user!.userId, operation, 12_000);
+    if (replay.state !== "missing") return replay.result;
+  }
+  if (!isOpenRouterConfigured()) {
+    return { status: 503, body: { error: "AI is not configured", code: "AI_NOT_CONFIGURED", retryable: false } };
   }
   // Uzunlik cheklovi — har rasm ~1024px JPEG (frontend downscale). 1.4MB string ≈ ~1MB rasm.
   if (p.data.images.some((s) => s.length > 1_400_000)) {
-    res.status(413).json({ error: "Reference image is too large — choose a smaller frame" });
-    return;
+    return { status: 413, body: { error: "Reference image is too large — choose a smaller frame" } };
   }
   const kind = p.data.kind || "image";
   // Vision narxi matn-onlydan (enhance) yuqori; haqiqiy video input qimmatroq.
   const hasVideo = kind === "video" && typeof p.data.videoUrl === "string" && p.data.videoUrl.length > 0;
   const cost = hasVideo ? DESCRIBE_VIDEO_COST : DESCRIBE_IMAGE_COST;
 
-  // Abuza nazorati + kredit (pulli gemini-2.5-flash vision) — /gen naqshi.
-  if (!(await withinDailyCap(req.user!.userId))) {
-    res.status(429).json({
-      error: "Daily AI assist limit reached — please try again tomorrow",
-      code: "DAILY_CAP_REACHED",
-    });
-    return;
-  }
-  const gate = await consumeAiCredits(req.user!.userId, cost);
+  const gate = await consumeAiCredits(req.user!.userId, cost, operation ? {
+    generationId: operation.id,
+    sourceKey: operation.consumeSourceKey,
+    operation: { id: operation.id, requestHash: operation.requestHash },
+  } : {});
   if (!gate.ok) {
-    res.status(402).json({ error: gate.error, code: gate.code, remaining: gate.remaining });
-    return;
+    return {
+      status: gate.code === "IDEMPOTENCY_CONFLICT" ? 409 : 402,
+      body: { error: gate.error, code: gate.code, remaining: gate.remaining, retryable: false },
+    };
+  }
+  if (gate.idempotentReplay && operation) {
+    const replay = await readAssistReplay(req.user!.userId, operation, 12_000);
+    return replay.state === "missing"
+      ? { status: 409, body: { error: "AI assist claim exists but its result is not ready", code: "IDEMPOTENCY_IN_PROGRESS", retryable: true } }
+      : replay.result;
+  }
+  const settleResult = async (result: AssistHttpResult): Promise<AssistHttpResult> => {
+    if (!operation) return result;
+    if (await settleAssistOperation(req.user!.userId, operation, result)) return result;
+    const replay = await readAssistReplay(req.user!.userId, operation, 4_000);
+    return replay.state === "missing" ? {
+      status: 409,
+      body: { error: "AI assist settlement was superseded", code: "ASSIST_SETTLEMENT_LOST", retryable: false },
+    } : replay.result;
+  };
+  const refundCost = () => refundAiCredits(req.user!.userId, cost, operation ? {
+    generationId: operation.id,
+    consumeSourceKey: operation.consumeSourceKey,
+    sourceKey: operation.refundSourceKey,
+  } : { topupConsumed: gate.topupConsumed });
+  if (!(await withinDailyCap(req.user!.userId))) {
+    await refundCost();
+    return settleResult({
+      status: 429,
+      body: {
+        error: "Daily AI assist limit reached — please try again tomorrow",
+        code: "DAILY_CAP_REACHED",
+        retryable: false,
+      },
+    });
   }
   logAiSpend(req.user!.userId, "describe", cost, VISION_MODEL);
 
@@ -2435,11 +2758,27 @@ studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
     );
   }
   if (!out.ok) {
-    await refundAiCredits(req.user!.userId, cost);
-    res.status(502).json({ error: out.error });
+    await refundCost();
+    return settleResult({
+      status: 502,
+      body: { error: out.error, code: "DESCRIBE_PROVIDER_FAILED", retryable: true },
+    });
+  }
+  return settleResult({
+    status: 200,
+    body: { prompt: out.data, creditsLeft: gate.remaining, creditsCharged: cost },
+  });
+}
+
+studioGenRouter.post("/gen/describe", async (req: Request, res: Response) => {
+  const parsedKey = assistRequestKey(req);
+  if (parsedKey.error) {
+    const r = assistKeyError(parsedKey.error);
+    res.status(r.status).json(r.body);
     return;
   }
-  res.json({ prompt: out.data });
+  const r = await describeCore(req, parsedKey.key);
+  res.status(r.status).json(r.body);
 });
 
 /** GET /gen/:jobId — job holati (polling). MUHIM: aniq yo'llardan KEYIN ro'yxatdan o'tadi. */
@@ -2530,7 +2869,7 @@ studioGenRouter.get("/gen/:jobId", async (req: Request, res: Response) => {
         isContent: true,
         category: rej.category,
         reason: rej.reason || "The provider's content filter rejected this request.",
-        refunded: gen.refunded ? gen.cost : 0,
+        refunded: gen.refunded ? gen.refundApplied : 0,
         modelLabel: model?.label ?? null,
         provider: model?.provider ?? null,
         suggestModelId: alt ? alt.id : null,
@@ -2596,17 +2935,21 @@ studioGenRouter.post("/gen/:jobId/cancel", async (req: Request, res: Response) =
     return;
   }
   await releaseGenerationSlot(gen.userId);
-  await refundAiCredits(gen.userId, gen.cost, { generationId: gen.id });
-  const prof = await ensurePluginProfile(gen.userId);
+  const refundBalance = await refundAiCredits(gen.userId, gen.cost, { generationId: gen.id });
+  const settled = await prisma.generation.findUnique({
+    where: { id: gen.id },
+    select: { refundApplied: true },
+  });
+  const appliedRefund = settled?.refundApplied ?? 0;
   await writeAuditLog({
     actorId: gen.userId,
     action: "generation.cancelled",
     targetType: "generation",
     targetId: gen.id,
     detail: `user cancelled a queued ${gen.mode} generation`,
-    meta: { mode: gen.mode, modelId: gen.modelId, refunded: gen.cost },
+    meta: { mode: gen.mode, modelId: gen.modelId, refunded: appliedRefund },
   }).catch(() => {});
-  res.json({ ok: true, cancelled: true, refunded: gen.cost, creditsLeft: prof?.aiCredits ?? null });
+  res.json({ ok: true, cancelled: true, refunded: appliedRefund, creditsLeft: refundBalance });
 });
 
 /** PATCH /gen/:jobId/pin — natijani "qadash"/yechish (D6). Faqat egasi.

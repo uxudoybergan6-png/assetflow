@@ -13,7 +13,7 @@
      og:image ATAYLAB yo'q — hozircha brend rasm asseti yo'q; mavjud bo'lmagan faylga
      ishora qilish preview'ni buzardi. Rasm tayyor bo'lganda og:image + twitter:card=
      summary_large_image qo'shiladi. -->
-<meta name="description" content="FrameFlow — ready-made motion templates plus AI image, video, voice and SFX generation. Work in the browser or right inside After Effects.">
+<meta name="description" content="FrameFlow — ready-made motion templates plus AI image, video, voice and SFX generation. Work in the browser and check live availability for Adobe plugins.">
 <link rel="canonical" href="https://getframeflow.app/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -21,10 +21,10 @@
 <meta property="og:site_name" content="FrameFlow">
 <meta property="og:url" content="https://getframeflow.app/">
 <meta property="og:title" content="FrameFlow — Creative Assets &amp; AI Generation Platform">
-<meta property="og:description" content="Ready-made motion templates plus AI image, video, voice and SFX generation. Work in the browser or right inside After Effects.">
+<meta property="og:description" content="Ready-made motion templates plus AI image, video, voice and SFX generation, with live availability for Adobe plugins.">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="FrameFlow — Creative Assets &amp; AI Generation Platform">
-<meta name="twitter:description" content="Ready-made motion templates plus AI image, video, voice and SFX generation. Work in the browser or right inside After Effects.">
+<meta name="twitter:description" content="Ready-made motion templates plus AI image, video, voice and SFX generation, with live availability for Adobe plugins.">
 
 <!-- BATCH6 tema: FOUC oldini olish — birinchi bo'yoqdan oldin html[data-theme] o'rnatiladi.
      #80 (X6): kalit butun domen bo'ylab YAGONA — `ff-theme` ∈ {noir,neon,cold,light}.
@@ -16367,7 +16367,7 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
             <h1 data-cms-text="pluginPage.title">{{ lcPgTitle }}</h1>
             <p data-cms-text="pluginPage.sub">{{ lcPgSub }}</p>
             <div class="pg-cta">
-              <button class="ffm-btn lg" onclick="{{ download }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ lcPgCta }}</button>
+              <button class="ffm-btn lg" onclick="{{ download }}" disabled="{{ prUnavailable }}" aria-disabled="{{ prUnavailable }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ lcPgCta }}</button>
               <button class="ffm-btn lg secondary" onclick="{{ downloadAe }}" disabled="{{ aeUnavailable }}" aria-disabled="{{ aeUnavailable }}"><i class="ph ph-download-simple" style="font-size:15px"></i>{{ aeCtaLabel }}</button>
             </div>
             <div style="margin-top:12px;padding:11px 13px;border:1px solid var(--border);border-radius:12px;font-size:11px;line-height:1.55;color:var(--muted)">
@@ -16615,7 +16615,9 @@ html.ff-iconfont-dead .ph, html.ff-iconfont-dead .ph-bold, html.ff-iconfont-dead
               </div>
               <!-- primary CTA — Pro darvozasi: Free rejada Pro shablon → "Upgrade to Pro"; aks holda yuklab olish -->
               <sc-if value="{{ detail.gated }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> Upgrade to Pro · $19/mo</a></sc-if>
-              <sc-if value="{{ detail.canDownload }}" hint-placeholder-val="{{ true }}"><a class="va-btn lime full" onclick="{{ downloadTpl }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.dlLabel }}</a></sc-if>
+              <sc-if value="{{ detail.canDownload }}" hint-placeholder-val="{{ true }}"><button type="button" class="va-btn lime full" onclick="{{ downloadTpl }}"><svg class="va-ic"><use href="#i-down"></use></svg> {{ detail.dlLabel }}</button></sc-if>
+              <sc-if value="{{ detail.downloading }}" hint-placeholder-val="{{ false }}"><button type="button" class="va-btn lime full" disabled aria-disabled="true"><svg class="va-ic"><use href="#i-down"></use></svg> Preparing secure download…</button></sc-if>
+              <sc-if value="{{ detail.packUnavailable }}" hint-placeholder-val="{{ false }}"><button type="button" class="va-btn lime full" disabled aria-disabled="true"><svg class="va-ic"><use href="#i-clock"></use></svg> Pack is not available yet</button></sc-if>
               <!-- §E (P2) — Free oylik limit tugadi: post-click 403 o'rniga oldindan halol darvoza -->
               <sc-if value="{{ detail.dlExhausted }}" hint-placeholder-val="{{ false }}"><a class="va-btn lime full" onclick="{{ goPricing }}" role="button" tabindex="0"><svg class="va-ic"><use href="#i-spark"></use></svg> Monthly limit reached — Upgrade to Pro</a></sc-if>
               <!-- §E (P2) — qolgan yuklab olishlar soni (faqat limitli tarifda) -->
@@ -18259,6 +18261,7 @@ class Component extends DCLogic {
     // P20 — bir vaqtda bir nechta generatsiya: bitta 'generating' bayrog'i o'rniga FAOL ishlar ro'yxati
     // [{ id, tempId, sessionId, mode, modelName, cost, startedAt }]. Har biri gridda o'z pending kartasi.
     activeJobs: [],
+    genSubmitting: false, // quote/session/job yaratilayotgan paytda CTA loading + double-click qalqoni
     enhBusy: false,
     enhanceStyle: 'faithful', // faithful | cinematic | creative (Prompt Enhance uslubi)
     showCredits: false,
@@ -18273,6 +18276,9 @@ class Component extends DCLogic {
     pluginDownloadUrl: null,
     pluginAeDownloadUrl: null,
     pluginDlErr: '',
+    pluginAeDl: 'idle',
+    pluginAeDlErr: '',
+    templateDownloadBusy: false,
     fApps: [], // #3 — Applications Supported multi-select (bo'sh = hammasi)
     fCats: [], // #3 — granular Categories multi-select (bo'sh = hammasi)
     // P1 #15 — server-driven browse gridi holati (filtr/qidiruv/sort server tomonda,
@@ -18379,6 +18385,8 @@ class Component extends DCLogic {
 
     genModels: {},
     genModelsLoaded: false, // FAZA C — featured models yuklandi (bo'sh bo'lsa ham) belgisi
+    genAvailability: 'idle', // idle|loading|ready|unavailable|error — /gen/health + /gen/models haqiqatidan
+    genAvailabilityMessage: '',
     genQuote: null, // P22 — reaktiv imzolangan cost-quote {key, price, signature, params, loading}
     selModel: {},
     pinnedModels: [], // P12 — mahkamlangan model id'lari (localStorage: ff_gen_pins), guruh boshida chiqadi
@@ -19050,53 +19058,161 @@ class Component extends DCLogic {
 
   // Plugin sahifa — haqiqiy reliz holatini serverdan so'raydi (PluginRelease → GET /api/plugin/version).
   // Reliz e'lon qilinmagan bo'lsa `latest: null` — "beta hali chiqmagan" halol holat, hech narsa o'ylab topilmaydi.
+  pluginPlatform() {
+    const ua = navigator.userAgent || '';
+    return /Windows/i.test(ua) ? 'win' : /Macintosh|Mac OS/i.test(ua) ? 'mac' : null;
+  }
   async loadPluginRelease() {
-    this.setState({ pluginDl: 'loading', pluginDlErr: '' });
+    if (this._pluginReleaseBusy) return;
+    this._pluginReleaseBusy = true;
+    this.setState({ pluginDl: 'loading', pluginDlErr: '', pluginAeDl: 'loading', pluginAeDlErr: '' });
     try {
       // Premiere uchun platformaga xos .ccx; AE uchun legacy .zxp faqat aniq
-      // manual opt-in bilan. Bitta kanal vaqtincha xato bersa ikkinchisi ishlashda davom etadi.
-      const ua = navigator.userAgent || '';
-      const platform = /Windows/i.test(ua) ? 'win' : /Macintosh|Mac OS/i.test(ua) ? 'mac' : null;
-      const both = await Promise.all([
-        FFAPI.pluginVersion(null, platform ? { app: 'pr', platform } : { app: 'pr' }).catch(() => null),
-        FFAPI.pluginVersion(null, { app: 'ae', manual: true }).catch(() => null),
-      ]);
-      const pr = both[0], ae = both[1];
-      if (!pr && !ae) throw new Error('Plugin release service is unavailable');
-      if (pr && pr.latest && pr.latest.version && pr.installer && pr.installer.url) {
-        this.setState({
-          pluginDl: 'ready', pluginRelease: pr.latest, pluginDownloadUrl: pr.installer.url,
-          pluginAeDownloadUrl: ae && ae.downloadUrl ? ae.downloadUrl : null,
-        });
-      } else {
-        this.setState({
-          pluginDl: 'unavailable', pluginRelease: pr && pr.latest ? pr.latest : null,
-          pluginDownloadUrl: null, pluginAeDownloadUrl: ae && ae.downloadUrl ? ae.downloadUrl : null,
-        });
-      }
+      // manual opt-in bilan. Kanallar mustaqil holatga ega: tarmoq xatosi "not published"
+      // deb ko'rsatilmaydi va bittasi yiqilsa ikkinchisining haqiqiy relizi yashirilmaydi.
+      const platform = this.pluginPlatform();
+      // Har task o'z kanalini kelishi bilan darhol yangilaydi. allSettled faqat busy lifecycle
+      // uchun: masalan AE timeout'i tayyor Premiere .ccx CTA'sini 30+ soniya ushlab turmaydi.
+      const prTask = FFAPI.pluginVersion(null, platform ? { app: 'pr', platform } : { app: 'pr' }).then((pr) => {
+        if (pr && pr.latest && pr.latest.version && pr.installer && pr.installer.url) {
+          this.setState({ pluginDl: 'ready', pluginRelease: pr.latest, pluginDownloadUrl: pr.installer.url, pluginDlErr: '' });
+        } else {
+          this.setState({ pluginDl: 'unavailable', pluginRelease: pr && pr.latest ? pr.latest : null, pluginDownloadUrl: null, pluginDlErr: '' });
+        }
+      }).catch((e) => {
+        this.setState({ pluginDl: 'error', pluginDownloadUrl: null, pluginDlErr: this.errMsg(e) });
+      });
+      const aeTask = FFAPI.pluginVersion(null, { app: 'ae', manual: true }).then((ae) => {
+        this.setState(ae && ae.downloadUrl
+          ? { pluginAeDl: 'ready', pluginAeDownloadUrl: ae.downloadUrl, pluginAeDlErr: '' }
+          : { pluginAeDl: 'unavailable', pluginAeDownloadUrl: null, pluginAeDlErr: '' });
+      }).catch((e) => {
+        this.setState({ pluginAeDl: 'error', pluginAeDownloadUrl: null, pluginAeDlErr: this.errMsg(e) });
+      });
+      await Promise.allSettled([prTask, aeTask]);
     } catch (e) {
-      this.setState({ pluginDl: 'error', pluginDlErr: this.errMsg(e) });
+      const msg = this.errMsg(e);
+      this.setState({ pluginDl: 'error', pluginDlErr: msg, pluginAeDl: 'error', pluginAeDlErr: msg });
+    } finally {
+      this._pluginReleaseBusy = false;
     }
   }
-  downloadPlugin() {
+  async downloadPlugin() {
     const st = this.state;
     if (st.pluginDl === 'loading') return;
-    if (st.pluginDl === 'ready' && st.pluginDownloadUrl) { window.location.href = st.pluginDownloadUrl; return; }
+    if (st.pluginDl === 'ready' && st.pluginDownloadUrl) {
+      if (this._pluginDownloadBusy) return;
+      this._pluginDownloadBusy = true;
+      try {
+        // Signed installer URL 1 soatda tugaydi. Sahifa uzoq ochiq turgan bo'lsa
+        // state'dagi eski URL'ni ishlatmaymiz — har bosishda yangisini olamiz.
+        const platform = this.pluginPlatform();
+        const pr = await FFAPI.pluginVersion(null, platform ? { app: 'pr', platform } : { app: 'pr' });
+        const freshUrl = pr && pr.latest && pr.installer && pr.installer.url;
+        if (!freshUrl) {
+          this.setState({ pluginDl: 'unavailable', pluginDownloadUrl: null, pluginDlErr: '' });
+          this.toast('The Premiere Pro download is not published for this platform', 'info');
+          return;
+        }
+        this.setState({ pluginDl: 'ready', pluginRelease: pr.latest, pluginDownloadUrl: freshUrl, pluginDlErr: '' });
+        window.location.href = freshUrl;
+      } catch (e) {
+        const msg = this.errMsg(e);
+        this.setState({ pluginDl: 'error', pluginDownloadUrl: null, pluginDlErr: msg });
+        this.toast(msg, 'error');
+      } finally {
+        this._pluginDownloadBusy = false;
+      }
+      return;
+    }
     if (st.pluginDl === 'error') { this.toast(st.pluginDlErr || "Couldn't check the plugin release", 'error'); this.loadPluginRelease(); return; }
     if (st.pluginDl === 'idle') { this.loadPluginRelease(); return; }
     this.toast('The beta download isn’t published yet — check back soon', 'info');
   }
-  downloadAePlugin() {
-    if (this.state.pluginAeDownloadUrl) { window.location.href = this.state.pluginAeDownloadUrl; return; }
+  async downloadAePlugin() {
+    if (this.state.pluginAeDl === 'loading') return;
+    if (this.state.pluginAeDl === 'ready' && this.state.pluginAeDownloadUrl) {
+      if (this._pluginDownloadBusy) return;
+      this._pluginDownloadBusy = true;
+      try {
+        const ae = await FFAPI.pluginVersion(null, { app: 'ae', manual: true });
+        const freshUrl = ae && ae.downloadUrl;
+        if (!freshUrl) {
+          this.setState({ pluginAeDl: 'unavailable', pluginAeDownloadUrl: null, pluginAeDlErr: '' });
+          this.toast('The After Effects download is not published yet', 'info');
+          return;
+        }
+        this.setState({ pluginAeDl: 'ready', pluginAeDownloadUrl: freshUrl, pluginAeDlErr: '' });
+        window.location.href = freshUrl;
+      } catch (e) {
+        const msg = this.errMsg(e);
+        this.setState({ pluginAeDl: 'error', pluginAeDownloadUrl: null, pluginAeDlErr: msg });
+        this.toast(msg, 'error');
+      } finally {
+        this._pluginDownloadBusy = false;
+      }
+      return;
+    }
+    if (this.state.pluginAeDl === 'error') { this.toast(this.state.pluginAeDlErr || "Couldn't check the After Effects release", 'error'); this.loadPluginRelease(); return; }
+    if (this.state.pluginAeDl === 'idle') { this.loadPluginRelease(); return; }
     this.toast('The After Effects download is not published yet', 'info');
   }
 
   // P30 (29c) — toast endi TIPGA ega (ikonka/rang shundan): success=✓ · error=✕ · warning · info.
   // Tipsiz xabar betaraf `info`: catch ichidagi unutilgan tip endi yolg'on ✓ ko'rsatmaydi.
   toast(msg, type) { const t = type || 'info'; this._toastRetryFn = null; this.setState({ toast: msg, toastType: t, toastRetry: false }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null, toastRetry: false }), t === 'error' ? 4600 : 2600); }
+  async copyText(text, successLabel) {
+    const value = String(text || '');
+    if (!value) return false;
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(value);
+      this.toast(successLabel || 'Copied', 'success');
+      return true;
+    } catch (e) {
+      let ta = null;
+      try {
+        ta = document.createElement('textarea'); ta.value = value; ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(ta); ta.select();
+        const ok = document.execCommand && document.execCommand('copy') === true;
+        if (!ok) throw new Error('Copy command rejected');
+        this.toast(successLabel || 'Copied', 'success');
+        return true;
+      } catch (x) {
+        this.toast('Copy failed — select the text and copy it manually', 'error');
+        return false;
+      } finally { if (ta && ta.parentNode) ta.parentNode.removeChild(ta); }
+    }
+  }
   // P17 — tarmoq xatosida "Retry" tugmali toast (AYNI operatsiyani qayta chaqiradi — enhance/gen
   // uchun AYNI idempotency kaliti bilan, shu bois ikkinchi charge/dublikat YO'Q). Uzoqroq ko'rinadi.
   toastWithRetry(msg, retryFn) { this._toastRetryFn = retryFn; this.setState({ toast: msg, toastType: 'error', toastRetry: true }); clearTimeout(this._t); this._t = setTimeout(() => { this._toastRetryFn = null; this.setState({ toast: null, toastRetry: false }); }, 9000); }
+
+  // Signup runtime-config'i vaqtincha uzilsa sahifa reloadisiz qayta tekshiriladi. Productionda
+  // Turnstile ikki kaliti to'liq bo'lmasa UI ham backend kabi fail-closed qoladi.
+  loadRuntimeConfig(force) {
+    if (this._turnstileConfigLoaded && !force) return Promise.resolve(true);
+    if (this._runtimeConfigPromise) return this._runtimeConfigPromise;
+    if (force) { this._turnstileConfigError = false; this._turnstileWidgetError = ''; }
+    this._runtimeConfigPromise = FFAPI.req('/api/public/runtime-config', { auth: false, timeout: 8000 }).then((cfg) => {
+      const turnstile = cfg && cfg.turnstile;
+      const meta = document.querySelector('meta[name="turnstile-site-key"]');
+      if (!turnstile || !turnstile.enabled || !turnstile.siteKey) throw new Error('Bot protection is not configured');
+      if (meta) meta.setAttribute('content', turnstile.siteKey);
+      this._turnstileConfigLoaded = true;
+      this._turnstileConfigError = false;
+      this.renderTurnstile();
+      return true;
+    }).catch(() => {
+      this._turnstileConfigLoaded = false;
+      this._turnstileConfigError = true;
+      if (this.state.screen === 'auth' && this.state.authMode === 'register') {
+        this.setState({ authErr: 'Sign-up is temporarily unavailable because bot protection could not be verified. Please try again.' });
+      }
+      return false;
+    }).finally(() => { this._runtimeConfigPromise = null; });
+    return this._runtimeConfigPromise;
+  }
 
   componentDidMount() {
     // FIX A4 (P6) — warm-up: fire-and-forget /health pingi Cloud Run + Neon'ni foydalanuvchi
@@ -19104,19 +19220,10 @@ class Component extends DCLogic {
     try { if (window.FFAPI) FFAPI.req('/health', { auth: false, timeout: 8000 }).catch(() => {}); } catch (e) {}
     this._turnstileConfigLoaded = false;
     this._turnstileConfigError = false;
-    try {
-      FFAPI.req('/api/public/runtime-config', { auth: false, timeout: 8000 }).then((cfg) => {
-        const turnstile = cfg && cfg.turnstile;
-        const meta = document.querySelector('meta[name="turnstile-site-key"]');
-        if (!turnstile || !turnstile.enabled || !turnstile.siteKey) throw new Error('Bot protection is not configured');
-        if (meta) meta.setAttribute('content', turnstile.siteKey);
-        this._turnstileConfigLoaded = true;
-        this.renderTurnstile();
-      }).catch(() => {
-        this._turnstileConfigError = true;
-        this.setState({ authErr: 'Sign-up is temporarily unavailable because bot protection could not be verified. Please try again later.' });
-      });
-    } catch (e) { this._turnstileConfigError = true; }
+    try { this.loadRuntimeConfig(false); } catch (e) { this._turnstileConfigError = true; }
+    // Marketing plugin copy ham reliz API'sidan keladi; eski CMS .zxp da'vosi birinchi
+    // tashrifdayoq release-aware fallback bilan almashtiriladi, javob kelgach aniq kanal ko'rinadi.
+    try { this.loadPluginRelease(); } catch (e) {}
     // FFCMS — admin vizual muharrir preview rejimi (?ffcms=1, iframe ichida):
     // ko'prik skripti (sahifa oxirida) shu hooklar orqali draft config qo'llaydi / ekran almashtiradi.
     try {
@@ -19935,15 +20042,22 @@ class Component extends DCLogic {
       return 'AI generation is temporarily unavailable — safety verification needs administrator attention';
     if (code === 'AI_NOT_CONFIGURED')
       return 'AI generation is temporarily unavailable — contact an administrator';
+    if (code === 'MODERATION_BLOCKED' || code === 'PREFLIGHT_BLOCKED')
+      return 'This request didn’t pass the safety check — no credits were charged';
     const raw = (e && e.message) || String((e && e.error) || '') || 'Something went wrong';
+    const refundRaw = e && e.data && (e.data.creditsRefunded != null ? e.data.creditsRefunded : e.data.refunded);
+    const refundConfirmed = refundRaw === true || (typeof refundRaw === 'number' && refundRaw > 0);
+    const refundSuffix = refundConfirmed
+      ? (typeof refundRaw === 'number' ? (' — ✦' + refundRaw + ' refunded') : ' — credits refunded')
+      : '';
     // R4_04 — Google real yuz / mashhur shaxs bloki (Responsible AI): toza xabar, xom JSON emas.
     if (/restricted individual|responsible ai|could not be submitted|real (?:person|people|face)|public figure|\bcelebrit/i.test(raw))
-      return 'This model won’t process real people or public figures — your credits were refunded';
+      return 'This model won’t process real people or public figures' + refundSuffix;
     if (/sensitive content|nsfw|nudity|sexual|content polic|safety (system|filter)|no image was returned|moderation (blocked|failed|rejected)/i.test(raw))
-      return 'The model’s content filter rejected this request — your credits were refunded';
+      return 'The model’s content filter rejected this request' + refundSuffix;
     // R4_04 — xom provayder JSON HECH QACHON ko'rsatilmasin (masalan "Omni 400: {\"error\":...}").
     if (/\{["']?\s*error\b/i.test(raw) || /^\s*\w[\w .()\/-]*\d{3}\s*:\s*[\[{]/.test(raw))
-      return 'The request was rejected by the model — your credits were refunded';
+      return 'The request was rejected by the model' + refundSuffix;
     return raw;
   }
   // #23 (X2) — TO'LOV xatolari sanitizatori. Checkout oqimi `err.message` ni TO'G'RIDAN
@@ -20160,28 +20274,66 @@ class Component extends DCLogic {
   //   setState QILMAYMIZ. Bekorga setState → galereya region qayta render → <img>/<video> tugunlari
   //   qayta yaratiladi → gradient flash. Faqat kichik imzo o'zgarganda render qilamiz.
   _sigChanged(key, sig) { this._sigs = this._sigs || {}; if (this._sigs[key] === sig) return false; this._sigs[key] = sig; return true; }
+  // Parallel gen/Topaz/Enhance response'lari teskari tartibda kelishi mumkin. Ularning
+  // creditsLeft'i charge-dan KEYINGI absolute balans: bitta sessiyada faqat MIN kamayadi.
+  // Refund/top-up esa refreshCredits orqali authoritative qayta o'qiladi.
+  _beginCreditMutation() {
+    const epoch = this._creditSessionEpoch || 0;
+    this._creditMutationsInFlight = (this._creditMutationsInFlight || 0) + 1;
+    return epoch;
+  }
+  _applyChargedBalance(next, epoch) {
+    if (epoch !== (this._creditSessionEpoch || 0) || typeof next !== 'number' || !isFinite(next)) return;
+    this._chargeBalanceFloor = this._chargeBalanceFloor == null ? next : Math.min(this._chargeBalanceFloor, next);
+    const floor = this._chargeBalanceFloor;
+    this.setState(s => ({ credits: FFAPI.reconcileChargedBalance(s.credits, floor, s.creditsLoaded), creditsLoaded: true }));
+  }
+  _finishCreditMutation(epoch) {
+    if (epoch !== (this._creditSessionEpoch || 0)) return;
+    this._creditMutationsInFlight = Math.max(0, (this._creditMutationsInFlight || 0) - 1);
+    if (!this._creditMutationsInFlight && this._creditRefreshPending) {
+      this._creditRefreshPending = false;
+      setTimeout(() => this.refreshCredits(), 0);
+    }
+  }
   async refreshCredits() {
-    if (this._creditsBusy) return; this._creditsBusy = true; // P16 (SPEED) — parallel dublikat so'rov yo'q
+    const epoch = this._creditSessionEpoch || 0;
+    if (this._creditsBusy && this._creditsBusyEpoch === epoch) return;
+    this._creditsBusy = true; this._creditsBusyEpoch = epoch; // P16 (SPEED) — parallel dublikat so'rov yo'q
     try {
       const c = await FFAPI.credits();
+      if (epoch !== (this._creditSessionEpoch || 0)) return;
       const st = (c && c.storage) || null; // FAZA 2 #20 — storage kvota (X / Y GB)
       const sig = [c.aiCredits || 0, c.plan || 'free', st ? (st.usedBytes || 0) : 0, st ? (st.quotaBytes || 0) : 0].join('|');
-      if (this._sigChanged('credits', sig) || !this.state.creditsLoaded) this.setState({
-        credits: c.aiCredits || 0, creditsLoaded: true, plan: c.plan || 'free',
-        storageUsed: st ? (st.usedBytes || 0) : 0,
-        storageQuota: st ? (st.quotaBytes || 0) : 0,
-      });
+      if (this._creditMutationsInFlight) {
+        // So'rov charge transactionidan oldin o'qigan bo'lishi mumkin; oxirgi mutation tugagach qayta olamiz.
+        this._creditRefreshPending = true;
+      } else {
+        this._chargeBalanceFloor = c.aiCredits || 0;
+        if (this._sigChanged('credits', sig) || !this.state.creditsLoaded) this.setState({
+          credits: c.aiCredits || 0, creditsLoaded: true, plan: c.plan || 'free',
+          storageUsed: st ? (st.usedBytes || 0) : 0,
+          storageQuota: st ? (st.quotaBytes || 0) : 0,
+        });
+      }
     } catch (e) {
       // §C/A5 — boot-critical: kreditlar hali yuklanmagan bo'lsa (cold-start) BIR marta 5s dan keyin qayta.
-      if (!this.state.creditsLoaded && !this._creditsRetried) { this._creditsRetried = true; setTimeout(() => { this.refreshCredits(); }, 5000); }
+      if (epoch === (this._creditSessionEpoch || 0) && !this.state.creditsLoaded && !this._creditsRetried) {
+        this._creditsRetried = true;
+        setTimeout(() => { if (epoch === (this._creditSessionEpoch || 0)) this.refreshCredits(); }, 5000);
+      }
+    } finally {
+      // Eski account request'i yangi accountning busy qalqonini yechmasin.
+      if (this._creditsBusyEpoch === epoch) { this._creditsBusy = false; this._creditsBusyEpoch = null; }
     }
-    this._creditsBusy = false;
   }
   async loadPluginMe() {
     // §E (P2) — downloadLimit/unlimitedDownloads ham olinadi: yuklab olishdan OLDIN
     // "X of 15 left" standingini ko'rsatish uchun (post-click 403 syurprizi yo'q).
+    const epoch = this._creditSessionEpoch || 0;
     try {
       const r = await FFAPI.pluginMe();
+      if (epoch !== (this._creditSessionEpoch || 0)) return;
       if (r && r.user) {
         const lim = r.user.limits || {};
         this.setState({
@@ -20215,8 +20367,10 @@ class Component extends DCLogic {
   // P3 (step 34) — foydalanuvchining AI Stock topshiriqlari holati (generationId → status).
   async loadExploreSubs() {
     if (!(window.FFAPI && FFAPI.getToken())) return;
+    const epoch = this._creditSessionEpoch || 0;
     try {
       const r = await FFAPI.genExploreSubmissions();
+      if (epoch !== (this._creditSessionEpoch || 0)) return;
       const subs = {};
       (r.submissions || []).forEach(s => { if (s.generationId) subs[s.generationId] = { reviewStatus: s.reviewStatus, published: s.published, templateId: s.templateId }; });
       this.setState({ exploreSubs: subs });
@@ -20279,41 +20433,86 @@ class Component extends DCLogic {
     this.refreshLightboxUrl(g.id);
   }
   async loadModels(attempt) {
+    const sessionEpoch = this._creditSessionEpoch || 0;
+    if (this._modelsBusy && this._modelsBusyEpoch === sessionEpoch) return;
+    this._modelsBusy = true;
+    this._modelsBusyEpoch = sessionEpoch;
     const modes = ['image', 'video', 'voice', 'sfx'];
-    let okAny = false;
-    for (const m of modes) {
-      try {
-        const r = await FFAPI.models(m);
-        let list = (r.models || []).filter(x => x.enabled !== false);
-        // BATCH4 #1/#2 — upscale modellari ALOHIDA pseudo-ro'yxatlarga (Upscale tool'i uchun);
-        // oddiy Image/Video composer picker'larida ko'rinmaydi (u alohida MODE).
-        let upList = null, vupList = null;
-        if (m === 'image') { upList = list.filter(x => x.feature === 'image-upscale'); list = list.filter(x => x.feature !== 'image-upscale'); }
-        if (m === 'video') { vupList = list.filter(x => x.feature === 'video-upscale'); list = list.filter(x => x.feature !== 'video-upscale'); }
-        okAny = true;
-        this.setState(s => {
-          const gm = Object.assign({}, s.genModels); gm[m] = list;
-          const sel = Object.assign({}, s.selModel);
-          if (!sel[m] && list.length) { const d = list.find(x => x.isDefault) || list[0]; sel[m] = d.id; }
-          if (upList) { gm.upscale = upList; if (!sel.upscale && upList.length) sel.upscale = (upList.find(x => x.isDefault) || upList[0]).id; }
-          if (vupList) { gm.vupscale = vupList; if (!sel.vupscale && vupList.length) sel.vupscale = (vupList.find(x => x.isDefault) || vupList[0]).id; }
-          return { genModels: gm, selModel: sel };
-        });
-      } catch (e) {}
-    }
-    // R4_08 — YOQILGAN Topaz enhance/upscale operatsiyalari (composer'dan filtrlangan; kartada "Use ▾").
-    try { const or = await FFAPI.ops(); this.setState({ topazOps: (or && or.ops) || [] }); } catch (e) {}
-    this.setState({ genModelsLoaded: true }); // FAZA C — featured-loader shu bilan o'chadi
-    // §A (P2) — model ro'yxati umuman kelmasa: doimiy "Loading…" o'rniga avto-retry
-    // (2 marta, o'sib boruvchi kutish), so'ng halol xabar.
-    if (!okAny) {
-      const a = attempt || 0;
-      if (a < 2) setTimeout(() => this.loadModels(a + 1), 4000 * (a + 1));
-      else this.toast("Couldn't load AI models — check your connection and reload the page");
+    const a = attempt || 0;
+    if (!a) this.setState({ genAvailability: 'loading', genAvailabilityMessage: 'Checking AI services…' });
+    const settled = (p) => p.then(value => ({ ok: true, value }), error => ({ ok: false, error }));
+    try {
+      // Avvalgi ketma-ket 4× retry outage paytida bir necha daqiqaga cho'zilardi. Health,
+      // barcha mode va ops parallel; FFAPI har idempotent so'rovning cold-start retry'sini o'zi qiladi.
+      const all = await Promise.all([
+        settled(FFAPI.genHealth()),
+        ...modes.map(m => settled(FFAPI.models(m))),
+        settled(FFAPI.ops()),
+      ]);
+      if (sessionEpoch !== (this._creditSessionEpoch || 0)) return;
+      const healthResult = all[0];
+      const modeResults = all.slice(1, 1 + modes.length);
+      const opsResult = all[1 + modes.length];
+      const rows = modeResults.filter(x => x.ok).map(x => x.value);
+      const assessment = FFAPI.assessAiReadiness(healthResult.ok ? healthResult.value : null, rows);
+      const gm = { image: [], video: [], voice: [], sfx: [], upscale: [], vupscale: [] };
+      modeResults.forEach((result, i) => {
+        if (!result.ok) return;
+        const mode = modes[i];
+        let list = (result.value.models || []).filter(x => x.enabled !== false);
+        if (mode === 'image') {
+          gm.upscale = list.filter(x => x.feature === 'image-upscale');
+          list = list.filter(x => x.feature !== 'image-upscale');
+        }
+        if (mode === 'video') {
+          gm.vupscale = list.filter(x => x.feature === 'video-upscale');
+          list = list.filter(x => x.feature !== 'video-upscale');
+        }
+        gm[mode] = list;
+      });
+      // Health fail-closed: kesh/stale model qatorlari bosiladigan holatda qolmaydi.
+      if (!assessment.ready) Object.keys(gm).forEach(k => { gm[k] = []; });
+      const sel = Object.assign({}, this.state.selModel);
+      Object.keys(gm).forEach(k => {
+        const list = gm[k];
+        const currentValid = list.some(x => String(x.id) === String(sel[k]));
+        if (!currentValid) {
+          if (list.length) sel[k] = (list.find(x => x.isDefault) || list[0]).id;
+          else delete sel[k];
+        }
+      });
+      const availability = assessment.ready ? 'ready' : (assessment.code === 'MODELS_UNAVAILABLE' ? 'error' : 'unavailable');
+      this.setState({
+        genModels: gm,
+        selModel: sel,
+        topazOps: assessment.ready && opsResult.ok ? ((opsResult.value && opsResult.value.ops) || []) : [],
+        genModelsLoaded: true,
+        genAvailability: availability,
+        genAvailabilityMessage: assessment.message,
+        genQuote: assessment.ready ? this.state.genQuote : null,
+      });
+      // Faqat transport/models olish xatosi retry qilinadi; aniq config/kill holati serverni spam qilmaydi.
+      // Bitta mode yiqilib, boshqasi ishlasa global health Ready bo'lishi mumkin — shu partial
+      // outage'da current-mode CTA yopiq qoladi, lekin yo'qolgan mode ikki marta fon retry oladi.
+      const requestFailures = modeResults.filter(x => !x.ok).length + (healthResult.ok ? 0 : 1);
+      if ((requestFailures || assessment.retryable) && a < 2) {
+        setTimeout(() => { if (sessionEpoch === (this._creditSessionEpoch || 0)) this.loadModels(a + 1); }, 4000 * (a + 1));
+      } else if (!assessment.ready && assessment.code === 'MODELS_UNAVAILABLE') {
+        this.toast(assessment.message, 'error');
+      }
+    } catch (e) {
+      if (sessionEpoch !== (this._creditSessionEpoch || 0)) return;
+      this.setState({ genModels: {}, selModel: {}, topazOps: [], genModelsLoaded: true, genAvailability: 'error', genAvailabilityMessage: "Couldn't verify AI services — check your connection and retry" });
+      if (a < 2) setTimeout(() => { if (sessionEpoch === (this._creditSessionEpoch || 0)) this.loadModels(a + 1); }, 4000 * (a + 1));
+      else this.toast("Couldn't verify AI services — check your connection and retry", 'error');
+    } finally {
+      if (this._modelsBusyEpoch === sessionEpoch) { this._modelsBusy = false; this._modelsBusyEpoch = null; }
     }
   }
   async loadHistory() {
-    if (this._histBusy) return; this._histBusy = true; // P16 (SPEED)
+    const epoch = this._creditSessionEpoch || 0;
+    if (this._histBusy && this._histBusyEpoch === epoch) return;
+    this._histBusy = true; this._histBusyEpoch = epoch; // P16 (SPEED)
     // P9 — issiq boot: keshlangan tarixni DARHOL chizamiz (barqaror CDN URL → flash yo'q),
     // keyin fon so'rovi ustiga yozadi.
     if (!this.state.gensLoaded) {
@@ -20323,14 +20522,17 @@ class Component extends DCLogic {
     try {
       // §A (P2) — server cap 60; kesilgan bo'lsa gensCapped bilan halol "recent" yorlig'i
       const r = await FFAPI.history(60);
+      if (epoch !== (this._creditSessionEpoch || 0)) return;
       const raw = r.items || [];
       this._cacheSet('hist', raw); // P9 — keyingi boot uchun
       const gens = raw.filter(g => g.status === 'done' && g.assets && g.assets.length).map(g => this.mapGen(g));
       // P23 — imzo: id+status+thumb; bir xil bo'lsa (idle qayta-yuklash) setState YO'Q (flash yo'q).
       const sig = gens.map(g => g.id + ':' + (g.thumb || g.url || '')).join('|') + '#' + (raw.length >= 60 ? 1 : 0);
       if (this._sigChanged('hist', sig) || !this.state.gensLoaded) this.setState(s => ({ gens, gensLoaded: true, gensCapped: raw.length >= 60, activeGenId: s.activeGenId || (gens[0] ? gens[0].id : null) }));
-    } catch (e) {}
-    this._histBusy = false;
+    } catch (e) {
+    } finally {
+      if (this._histBusyEpoch === epoch) { this._histBusy = false; this._histBusyEpoch = null; }
+    }
   }
   // ── P21 (29) — HAQIQIY kredit ledger (refunds ko'rinadi) + REAL yuklab olish tarixi ──
   async loadCreditLedger(reset) {
@@ -20364,12 +20566,14 @@ class Component extends DCLogic {
     this.setState({ ledgerFilter: f, ledger: [], ledgerCursor: null, ledgerHasMore: false, ledgerLoaded: false }, () => this.loadCreditLedger(true));
   }
   async loadDownloads(reset) {
-    if (this._dlBusy) return;
+    const epoch = this._creditSessionEpoch || 0;
+    if (this._dlBusy && this._dlBusyEpoch === epoch) return;
     if (!(window.FFAPI && FFAPI.getToken())) return;
-    this._dlBusy = true;
+    this._dlBusy = true; this._dlBusyEpoch = epoch;
     const cursor = reset ? null : this.state.downloadsCursor;
     try {
       const r = await FFAPI.downloads(cursor);
+      if (epoch !== (this._creditSessionEpoch || 0)) return;
       const rows = r.items || [];
       this.setState(s => ({
         downloads: (reset || !cursor) ? rows : s.downloads.concat(rows),
@@ -20377,8 +20581,11 @@ class Component extends DCLogic {
         downloadsHasMore: !!r.hasMore,
         downloadsLoaded: true,
       }));
-    } catch (e) { this.setState({ downloadsLoaded: true }); }
-    this._dlBusy = false;
+    } catch (e) {
+      if (epoch === (this._creditSessionEpoch || 0)) this.setState({ downloadsLoaded: true });
+    } finally {
+      if (this._dlBusyEpoch === epoch) { this._dlBusy = false; this._dlBusyEpoch = null; }
+    }
   }
   // P30 §4 (29c) — rad etilgan modeldan mo''tadilroq (qonuniy) modelga o'tib qayta urinish.
   tryRejectModel() {
@@ -20658,7 +20865,9 @@ class Component extends DCLogic {
   gotoAuth(mode) {
     // #14: tirik sessiya bor — login formasi o'rniga to'g'ridan app ("Sign in" bosilsa ham).
     if (window.FFAPI && FFAPI.getToken() && FFAPI.getUser()) { const dest = this._afterAuth || 'dashboard'; this._afterAuth = null; this.go(dest); return; }
-    this.setState({ authMode: mode || 'login', authErr: null, authInfo: null }); this.go('auth');
+    const nextMode = mode || 'login';
+    this.setState({ authMode: nextMode, authErr: null, authInfo: null }); this.go('auth');
+    if (nextMode === 'register' && !this._turnstileConfigLoaded) this.loadRuntimeConfig(this._turnstileConfigError).catch(() => {});
   }
   async doAuth() {
     const st = this.state;
@@ -20671,14 +20880,26 @@ class Component extends DCLogic {
       this.setState({ authErr: st.authMode === 'register' ? 'Password must be at least 8 characters' : 'Enter your password' }); return;
     }
     if (st.authMode === 'register' && !this._turnstileConfigLoaded) {
-      this.setState({ authErr: this._turnstileConfigError
-        ? 'Sign-up is temporarily unavailable because bot protection is misconfigured.'
-        : 'Bot protection is still loading — please wait a moment.' });
-      return;
+      this.setState({ authBusy: true, authErr: null });
+      const configReady = await this.loadRuntimeConfig(this._turnstileConfigError);
+      if (!configReady) {
+        this.setState({ authBusy: false, authErr: 'Sign-up is temporarily unavailable because bot protection is not configured or could not be verified.' });
+        return;
+      }
+      // Runtime config is asynchronous. If the user switched away from sign-up
+      // while it was loading, never continue with the stale register snapshot.
+      if (this.state.authMode !== 'register') {
+        this.setState({ authBusy: false });
+        return;
+      }
+      this.setState({ authBusy: false });
     }
-    const turnstileSiteKey = (document.querySelector('meta[name="turnstile-site-key"]') || {}).getAttribute && document.querySelector('meta[name="turnstile-site-key"]').getAttribute('content');
-    if (st.authMode === 'register' && turnstileSiteKey && !this._turnstileToken) {
-      this.setState({ authErr: 'Please complete the bot check' }); return;
+    // Config `ready` bo'lgach tokenning o'zi shart. DOM meta yo'qolishi yoki widget
+    // chizilmasligi hech qachon signup'ni himoyasiz yuborishga aylantirmaydi.
+    if (st.authMode === 'register' && !this._turnstileToken) {
+      this.setState({ authErr: this._turnstileWidgetError
+        ? 'The bot check is unavailable. Allow challenges.cloudflare.com, then reload the page.'
+        : 'Please complete the bot check' }); return;
     }
     this.setState({ authBusy: true, authErr: null, authInfo: null });
     try {
@@ -20749,9 +20970,8 @@ class Component extends DCLogic {
     // BATCH6: dark 'filled_black' — 3-tema qorong'u panellarга mos (mockup .google-btn)
     google.accounts.id.renderButton(container, { theme: 'filled_black', size: 'large', width: 340, text: 'continue_with', locale: 'en' });
   }
-  /** Turnstile widget — faqat register rejimida, meta[turnstile-site-key] bo'sh
-   *  bo'lsa chizilmaydi (backend ham kalit yo'q bo'lsa fail-open, token talab
-   *  qilmaydi). Idempotent: konteyner allaqachon to'ldirilgan bo'lsa qayta chizmaydi. */
+  /** Turnstile widget — faqat register rejimida. Production backend kalitsiz fail-closed;
+   *  shu sabab runtime-config tasdiqlanmaguncha forma ham yuborilmaydi. */
   renderTurnstile() {
     if (this.state.screen !== 'auth' || this.state.authMode !== 'register') return;
     const container = document.getElementById('ffTurnstileWidget');
@@ -20766,12 +20986,14 @@ class Component extends DCLogic {
       this._turnstileTries = (this._turnstileTries || 0) + 1;
       if (this._turnstileTries > 25) { // ~5s (25 × 200ms)
         this._turnstileFailed = true;
+        this._turnstileWidgetError = 'BOT_WIDGET_UNAVAILABLE';
         const b = document.createElement('div');
         // uslub authErr banneri bilan bir xil (SPA'da inline, alohida klass yo'q)
         b.style.cssText = 'padding:11px 14px;border-radius:11px;background:var(--reddim);border:1px solid rgba(255,107,94,.3);font-size:13px;color:#FF9C8F;text-align:left';
         b.setAttribute('role', 'status');
         b.textContent = 'The bot check could not load. Turn off your ad/content blocker (or allow challenges.cloudflare.com) and reload the page.';
         container.appendChild(b);
+        this.setState({ authErr: 'The bot check could not load. Allow challenges.cloudflare.com and reload the page.' });
         return;
       }
       setTimeout(() => this.renderTurnstile(), 200);
@@ -20779,10 +21001,11 @@ class Component extends DCLogic {
     }
     this._turnstileWidgetId = window.turnstile.render(container, {
       sitekey: siteKey,
-      callback: (token) => { this._turnstileToken = token; },
+      callback: (token) => { this._turnstileToken = token; this._turnstileWidgetError = ''; this.setState({ authErr: null }); },
       'expired-callback': () => { this._turnstileToken = ''; },
       'error-callback': (code) => {
         this._turnstileToken = '';
+        this._turnstileWidgetError = 'BOT_WIDGET_ERROR';
         this.setState({ authErr: /^400020/.test(String(code || ''))
           ? 'Sign-up is temporarily unavailable: the bot-protection site key is invalid.'
           : 'The bot check failed to load. Please reload the page and try again.' });
@@ -20834,13 +21057,41 @@ class Component extends DCLogic {
   resetUserState(extra) {
     this._clearPollTimers();
     this._clearUserCache(); // P9 — sessiya keshi yaroqsiz (logout/expiry/login)
+    try { sessionStorage.removeItem('ff_active_jobs'); } catch (e) {}
+    // Eski foydalanuvchining kechikkan gen/enhance javobi yangi sessiya balansiga yozilmasin.
+    this._creditSessionEpoch = (this._creditSessionEpoch || 0) + 1;
+    this._ledgerEpoch = (this._ledgerEpoch || 0) + 1;
+    this._sessionsEpoch = (this._sessionsEpoch || 0) + 1;
+    this._sessionOpenEpoch = (this._sessionOpenEpoch || 0) + 1;
+    this._projectsEpoch = (this._projectsEpoch || 0) + 1;
+    this._projectOpenEpoch = (this._projectOpenEpoch || 0) + 1;
+    this._creditMutationsInFlight = 0;
+    this._creditRefreshPending = false;
+    this._chargeBalanceFloor = null;
+    this._creditsBusy = false; this._creditsBusyEpoch = null; this._creditsRetried = false;
+    this._histBusy = false; this._histBusyEpoch = null;
+    this._dlBusy = false; this._dlBusyEpoch = null;
+    this._modelsBusy = false; this._modelsBusyEpoch = null;
+    this._gqKey = null; this._upqKey = null;
+    this._sigs = {};
+    this._templateDownloadRequest = null;
     this.setState(Object.assign({
-      credits: 0, creditsLoaded: false, plan: 'free', gens: [], gensLoaded: false,
-      downloadsMonth: 0, selModel: {}, genModels: {}, activeJobs: [],
+      credits: 0, creditsLoaded: false, plan: 'free', storageUsed: 0, storageQuota: 0,
+      gens: [], gensLoaded: false, gensCapped: false, activeGenId: null, lightbox: null,
+      ledger: [], ledgerTotals: null, ledgerLoaded: false, ledgerLoading: false,
+      ledgerFilter: 'all', ledgerCursor: null, ledgerHasMore: false,
+      downloads: [], downloadsLoaded: false, downloadsCursor: null, downloadsHasMore: false,
+      downloadsMonth: 0, downloadLimit: null, unlimitedDownloads: false,
+      exploreSubs: {}, exploreModal: null, exploreBusy: false, exploreRights: false,
+      rejectBanner: null, showCredits: false,
+      selModel: {}, genModels: {}, genModelsLoaded: false,
+      genAvailability: 'idle', genAvailabilityMessage: '', genQuote: null,
+      activeJobs: [], genSubmitting: false, enhBusy: false, templateDownloadBusy: false,
       refImages: [], refStartUrl: null, refEndUrl: null, refVideos: [], refAudios: [],
       aiAudio: null, aiBitrate: '', curSessId: null, viewSess: 'new', sessGens: [],
-      sessions: [], sessionsLoaded: false, projects: [], projectsLoaded: false,
-      projOpen: null, addPick: null, nameModal: null,
+      sessGensLoading: false, sessions: [], sessionsLoaded: false, sessErr: false,
+      projects: [], projectsLoaded: false, projOpen: null, projLoading: false, projErr: false,
+      addPick: null, nameModal: null,
       projSelect: false, projSel: {}, projBulkArm: false, projBulkBusy: false, // SC_34 — select holati login almashganda qolmasin
     }, extra || {}));
   }
@@ -21002,6 +21253,7 @@ class Component extends DCLogic {
   syncGenQuote() {
     try {
       if (!(window.FFAPI && FFAPI.getToken())) return;
+      if (this.state.genAvailability !== 'ready') return;
       if (this.state.screen !== 'aistudio') return; // faqat AI Studio composer ko'rinadigan joyda
       if (this.state.aiView && this.state.aiView !== 'composer') return;
       const tool = this.curTool(), model = this.curModel();
@@ -21060,27 +21312,36 @@ class Component extends DCLogic {
   async retryGenerationSnapshot() {
     const snap = this._genRetrySnapshot;
     if (!snap || this._genSubmitting) return;
+    if (this.state.genAvailability !== 'ready') { this.toast(this.state.genAvailabilityMessage || 'AI generation is unavailable', 'error'); this.loadModels(); return; }
     this._genSubmitting = true;
+    this.setState({ genSubmitting: true });
+    const creditEpoch = this._beginCreditMutation();
     try {
       const r = await FFAPI.gen(snap.body);
       this._genRetrySnapshot = null; this._genIdemKey = null;
       if ((this.state.activeJobs || []).some(j => j.id === r.jobId)) return;
       const job = { id: r.jobId, tempId: 'j' + (this._jobSeq = (this._jobSeq || 0) + 1), sessionId: snap.sessionId, mode: snap.mode, modelName: snap.modelName, cost: snap.cost, startedAt: Date.now() };
-      this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]), credits: (typeof r.creditsLeft === 'number' ? r.creditsLeft : s.credits) }));
+      this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]) }));
+      this._applyChargedBalance(r.creditsLeft, creditEpoch);
       this._persistActiveJob(job); this.pollJob(r.jobId);
     } catch (e) {
       if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — retrying uses the exact same request", () => this.retryGenerationSnapshot());
       else { this._genRetrySnapshot = null; this._genIdemKey = null; this.toast(this.errMsg(e), 'error'); }
-    } finally { this._genSubmitting = false; }
+    } finally { this._finishCreditMutation(creditEpoch); this._genSubmitting = false; this.setState({ genSubmitting: false }); }
   }
   async generate(isRetry) {
     if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    if (this.state.genAvailability !== 'ready') {
+      this.toast(this.state.genAvailabilityMessage || 'AI generation is unavailable — checking again', 'error');
+      this.loadModels();
+      return;
+    }
     // P17 — bir "click" uchun BITTA idempotency kaliti: tarmoq uzilib Retry bosilsa AYNI kalit
     // qayta ishlatiladi → server dedup, DUBLIKAT job / IKKINCHI charge YO'Q. Yangi klik = yangi kalit.
     if (!isRetry || !this._genIdemKey) this._genIdemKey = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : ('g' + Date.now() + Math.random().toString(16).slice(2)));
     const idemKey = this._genIdemKey;
     const tool = this.curTool(), model = this.curModel();
-    if (!model) { this.toast("Model failed to load — refresh the page"); return; }
+    if (!model) { this.toast('No ' + tool.short + ' model is currently available', 'error'); this.loadModels(); return; }
     let prompt = (this.state.aiPrompt || '').trim();
     // P13 — pre-flight: promptda eslatilgan, lekin joriy model FAOL qilmaydigan referenslar (ogohlantiramiz, bloklamaymiz)
     const inact = this.inactiveMentions(tool.mode, model);
@@ -21111,6 +21372,8 @@ class Component extends DCLogic {
     if (tool.mode === 'image' && model.refMode === 'required' && !this.state.refImages.length) { this.toast('This model requires a reference image — add one next to the prompt'); return; }
     const params = this.buildParams(tool, model);
     this._genSubmitting = true;
+    this.setState({ genSubmitting: true });
+    let creditEpoch = null;
     try {
       // P22 #4 — REAKTIV imzolangan quote (state.genQuote) joriy so'rovga mos bo'lsa uni yuboramiz —
       //   bosishda qayta round-trip YO'Q (narx allaqachon COST chipida ko'rsatilgan). Mos emas/upscale
@@ -21126,11 +21389,9 @@ class Component extends DCLogic {
       }
       // BATCH4 #2 — video-upscale: imzo SERVER yozgan canonical params ustidan — /gen'ga AYNAN o'sha ketadi
       const genParams = q.pricedParams || params;
-      // P20/P22.2 — balans FAOL (uchayotgan) ishlarga komitilgan kreditlarni hisobga oladi (aks holda
-      // 3-ish server tomonidan rad etilib, biz tuzatayotgan xatoni qaytadi). Money-zona: faqat KO'RSATISH,
-      // haqiqiy yechish/rad etish SERVERDA atomik.
-      const committed = (this.state.activeJobs || []).reduce((a, j) => a + (j.cost || 0), 0);
-      if (q.price > (this.state.credits - committed)) { this._genSubmitting = false; this.setState({ showCredits: true }); return; }
+      // `/gen` javobidagi creditsLeft allaqachon faol ish uchun yechilgan kreditdan KEYINGI
+      // server balansidir. activeJobs.cost'ni yana ayirish double-count bo'lardi.
+      if (q.price > this.state.credits) { this._genSubmitting = false; this.setState({ showCredits: true }); return; }
       // QA-FIX #12: rejim-boshi yashirin sessiya o'rniga BITTA faol sessiya (rail'da ko'rinadi).
       // Sessiya birinchi gen'da lazily yaratiladi — nomi birinchi promptdan.
       let sid = this.state.curSessId;
@@ -21140,6 +21401,7 @@ class Component extends DCLogic {
         this.setState({ curSessId: sid, viewSess: sid, sessGens: [] });
       }
       let r;
+      creditEpoch = this._beginCreditMutation();
       try {
         const body = { sessionId: sid, mode: tool.mode, prompt, modelId: model.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey };
         this._genRetrySnapshot = { body: JSON.parse(JSON.stringify(body)), sessionId: sid, mode: tool.mode, modelName: model.label || 'Model', cost: q.price };
@@ -21158,7 +21420,8 @@ class Component extends DCLogic {
       this._genIdemKey = null; this._genRetrySnapshot = null; // muvaffaqiyat — yangi klik yangi request
       // P20 — ishni FAOL ro'yxatga qo'shamiz; kompozer ochiq qoladi (keyingi promptni yozish mumkin).
       const job = { id: r.jobId, tempId: 'j' + (this._jobSeq = (this._jobSeq || 0) + 1), sessionId: sid, mode: tool.mode, modelName: model.label || 'Model', cost: q.price, startedAt: Date.now() };
-      this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]), credits: (typeof r.creditsLeft === 'number' ? r.creditsLeft : s.credits) }));
+      this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]) }));
+      this._applyChargedBalance(r.creditsLeft, creditEpoch);
       this._persistActiveJob(job); // FIX A5 (P6) — refresh mid-gen'da poll qayta ulanishi uchun
       this.pollJob(r.jobId);
     } catch (e) {
@@ -21167,7 +21430,7 @@ class Component extends DCLogic {
       // P17 — tarmoq uzildi: AYNI kalit bilan Retry (server dedup → dublikat yo'q, ikkinchi charge yo'q).
       else if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — retrying uses the exact same request", () => this.retryGenerationSnapshot());
       else { this._genIdemKey = null; this._genRetrySnapshot = null; this.toast(this.errMsg(e), 'error'); }
-    } finally { this._genSubmitting = false; }
+    } finally { if (creditEpoch != null) this._finishCreditMutation(creditEpoch); this._genSubmitting = false; this.setState({ genSubmitting: false }); }
   }
   // R4_08 — kartadagi "Use ▾ → Upscale" bir-bosishlik Topaz op: manba gen'ning YANGI imzolangan
   // URL'ini oladi → params (rasm: referenceUrl; video: sourceUrl+factor) → imzolangan quote → gen →
@@ -21175,6 +21438,7 @@ class Component extends DCLogic {
   // tegilmagan): op muvaffaqiyatsiz bo'lsa kredit qaytadi. Composer holatiga TEGMAYDI (mustaqil oqim).
   async runTopazOp(op, sourceGenId, factor) {
     if (!op || !sourceGenId || this._topazBusy) return;
+    if (this.state.genAvailability !== 'ready') { this.toast(this.state.genAvailabilityMessage || 'AI generation is unavailable', 'error'); this.loadModels(); return; }
     this._topazBusy = true;
     try {
       const g = await FFAPI.genGet(sourceGenId);
@@ -21186,20 +21450,23 @@ class Component extends DCLogic {
         : { referenceUrl: url, referenceUrls: [url] };
       const q = await FFAPI.quote(op.id, mode, params);
       const genParams = q.pricedParams || params; // upscale: imzo SERVER canonical params ustidan
-      const committed = (this.state.activeJobs || []).reduce((a, j) => a + (j.cost || 0), 0);
-      if (q.price > (this.state.credits - committed)) { this.setState({ showCredits: true }); return; }
+      if (q.price > this.state.credits) { this.setState({ showCredits: true }); return; }
       let sid = this.state.curSessId;
       if (!sid) { const s = await FFAPI.session(mode, op.label); sid = s.id; this.setState({ curSessId: sid, viewSess: sid, sessGens: [] }); }
       const idemKey = 'topaz-' + op.id + '-' + sourceGenId + '-' + (factor || '') + '-' + Date.now();
       let r;
+      const creditEpoch = this._beginCreditMutation();
       try {
-        r = await FFAPI.gen({ sessionId: sid, mode, prompt: op.label, modelId: op.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey });
-      } catch (ge) {
-        if (ge && ge.status === 404) { const s2 = await FFAPI.session(mode, op.label); sid = s2.id; this.setState({ curSessId: s2.id, viewSess: s2.id, sessGens: [] }); r = await FFAPI.gen({ sessionId: s2.id, mode, prompt: op.label, modelId: op.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey }); }
-        else { throw ge; }
-      }
+        try {
+          r = await FFAPI.gen({ sessionId: sid, mode, prompt: op.label, modelId: op.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey });
+        } catch (ge) {
+          if (ge && ge.status === 404) { const s2 = await FFAPI.session(mode, op.label); sid = s2.id; this.setState({ curSessId: s2.id, viewSess: s2.id, sessGens: [] }); r = await FFAPI.gen({ sessionId: s2.id, mode, prompt: op.label, modelId: op.id, params: genParams, price: q.price, costQuoteSignature: q.signature, idempotencyKey: idemKey }); }
+          else { throw ge; }
+        }
+        this._applyChargedBalance(r.creditsLeft, creditEpoch);
+      } finally { this._finishCreditMutation(creditEpoch); }
       const job = { id: r.jobId, tempId: 'j' + (this._jobSeq = (this._jobSeq || 0) + 1), sessionId: sid, mode, modelName: op.label || 'Upscale', cost: q.price, startedAt: Date.now() };
-      this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]), credits: (typeof r.creditsLeft === 'number' ? r.creditsLeft : s.credits) }));
+      this.setState(s => ({ activeJobs: (s.activeJobs || []).concat([job]) }));
       this._persistActiveJob(job);
       this.pollJob(r.jobId);
       this.toast((op.opType === 'removebg' ? 'Removing background…' : 'Upscaling…') + ' ✦' + q.price);
@@ -21247,6 +21514,7 @@ class Component extends DCLogic {
   pollJob(jobId) {
     this._pollT = this._pollT || {};
     clearTimeout(this._pollT[jobId]);
+    const sessionEpoch = this._creditSessionEpoch || 0;
     let delay = 1800;
     // §A (P1) — poll TAQDIRLI: ketma-ket 8 xato YOKI 12 daqiqa deadline'dan keyin taslim bo'ladi.
     const startedAt = Date.now();
@@ -21255,10 +21523,12 @@ class Component extends DCLogic {
     const drop = () => { try { clearTimeout(this._pollT[jobId]); delete this._pollT[jobId]; } catch (e) {} this._unpersistActiveJob(jobId); /* FIX A5 */ };
     const finish = (extra) => { this.setState(s => Object.assign({ activeJobs: (s.activeJobs || []).filter(j => j.id !== jobId) }, extra || {})); drop(); };
     const tick = async () => {
+      if (sessionEpoch !== (this._creditSessionEpoch || 0)) { drop(); return; }
       // §A (P2) — sessiya tugagan bo'lsa poll o'zi to'xtaydi (401 loop + toast spami yo'q)
       if (!(window.FFAPI && FFAPI.getToken())) { finish(); return; }
       let g = null;
       try { g = await FFAPI.genGet(jobId); misses = 0; } catch (e) {
+        if (sessionEpoch !== (this._creditSessionEpoch || 0)) { drop(); return; }
         misses++;
         if (misses >= 8) {
           finish();
@@ -21267,6 +21537,7 @@ class Component extends DCLogic {
           return;
         }
       }
+      if (sessionEpoch !== (this._creditSessionEpoch || 0)) { drop(); return; }
       if (g && g.status === 'done') {
         const m = this.mapGen(g);
         this.setState(s => {
@@ -21297,13 +21568,20 @@ class Component extends DCLogic {
         const rej = g.rejection;
         if (rej && rej.isContent) {
           // R4_04 — sabab backend'da toza; belt-and-suspenders: xom JSON tushsa errMsg tozalaydi.
-          const reason = (rej.reason && !/\{["']?\s*error\b/i.test(rej.reason)) ? rej.reason : this.errMsg({ message: rej.reason || g.error || '' });
+          const reasonRaw = (rej.reason && !/\{["']?\s*error\b/i.test(rej.reason)) ? rej.reason : this.errMsg({ message: rej.reason || g.error || '' });
+          const reason = String(reasonRaw || 'Generation failed').replace(/\s*[—·-]?\s*(?:your\s+)?credits? (?:were )?refunded\.?/ig, '').trim();
           const refNote = rej.refunded ? (' · ✦' + rej.refunded + ' refunded') : '';
           this.toast(reason + refNote, 'error');
           this.setState({ rejectBanner: { reason: reason, refunded: rej.refunded || 0, modelLabel: rej.modelLabel || '', provider: rej.provider || '', suggestModelId: rej.suggestModelId || null, suggestModelLabel: rej.suggestModelLabel || '', mode: g.mode } });
         } else {
-          // R4_04 — xom provayder xatosini ham errMsg orqali (Omni 400 JSON hech qachon xom ko'rinmasin).
-          this.toast(this.errMsg({ message: g.error || 'Generation failed — credits refunded' }), 'error');
+          // Refundni faqat server `refunded:true` bilan tasdiqlasa aytamiz; aks holda yolg'on
+          // "refunded" va'dasi emas, reconciliation holati ko'rsatiladi.
+          const base = String(this.errMsg({ message: g.error || 'Generation failed' }))
+            .replace(/\s*[—·-]?\s*(?:your\s+)?credits? (?:were )?refunded\.?/ig, '').trim();
+          const refundNote = g.refunded && g.cost ? (' · ✦' + g.cost + ' refunded')
+            : g.cost ? ' · refund confirmation pending'
+            : ' · no credits were charged';
+          this.toast((base || 'Generation failed') + refundNote, 'error');
         }
         this.refreshCredits();
         return;
@@ -21460,7 +21738,7 @@ class Component extends DCLogic {
     this.setState({ aiPrompt: cur + sep + tpl + ' ' });
     setTimeout(() => { this.afSizePromptTa(); try { const t = document.querySelector('.va-dock .prompt'); if (t) t.focus(); } catch (x) {} }, 60);
   }
-  applyEnhanceResult(r, nref, undoKey) {
+  applyEnhanceResult(r, nref, undoKey, creditEpoch) {
     if (r && r.mentionMismatch) {
       const why = r.mentionMismatchKind === 'missing'
         ? 'the rewrite dropped an attached reference'
@@ -21475,29 +21753,35 @@ class Component extends DCLogic {
       const skipped = typeof r.referencesSkipped === 'number' ? r.referencesSkipped : 0;
       this.toast('Prompt enhanced ✨' + (seen ? (' · saw ' + seen + ' reference' + (seen > 1 ? 's' : '')) : '') + (skipped ? (' · skipped ' + skipped + ' unavailable/large') : '') + (r.creditsCharged ? (' · ✦' + r.creditsCharged) : '') + ' · ' + undoKey + ' to undo', skipped ? 'warning' : 'success');
     }
-    if (r && typeof r.creditsLeft === 'number') this.setState({ credits: r.creditsLeft });
+    if (r && r.creditsRefunded) this.refreshCredits();
+    else if (r && typeof r.creditsLeft === 'number') this._applyChargedBalance(r.creditsLeft, creditEpoch);
   }
   async retryEnhanceSnapshot() {
     const snap = this._enhRetrySnapshot; if (!snap || this.state.enhBusy) return;
+    if (this.state.genAvailability !== 'ready') { this.toast(this.state.genAvailabilityMessage || 'AI generation is unavailable', 'error'); this.loadModels(); return; }
     this.setState({ enhBusy: true });
+    const creditEpoch = this._beginCreditMutation();
     try {
       const r = await FFAPI.enhance(snap.prompt, snap.mode, snap.modelId, snap.opts);
       this._enhIdemKey = null; this._enhRetrySnapshot = null;
-      this.applyEnhanceResult(r, snap.nref, snap.undoKey);
+      this.applyEnhanceResult(r, snap.nref, snap.undoKey, creditEpoch);
     } catch (e) {
       if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — retrying uses the exact same prompt and references", () => this.retryEnhanceSnapshot());
       else { this._enhIdemKey = null; this._enhRetrySnapshot = null; this.toast(this.errMsg(e), 'error'); }
-    }
+      this.refreshCredits();
+    } finally { this._finishCreditMutation(creditEpoch); }
     this.setState({ enhBusy: false });
   }
   async doEnhance(isRetry) {
     const prompt = (this.state.aiPrompt || '').trim();
     if (prompt.length < 2) { this.toast('Write a prompt first'); return; }
     if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
+    if (this.state.genAvailability !== 'ready') { this.toast(this.state.genAvailabilityMessage || 'AI generation is unavailable — checking again', 'error'); this.loadModels(); return; }
+    const tool = this.curTool(), model = this.curModel();
+    if (!model) { this.toast('No ' + tool.short + ' model is currently available', 'error'); this.loadModels(); return; }
     if (this.state.enhBusy && !isRetry) return;
     // P17 — bir "click" idempotency kaliti (tarmoq uzilib Retry bosilsa AYNI kalit → ikkinchi charge yo'q).
     if (!isRetry || !this._enhIdemKey) this._enhIdemKey = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : ('e' + Date.now() + Math.random().toString(16).slice(2)));
-    const tool = this.curTool(), model = this.curModel();
     // Faqat tanlangan model HAQIQATDA ishlatadigan referenslarni, aniq rol va barqaror @mention
     // bilan yuboramiz. Start/end generic @img bo'lib ketmaydi; image hovuzi esa @img1 dan boshlanadi.
     const proj = this.projectRefs(tool.mode, model);
@@ -21524,28 +21808,30 @@ class Component extends DCLogic {
     refOpts.idempotencyKey = this._enhIdemKey; // P17
     this._enhRetrySnapshot = { prompt, mode: tool.mode, modelId: model ? model.id : undefined, opts: JSON.parse(JSON.stringify(refOpts)), nref, undoKey };
     this.setState({ enhBusy: true });
+    const creditEpoch = this._beginCreditMutation();
     try {
       const r = await FFAPI.enhance(prompt, tool.mode, model ? model.id : undefined, refOpts);
       this._enhIdemKey = null; this._enhRetrySnapshot = null;
-      this.applyEnhanceResult(r, nref, undoKey);
+      this.applyEnhanceResult(r, nref, undoKey, creditEpoch);
     } catch (e) {
       // P17 — tarmoq uzildi: AYNI idempotency kaliti bilan Retry (server dedup → ikkinchi charge yo'q).
       if (e && e.message === 'NETWORK') this.toastWithRetry("Can't reach the server — retrying uses the exact same prompt and references", () => this.retryEnhanceSnapshot());
       else { this._enhIdemKey = null; this._enhRetrySnapshot = null; this.toast(this.errMsg(e), 'error'); }
-    }
+      this.refreshCredits();
+    } finally { this._finishCreditMutation(creditEpoch); }
     this.setState({ enhBusy: false });
   }
   async downloadGenAsset(id) {
     try {
       const g = await FFAPI.genGet(id);
       const asset = (g.assets && g.assets[0]) || null;
-      if (!asset || !asset.url) { this.toast('File not found'); return; }
+      if (!asset || !(asset.downloadUrl || asset.url)) { this.toast('File not found', 'error'); return; }
       const a = document.createElement('a');
       // downloadUrl = Content-Disposition: attachment (brauzer inline ochmaydi, yuklab oladi).
       a.href = asset.downloadUrl || asset.url; a.download = ''; a.rel = 'noopener';
       document.body.appendChild(a); a.click(); a.remove();
       this.toast('Download started');
-    } catch (e) { this.toast(this.errMsg(e)); }
+    } catch (e) { this.toast(this.errMsg(e), 'error'); }
   }
   // §C (P30) — gen o'chirish endi 2-bosqichli "armed" tasdiq (project-delete naqshi): pullik
   // aktiv bitta klikda o'lib ketmasin. Birinchi klik qurollantiradi (genDelArm=id + 3.5s disarm
@@ -22073,22 +22359,39 @@ class Component extends DCLogic {
   async downloadTemplate() {
     const d = this.state.detail;
     if (!d) return;
+    if (this._templateDownloadBusy) return;
     if (!d.real) { this.toast("This is a showcase template — the catalog will fill in soon"); return; }
     if (!(window.FFAPI && FFAPI.getToken())) { this.gotoAuth('login'); return; }
     if (!d.hasPack) { this.toast('This template has no pack file uploaded yet'); return; }
+    this._templateDownloadBusy = true;
+    this.setState({ templateDownloadBusy: true });
+    // Bir klik uchun bitta stable kalit. Ichki transport retry ham, NETWORK'dan keyingi
+    // foydalanuvchi Retry'i ham shu kalitni yuboradi; boshqa template yangi kalit oladi.
+    if (!this._templateDownloadRequest || this._templateDownloadRequest.id !== d.id) {
+      this._templateDownloadRequest = { id: d.id, key: FFAPI.uuid() };
+    }
+    const requestKey = this._templateDownloadRequest.key;
     try {
-      const r = await FFAPI.packLink(d.id);
+      const r = await FFAPI.packLink(d.id, requestKey);
       if (r && r.url) {
+        this._templateDownloadRequest = null;
         const a = document.createElement('a');
         a.href = r.url; a.download = ''; a.rel = 'noopener';
         document.body.appendChild(a); a.click(); a.remove();
         this.toast('Download started');
         this.loadPluginMe();
       } else {
+        this._templateDownloadRequest = null;
         // §C (P30) — javob keldi-yu URL yo'q: jim qolmaymiz, halol xato ko'rsatamiz.
         this.toast("Couldn't start the download — please try again", 'error');
       }
-    } catch (e) { this.toast(this.errMsg(e)); }
+    } catch (e) {
+      // Javobli xato quota mutatsiyasi natijasini aniq bildiradi va yangi urinish yangi action.
+      // Faqat natijasi noma'lum NETWORK xatosida ayni idempotency kaliti saqlanadi.
+      if (!(e && e.message === 'NETWORK')) this._templateDownloadRequest = null;
+      this.toast(this.errMsg(e), 'error');
+    }
+    finally { this._templateDownloadBusy = false; this.setState({ templateDownloadBusy: false }); }
   }
   async saveProfile() {
     const name = (this.state.accName || '').trim();
@@ -22170,6 +22473,22 @@ class Component extends DCLogic {
     // Sayt CMS: aicard matnlari (title/desc/cost) config'dan; tool kaliti/ikon/ranglar kodda.
     const studioCards = this.studioCards.map((c, i) => ({ ...c, ci: i, t: lc.aiPromo.cards[i].title, d: lc.aiPromo.cards[i].desc, cost: lc.aiPromo.cards[i].cost, g: this.grad(c.h), ibg: (studioIcon[c.tool] || {}).ibg || 'var(--limedim)', icol: (studioIcon[c.tool] || {}).icol || 'var(--lime)', rd: (i % 4) * 80, ...(studioGlow[c.tool] || studioGlow['Rasm yaratish']) }));
 
+    // Plugin relizi — marketing CMS eski .zxp/After Effects yoki .ccx/Premiere matnini
+    // saqlab qolishi mumkin. Download API haqiqat manbai: nashr qilinmagan kanal birinchi
+    // renderda ham "available" deb reklama qilinmaydi.
+    const prReleased = this.state.pluginDl === 'ready' && !!this.state.pluginDownloadUrl;
+    const aeReleased = this.state.pluginAeDl === 'ready' && !!this.state.pluginAeDownloadUrl;
+    const releaseSafeText = (value, fallback) => {
+      const text = String(value || '');
+      const staleAe = !aeReleased && /after effects|\.zxp|\bzxp\b/i.test(text);
+      const stalePr = !prReleased && /premiere pro|\.ccx|\bccx\b/i.test(text);
+      return (staleAe || stalePr) ? fallback : value;
+    };
+    const releasedPluginFeature = prReleased ? 'Premiere Pro plugin (.ccx)'
+      : aeReleased ? 'After Effects plugin'
+      : 'Adobe plugin — live release availability';
+    const safeReleaseList = (items) => (items || []).map(item => releaseSafeText(item, releasedPluginFeature));
+
     // Sayt CMS: tarif DISPLAY nusxasi config'dan (nom/narx/kredit/CTA/ro'yxatlar);
     // key/pop va checkout oqimi (onChoosePlan) KODDA — pul mantig'iga tegilmaydi.
     const plansSrc = this.plans.map((p, i) => ({
@@ -22177,7 +22496,8 @@ class Component extends DCLogic {
       // Billing narxi CMS matnidan kelmaydi: checkout plan kaliti bilan bog'langan
       // kod-tasdiqlangan narx ko'rsatiladi. CMS faqat copy/featuresni tahrirlaydi.
       name: lc.plans[i].name, pm: p.pm, cr: lc.plans[i].credits,
-      sub: lc.plans[i].sub, cta: lc.plans[i].cta, feats: lc.plans[i].feats, tf: lc.plans[i].teaserFeats,
+      sub: lc.plans[i].sub, cta: lc.plans[i].cta,
+      feats: safeReleaseList(lc.plans[i].feats), tf: safeReleaseList(lc.plans[i].teaserFeats),
     }));
     const plansView = plansSrc.map((p, pli) => {
       const price = p.pm;
@@ -22206,8 +22526,23 @@ class Component extends DCLogic {
       };
     });
 
-    // Sayt CMS: FAQ savol-javoblari config'dan (landing + pricing sahifada bitta manba)
-    const faqsView = lc.faqSection.items.map((f, i) => { const op = i === this.state.openFaq; return { ...f, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'color-mix(in srgb,var(--lime) 25%,transparent)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' }; });
+    const pluginInstallAnswer = prReleased
+      ? 'Download the Premiere Pro .ccx from the Plugin page, open it with Adobe Creative Cloud, restart Premiere Pro, then choose Window → Extensions → FrameFlow.'
+      : aeReleased
+        ? 'Download the signed After Effects package from the Plugin page and follow the installer instructions shown there.'
+        : 'Open the Plugin page to see live release availability and installation instructions for each Adobe app.';
+    const pluginWorkflowAnswer = prReleased
+      ? 'Pick a template or create in AI Studio, then download in the browser or continue in the published Premiere Pro plugin.'
+      : aeReleased
+        ? 'Pick a template or create in AI Studio, then download in the browser or continue in the published After Effects plugin.'
+        : 'Pick a template or create in AI Studio, then download in the browser. The Plugin page shows verified Adobe release availability.';
+    // Sayt CMS: FAQ savol-javoblari config'dan; relizga zid install javobi esa API holatiga almashtiriladi.
+    const faqsView = lc.faqSection.items.map((f, i) => {
+      const op = i === this.state.openFaq;
+      const installFaq = /how.*install.*plugin|plugin.*install/i.test(String(f.q || ''));
+      const safe = installFaq ? Object.assign({}, f, { a: pluginInstallAnswer }) : Object.assign({}, f, { a: releaseSafeText(f.a, pluginWorkflowAnswer) });
+      return { ...safe, idx: i, open: op, icon: op ? 'minus' : 'plus', bd: op ? 'var(--bd2)' : 'var(--bd)', faqBd: op ? 'color-mix(in srgb,var(--lime) 25%,transparent)' : 'rgba(255,255,255,.07)', qCol: op ? 'var(--text)' : '#B7C0CE', iCol: op ? 'var(--lime)' : 'var(--muted)', itCls: op ? 'ffl-faqit open' : 'ffl-faqit' };
+    });
 
     const creditPacks = this.creditPacks.map(c => ({ ...c, bg: c.pop ? 'linear-gradient(180deg,color-mix(in srgb,var(--lime) 12%,transparent),var(--card2))' : 'var(--card2)', bd: c.pop ? 'color-mix(in srgb,var(--lime) 45%,transparent)' : 'var(--border)', packCls: (c.pop ? 'va-cpack hot' : 'va-cpack') + (this.state.payBusy === 'c' + c.c ? ' is-busy' : ''), badge: c.pop ? 'MOST POPULAR' : '' }));
 
@@ -22617,19 +22952,22 @@ class Component extends DCLogic {
       ? ((uqV && !uqV.error && typeof uqV.price === 'number') ? uqV.price : null)
       : (gqFresh ? gqObj.price : (typeof costNow === 'number' ? costNow : null));
     const dispPrice = (effPrice != null ? effPrice : costNow);
-    const axQuote = axIsVUp
+    const aiServiceReady = this.state.genAvailability === 'ready';
+    const aiServiceLoading = this.state.genAvailability === 'idle' || this.state.genAvailability === 'loading';
+    let axQuote = axIsVUp
       ? ((uqV && !uqV.error && typeof uqV.price === 'number')
           ? ('✦ ' + uqV.price + (uqV.info ? ' · ' + uqV.info.resolution + ' · ' + uqV.info.duration + 's' + (uqV.info.fpsDoubled ? ' (60fps ×2)' : '') : ''))
           : (this.state.refVideos.length ? (uqV && uqV.error ? '✦ — (' + String(uqV.error).slice(0, 40) + ')' : 'pricing…') : '✦ —'))
       : gqLoading ? 'pricing…'
       : (countOpts.length > 1 && nSel > 1) ? (nSel + ' × ✦' + Math.round(dispPrice / nSel) + ' = ✦ ' + dispPrice) : ('✦ ' + dispPrice);
+    if (!aiServiceReady || !model) axQuote = '✦ —';
     // BATCH4 #1/#2 — Upscale'da prompt ixtiyoriy: manba tanlangan bo'lsa Generate yoqiladi
     const axPromptReady = axIsUpscaleTool
       ? (axIsVUp ? (this.state.refVideos.length > 0 && !!(uqV && !uqV.error && typeof uqV.price === 'number')) : this.state.refImages.length > 0)
       : (this.state.aiPrompt || '').trim().length >= 2;
     // P20 — parallel: tugma FAOL qoladi (yana ish yuborish mumkin), faqat cap'ga yetganda o'chadi.
     const genAtCap = (this.state.activeJobs || []).length >= 5;
-    // P20/P22.2 — uchayotgan ishlarga komitilgan kreditlar (balans "ayni damda" ni ko'rsatadi)
+    // Faol ish narxi axborot uchun; state.credits — server qaytargan POST-charge qoldiq.
     const committedCredits = (this.state.activeJobs || []).reduce((a, j) => a + (j.cost || 0), 0);
     // ── P22 — DARVOZALAR BOSISHDAN OLDIN: kredit yetmasa / model sharti bajarilmasa Generate O'CHADI
     //    (bosgandan keyin toast/modal EMAS). Narx: reaktiv imzolangan quote (step 27) bo'lsa undan, aks
@@ -22641,7 +22979,7 @@ class Component extends DCLogic {
     const promptLenG = (this.state.aiPrompt || '').trim().length;
     const overChars = tool.mode === 'voice' && model && model.maxChars && promptLenG > model.maxChars;
     // effPrice / gqLoading — REAKTIV IMZOLANGAN quote'dan (yuqorida hisoblangan)
-    const availCredits = this.state.credits - committedCredits;
+    const availCredits = this.state.credits;
     const enhanceProjection = this.projectRefs(tool.mode, model).items.filter(x => x.active);
     const enhanceHasImage = enhanceProjection.some(x => x.k === 'start' || x.k === 'end' || x.k === 'img');
     const enhanceHasVideo = enhanceProjection.some(x => x.k === 'vid');
@@ -22649,15 +22987,19 @@ class Component extends DCLogic {
     const enhanceCost = 1 + (enhanceHasImage ? 1 : 0) + (enhanceHasVideo ? 2 : 0) + (enhanceHasAudio ? 1 : 0);
     const enhancePromptReady = (this.state.aiPrompt || '').trim().length >= 2;
     const enhanceNotEnough = this.state.creditsLoaded && enhanceCost > this.state.credits;
-    const enhanceBlocked = this.state.enhBusy || !enhancePromptReady || enhanceNotEnough;
+    const enhanceBlocked = this.state.enhBusy || !aiServiceReady || !model || !enhancePromptReady || enhanceNotEnough;
     const enhBtnCls = 'va-set enh ff-create-enhance' + (enhanceBlocked ? ' off' : '') + (this.state.enhBusy ? ' busy' : '');
     const enhLabel = this.state.enhBusy ? 'Enhancing…' : ('Enhance ' + (enhanceStyleMeta[activeEnhanceStyle] || enhanceStyleMeta.faithful).label + ' · ✦' + enhanceCost);
     const notEnough = this.state.creditsLoaded && effPrice != null && effPrice > availCredits;
     // Narx noma'lum bo'lsa (quote yuklanyapti va lokal taxmin ham yo'q) tugma yoqilmaydi — P22 qoidasi.
     const priceUnknown = effPrice == null || gqLoading;
-    const genBlocked = !axPromptReady || genAtCap || needStart || needRefImg || needSrcVideo || overChars || notEnough || priceUnknown;
+    const genBlocked = !aiServiceReady || !model || this.state.genSubmitting || !axPromptReady || genAtCap || needStart || needRefImg || needSrcVideo || overChars || notEnough || priceUnknown;
     const genBtnCls = 'va-btn lime' + (genBlocked ? ' off' : '');
-    const genBtnLabel = genAtCap ? 'Max 5 running' : (gqLoading ? 'Pricing…' : 'Generate');
+    const genBtnLabel = this.state.genSubmitting ? 'Submitting…'
+      : aiServiceLoading ? 'Checking service…'
+      : !aiServiceReady || !model ? 'Unavailable'
+      : genAtCap ? 'Max 5 running'
+      : (gqLoading ? 'Pricing…' : 'Generate');
     // Inline sabab qatori (modal EMAS): faqat tushuntirishga arziydigan holatlarda
     const genGateOn = axPromptReady && !genAtCap && (notEnough || needStart || needRefImg || needSrcVideo || overChars);
     const genGateTopup = notEnough;
@@ -22668,16 +23010,20 @@ class Component extends DCLogic {
       : overChars ? ('Too long — max ' + model.maxChars + ' characters (yours: ' + promptLenG + ')')
       : '';
     let genStatusText = '';
-    if (!axIsUpscaleTool && !axPromptReady) genStatusText = 'Write a prompt to begin';
+    if (aiServiceLoading) genStatusText = 'Checking AI services…';
+    else if (!aiServiceReady) genStatusText = this.state.genAvailabilityMessage || 'AI generation is unavailable';
+    else if (!model) genStatusText = 'No ' + tool.short + ' model is currently available';
+    else if (this.state.genSubmitting) genStatusText = 'Submitting generation…';
+    else if (!axIsUpscaleTool && !axPromptReady) genStatusText = 'Write a prompt to begin';
     else if (gqLoading) genStatusText = 'Loading quote…';
     else if (gqError) genStatusText = 'Quote error: ' + String(gqObj && gqObj.error).slice(0, 80);
-    else if (axPromptReady && !genGateOn && model && (axIsUpscaleTool ? isUpscaleQuoteReady : isQuoteReady)) genStatusText = 'Ready';
-    const genStatusCls = 'ff-create-status' + (gqLoading ? ' loading' : (gqError ? ' err' : (genStatusText ? ' ok' : '')));
+    else if (axPromptReady && !genGateOn && (axIsUpscaleTool ? isUpscaleQuoteReady : isQuoteReady)) genStatusText = 'Ready';
+    const genStatusCls = 'ff-create-status' + ((aiServiceLoading || gqLoading || this.state.genSubmitting) ? ' loading' : ((!aiServiceReady || !model || gqError) ? ' err' : (genStatusText ? ' ok' : '')));
     // P30 §2 (29c) — qattiq siyosatli model tanlangan bo'lsa: KREDIT SARFLANISHIDAN OLDIN halol
     // ogohlantirish (bloklamaydi). Rad etilsa server refund qiladi (money-zona TEGILMAYDI).
-    const strictPolicyNote = axPromptReady && !genGateOn && !!(model && model.policyStrictness === 'strict');
+    const strictPolicyNote = aiServiceReady && axPromptReady && !genGateOn && !!(model && model.policyStrictness === 'strict');
     const axBalNote = anyActive
-      ? ('✦ ' + committedCredits + ' reserved for ' + this.state.activeJobs.length + ' running job' + (this.state.activeJobs.length > 1 ? 's' : '') + ' — refunded if they fail')
+      ? ('✦ ' + committedCredits + ' charged across ' + this.state.activeJobs.length + ' running job' + (this.state.activeJobs.length > 1 ? 's' : '') + ' — refunded if they fail')
       : (tool.mode === 'image' ? (unitCost > 0 ? ('~' + Math.floor(this.state.credits / unitCost) + ' image generations left') : 'priced per image')
         : (tool.mode === 'video' ? 'video is billed per second of output'
           : (tool.mode === 'voice' ? ('voice is billed per generation' + (model && model.maxChars ? ' (up to ' + model.maxChars + ' chars)' : '')) : 'billed per sound effect')));
@@ -22800,7 +23146,8 @@ class Component extends DCLogic {
       });
     };
     const ensureAistudioModels = () => {
-      if (!this.state.genModelsLoaded && window.FFAPI && FFAPI.getToken()) this.loadModels();
+      const activeList = this.state.genModels[this.toolModelKey(this.curTool())] || [];
+      if ((!this.state.genModelsLoaded || this.state.genAvailability !== 'ready' || !activeList.length) && window.FFAPI && FFAPI.getToken()) this.loadModels();
     };
     const refClearIfModeChanged = () => ({});
     const q = (this.state.q || '').toLowerCase();
@@ -22977,7 +23324,9 @@ class Component extends DCLogic {
       notGated: !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')),
       // §E (P2) — oldindan yuklab olish standingi (post-click 403 syurprizi yo'q). Pro-gate'dan
       // MUSTAQIL: hatto bepul shablonda ham Free oylik limit tugagan bo'lsa halol ko'rsatamiz.
-      canDownload: !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')) && !dlExhausted,
+      canDownload: !!dRaw.hasPack && !this.state.templateDownloadBusy && !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')) && !dlExhausted,
+      downloading: !!dRaw.hasPack && !!this.state.templateDownloadBusy && !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')) && !dlExhausted,
+      packUnavailable: !dRaw.hasPack && !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')) && !dlExhausted,
       dlExhausted: !(!!dRaw.pro && ((this.state.plan || (this.state.user && this.state.user.plan) || 'free').toLowerCase() === 'free')) && dlExhausted,
       showDlLeft: dlLeft != null && !dlExhausted,
       dlLeftLabel: dlLeft != null ? (dlLeft + ' of ' + dlLimit + ' downloads left this month') : '',
@@ -23286,13 +23635,14 @@ class Component extends DCLogic {
     // A2b gating eslatmasi — faqat matn, yuklab olish oqimi (packLink) o'zgarmagan.
     // v2 — Pro narxi endi CMS plans[1].price'dan (qattiq $19 o'rniga; displey nusxa bilan sinxron)
     const detailGate = dRaw ? (dRaw.pro
-      ? (isFreePlan ? ('Included with Pro — $' + lc.plans[1].price + '/mo. On the Free plan downloads stay HD + watermarked.') : ('Included with your ' + planShort + ' plan.'))
+      ? (isFreePlan ? ('Preview on Free; the production pack is included with Pro — $' + lc.plans[1].price + '/mo.') : ('Included with your ' + planShort + ' plan.'))
       : 'Free template — included on every plan.') : '';
     // Hisob — obuna/kredit ko'rsatkichlari (real reja holatidan)
     const curPlanRow = plansCur.find(p => p.cur) || null;
     const planPriceLabel = isFreePlan ? 'Free' : ('$' + (curPlanRow ? curPlanRow.price : 0) + '/month');
     const creditRefreshNote = isFreePlan ? ('Free plan · ' + creditMaxFmt + ' credits every month') : (planShort + ' plan · ' + creditMaxFmt + ' renews every month');
-    const downloadsLimitLabel = isFreePlan ? '10 / mo' : 'Unlimited';
+    const downloadsLimitLabel = this.state.unlimitedDownloads ? 'Unlimited'
+      : (this.state.downloadLimit != null ? (this.state.downloadLimit + ' / mo') : 'Checking…');
     const exportLabel = isFreePlan ? '1080p' : '4K';
     const creditPacksAcc = this.creditPacks.map(c => ({ ...c, cardBd: c.pop ? 'color-mix(in srgb,var(--lime) 30%,transparent)' : 'var(--hair2)', cardBg: c.pop ? 'linear-gradient(120deg,color-mix(in srgb,var(--lime) 8%,transparent),transparent),var(--surface)' : 'var(--surface)', subCol: c.pop ? 'var(--lime)' : 'var(--muted)', btnCls: c.pop ? 'ffm-btn sm' : 'ffm-btn2 sm', packCls: (c.pop ? 'va-pack hot' : 'va-pack') + (this.state.payBusy === 'c' + c.c ? ' is-busy' : ''), hotNote: c.pop ? ' · popular' : '' }));
     // FAZA 5 Variant A — A4 hisob bindinglari
@@ -23325,7 +23675,7 @@ class Component extends DCLogic {
         v: n >= 1000 ? n.toLocaleString('en-US') : String(n),
         plus: isWord ? '' : (st.suffix || ''),
         unit: isWord ? ' ' + st.suffix : '',
-        label: st.label,
+        label: releaseSafeText(st.label, 'Web + verified Adobe plugin releases'),
       };
     });
     // Mockup preview kartalari — media bo'lsa gradient ustiga to'ldiradi, bo'lmasa gradient qoladi.
@@ -23418,7 +23768,13 @@ class Component extends DCLogic {
     const megaModelsView = lc.megaModels.rows.map(m => ({ ...m, hasBadge: !!m.badge }));
     const quickIcons = ['#i-grid', '#i-spark', '#i-puzzle'];
     const quickScreens = ['templates', 'aistudio', 'plugin'];
-    const appQuickView = lc.appHome.quick.map((q, i) => ({ qt: q.title, qd: q.desc, icon: quickIcons[i] || '#i-grid', screen: quickScreens[i] || 'templates' }));
+    const appQuickView = lc.appHome.quick.map((q, i) => i === 2 ? ({
+      qt: prReleased || aeReleased ? releaseSafeText(q.title, 'Install the published plugin') : 'Plugin release status',
+      qd: prReleased ? 'Browse & import inside Premiere Pro'
+        : aeReleased ? 'Browse & import inside After Effects'
+        : 'See verified availability for each Adobe app',
+      icon: quickIcons[i], screen: quickScreens[i],
+    }) : ({ qt: q.title, qd: q.desc, icon: quickIcons[i] || '#i-grid', screen: quickScreens[i] || 'templates' }));
     const pricingCompareView = lc.pricingPage.compareItems.map(t => ({ t }));
     // Theme — faqat marketing ekranlarda (app UI default accent/fontda qoladi).
     const lcFontStack = this.landingFontStacks[lc.theme.font] || this.landingFontStacks.hanken;
@@ -23449,24 +23805,65 @@ class Component extends DCLogic {
     const lcFtCatLinks = lc.footer.cols[1].links.map((label) => ({ label, cat: footerCatFromLabel(label) }));
     const ftHrefs = ['help.html', 'terms.html', 'privacy.html', 'refund.html'];
     const lcFtLegalLinks = lc.footer.cols[2].links.slice(0, 4).map((label, i) => ({ label, href: ftHrefs[i] }));
-    // Plugin promo chip'lari (3 ta, ranglar kodda)
+    // Plugin promo chip'lari (3 ta, ranglar kodda). Relizga oid matn API holatidan;
+    // CMS nashr qilinmagan AE/.zxp kanalini qayta "available" qila olmaydi.
     const ppChipDots = ['#b794f6', '#7aa2f7', '#f0907f'];
-    const lcPpChips = lc.pluginPromo.chips.slice(0, 3).map((label, i) => ({ label, dot: ppChipDots[i], extra: i === 2 ? 'color:var(--muted2)' : '' }));
-    // Plugin sahifa qadamlari (raqam kodda)
-    const pluginStepsView = lc.pluginPage.steps.map((st, i) => ({ n: String(i + 1), t: st.t, d: st.d }));
+    const releaseChips = prReleased
+      ? ['Premiere Pro 25.6+', 'Creative Cloud .ccx', 'Catalog + AI Studio']
+      : aeReleased
+        ? ['After Effects', 'Published installer', 'Catalog + AI Studio']
+        : ['Live release status', 'Verified downloads only', 'Adobe integration'];
+    const lcPpChips = releaseChips.map((label, i) => ({ label, dot: ppChipDots[i], extra: i === 2 ? 'color:var(--muted2)' : '' }));
+    // Plugin sahifa qadamlari reliz formati bilan qat'iy mos (.ccx ≠ .zxp).
+    const releaseSteps = prReleased ? [
+      { t: 'Download the Premiere Pro .ccx', d: 'Use the live download button above to get the currently published package.' },
+      { t: 'Open it with Adobe Creative Cloud', d: 'Creative Cloud installs the signed package for Premiere Pro 25.6 or newer.' },
+      { t: 'Restart and connect your account', d: 'Open Window → Extensions → FrameFlow, then sign in with your platform account.' },
+    ] : aeReleased ? [
+      { t: 'Download the After Effects package', d: 'Use the live download button above for the currently published release.' },
+      { t: 'Follow the installer instructions', d: 'Complete the installation, then fully restart After Effects.' },
+      { t: 'Connect your account', d: 'Open FrameFlow from Extensions and sign in with your platform account.' },
+    ] : [
+      { t: 'Check live availability', d: 'This page verifies each Adobe app release directly with the server.' },
+      { t: 'Download only a published build', d: 'A download button is enabled only when a verified artifact exists.' },
+      { t: 'Follow the app-specific instructions', d: 'Installation steps appear here as soon as that app release is published.' },
+    ];
+    const pluginStepsView = releaseSteps.map((st, i) => ({ n: String(i + 1), t: st.t, d: st.d }));
     // Plugin sahifa — CTA/versiya matni haqiqiy reliz holatiga qarab (loadPluginRelease/downloadPlugin);
     // CMS matni FAQAT 'idle' fallback (hali so'ralmagan holat).
     const pgDl = this.state.pluginDl;
     const pgCtaLabel = pgDl === 'loading' ? 'Checking Premiere release…'
       : pgDl === 'unavailable' ? 'Premiere Pro (.ccx) — not published yet'
       : pgDl === 'error' ? 'Retry check'
+      : pgDl === 'idle' ? 'Checking Premiere release…'
       : 'Premiere Pro (.ccx)';
     const pgVersionNote = pgDl === 'ready' && this.state.pluginRelease
       ? ('v' + this.state.pluginRelease.version + ' · Creative Cloud .ccx · Premiere Pro 25.6+')
       : pgDl === 'unavailable' ? 'The beta download isn’t published yet — check back soon'
       : pgDl === 'error' ? (this.state.pluginDlErr || "Couldn't check for updates — click the button to retry")
       : pgDl === 'loading' ? 'Checking the latest release…'
-      : lc.pluginPage.versionNote;
+      : 'Release availability is checked live before download.';
+    const safePluginPromoTitle = prReleased ? 'The FrameFlow plugin — inside Premiere Pro'
+      : aeReleased ? releaseSafeText(lc.pluginPromo.title, 'The FrameFlow plugin — inside After Effects')
+      : 'FrameFlow plugins for Adobe apps';
+    const safePluginPromoDesc = prReleased
+      ? 'Browse the catalog and use AI Studio inside Premiere Pro. The After Effects download will appear only when its release is published.'
+      : releaseSafeText(lc.pluginPromo.desc, 'Live release availability and verified downloads for supported Adobe apps.');
+    const safePluginPromoCta = prReleased ? 'Get the Premiere Pro plugin (.ccx)'
+      : aeReleased ? 'Get the After Effects plugin'
+      : 'View plugin release status';
+    const safePluginPromoWinTitle = prReleased ? 'FrameFlow · Premiere Pro'
+      : aeReleased ? 'FrameFlow · After Effects'
+      : 'FrameFlow · Adobe plugin';
+    const safePluginPageBadge = prReleased ? 'Premiere Pro 25.6+'
+      : aeReleased ? releaseSafeText(lc.pluginPage.badge, 'After Effects')
+      : 'LIVE RELEASE STATUS';
+    const safePluginPageTitle = prReleased ? 'Install FrameFlow for Premiere Pro'
+      : aeReleased ? releaseSafeText(lc.pluginPage.title, 'Install FrameFlow for After Effects')
+      : 'FrameFlow plugin releases';
+    const safePluginPageSub = prReleased
+      ? 'Catalog and AI Studio inside Premiere Pro. After Effects stays marked unavailable until a real installer is published.'
+      : releaseSafeText(lc.pluginPage.sub, 'Verified downloads and app-specific installation instructions in one place.');
     const pageAnim = 'none';
     // P10 — Marketing nav frost'i endi CSS klass bilan (scroll'da html.ffscrolled almashadi, setState EMAS).
     //       landing = tepada tekis, scroll'da muzli; pricing/plugin = doim muzli (.nf klass).
@@ -23480,7 +23877,10 @@ class Component extends DCLogic {
     const howSteps = [
       { n: '01', t: 'Pick or write a prompt', d: 'Choose a template from the library or write a prompt in AI Studio.', icon: 'cursor-click' },
       { n: '02', t: 'AI generates it', d: 'A 4K result in seconds \u2014 image, video, voice or SFX.', icon: 'sparkle' },
-      { n: '03', t: 'Download or open in the plugin', d: 'Export from the browser or continue right inside After Effects.', icon: 'rocket-launch' },
+      { n: '03', t: 'Download or open in the plugin', d: prReleased
+        ? 'Export from the browser or continue in the published Premiere Pro plugin.'
+        : aeReleased ? 'Export from the browser or continue in the published After Effects plugin.'
+        : 'Export from the browser; verified Adobe plugin releases are listed on the Plugin page.', icon: 'rocket-launch' },
     ];
     const studioRv = studioCards.map((c, i) => ({ ...c, ci: i, rd: (i % 4) * 90 }));
     const plansRv = plansView.map((p, i) => ({ ...p, pli: i, rd: i * 110 }));
@@ -23497,7 +23897,8 @@ class Component extends DCLogic {
       lcNavPlugin: lc.nav.plugin, lcNavSignIn: lc.nav.signIn, lcNavCta: lc.nav.cta,
       lcNavPluginBadge: lc.nav.pluginBadge, hasNavPluginBadge: !!lc.nav.pluginBadge,
       lcHeroBadgeTag: lc.hero.badgeTag, lcHeroBadgeText: lc.hero.badgeText,
-      lcHeroTitle: lc.hero.title, lcHeroTitleAccent: lc.hero.titleAccent, lcHeroSub: lc.hero.sub,
+      lcHeroTitle: lc.hero.title, lcHeroTitleAccent: lc.hero.titleAccent,
+      lcHeroSub: releaseSafeText(lc.hero.sub, 'Download templates and generate images, video and audio in the browser — with verified Adobe plugin releases shown live.'),
       lcHeroCtaPrimary: lc.hero.ctaPrimary, lcHeroCtaSecondary: lc.hero.ctaSecondary,
       lcHeroCredline: lc.hero.credline,
       lcMockTitle: lc.mockup.title, lcMockBadge: lc.mockup.badge,
@@ -23533,8 +23934,8 @@ class Component extends DCLogic {
       lcFcEyebrow: lc.finalCta.eyebrow, lcFcSecondary: lc.finalCta.secondaryLabel,
       lcAiStackLabel: lc.aiPromo.stackLabel, lcAiChipMode: lc.aiPromo.chipMode, lcAiChipModel: lc.aiPromo.chipModel,
       lcAiChipRes: lc.aiPromo.chipRes, lcAiChipCost: lc.aiPromo.chipCost, lcAiChipGen: lc.aiPromo.chipGenerate,
-      lcPpWinTitle: lc.pluginPromo.winTitle, lcPpWinSearch: lc.pluginPromo.winSearch, lcPpWinImport: lc.pluginPromo.winImport,
-      lcPgWinTitle: lc.pluginPage.winTitle, lcPgWinSearch: lc.pluginPage.winSearch,
+      lcPpWinTitle: safePluginPromoWinTitle, lcPpWinSearch: lc.pluginPromo.winSearch, lcPpWinImport: lc.pluginPromo.winImport,
+      lcPgWinTitle: safePluginPromoWinTitle, lcPgWinSearch: lc.pluginPage.winSearch,
       lcPgMockName: lc.pluginPage.mockName, lcPgMockImport: lc.pluginPage.mockImport,
       // Sayt CMS — bo'lim tartibi/ko'rinishi
       lsStats: secStyle('stats'), lsShowcase: secStyle('showcase'), lsAiPromo: secStyle('aiPromo'),
@@ -23544,8 +23945,8 @@ class Component extends DCLogic {
       // Sayt CMS — pastki bo'limlar
       lcShowEyebrow: lc.showcase.eyebrow, lcShowTitle: lc.showcase.title, lcShowLink: lc.showcase.linkLabel,
       lcAiEyebrow: lc.aiPromo.eyebrow, lcAiTitle: lc.aiPromo.title, lcAiDesc: lc.aiPromo.desc, lcAiCta: lc.aiPromo.ctaLabel,
-      lcPpEyebrow: lc.pluginPromo.eyebrow, lcPpTitle: lc.pluginPromo.title, lcPpDesc: lc.pluginPromo.desc,
-      lcPpCta: lc.pluginPromo.ctaLabel, lcPpChips,
+      lcPpEyebrow: lc.pluginPromo.eyebrow, lcPpTitle: safePluginPromoTitle, lcPpDesc: safePluginPromoDesc,
+      lcPpCta: safePluginPromoCta, lcPpChips,
       lcPtEyebrow: lc.pricingTeaser.eyebrow, lcPtTitle: lc.pricingTeaser.title, lcPtSub: lc.pricingTeaser.sub,
       lcPtNote: lc.pricingTeaser.note, lcPtNoteLink: lc.pricingTeaser.noteLink,
       lcFaqTitle: lc.faqSection.title,
@@ -23558,10 +23959,14 @@ class Component extends DCLogic {
       // Sayt CMS — pricing/plugin sahifalar
       lcPrEyebrow: lc.pricingPage.eyebrow, lcPrTitle: lc.pricingPage.title, lcPrSub: lc.pricingPage.sub,
       lcPrFaqTitle: lc.pricingPage.faqTitle,
-      lcPgBadge: lc.pluginPage.badge, lcPgTitle: lc.pluginPage.title, lcPgSub: lc.pluginPage.sub,
+      lcPgBadge: safePluginPageBadge, lcPgTitle: safePluginPageTitle, lcPgSub: safePluginPageSub,
       lcPgCta: pgCtaLabel, lcPgVersion: pgVersionNote, lcPgGuarantee: lc.pluginPage.guarantee,
-      aeUnavailable: !this.state.pluginAeDownloadUrl,
-      aeCtaLabel: this.state.pluginAeDownloadUrl ? 'After Effects (.zxp)' : 'After Effects — coming soon',
+      prUnavailable: this.state.pluginDl === 'idle' || this.state.pluginDl === 'loading' || this.state.pluginDl === 'unavailable',
+      aeUnavailable: this.state.pluginAeDl === 'idle' || this.state.pluginAeDl === 'loading' || this.state.pluginAeDl === 'unavailable',
+      aeCtaLabel: this.state.pluginAeDl === 'ready' ? 'After Effects (.zxp)'
+        : this.state.pluginAeDl === 'error' ? 'Retry After Effects check'
+        : this.state.pluginAeDl === 'loading' || this.state.pluginAeDl === 'idle' ? 'Checking After Effects release…'
+        : 'After Effects — not published',
       pluginStepsView,
       pageAnim, marqA, marqB, heroWords, howSteps,
       studioRv, plansRv,
@@ -24042,9 +24447,7 @@ class Component extends DCLogic {
       axHasPrompt: !!(activeGenRaw && activeGenRaw.prompt),
       axMenuCopyPrompt: (e) => { e.stopPropagation(); this.setState({ useMenuOpen: false });
         const p = activeGenRaw && activeGenRaw.prompt; if (!p) return;
-        (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(p) : Promise.reject())
-          .then(() => this.toast('Prompt copied'))
-          .catch(() => { try { const ta = document.createElement('textarea'); ta.value = p; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); this.toast('Prompt copied'); } catch (x) { this.toast('Copy failed'); } }); },
+        this.copyText(p, 'Prompt copied'); },
       axTileDownload: (e) => { e.stopPropagation(); if (activeGenRaw) this.downloadGenAsset(activeGenRaw.id); },
       axTileRegen: (e) => { e.stopPropagation(); const el = e.currentTarget.closest('[data-id]'); const id = el && el.dataset.id; const g = id ? wsGens.find(x => x.id === id) : activeGenRaw; if (g) this.restoreGenToComposer(g.id); }, // P18: prefill, don't generate
       // D6 — kartani qadash/yechish (rasm/video plitkasi + audio qatori uchun AYNI handler)
@@ -24119,7 +24522,7 @@ class Component extends DCLogic {
         //   preview funksiyasi shu URL uchun asetning rasm/sarlavha/tavsifini beradi.
         const url = window.location.origin + this.assetPath(d);
         try { if (navigator.share) { await navigator.share({ title: d.n + ' — FrameFlow', url }); return; } } catch (e) { /* rad etildi/bloklandi — clipboard fallback */ }
-        try { await navigator.clipboard.writeText(url); this.toast('Link copied'); } catch (e) { this.toast(url); }
+        await this.copyText(url, 'Link copied');
       },
       fAppsView, fCatsView, fPlansView, fOrientView, fQualView,
       // P2 — kontekstga qarab filtr ko'rinishi bayroqlari + AI Stock Type (Image|Video)
@@ -24240,7 +24643,7 @@ class Component extends DCLogic {
       // P11 — lightbox oldingi/keyingi generatsiya + prompt nusxa
       lbPrev: (e) => { if (e) e.stopPropagation(); this._lbGo(-1); },
       lbNext: (e) => { if (e) e.stopPropagation(); this._lbGo(1); },
-      lbCopyPrompt: (e) => { if (e) e.stopPropagation(); const g = this.state.lightbox; if (g && g.prompt) { try { navigator.clipboard.writeText(g.prompt); this.toast('Prompt copied'); } catch (er) {} } },
+      lbCopyPrompt: (e) => { if (e) e.stopPropagation(); const g = this.state.lightbox; if (g && g.prompt) this.copyText(g.prompt, 'Prompt copied'); },
       // D12 — panel tab'lari
       lbTabDetails: (e) => { if (e) e.stopPropagation(); this.setState({ lbTab: 'details' }); },
       lbTabEdit: (e) => { if (e) e.stopPropagation(); this.setState({ lbTab: 'edit' }); },

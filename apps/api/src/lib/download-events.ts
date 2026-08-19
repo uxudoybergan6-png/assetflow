@@ -130,7 +130,7 @@ export async function recordTemplateDownloadEvent(input: {
     // DEDUP (H1): (userId, templateId, kind) unique → bir foydalanuvchining bir shablonni
     // qayta yuklab olishi YANGI hodisa yaratmaydi (→ takroriy earning yo'q). createMany +
     // skipDuplicates unique konflikt'da THROW qilmaydi (count=0 qaytadi).
-    const created = await prisma.templateDownloadEvent.createMany({
+    await prisma.templateDownloadEvent.createMany({
       data: [
         {
           templateId: input.templateId,
@@ -159,9 +159,6 @@ export async function recordTemplateDownloadEvent(input: {
       select: { id: true, contributorId: true },
     });
     if (!ev) return null;
-    // Takror yuklab olish (yangi qator yaratilmadi) → yangi earning imkoniyati yo'q.
-    if (created.count === 0) return ev;
-
     // ── Earning gate'lari — FAQAT earning'ga ta'sir qiladi (download hodisasi allaqachon qaydlandi):
     //   (M7) admin/uncharged  → earning yo'q;
     //   (H1) self-exclusion   → o'z shablonini yuklab olsa o'ziga earning yo'q;
@@ -172,12 +169,16 @@ export async function recordTemplateDownloadEvent(input: {
       input.userId !== ev.contributorId &&
       (await downloaderMayEarn(input.userId));
     if (eligible) {
-      await grantContributorEarning({
+      // Event oldingi urinishda yaratilib, process earning yozuvidan oldin o'lgan
+      // bo'lishi mumkin. Grant downloadEventId bo'yicha idempotent, shu sabab replayda
+      // ham qayta urinib crash oralig'ini xavfsiz yopamiz.
+      const earningRecorded = await grantContributorEarning({
         downloadEventId: ev.id,
         templateId: input.templateId,
         contributorId: ev.contributorId,
         kind: input.kind,
       });
+      if (!earningRecorded) return null;
     }
     return ev;
   } catch (e) {

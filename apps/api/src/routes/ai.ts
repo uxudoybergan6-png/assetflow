@@ -114,7 +114,7 @@ aiRouter.post("/image", async (req: Request, res: Response) => {
 
   const out = await aiGenerateImage(prompt);
   if (!out.ok) {
-    await refundAiCredits(userId, cost);
+    await refundAiCredits(userId, cost, { topupConsumed: gate.topupConsumed });
     await prisma.aiGeneration.create({
       data: { userId, type: AiGenerationType.IMAGE, prompt, credits: 0, status: AiGenerationStatus.FAILED },
     });
@@ -167,7 +167,7 @@ aiRouter.post("/voiceover", async (req: Request, res: Response) => {
 
   const out = await aiGenerateSpeech(text, lang || "en");
   if (!out.ok) {
-    await refundAiCredits(userId, cost);
+    await refundAiCredits(userId, cost, { topupConsumed: gate.topupConsumed });
     await prisma.aiGeneration.create({
       data: { userId, type: AiGenerationType.VOICEOVER, prompt: text, credits: 0, status: AiGenerationStatus.FAILED },
     });
@@ -224,7 +224,7 @@ aiRouter.post("/search", async (req: Request, res: Response) => {
 
   const out = await aiEmbed(query);
   if (!out.ok) {
-    await refundAiCredits(userId, cost);
+    await refundAiCredits(userId, cost, { topupConsumed: gate.topupConsumed });
     res.status(502).json({ error: out.error });
     return;
   }

@@ -26,6 +26,7 @@ export const DIST_DIR = path.join(REPO_ROOT, "dist/zxp");
 const CUSTOMER_FILES = [
   "AssetFlow_Plugin.html",
   "frameflow-create-workspace.js",
+  "assetflow-gen-runtime.js",
   "frameflow-vnext.js",
   "assetflow-uxp-bridge.js",
   "assetflow-account.js",

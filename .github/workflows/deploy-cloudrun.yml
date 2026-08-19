@@ -186,6 +186,8 @@ jobs:
       - name: Verify candidate health and promote traffic
         env:
           DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          FRAMEFLOW_READONLY_EMAIL: ${{ secrets.FRAMEFLOW_READONLY_EMAIL }}
+          FRAMEFLOW_READONLY_PASSWORD: ${{ secrets.FRAMEFLOW_READONLY_PASSWORD }}
         run: |
           set -euo pipefail
           TAG="candidate-${DEPLOY_SHA:0:12}"
@@ -218,6 +220,19 @@ jobs:
             echo "::error::Candidate /health o'tmadi — production trafik eski revisionda qoldi" >&2
             exit 1
           fi
+
+          # `/health` faqat DB/storage'ni isbotlaydi. 2026-08-20 outage'da u 200 edi,
+          # lekin Studio Gen moderatsiya konfiguratsiyasi sabab barcha so'rovlar 503 bo'lgan.
+          # Endi candidate trafik olishidan OLDIN plugin auth → model readiness → signed quote
+          # va real moderation chaqirig'i zero-spend canary bilan tekshiriladi. Secret yo'q bo'lsa
+          # jimgina skip EMAS — deploy fail-closed to'xtaydi.
+          if [ -z "$FRAMEFLOW_READONLY_EMAIL" ] || [ -z "$FRAMEFLOW_READONLY_PASSWORD" ]; then
+            echo "::error::FRAMEFLOW_READONLY_EMAIL/PASSWORD GitHub secrets yo'q — candidate smoke bajarilmadi" >&2
+            exit 1
+          fi
+          FRAMEFLOW_API_URL="$TAG_URL" npm run verify:gen-production-readonly
+          FRAMEFLOW_API_URL="$TAG_URL" npm run verify:gen-production-canary
+
           gcloud run services update-traffic "$SERVICE" --region "$REGION" \
             --to-revisions "${REVISION}=100"
 

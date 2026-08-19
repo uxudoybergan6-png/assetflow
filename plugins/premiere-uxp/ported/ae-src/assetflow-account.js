@@ -12,6 +12,10 @@ const AssetFlowAccount = (() => {
   let activeTokenMeta = null;
   let sessionBootstrapPromise = null;
   let refreshInProgress = null;
+  // Authenticated work captures this epoch before touching user-scoped data.
+  // Logout/login increments it so a late response from the previous account
+  // cannot clear or overwrite the newly active account.
+  let authSessionEpoch = 0;
   // Haqiqiy sessiya shu ishga tushishda kamida bir marta tasdiqlanganmi?
   // (fetchMe/login/device-confirm muvaffaqiyati). Faqat shundan KEYIN 401/403
   // "sessiya tugadi" deb ko'rsatiladi. Bootda qolib ketgan eskirgan token 401'i
@@ -41,7 +45,11 @@ const AssetFlowAccount = (() => {
     }
     const c =
       typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs().client || {} : {};
-    return (c.apiBaseUrl || DEFAULT_API).replace(/\/$/, "");
+    const saved = (c.apiBaseUrl || DEFAULT_API).replace(/\/$/, "");
+    if (env && typeof env.sanitizeApi === "function") {
+      try { return env.sanitizeApi(saved).replace(/\/$/, ""); } catch {}
+    }
+    return saved;
   }
 
   function hostApp() {
@@ -246,6 +254,7 @@ const AssetFlowAccount = (() => {
     activeToken = "";
     activeTokenMeta = null;
     cachedUser = null;
+    authSessionEpoch += 1;
   }
 
   function writeTokenToPrefs(tokenValue, meta, keepLegacyTokens = true, persistPlaintext = true) {
@@ -348,6 +357,7 @@ const AssetFlowAccount = (() => {
 
   async function ensureSessionLoaded() {
     if (sessionBootstrapPromise) return sessionBootstrapPromise;
+    const bootstrapEpoch = authSessionEpoch;
     sessionBootstrapPromise = (async () => {
       const candidates = candidateSources();
       if (candidates.length === 0) {
@@ -364,6 +374,9 @@ const AssetFlowAccount = (() => {
             keepExisting: true,
             validated: false,
           };
+      // Candidate validation may outlive a manual login. Its older token must
+      // never be persisted over the newly selected account.
+      if (bootstrapEpoch !== authSessionEpoch) return;
       const tokenValue = String(selected.token || "").trim();
       if (!tokenValue) {
         clearLocalTokenState("invalid");
@@ -637,6 +650,7 @@ const AssetFlowAccount = (() => {
     if (!activeToken || !tokenNeedsRefresh(activeTokenMeta)) return false;
 
     const currentToken = activeToken;
+    const refreshEpoch = authSessionEpoch;
     refreshInProgress = (async () => {
       try {
         const data = await requestWithToken(
@@ -647,11 +661,15 @@ const AssetFlowAccount = (() => {
         );
         const nextToken = String(data?.token || "").trim();
         if (!nextToken) return false;
+        // Logout/login may have completed while token A was refreshing. Never
+        // let A's refresh response overwrite the newly active token B.
+        if (refreshEpoch !== authSessionEpoch || activeToken !== currentToken) return false;
         const nextMeta = tokenMetaFromResponse(data);
         const sharedPersisted = persistSharedToken(nextToken, nextMeta, true);
         if (!sharedPersisted) return false;
         return true;
       } catch (e) {
+        if (refreshEpoch !== authSessionEpoch || activeToken !== currentToken) return false;
         const status = e.status || 0;
         const code = e.code || (e.data && e.data.code);
         if (isRetryableNetworkFailure(e)) {
@@ -670,13 +688,41 @@ const AssetFlowAccount = (() => {
   }
 
   async function request(path, options = {}) {
+    const requestEpoch = authSessionEpoch;
     await ensureSessionLoaded();
+    if (requestEpoch !== authSessionEpoch) {
+      const changed = new Error("Account changed while the request was running");
+      changed.code = "SESSION_CHANGED";
+      throw changed;
+    }
     await ensureFreshToken();
+    if (requestEpoch !== authSessionEpoch) {
+      const changed = new Error("Account changed while the request was running");
+      changed.code = "SESSION_CHANGED";
+      throw changed;
+    }
 
     const t = token();
-    const data = await requestWithToken(path, options, t, { handleAuthFailure: true });
-
-    return data;
+    try {
+      const data = await requestWithToken(path, options, t, { handleAuthFailure: false });
+      if (requestEpoch !== authSessionEpoch) {
+        const changed = new Error("Account changed while the request was running");
+        changed.code = "SESSION_CHANGED";
+        throw changed;
+      }
+      return data;
+    } catch (e) {
+      if (requestEpoch !== authSessionEpoch || e?.code === "SESSION_CHANGED") {
+        const changed = new Error("Account changed while the request was running");
+        changed.code = "SESSION_CHANGED";
+        throw changed;
+      }
+      // A parallel refresh may have rotated this same account's token. An
+      // auth failure for the retired token must not clear the fresh token.
+      if (t !== token()) throw e;
+      handleAuthFailure(e?.status || 0, !!t, e?.code || e?.data?.code);
+      throw e;
+    }
   }
 
   function isLoggedIn() {
@@ -687,7 +733,11 @@ const AssetFlowAccount = (() => {
     const prefs =
       typeof AssetFlowStore !== "undefined" ? AssetFlowStore.loadPrefs() : { client: {} };
     const client = prefs.client || {};
-    client.apiBaseUrl = partial.apiBaseUrl || apiBase();
+    let nextApi = partial.apiBaseUrl || apiBase();
+    if (env && typeof env.sanitizeApi === "function") {
+      try { nextApi = env.sanitizeApi(nextApi) || apiBase(); } catch {}
+    }
+    client.apiBaseUrl = String(nextApi).replace(/\/$/, "");
     // Token persistence faqat persistSharedToken() orqali: secure store ishlasa
     // bu yordamchi uni prefs.json'ga qayta ochiq matn qilib yozmasligi kerak.
     if (partial.meta) client[CREDENTIAL_META_KEY] = partial.meta;
@@ -701,6 +751,9 @@ const AssetFlowAccount = (() => {
       method: "POST",
       body: { email, password },
     });
+    // An email login supersedes any still-polling browser/device login.
+    stopDevicePolling();
+    authSessionEpoch += 1;
     saveToken(data.token, tokenMetaFromResponse(data));
     cachedUser = data.user;
     sessionEstablished = true;
@@ -778,11 +831,20 @@ const AssetFlowAccount = (() => {
           method: "POST",
           body: { requestId, pollToken },
         });
+        // A later email login/logout may have cancelled this device request
+        // while its HTTP response was in flight. Never let that response take
+        // ownership of the new session.
+        if (
+          !activeDeviceRequest ||
+          activeDeviceRequest.requestId !== requestId ||
+          activeDeviceRequest.pollToken !== pollToken
+        ) return;
         if (data.status === "confirmed") {
           finishDevicePolling();
           persistClient({
             apiBaseUrl: (data.apiBaseUrl || apiBase()).replace(/\/$/, ""),
           });
+          authSessionEpoch += 1;
           saveToken(data.token, tokenMetaFromResponse(data));
           cachedUser = data.user;
           sessionEstablished = true;
@@ -818,9 +880,11 @@ const AssetFlowAccount = (() => {
       if (data.adminUrl) adminUrl = data.adminUrl;
       return cachedUser;
     } catch (e) {
-      if (handleAuthFailure(e.status, hadToken, e.code || e.data?.code)) {
-        return null;
-      }
+      // request() already performs auth invalidation and rejects a response
+      // whose account epoch changed. In both cases the current cached user is
+      // authoritative; do not replay the old response's auth failure here.
+      if (e?.code === "SESSION_CHANGED") return cachedUser;
+      if (!isLoggedIn()) return null;
       throw e;
     }
   }
@@ -968,10 +1032,20 @@ const AssetFlowAccount = (() => {
     return cachedUser;
   }
 
-  async function reserveImport(templateId) {
+  function operationId() {
+    try { if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID(); } catch {}
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
+
+  async function reserveImport(templateId, idempotencyKey) {
+    const requestKey = String(idempotencyKey || operationId());
     const data = await request("/api/plugin/usage/import/reserve", {
       method: "POST",
-      body: { templateId, app: hostApp() },
+      headers: { "Idempotency-Key": requestKey },
+      body: { templateId, app: hostApp(), idempotencyKey: requestKey },
     });
     return data && data.reservationId ? data.reservationId : "";
   }
@@ -994,16 +1068,7 @@ const AssetFlowAccount = (() => {
   }
 
   function openAdminPanel() {
-    const url = getAdminUrl();
-    if (typeof window.__adobe_cep__ !== "undefined" && window.CSInterface) {
-      try {
-        new CSInterface().openURLInDefaultBrowser(url);
-        return;
-      } catch {
-        /* fallback */
-      }
-    }
-    window.open(url, "_blank");
+    return openExternal(getAdminUrl());
   }
 
   function authHeaders() {
@@ -1011,6 +1076,10 @@ const AssetFlowAccount = (() => {
     const h = { "X-FF-App": hostApp() };
     if (t) h.Authorization = `Bearer ${t}`;
     return h;
+  }
+
+  function sessionEpoch() {
+    return authSessionEpoch;
   }
 
   return {
@@ -1038,6 +1107,7 @@ const AssetFlowAccount = (() => {
     getAdminUrl,
     openAdminPanel,
     authHeaders,
+    sessionEpoch,
     saveToken,
     handleAuthFailure,
   };

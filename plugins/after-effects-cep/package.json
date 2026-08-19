@@ -9,6 +9,7 @@
     "package:admin": "bash scripts/build-zxp.sh --admin --unsigned",
     "test:package": "node scripts/test-package-security.mjs",
     "test:create": "node scripts/test-create-workspace.mjs",
+    "test:gen-runtime": "node scripts/test-gen-runtime.mjs",
     "test:premiere": "node scripts/test-premiere-cep-host.mjs && node scripts/test-premiere-cep-integration.mjs"
   }
 }

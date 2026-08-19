@@ -17,6 +17,7 @@ import {
   isManualDownloadRequest,
   resolveLegacyDownloadUrl,
 } from "../dist/lib/plugin-release-contract.js";
+import { mergeConfig as mergeLandingConfig } from "../dist/lib/landing-config.js";
 import { readFileSync } from "node:fs";
 
 const PUBLISHED_AT = new Date("2026-07-01T00:00:00Z");
@@ -306,6 +307,34 @@ check(
   true
 );
 
+// Production DB'da qolgan eski CMS `.zxp` copy yangi release kanalini qayta
+// bosmasligi kerak. Releasega bog'liq bo'lmagan mock/guarantee matni saqlanadi.
+{
+  const merged = mergeLandingConfig({
+    pluginPage: {
+      badge: "After Effects 2022+",
+      ctaLabel: "Download the plugin (.zxp)",
+      versionNote: "Compatible ZXP installer",
+      guarantee: "Custom guarantee",
+      steps: [
+        { t: "Download .zxp", d: "Old" },
+        { t: "Install ZXP", d: "Old" },
+        { t: "Connect", d: "Old" },
+      ],
+    },
+    pluginPromo: {
+      title: "Inside After Effects",
+      ctaLabel: "Download .zxp",
+      chips: ["After Effects 2022+"],
+    },
+  });
+  check("legacy CMS plugin CTA is sanitized to the current .ccx channel", merged.pluginPage.ctaLabel, "Premiere Pro (.ccx)");
+  check("legacy CMS compatibility badge cannot override current host", merged.pluginPage.badge, "Premiere Pro 25.6+");
+  check("legacy CMS install steps are replaced with Creative Cloud steps", merged.pluginPage.steps[0].t, "Download the .ccx file");
+  check("release-independent CMS guarantee remains customizable", merged.pluginPage.guarantee, "Custom guarantee");
+  check("legacy landing promo CTA is sanitized", merged.pluginPromo.ctaLabel, "Download for Premiere Pro (.ccx)");
+}
+
 // ── MANBA ISBOTI — jonli route AYNAN shu darvozani ishlatadi ───────────────
 // (kontrakt to'g'ri bo'lib, route uni chetlab o'tsa — test bo'sh bo'lardi.)
 {
@@ -314,6 +343,7 @@ check(
     routeSrc.indexOf('pluginRouter.get("/version"'),
     routeSrc.indexOf('pluginRouter.get("/content-config"')
   );
+  check("signed installer response is private and never cached", /res\.set\("Cache-Control",\s*"private, no-store"\)/.test(versionRoute), true);
   check("route reads the manual opt-in from the query", /const manualDownload = isManualDownloadRequest\(req\.query\.manual\)/.test(versionRoute), true);
   check("route signs the legacy .zxp url only under the opt-in", /if \(manualDownload && latest && latest\.downloadKey && isS3Configured\(\)\)/.test(versionRoute), true);
   check("route passes the legacy url through resolveLegacyDownloadUrl", /resolveLegacyDownloadUrl\(req\.query\.manual, downloadUrl\)/.test(versionRoute), true);

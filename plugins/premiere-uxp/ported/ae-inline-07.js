@@ -11,7 +11,7 @@
   // model metadata (lazy, cached) — refMode/maxRefs/aspects/resolutions/qualityCost/count backenddan
   // P8: pre-load defaultlar joriy default katalog modeliga (Nano Banana 2, id 1010) mos —
   // ensureMeta yuklangach baribir katalogdan yangilanadi.
-  var meta={loaded:false,models:[],modelId:null,key:null,label:'Nano Banana 2',refMode:'image-edit',maxRefs:10,refKind:null,refOk:true,
+  var meta={loaded:false,catalogVersion:'',models:[],modelId:null,key:null,label:'Nano Banana 2',refMode:'image-edit',maxRefs:10,refKind:null,refOk:true,
     ars:['1:1','2:3','3:2','3:4','4:3','16:9','9:16','21:9'],quals:['1K','2K','4K'],qLabel:'Quality',aspDef:'1:1',qDefault:'1K',
     qcost:{'1K':4,'2K':8,'4K':16},counts:[1,2,3,4]};
   var st={ar:'1:1',q:'1K',n:1,refs:[],sessionId:null,lastResults:[],recent:[],recentSelect:false,recentSel:{},sessTotal:null,audCount:0}; // SC_29: sessTotal/audCount — faol sessiya sanoqlari
@@ -26,7 +26,7 @@
   // ---- kredit (REAL profil) + narx ----
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
   function cost(){ return meta.hasQuality ? (meta.qcost[st.q]||12)*st.n : (meta.flatCost||4)*st.n; }
-  function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
+  function setCreditChip(v){ var cr=$('igCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); }
   function recost(){
     var sc=$('igCost'), c=cost();
     if(sc){ sc.textContent='✦'+c;
@@ -40,8 +40,7 @@
   //   komitilgan kreditni hisobga oladi (P22.2). Money-zona: faqat ko'rsatish/darvoza — server atomik.
   function igCreditGate(){
     var cr=credits(), c=cost();
-    var committed=(activeJobs||[]).reduce(function(a,j){ return a+(j.jcost||0); },0);
-    var avail=(cr!=null)?(cr-committed):null;
+    var avail=(typeof FrameFlowGenRuntime!=='undefined')?FrameFlowGenRuntime.availableCredits(cr,activeJobs):((cr!=null)?(cr-(activeJobs||[]).reduce(function(a,j){return a+(!j.submitted&&(j.jcost||0));},0)):null);
     var low=(avail!=null)&&(c>avail);
     window.afLowCred('ig',low,window.afLowCredNeed(c,avail)); // D7: umumiy banner helper
     var chip=$('igCredit'); if(chip)chip.classList.toggle('low',low);
@@ -70,6 +69,15 @@
     return {vis:vis+pend,aud:st.audCount||0};
   };
   window.axIGRefresh=refresh;
+  if(typeof FrameFlowGenRuntime!=='undefined')FrameFlowGenRuntime.subscribe(function(snapshot){
+    var modeState=snapshot&&snapshot.modes&&snapshot.modes.image;
+    if(snapshot&&!snapshot.authenticated){meta.loaded=false;meta._pending=null;meta.models=[];meta.modelId=null;}
+    else if(modeState&&!modeState.known&&meta.loaded){meta.loaded=false;meta._pending=null;}
+    var version=modeState&&modeState.catalogVersion;
+    if(meta.loaded&&version&&version!==meta.catalogVersion){meta.loaded=false;meta._pending=null;}
+    if(afGenLoggedIn()&&!meta.loaded)ensureMeta().then(refreshGen).catch(function(){refreshGen();});
+    else refreshGen();
+  });
 
   // SC_17: Upscale (selectUpscaleModel/igStartUpscale/afIgUpscale/axIGSelectUpscale)
   // BUTUNLAY o'chirildi — UI ham, kod ham. Tarixdagi eski upscale natijalari oddiy
@@ -81,7 +89,7 @@
     var needRef=meta.refMode==='required';
     var needPrompt=true; // SC_17: upscale (prompt-siz yagona rejim) o'chirildi
     var low=igCreditGate(); // P22 — kredit yetmasa (komitilgan bilan) tugma O'CHADI (bosishdan oldin)
-    var ok=meta.loaded && (!needPrompt || $('igPrompt').value.trim().length>=2) && (!needRef || st.refs.length>0) && !anyLoading() && activeJobs.length<MAX_JOBS && !low;
+    var ok=afCanGenerate('image') && meta.loaded && (!needPrompt || $('igPrompt').value.trim().length>=2) && (!needRef || st.refs.length>0) && !anyLoading() && activeJobs.length<MAX_JOBS && !low;
     var g=$('igGen'); if(g)g.disabled=!ok;
     $('igRefWarn').classList.toggle('on', needRef && st.refs.length===0);
     // P30 §2 — qattiq siyosatli model + prompt bor → "rad etilsa hisobdan yechilmaydi" ogohlantirish
@@ -252,15 +260,17 @@
   function ensureMeta(){
     if(meta.loaded)return Promise.resolve(meta);
     if(meta._pending)return meta._pending;
-    meta._pending=studioGet('/api/studio/gen/models?mode=image').then(function(r){
+    meta._pending=Promise.all([studioGet('/api/studio/gen/models?mode=image'),afRefreshGenerationHealth(false)]).then(function(rs){
+      var r=rs[0];
       // P10: provider allowlist OLIB TASHLANDI — server faqat enabled modellarni qaytaradi;
       // yangi provider'li model katalogga qo'shilsa UI kodi o'zgarmasdan ko'rinadi (katalog-driven).
-      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.id!=null&&x.mode==='image'; });
-      if(!fal.length)throw new Error('No model found');
+      meta.catalogVersion=String((r&&r.catalogVersion)||'');
+      var fal=afApplyGenCatalog('image',r);
+      if(!fal.length)throw new Error(afGenUnavailableReason('image')||'No image model found');
       meta.models=fal;
       // default: isDefault belgilangani (Nano Banana), aks holда 1-chi
       var def=fal.filter(function(x){ return x.isDefault; })[0]||fal[0];
-      meta.loaded=true; setModel(def); renderModelSheet();
+      meta.loaded=true; meta._pending=null; setModel(def); renderModelSheet();
       return meta;
     }).catch(function(err){
       meta._pending=null;
@@ -284,7 +294,8 @@
     return ensureMeta().then(function(){
       var selected=Promise.resolve(true);
       if(draft.modelId!=null)selected=window.axIGSelectModel(draft.modelId);
-      return selected.then(function(){
+      return selected.then(function(ok){
+        if(draft.modelId!=null&&!ok)throw new Error('The selected image model is no longer available');
         var p=draft.params||{};
         if(p.aspectRatio!=null&&meta.ars.indexOf(p.aspectRatio)>=0)st.ar=p.aspectRatio;
         if(p.quality!=null&&meta.quals.indexOf(p.quality)>=0)st.q=p.quality;
@@ -701,8 +712,8 @@
     studioPost('/api/studio/gen/prompt/enhance',body).then(function(e){
       // P28.3 (29a) — API mos kelmagan @mention sabab qayta yozishni RAD ETsa (mentionMismatch),
       // asl prompt qaytadi (o'zgarmaydi) → jimgina "softened" DEMAYMIZ (evasion olib tashlandi).
-      if(e&&e.mentionMismatch){ if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast(enhanceMismatchMessage(e),'info'); }
-      else if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); if(typeof e.creditsLeft==='number')setCreditChip(e.creditsLeft); toast('Prompt enhanced ✨'+(refUrls.length?(' · saw '+refUrls.length+' reference'+(refUrls.length>1?'s':'')):'')+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
+      if(e&&e.mentionMismatch){ afSettleCredits(e); toast(enhanceMismatchMessage(e),'info'); }
+      else if(e&&e.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim(); grow(); refreshGen(); afApplyChargeCredits(e); toast('Prompt enhanced ✨'+(refUrls.length?(' · saw '+refUrls.length+' reference'+(refUrls.length>1?'s':'')):'')+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success'); }
       else toast('Could not enhance','error');
     }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Enhance error','error'); }).then(function(){ enhancing=false; en.classList.remove('busy'); });
   });
@@ -757,7 +768,7 @@
     j.cancelled=true; removeJob(j);
     if(!j.submitted||!j.jobId){ toast('Canceled — no credits charged','info'); return; }
     studioPost('/api/studio/gen/'+j.jobId+'/cancel',{}).then(function(r){
-      if(r&&typeof r.creditsLeft==='number')setCreditChip(r.creditsLeft); else setCreditChip(credits());
+      afSettleCredits(r);
       toast('Cancelled'+(r&&r.refunded?(' — ✦'+r.refunded+' refunded'):' — no credits charged'),'success');
     }).catch(function(err){
       if(err&&err.code==='GENERATION_DISPATCHED')toast('Already started at the provider — stopped waiting; it will appear in History','warning');
@@ -777,6 +788,7 @@
 
   // ---- generatsiya (REAL, parallel) ----
   function genClick(){
+    if(!afCanGenerate('image')){ toast(afGenUnavailableReason('image'),'error'); afRefreshGenerationHealth(true); refreshGen(); return; }
     if(activeJobs.length>=MAX_JOBS){ toast('Max '+MAX_JOBS+' active gens — wait for one to finish','info'); return; }
     igSanitizeMentions(); // P13: orphan @imgN (mavjud referensdan katta) provayderga ketmasin
     // P13 — pre-flight: promptda eslatilgan, lekin joriy modelda NOFAOL (limitdan tashqari) @imgN — ogohlantiramiz
@@ -786,8 +798,9 @@
     if(prompt.length<2){ toast('Write a prompt','warning'); return; }
     if(meta.refMode==='required'&&st.refs.length===0){ toast('Upload a reference','warning'); return; }
     if(anyLoading()){ toast('Reference is uploading — please wait','info'); return; }
-    var c=credits();
-    if(c!=null&&c<cost()){ toast('Not enough credits — ⚙ Settings › "Top up credits"','error'); return; }
+    // The button state is only UX; re-run the same pending-job-aware money
+    // gate at click time to close keyboard/programmatic/double-click races.
+    if(igCreditGate()){ toast('Not enough credits — ⚙ Settings › "Top up credits"','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,label:meta.label,jcost:cost(),ar:st.ar,q:st.q,
            cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now()};
     activeJobs.push(j);
@@ -823,9 +836,9 @@
       return studioPost('/api/studio/gen',{sessionId:sid,mode:'image',modelId:meta.modelId,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000);
     }).then(function(res){
       if(j.cancelled)throw new Error('CANCELLED');
-      if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
       if(!res||!res.jobId)throw new Error('Job was not created');
       j.jobId=res.jobId; j.submitted=true;
+      afApplyChargeCredits(res);
       syncSessionJob(j,'active');
       // #31 (PX1): panel yopilsa ham job diskda qoladi → keyingi ochilishда tiklanadi
       if(window.afJobStore)window.afJobStore.add('imggen',{jobId:j.jobId,prompt:j.prompt,cat:'image',cost:j.jcost,sid:j.sid,modelId:j.modelId,params:j.params});
@@ -884,7 +897,7 @@
           // P30 (29c) — status=done LEKIN natija yo'q = provayder kontent rad etdi (success-shaklda!).
           // HALOL ishlaymiz: "Done! charged" ✓ EMAS. Kredit qaytariladi; boshqa-model taklifi.
           if(!first){
-            removeJob(j,'failed','Failed · credits refunded'); setCreditChip(credits());
+            removeJob(j,'failed','Failed · credits refunded'); afSettleCredits(gn);
             if(!handleGenRejection(gn, function(id){ var m=(meta.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof setModel==='function'){ if(setModel(m)!==false&&typeof renderModelSheet==='function')renderModelSheet(); } }))
               toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No result was returned — your credits were refunded','error');
             if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },1500);
@@ -914,7 +927,7 @@
           if(typeof loadRecent==='function')setTimeout(function(){ loadRecent(); },2000); // history bilan id/thumb sinxron
         },200);
       }else if(s==='failed'){
-        removeJob(j,'failed','Failed · credits refunded'); setCreditChip(credits());
+        removeJob(j,'failed','Failed · credits refunded'); afSettleCredits(gn);
         // P30 §3+§4 — kontent rad etilishi bo'lsa halol xato + ✦N qaytarildi + boshqa-model taklifi.
         if(!handleGenRejection(gn, function(id){ var m=(meta.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof setModel==='function'){ if(setModel(m)!==false&&typeof renderModelSheet==='function')renderModelSheet(); } }))
           toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):((gn&&gn.error)||'Generation failed — credits refunded'),'error');

@@ -16,6 +16,7 @@
     "studio:ui": "node scripts/start-studio-ui.mjs",
     "verify:pipeline": "node scripts/verify-pipeline.mjs",
     "verify:gen-production-readonly": "node scripts/verify-gen-production-readonly.mjs",
+    "verify:gen-production-canary": "node scripts/verify-gen-production-canary.mjs",
     "preflight:marketplace": "node plugins/after-effects-cep/scripts/marketplace-preflight.mjs",
     "test:marketplace-preflight": "node plugins/after-effects-cep/scripts/test-marketplace-preflight.mjs",
     "test:plugin-package": "node plugins/after-effects-cep/scripts/test-package-security.mjs",

@@ -539,7 +539,7 @@ model Generation {
   category  String?
   cost      Int        @default(0)
   refunded  Boolean    @default(false)       // idempotent refund guard — bir job IKKI marta refund qilinmasin (additive, default false)
-  refundStatus String?                       // pending | applied (transactional refund state)
+  refundStatus String?                       // pending | applied | not_required (transactional refund state)
   refundApplied Int      @default(0)          // amalda qaytarilgan kredit
   // D6 — foydalanuvchi natijani "qadab" qo'yadi: ro'yxatlarda DOIM birinchi chiqadi
   // (orderBy: pinned desc → createdAt desc). Additive, default false — pul zonasiga tegmaydi.

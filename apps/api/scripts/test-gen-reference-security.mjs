@@ -56,7 +56,7 @@ assert.match(
 );
 assert.match(
   route,
-  /session delete:[\s\S]*?savedReference\.findMany\([\s\S]*?generationId:\s*\{\s*in:\s*genIds\s*\},\s*userId:\s*session\.userId[\s\S]*?savedReference\.deleteMany/,
+  /studioGenRouter\.delete\("\/gen\/sessions\/:id"[\s\S]*?tx\.savedReference\.findMany\([\s\S]*?generationId:\s*\{\s*in:\s*genIds\s*\},\s*userId:\s*session\.userId[\s\S]*?tx\.savedReference\.deleteMany/,
   "session deletion must remove only that account's linked references"
 );
 assert.match(

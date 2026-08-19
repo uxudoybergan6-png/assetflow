@@ -14,7 +14,13 @@ const AssetFlowCatalog = (() => {
     }
     if (typeof AssetFlowStore !== "undefined") {
       const c = AssetFlowStore.loadPrefs?.().client || {};
-      if (c.apiBaseUrl) return String(c.apiBaseUrl).replace(/\/$/, "");
+      if (c.apiBaseUrl) {
+        const saved = String(c.apiBaseUrl).replace(/\/$/, "");
+        if (typeof ASSETFLOW_ENV !== "undefined" && ASSETFLOW_ENV.sanitizeApi) {
+          try { return ASSETFLOW_ENV.sanitizeApi(saved).replace(/\/$/, ""); } catch {}
+        }
+        return saved;
+      }
     }
     return DEFAULT_API;
   }
@@ -28,8 +34,20 @@ const AssetFlowCatalog = (() => {
   }
 
   /** Pack/MOGRT yuklab olish uchun Authorization header (gate'langan route) */
-  function downloadHeaders() {
+  function newDownloadRequestId() {
+    try {
+      if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+    } catch {}
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
+
+  function downloadHeaders(requestId) {
     const h = { "X-FF-App": hostTemplateApp() };
+    const key = String(requestId || "").trim();
+    if (key) h["Idempotency-Key"] = key;
     if (typeof AssetFlowAccount !== "undefined" && AssetFlowAccount.authHeaders) {
       const auth = AssetFlowAccount.authHeaders();
       if (auth && auth.Authorization) h.Authorization = auth.Authorization;
@@ -1257,6 +1275,30 @@ const AssetFlowCatalog = (() => {
     });
   }
 
+  function retryableDownloadError(error) {
+    if (!error || error.cancelled) return false;
+    const status = Number(error.status) || 0;
+    if (status) return status === 408 || status === 425 || status === 429 || status >= 500;
+    return /timed?\s*out|timeout|network|fetch|socket|econn|reset|hang\s*up|aborted|load failed/i.test(String(error.message || error));
+  }
+
+  async function downloadUrlToFileWithRetry(url, destPath, onProgress, headers, opts) {
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        // `headers` (including Idempotency-Key) is intentionally reused. If
+        // the API consumed quota but its redirect/response was lost, retrying
+        // this logical download cannot consume a second slot.
+        return await downloadUrlToFile(url, destPath, onProgress, headers, opts);
+      } catch (error) {
+        lastError = error;
+        if (attempt || !retryableDownloadError(error)) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+    }
+    throw lastError;
+  }
+
   /**
    * M2: faqat tanlangan sahnaning .mogrt faylini yuklab olib .aep ga
    * tayyorlaydi — butun ZIP (200MB+) yuklanmaydi. Fayl
@@ -1280,12 +1322,14 @@ const AssetFlowCatalog = (() => {
       fs.mkdirSync(dir, { recursive: true });
     } catch {}
     const out = path.join(dir, `${slug}.mogrt`);
+    const requestId = String((opts && opts.downloadRequestId) || newDownloadRequestId());
+    if (opts && !opts.downloadRequestId) opts.downloadRequestId = requestId;
     let _freshDownload = false;
     if (!cachedFileOk(fs, out, 0)) {
       if (typeof showToast === "function") showToast("Loading scene…");
       const onProgress = opts && opts.onProgress;
       let sceneSha = ""; // #96 (PL-d) — server hash bersa (X-Pack-Sha256) tekshiriladi
-      await downloadUrlToFile(scene.mogrtUrl, out, onProgress, downloadHeaders(), {
+      await downloadUrlToFileWithRetry(scene.mogrtUrl, out, onProgress, downloadHeaders(requestId), {
         onServerSha: (h) => { sceneSha = h; },
         httpsOnly: true,
         maxBytes: 512 * 1024 * 1024,
@@ -1329,6 +1373,8 @@ const AssetFlowCatalog = (() => {
     const expectedSize = (opts && opts.fileSize) || meta.fileSize || 0;
     const expectedSha256 = (opts && opts.expectedSha256) || meta.sha256 || "";
     const onProgress = opts && opts.onProgress;
+    const requestId = String((opts && opts.downloadRequestId) || newDownloadRequestId());
+    if (opts && !opts.downloadRequestId) opts.downloadRequestId = requestId;
 
     // ZIP bo'lsa — unzip papkasini tekshiramiz (kesh)
     if (extLower === ".zip") {
@@ -1394,7 +1440,7 @@ const AssetFlowCatalog = (() => {
     if (needDownload) {
       const directUrl = (opts && opts.packUrl) || meta.url;
       // Har doim API gate orqali boshlaymiz: u immutable X-Pack-Sha256 headerini beradi.
-      const url = `${apiBase()}/api/plugin/assets/${templateId}/pack`;
+      const url = `${apiBase()}/api/plugin/assets/${templateId}/pack?downloadRequestId=${encodeURIComponent(requestId)}`;
       if (typeof showToast === "function") {
         const mb =
           expectedSize > 0
@@ -1408,7 +1454,7 @@ const AssetFlowCatalog = (() => {
       let serverSha = "";
       const shaOpts = { onServerSha: (h) => { serverSha = h; }, httpsOnly: true, maxBytes: 3 * 1024 * 1024 * 1024, timeoutMs: 30000 };
       try {
-        await downloadUrlToFile(url, out, onProgress, downloadHeaders(), shaOpts);
+        await downloadUrlToFileWithRetry(url, out, onProgress, downloadHeaders(requestId), shaOpts);
       } catch (e) {
         // Limit/nashr/sessiya xatosi (403/401) — fallback bilan yashirmaymiz
         if (e && (e.status === 401 || e.status === 403)) throw e;
@@ -1814,6 +1860,7 @@ const AssetFlowCatalog = (() => {
     mergeIntoBrowse,
     downloadPackToTemp,
     downloadSceneMogrt,
+    newDownloadRequestId,
     downloadUrlToFile,
     // downloadUrlToFile `opts` (httpsOnly/maxBytes) ni QO'LLAB-QUVVATLAYDI. Updater shu
     // bayroqni tekshiradi: eski nusxa yonida ishga tushsa — hech narsa yuklamaydi.

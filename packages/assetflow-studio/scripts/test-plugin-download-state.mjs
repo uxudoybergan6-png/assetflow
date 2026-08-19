@@ -1,62 +1,61 @@
-// Task A — Plugin sahifasi CTA/versiya-matn holat mashinasi regressiya testi (test infra yo'q — standalone).
-// Bu funksiya platform/index.html'dagi render() ichidagi pgCtaLabel/pgVersionNote hisobining
-// AYNAN nusxasi (dc-runtime raw <script> ichida — import qilib bo'lmaydi, shu bois qo'lda sinxronlanadi).
-// index.html'da bu hisob o'zgarsa — shu faylni ham yangilang.
-// Ishga tushirish: node packages/assetflow-studio/scripts/test-plugin-download-state.mjs
+import assert from "node:assert/strict";
+import fs from "node:fs";
 
-const DEFAULT_CTA = "Download the plugin (.zxp)";
-const DEFAULT_VERSION_NOTE = "Compatible ZXP installer · requires After Effects 2022 (22.0) or newer";
+const html = fs.readFileSync("packages/assetflow-studio/platform/index.html", "utf8");
 
-function computePluginPageCopy(pluginDl, pluginRelease, pluginDlErr) {
-  const pgCtaLabel =
-    pluginDl === "loading" ? "Checking latest version…"
-    : pluginDl === "unavailable" ? "Beta download not published yet"
-    : pluginDl === "error" ? "Retry check"
-    : DEFAULT_CTA;
-  const pgVersionNote =
-    pluginDl === "ready" && pluginRelease ? ("v" + pluginRelease.version + " · Compatible ZXP installer · After Effects 2022+")
-    : pluginDl === "unavailable" ? "The beta download isn’t published yet — check back soon"
-    : pluginDl === "error" ? (pluginDlErr || "Couldn't check for updates — click the button to retry")
-    : pluginDl === "loading" ? "Checking the latest release…"
-    : DEFAULT_VERSION_NOTE;
-  return { pgCtaLabel, pgVersionNote };
+function premiereCopy(state) {
+  const label = state.pluginDl === "loading" ? "Checking Premiere release…"
+    : state.pluginDl === "unavailable" ? "Premiere Pro (.ccx) — not published yet"
+    : state.pluginDl === "error" ? "Retry check"
+    : state.pluginDl === "idle" ? "Checking Premiere release…"
+    : "Premiere Pro (.ccx)";
+  const disabled = ["idle", "loading", "unavailable"].includes(state.pluginDl);
+  return { label, disabled };
 }
 
-// downloadPlugin() klik holati — nima qilishi kerakligini simulyatsiya qiladi ("navigate" | "toast" | "retry" | "noop").
-function simulateDownloadClick(state) {
-  if (state.pluginDl === "loading") return { action: "noop" };
-  if (state.pluginDl === "ready" && state.pluginDownloadUrl) return { action: "navigate", url: state.pluginDownloadUrl };
-  if (state.pluginDl === "error") return { action: "toast+retry" };
-  if (state.pluginDl === "idle") return { action: "retry" };
-  return { action: "toast" }; // 'unavailable' — halol xabar, HECH QACHON jim qolmaydi
+function afterEffectsCopy(state) {
+  const label = state.pluginAeDl === "ready" ? "After Effects (.zxp)"
+    : state.pluginAeDl === "error" ? "Retry After Effects check"
+    : state.pluginAeDl === "loading" || state.pluginAeDl === "idle" ? "Checking After Effects release…"
+    : "After Effects — not published";
+  const disabled = ["idle", "loading", "unavailable"].includes(state.pluginAeDl);
+  return { label, disabled };
 }
 
-let fail = 0;
-function check(label, actual, expected) {
-  const ok = JSON.stringify(actual) === JSON.stringify(expected);
-  if (!ok) fail++;
-  console.log(`${ok ? "✓" : "✗ FAIL"}  ${label}`);
-  if (!ok) {
-    console.log("  got:     ", JSON.stringify(actual));
-    console.log("  expected:", JSON.stringify(expected));
-  }
-}
+assert.deepEqual(premiereCopy({ pluginDl: "idle" }), { label: "Checking Premiere release…", disabled: true });
+assert.deepEqual(premiereCopy({ pluginDl: "ready" }), { label: "Premiere Pro (.ccx)", disabled: false });
+assert.deepEqual(premiereCopy({ pluginDl: "unavailable" }), { label: "Premiere Pro (.ccx) — not published yet", disabled: true });
+assert.deepEqual(premiereCopy({ pluginDl: "error" }), { label: "Retry check", disabled: false });
+assert.deepEqual(afterEffectsCopy({ pluginAeDl: "unavailable" }), { label: "After Effects — not published", disabled: true });
+assert.deepEqual(afterEffectsCopy({ pluginAeDl: "error" }), { label: "Retry After Effects check", disabled: false });
 
-check("idle → default CMS copy", computePluginPageCopy("idle", null, ""), { pgCtaLabel: DEFAULT_CTA, pgVersionNote: DEFAULT_VERSION_NOTE });
-check("loading → checking copy", computePluginPageCopy("loading", null, ""), { pgCtaLabel: "Checking latest version…", pgVersionNote: "Checking the latest release…" });
-check("ready → real version shown", computePluginPageCopy("ready", { version: "1.1.1" }, ""), { pgCtaLabel: DEFAULT_CTA, pgVersionNote: "v1.1.1 · Compatible ZXP installer · After Effects 2022+" });
-check("unavailable → honest not-published copy", computePluginPageCopy("unavailable", null, ""), { pgCtaLabel: "Beta download not published yet", pgVersionNote: "The beta download isn’t published yet — check back soon" });
-check("error → retry copy with message", computePluginPageCopy("error", null, "Can't reach the server"), { pgCtaLabel: "Retry check", pgVersionNote: "Can't reach the server" });
+// Bir kanal yiqilsa ikkinchisining release holati yashirilmaydi.
+assert.match(html, /Promise\.allSettled\(\[/);
+assert.match(html, /const prTask = FFAPI\.pluginVersion[\s\S]{0,260}this\.setState\(\{ pluginDl: 'ready'/);
+assert.match(html, /const aeTask = FFAPI\.pluginVersion[\s\S]{0,260}pluginAeDl: 'ready'/);
+assert.match(html, /await Promise\.allSettled\(\[prTask, aeTask\]\)/);
 
-// Klik davomida hech qachon jim qolmaydi (har holat uchun aniq harakat bor):
-check("click while loading → noop (ignored, not double-fetch)", simulateDownloadClick({ pluginDl: "loading" }), { action: "noop" });
-check("click while ready → navigates to real artifact URL", simulateDownloadClick({ pluginDl: "ready", pluginDownloadUrl: "https://cdn/pack.zip" }), { action: "navigate", url: "https://cdn/pack.zip" });
-check("click while error → toast + retry fetch", simulateDownloadClick({ pluginDl: "error" }), { action: "toast+retry" });
-check("click while idle (race) → kicks off fetch instead of no-op", simulateDownloadClick({ pluginDl: "idle" }), { action: "retry" });
-check("click while unavailable → honest toast, never silent", simulateDownloadClick({ pluginDl: "unavailable" }), { action: "toast" });
+// Presigned URL bir soatda tugaydi: CTA state'dagi eski URL'ga to'g'ridan o'tmay,
+// bosish vaqtida serverdan yangi Premiere/AE havolasini oladi.
+assert.match(html, /async downloadPlugin\(\)[\s\S]{0,1800}FFAPI\.pluginVersion\(null, platform[\s\S]{0,900}window\.location\.href = freshUrl/);
+assert.match(html, /async downloadAePlugin\(\)[\s\S]{0,1400}FFAPI\.pluginVersion\(null, \{ app: 'ae', manual: true \}\)[\s\S]{0,800}window\.location\.href = freshUrl/);
+assert.doesNotMatch(html, /window\.location\.href = (?:st\.)?plugin(?:Ae)?DownloadUrl/);
 
-if (fail) {
-  console.error(`\n${fail} test(lar) yiqildi`);
-  process.exit(1);
-}
-console.log(`\nHammasi o'tdi (10 case).`);
+// Server tekshiruvidan oldin yoki unpublished holatda download bosilmaydi; error esa Retry bo'lib qoladi.
+assert.match(html, /disabled="\{\{ prUnavailable \}\}" aria-disabled="\{\{ prUnavailable \}\}"/);
+assert.match(html, /disabled="\{\{ aeUnavailable \}\}" aria-disabled="\{\{ aeUnavailable \}\}"/);
+assert.match(html, /prUnavailable: this\.state\.pluginDl === 'idle' \|\| this\.state\.pluginDl === 'loading' \|\| this\.state\.pluginDl === 'unavailable'/);
+assert.match(html, /aeUnavailable: this\.state\.pluginAeDl === 'idle' \|\| this\.state\.pluginAeDl === 'loading' \|\| this\.state\.pluginAeDl === 'unavailable'/);
+
+// CMS'dagi stale AE/.zxp yoki PR/.ccx da'vosi faqat tegishli live release bo'lsa ko'rinadi.
+assert.match(html, /const staleAe = !aeReleased/);
+assert.match(html, /const stalePr = !prReleased/);
+assert.match(html, /feats: safeReleaseList\(lc\.plans\[i\]\.feats\)/);
+assert.match(html, /label: releaseSafeText\(st\.label, 'Web \+ verified Adobe plugin releases'\)/);
+assert.match(html, /Export from the browser; verified Adobe plugin releases are listed on the Plugin page\./);
+
+// JS ishlashidan oldingi SEO copy ham unpublished AE'ni mavjud deb e'lon qilmaydi.
+const head = html.slice(0, html.indexOf("</head>"));
+assert.doesNotMatch(head, /right inside After Effects/i);
+
+console.log("Plugin release-aware copy and CTA state contract passed.");

@@ -753,7 +753,9 @@ function renderPayouts(){
   const isPool = d.payoutMode==='pool';
   const sharePct = Math.round(((d.poolShare!=null?d.poolShare:0.3))*100);
   const totalEvents = rows.reduce((a,r)=>a+(r.earningEvents||0),0);
-  const pendingCount = rows.filter(r=>(r.balanceCents||0)>0).length;
+  // Backend faqat hold oynasidan chiqqan eligible earning'larni payoutga bog'laydi.
+  // "Ready" ham aynan payable summa bo'yicha sanaladi, umumiy balance bo'yicha emas.
+  const pendingCount = rows.filter(r=>(r.payableCents!=null?r.payableCents:(r.balanceCents||0))>0).length;
   const poolCents = rows.reduce((a,r)=>a+(r.balanceCents||0),0);
   const paidCents = rows.reduce((a,r)=>a+Math.max(0,(r.totalEarnedCents||0)-(r.balanceCents||0)),0);
   root.innerHTML = `
@@ -779,15 +781,19 @@ function renderPayouts(){
         <thead><tr><th>Contributor</th><th class="r">Earning events</th><th class="r">Total earned</th><th class="r">Accrued (balance)</th><th class="r">Paid</th><th>Status</th><th class="r">Action</th></tr></thead>
         <tbody>${rows.length ? rows.map(r=>{
           const paid = Math.max(0,(r.totalEarnedCents||0)-(r.balanceCents||0));
-          const pending = (r.balanceCents||0)>0;
+          const balance = r.balanceCents||0;
+          const payable = r.payableCents!=null?r.payableCents:balance;
+          const held = r.heldCents||0;
+          const pending = payable>0;
+          const heldOnly = !pending && balance>0;
           return `<tr>
             <td><div class="adx-who">${axAv(r.name||r.email||'?',r.email,32)}<div style="min-width:0"><div class="nm">${esc(r.name||r.email||'—')}</div><div class="em">${esc(r.email||'')}</div></div></div></td>
             <td class="r adx-num">${(r.earningEvents||0).toLocaleString()}</td>
             <td class="r adx-num">${bizUsdCents(r.totalEarnedCents)}</td>
             <td class="r adx-num" style="color:#FFB27C">${bizUsdCents(r.balanceCents)}</td>
             <td class="r adx-num" style="color:var(--lime)">${bizUsdCents(paid)}</td>
-            <td>${pending?'<span class="adx-bdg adx-bdg-pending"><span class="bd"></span>Pending':'<span class="adx-bdg adx-bdg-approved"><span class="bd"></span>Paid'}</span></td>
-            <td class="r">${pending?`<button class="adx-btn sm" onclick="openPayoutRecord('${r.contributorId}')"><i class="ph ph-check"></i>Record payout</button>`:`<button class="adx-btn2 sm" onclick="toast('Receipt','Viewing payout history coming in a future version','info')"><i class="ph ph-clipboard-text"></i>Receipt</button>`}</td>
+            <td>${pending?'<span class="adx-bdg adx-bdg-pending"><span class="bd"></span>Payable':heldOnly?'<span class="adx-bdg adx-bdg-draft"><span class="bd"></span>Held':'<span class="adx-bdg adx-bdg-approved"><span class="bd"></span>Paid'}</span></td>
+            <td class="r">${pending?`<button class="adx-btn sm" onclick="openPayoutRecord('${r.contributorId}')"><i class="ph ph-check"></i>Record ${bizUsdCents(payable)}</button>`:heldOnly?`<button class="adx-btn2 sm" disabled title="${bizUsdCents(held||balance)} is still inside the payout hold window" style="opacity:.55;cursor:not-allowed"><i class="ph ph-clock-countdown"></i>Held</button>`:`<span style="font-size:10.5px;color:var(--muted2)" title="Payout receipt/history is not available in this admin screen">No receipt view</span>`}</td>
           </tr>`;
         }).join('') : `<tr><td colspan="7"><div class="adx-empty" style="border:0;padding:34px"><span class="ei"><i class="ph ph-hand-coins"></i></span><div style="font-weight:600;font-size:13px">No earnings yet</div><div style="font-size:11px;color:var(--muted2)">Contributor earnings accrue as approved templates are downloaded.</div></div></td></tr>`}</tbody>
       </table></div>
@@ -802,13 +808,14 @@ function openPayoutRecord(contributorId){
   const host = document.getElementById('bizEditPanel');
   const held = r.heldCents||0, payable = r.payableCents!=null?r.payableCents:(r.balanceCents||0);
   const holdDays = r.payoutHoldDays!=null?r.payoutHoldDays:30;
+  if(!(payable>0)){ toast('Not payable yet',`This balance is still inside the ${holdDays}-day hold window`,'warn'); return; }
   const sybil = SYBIL_DATA && (SYBIL_DATA.contributors||[]).find(x=>x.contributorId===contributorId && x.suspicious);
   host.innerHTML = `<div class="adx-editpanel" style="width:340px"><div style="padding:18px 20px">
     <div style="display:flex;align-items:center;gap:8px"><i class="ph ph-hand-coins" style="color:var(--lime)"></i><span style="font-weight:700;font-size:13.5px">Record payout</span><span style="flex:1"></span><button class="adx-iact" onclick="document.getElementById('bizEditPanel').innerHTML=''"><i class="ph ph-x"></i></button></div>
-    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5">${esc(r.name||r.email||'')} — unpaid balance <b style="color:var(--text)">${bizUsdCents(r.balanceCents)}</b>. This is a manually entered payout record (ContributorPayout) — the money transfer happens outside the system. All unpaid earnings will be linked.</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5">${esc(r.name||r.email||'')} — payable now <b style="color:var(--text)">${bizUsdCents(payable)}</b> of ${bizUsdCents(r.balanceCents)} unpaid. This manually records a ContributorPayout; the money transfer happens outside the system. Only currently eligible earnings will be linked.</div>
     ${sybil?`<div style="margin-top:10px;padding:9px 11px;background:rgba(255,107,94,.12);border:1px solid rgba(255,107,94,.28);border-radius:9px;font-size:10.5px;color:#FF6B5E;line-height:1.5"><i class="ph ph-warning"></i> <b>Flagged (risk ${sybil.score})</b> — review the Trust &amp; safety panel before paying. ${esc((sybil.reasons||[])[0]||'')}</div>`:''}
-    ${held>0?`<div style="margin-top:10px;padding:9px 11px;background:rgba(255,178,124,.12);border:1px solid rgba(255,178,124,.28);border-radius:9px;font-size:10.5px;color:#FFB27C;line-height:1.5"><i class="ph ph-clock-countdown"></i> ${bizUsdCents(held)} of this is within the ${holdDays}-day hold window. Payable now: <b>${bizUsdCents(payable)}</b>. Recording links ALL unpaid earnings — hold is advisory.</div>`:''}
-    <div class="adx-flab" style="margin-top:12px">AMOUNT</div><input class="adx-input mono" value="${bizUsdCents(r.balanceCents)}" disabled>
+    ${held>0?`<div style="margin-top:10px;padding:9px 11px;background:rgba(255,178,124,.12);border:1px solid rgba(255,178,124,.28);border-radius:9px;font-size:10.5px;color:#FFB27C;line-height:1.5"><i class="ph ph-clock-countdown"></i> ${bizUsdCents(held)} remains inside the ${holdDays}-day hold window and will not be included. Payable now: <b>${bizUsdCents(payable)}</b>.</div>`:''}
+    <div class="adx-flab" style="margin-top:12px">PAYABLE AMOUNT</div><input class="adx-input mono" value="${bizUsdCents(payable)}" disabled>
     <div class="adx-flab" style="margin-top:10px">METHOD</div>
     <select class="adx-input" id="payoutMethod"><option value="bank">Bank transfer</option><option value="payme">Payme</option><option value="click">Click</option><option value="manual">Other (manual)</option></select>
     <div class="adx-flab" style="margin-top:10px">NOTE / REFERENCE (optional)</div><input class="adx-input" id="payoutNote" placeholder="Bank ref or note…">

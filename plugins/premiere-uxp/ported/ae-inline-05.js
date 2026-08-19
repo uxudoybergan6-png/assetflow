@@ -81,22 +81,34 @@
   };
   // Kredit uchun yagona server refresh. Bir paytdagi Account/Settings/Refresh chaqiriqlari
   // bitta requestni bo'lishadi; kechroq kelgan eski javob yangi balansni qayta yozmaydi.
-  var creditRefreshPromise=null,creditRefreshSeq=0,creditAppliedSeq=0,creditRefreshAt=0;
+  var creditRefreshPromise=null,creditRefreshSessionEpoch=-1,creditRefreshSeq=0,creditAppliedSeq=0,creditRefreshAt=0,creditRefreshAtEpoch=-1;
   window.afRefreshCredits=function(opts){
     opts=opts||{};
     if(typeof studioGet!=='function')return Promise.resolve(null);
     try{ if(typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return Promise.resolve(null); }catch(e){return Promise.resolve(null);}
-    if(creditRefreshPromise)return creditRefreshPromise;
-    if(!opts.force&&Date.now()-creditRefreshAt<5000)return Promise.resolve(null);
+    var sessionEpoch=afAuthSessionEpoch();
+    if(creditRefreshPromise&&creditRefreshSessionEpoch===sessionEpoch){
+      // Settlement callers need a read that starts after the currently
+      // running read, not the possibly older snapshot already in flight.
+      if(opts.force)return creditRefreshPromise.then(function(){return window.afRefreshCredits({force:true});},function(){return window.afRefreshCredits({force:true});});
+      return creditRefreshPromise;
+    }
+    if(!opts.force&&creditRefreshAtEpoch===sessionEpoch&&Date.now()-creditRefreshAt<5000)return Promise.resolve(null);
     var seq=++creditRefreshSeq;
     creditRefreshAt=Date.now();
-    creditRefreshPromise=studioGet('/api/studio/credits').then(function(d){
+    creditRefreshAtEpoch=sessionEpoch;
+    var request=studioGet('/api/studio/credits').then(function(d){
+      if(sessionEpoch!==afAuthSessionEpoch())return null;
       if(seq>=creditAppliedSeq&&d&&typeof d.aiCredits==='number'&&isFinite(d.aiCredits)){
         window.afSyncCredits(d.aiCredits,seq);
       }
       return d||null;
-    }).finally(function(){ creditRefreshPromise=null; });
-    return creditRefreshPromise;
+    }).finally(function(){
+      if(creditRefreshPromise===request){creditRefreshPromise=null;creditRefreshSessionEpoch=-1;}
+    });
+    creditRefreshPromise=request;
+    creditRefreshSessionEpoch=sessionEpoch;
+    return request;
   };
   // D7 (#P1-plagin) — UMUMIY "kam kredit" banneri. Ilgari uchta tool (ig/vg/ag) markup'da ham
   // (bir xil 14px SVG + .lt/.ls tuzilishi, faqat id prefiksi farqli), gate kodida ham
@@ -434,6 +446,8 @@
   // Katalog + kredit + tool recents + sessiya/loyiha keshlari birga yangilanadi.
   window.afRefreshAll=function(){
     try{ if(typeof syncServerCatalog==='function')syncServerCatalog(); }catch(e){}
+    try{ afRefreshGenerationHealth(true); }catch(e){}
+    try{ if(window.afCreateWorkspace&&typeof window.afCreateWorkspace.refreshModels==='function')window.afCreateWorkspace.refreshModels(true); }catch(e){}
     try{ if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}).catch(function(){}); }catch(e){}
     try{ if(typeof window.afIgRetryRecent==='function')window.afIgRetryRecent(); }catch(e){}
     try{ if(typeof window.axVGRefresh==='function')window.axVGRefresh(); }catch(e){}
@@ -496,7 +510,7 @@
     var last=0;
     window.addEventListener('focus',function(){
       var now=Date.now(); if(now-last<20000)return; last=now;
-      try{ studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){}); }catch(e){}
+      try{ if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}).catch(function(){}); }catch(e){}
       try{ if(typeof window.axSPInvalidate==='function')window.axSPInvalidate(); }catch(e){}
     });
   })();

@@ -2007,7 +2007,14 @@ function main() {
     if (!/^(?:assetflow-|frameflow-).*\.js$/.test(f)) continue;
     if (f === "assetflow-uxp-bridge.js") continue;
     fs.mkdirSync(path.join(OUT, "ae-src"), { recursive: true });
-    write(path.join(OUT, "ae-src", f), transformJs(read(path.join(AE, f))));
+    const source = read(path.join(AE, f));
+    // Host-neutral runtime is deliberately a byte-for-byte shared contract.
+    // Applying the AE→Premiere copy pass even to its comments breaks the parity
+    // guarantee and can hide a future functional transform in generated UXP.
+    write(
+      path.join(OUT, "ae-src", f),
+      f === "assetflow-gen-runtime.js" ? source : transformJs(source),
+    );
     copied++;
   }
   const fonts = copyDir(path.join(AE, "css", "fonts"), path.join(OUT, "fonts"));

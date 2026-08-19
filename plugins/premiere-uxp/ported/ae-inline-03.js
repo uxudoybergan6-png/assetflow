@@ -351,9 +351,10 @@ function recordImportedMeta(templateKey,sceneName,data){
   window.downloadedMeta[templateKey]=m;
 }
 
-function packDownloadOpts(pack){
+function packDownloadOpts(pack,downloadRequestId){
   return{
     hostApp:AF_TEMPLATE_APP,
+    downloadRequestId:downloadRequestId||afUuid(),
     packUrl:pack?.serverPackUrl,
     fileSize:pack?.fileSize||0,
     onProgress(done,total){
@@ -366,9 +367,10 @@ function packDownloadOpts(pack){
     }
   };
 }
-function sceneDownloadOpts(){
+function sceneDownloadOpts(downloadRequestId){
   return{
     hostApp:AF_TEMPLATE_APP,
+    downloadRequestId:downloadRequestId||afUuid(),
     onProgress(done,total){
       if(total>0){
         const pct=Math.min(100,Math.floor((done/total)*100));
@@ -477,25 +479,31 @@ function hostEvalGuarded(script,opts){
   });
 }
 
-async function reserveImportForHost(pack){
+async function reserveImportForHost(pack,idempotencyKey){
   if(!pack?.serverTemplateId||typeof AssetFlowAccount==='undefined'||!AssetFlowAccount.isLoggedIn())return {ok:true,id:''};
-  try{
-    const id=await Promise.race([
-      AssetFlowAccount.reserveImport(pack.serverTemplateId),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Import quota check timed out')),10000))
-    ]);
-    if(!id)throw new Error('Import quota reservation was not created');
-    if(typeof refreshAccountUi==='function')refreshAccountUi();
-    return {ok:true,id};
-  }catch(e){
-    hideProgress();
-    if(e&&(e.status===403||e.code==='LIMIT_REACHED')){
-      openLimitSheet('import');
-      return {ok:false,result:'limit'};
+  const requestKey=idempotencyKey||afUuid();
+  let e=null;
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const id=await Promise.race([
+        AssetFlowAccount.reserveImport(pack.serverTemplateId,requestKey),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('Import quota check timed out')),10000))
+      ]);
+      if(!id)throw new Error('Import quota reservation was not created');
+      if(typeof refreshAccountUi==='function')refreshAccountUi();
+      return {ok:true,id};
+    }catch(err){
+      e=err;
+      if(err&&err.status>=400&&err.status<500)break;
     }
-    showToast('Import quota could not be verified. Check your connection and try again.','error');
-    return {ok:false,result:''};
   }
+  hideProgress();
+  if(e&&(e.status===403||e.code==='LIMIT_REACHED')){
+    openLimitSheet('import');
+    return {ok:false,result:'limit'};
+  }
+  showToast('Import quota could not be verified. Check your connection and try again.','error');
+  return {ok:false,result:''};
 }
 
 async function settleImportForHost(reservationId,success){
@@ -528,6 +536,7 @@ function hostImportSucceeded(raw){
 
 async function importPackFileToAE(pack){
   if(!IS_CEP||!csInterface)return '';
+  const operationId=afUuid();
   let importPath='';
   if(pack?.serverTemplateId&&typeof AssetFlowCatalog!=='undefined'){
     try{
@@ -539,7 +548,7 @@ async function importPackFileToAE(pack){
       const ext=path.extname(fileName)||'.aep';
       const baseDir=AssetFlowCatalog.downloadDir()||os.tmpdir();
       const expectedPath=path.join(baseDir,`assetflow_${pack.serverTemplateId}${ext}`);
-      const downloadOpts=packDownloadOpts(pack);
+      const downloadOpts=packDownloadOpts(pack,operationId);
       const progressUi=downloadOpts.onProgress;
       downloadOpts.onProgress=(done,total)=>{
         const expectedBytes=Number(total)||Number(pack.fileSize)||0;
@@ -582,7 +591,7 @@ async function importPackFileToAE(pack){
   }else return '';
   // Kvota host importidan oldin rezerv qilinadi; faqat host muvaffaqiyatidan keyin
   // commit bo'ladi. Tarmoq xatosida fail-closed — limitni chetlab o'tib bo'lmaydi.
-  const importReservation=await reserveImportForHost(pack);
+  const importReservation=await reserveImportForHost(pack,operationId);
   if(!importReservation.ok)return importReservation.result;
   const reservationId=importReservation.id;
   // P35 — footage-to'plami (zip ichida .aep/.mogrt yo'q, faqat kliplar): host
@@ -653,6 +662,7 @@ async function importPackFileToAE(pack){
 
 async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline'){
   if(!IS_CEP||!csInterface)return '';
+  const operationId=afUuid();
   let importPath='';
   if(pack?.serverTemplateId&&typeof AssetFlowCatalog!=='undefined'){
     try{
@@ -663,14 +673,14 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
       }else if(scene?.mogrtUrl&&AssetFlowCatalog.downloadSceneMogrt){
         // M2: faqat tanlangan sahna .mogrt'i yuklab olinadi — butun ZIP emas
         try{
-          importPath=await AssetFlowCatalog.downloadSceneMogrt(pack.serverTemplateId,scene,sceneDownloadOpts());
+          importPath=await AssetFlowCatalog.downloadSceneMogrt(pack.serverTemplateId,scene,sceneDownloadOpts(operationId));
         }catch(mogrtErr){
           // Server'da yakka .mogrt yo'q/xato — eski yo'l: butun pack
           console.warn('mogrt url yuklash xato, zip fallback',mogrtErr);
-          importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
+          importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack,operationId));
         }
       }else{
-        importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack));
+        importPath=await AssetFlowCatalog.downloadPackToTemp(pack.serverTemplateId,pack.fileName||'template.aep',packDownloadOpts(pack,operationId));
       }
     }catch(e){
       hideProgress();
@@ -690,7 +700,7 @@ async function importSingleSceneToAE(pack,scene,packLabel,importMode='timeline')
     showProgress(0,'Preparing…');
     importPath=await AssetFlowStore.prepareImportFile(pack.fileBlobId,pack.fileName||'template.aep');
   }else return '';
-  const importReservation=await reserveImportForHost(pack);
+  const importReservation=await reserveImportForHost(pack,operationId);
   if(!importReservation.ok)return importReservation.result;
   const reservationId=importReservation.id;
   // Yuklab olindi — endi host import fazasi (sinxron, vaqt olishi mumkin)
@@ -3374,7 +3384,7 @@ function fhomeFetchModels(){
   var clean=function(s){ return String(s==null?'':s).replace(/[<>&"]/g,''); };
   var getMode=function(mode){
     return studioGet('/api/studio/gen/models?mode='+mode).then(function(r){
-      return ((r&&r.models)||[]).filter(function(x){ return x&&x.id!=null&&x.mode===mode&&x.enabled!==false; });
+      return afApplyGenCatalog(mode,r);
     }).catch(function(){ return []; });
   };
   Promise.all([getMode('image'),getMode('video'),getMode('voice'),getMode('sfx')]).then(function(res){
@@ -4472,12 +4482,104 @@ function onEnvScopeChange(sel){
 
 /* F-02 tozalash: eski AI kompozer (AI_CFG/af_ai/aiLoadModels...) olib tashlandi — hech qayerdan chaqirilmasdi. */
 /** /api/studio GET — auth bilan (pubFetch base+timeout). */
+function afAuthSessionEpoch(){
+  try{return (typeof AssetFlowAccount!=='undefined'&&typeof AssetFlowAccount.sessionEpoch==='function')?AssetFlowAccount.sessionEpoch():0;}catch(e){return 0;}
+}
+function afSessionChangedError(){var e=new Error('Account changed while the request was running');e.code='SESSION_CHANGED';return e;}
 async function studioGet(path){
+  const authEpoch=afAuthSessionEpoch();
   const res=await pubFetch(path,{headers:pubAuthHeaders()},30000);
   const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+  if(authEpoch!==afAuthSessionEpoch())throw afSessionChangedError();
   if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
   return d;
 }
+/* Studio Gen readiness is a first-class gate, not a decorative status. The
+   shared runtime is copied verbatim into Premiere UXP by ae-port.mjs. */
+function afGenLoggedIn(){
+  try{return typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn();}catch(e){return false;}
+}
+var __afGenRuntimeSessionEpoch=-1,__afGenRuntimeSyncing=false;
+function afSyncGenAuth(){
+  if(typeof FrameFlowGenRuntime==='undefined')return afGenLoggedIn();
+  var logged=afGenLoggedIn(),sessionEpoch=afAuthSessionEpoch();
+  if(__afGenRuntimeSyncing)return logged;
+  // A direct account switch can remain "authenticated=true" throughout. Force
+  // one closed transition so every model cache/quote is invalidated anyway.
+  var accountChanged=logged&&__afGenRuntimeSessionEpoch>=0&&sessionEpoch!==__afGenRuntimeSessionEpoch;
+  __afGenRuntimeSessionEpoch=sessionEpoch;
+  __afGenRuntimeSyncing=true;
+  try{
+    if(accountChanged)FrameFlowGenRuntime.setAuthenticated(false);
+    FrameFlowGenRuntime.setAuthenticated(logged);
+  }finally{__afGenRuntimeSyncing=false;}
+  return logged;
+}
+function afApplyGenCatalog(mode,response){
+  if(typeof FrameFlowGenRuntime==='undefined')return ((response&&response.models)||[]).filter(function(m){return m&&m.id!=null&&m.enabled!==false&&m.disabled!==true&&m.available!==false;});
+  afSyncGenAuth(); return FrameFlowGenRuntime.applyModelCatalog(mode,response||{});
+}
+function afCanGenerate(mode){
+  if(typeof FrameFlowGenRuntime==='undefined')return afGenLoggedIn();
+  afSyncGenAuth(); return FrameFlowGenRuntime.canGenerate(mode);
+}
+function afGenUnavailableReason(mode){
+  if(typeof FrameFlowGenRuntime==='undefined')return afGenLoggedIn()?'AI generation is temporarily unavailable':'Sign in to generate';
+  afSyncGenAuth(); return FrameFlowGenRuntime.reason(mode);
+}
+var __afGenHealthTimer=null,__afGenHealthRetryTimer=null,__afGenHealthRetryAttempt=0,__afGenHealthRetryEpoch=-1;
+var __afCreditMutationBarrier=(typeof FrameFlowGenRuntime!=='undefined'&&FrameFlowGenRuntime.createMutationBarrier)?FrameFlowGenRuntime.createMutationBarrier():null;
+function afQueueGenerationHealthRetry(sessionEpoch){
+  if(sessionEpoch!==afAuthSessionEpoch()||__afGenHealthRetryTimer||__afGenHealthRetryAttempt>=2)return;
+  var delay=[3000,8000][__afGenHealthRetryAttempt++]||8000;
+  __afGenHealthRetryTimer=setTimeout(function(){
+    __afGenHealthRetryTimer=null;
+    if(sessionEpoch===afAuthSessionEpoch()&&afGenLoggedIn())afRefreshGenerationHealth(true);
+  },delay);
+}
+function afRefreshGenerationHealth(force){
+  if(typeof FrameFlowGenRuntime==='undefined'||!afSyncGenAuth())return Promise.resolve(null);
+  var sessionEpoch=afAuthSessionEpoch();
+  if(__afGenHealthRetryEpoch!==sessionEpoch){
+    __afGenHealthRetryEpoch=sessionEpoch;__afGenHealthRetryAttempt=0;
+    if(__afGenHealthRetryTimer){clearTimeout(__afGenHealthRetryTimer);__afGenHealthRetryTimer=null;}
+  }
+  return FrameFlowGenRuntime.refreshHealth(function(){return studioGet('/api/studio/gen/health');},{force:!!force,maxAgeMs:30000}).then(function(snapshot){
+    if(sessionEpoch!==afAuthSessionEpoch())return snapshot;
+    var health=snapshot&&snapshot.health||{};
+    if(health.ready){__afGenHealthRetryAttempt=0;if(__afGenHealthRetryTimer){clearTimeout(__afGenHealthRetryTimer);__afGenHealthRetryTimer=null;}}
+    else if(health.code==='MODERATION_UNAVAILABLE')afQueueGenerationHealthRetry(sessionEpoch);
+    return snapshot;
+  }).catch(function(e){
+    if(sessionEpoch===afAuthSessionEpoch()&&!(FrameFlowGenRuntime.isPermanentError&&FrameFlowGenRuntime.isPermanentError(e&&e.status,e&&e.code)))afQueueGenerationHealthRetry(sessionEpoch);
+    return null;
+  });
+}
+function afSettleCredits(payload){
+  var wait=(__afCreditMutationBarrier&&__afCreditMutationBarrier.wait)?__afCreditMutationBarrier.wait():Promise.resolve();
+  return wait.then(function(){
+    if(typeof FrameFlowGenRuntime==='undefined'){
+      // A settlement/refund payload can be stale relative to a parallel
+      // charge. Only a ledger read is authoritative here.
+      if(typeof window.afRefreshCredits==='function')return window.afRefreshCredits({force:true});
+      return null;
+    }
+    return FrameFlowGenRuntime.syncSettledCredits(payload,
+      typeof window.afSyncCredits==='function'?window.afSyncCredits:null,
+      typeof window.afRefreshCredits==='function'?window.afRefreshCredits:null);
+  }).catch(function(){return null;});
+}
+function afApplyChargeCredits(payload){
+  if(!payload||typeof payload.creditsLeft!=='number'||typeof window.afSyncCredits!=='function')return null;
+  var current=null;
+  try{var u=AssetFlowAccount&&AssetFlowAccount.getCachedUser&&AssetFlowAccount.getCachedUser();current=u&&typeof u.aiCredits==='number'?u.aiCredits:null;}catch(e){}
+  var next=(typeof FrameFlowGenRuntime!=='undefined')?FrameFlowGenRuntime.mergeChargedCredits(current,payload):((current==null)?payload.creditsLeft:Math.min(current,payload.creditsLeft));
+  if(typeof next==='number'&&isFinite(next))window.afSyncCredits(next);
+  return next;
+}
+afSyncGenAuth();
+afRefreshGenerationHealth(false);
+__afGenHealthTimer=setInterval(function(){if(afGenLoggedIn())afRefreshGenerationHealth(true);},60000);
 /** UUID (idempotency kaliti) — crypto.randomUUID bo'lsa o'sha, aks holda zaxira. */
 function afUuid(){
   try{ if(window.crypto&&window.crypto.randomUUID) return window.crypto.randomUUID(); }catch(e){}
@@ -4548,30 +4650,42 @@ function afSleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
  *  — himoyasiz POST'ni ko'r-ko'rona qayta yuborish DOUBLE-CHARGE'ga olib keladi. */
 async function studioPost(path,body,ms){
   body=body||{};
+  var authEpoch=afAuthSessionEpoch();
+  var mutatesCredits=path==='/api/studio/gen'||path==='/api/studio/gen/prompt/enhance';
+  var endCreditMutation=mutatesCredits&&__afCreditMutationBarrier?__afCreditMutationBarrier.begin():null;
   var idem=body.idempotencyKey||null;
   var headers=Object.assign({'Content-Type':'application/json'},pubAuthHeaders());
   if(idem)headers['Idempotency-Key']=idem;
   var maxAttempts=idem?4:1;
   var lastErr=null;
-  for(var a=0;a<maxAttempts;a++){
-    try{
-      var res=await pubFetch(path,{method:'POST',headers:headers,body:JSON.stringify(body)},ms||60000);
-      var t=await res.text();var d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
-      if(!res.ok){
-        if(idem&&(res.status===502||res.status===503||res.status===504||res.status===429)&&d.code!=='MODERATION_NOT_CONFIGURED'&&d.code!=='AI_NOT_CONFIGURED'&&a<maxAttempts-1){ await afSleep(afBackoff(a)); continue; }
-        var e2=new Error((d&&d.error)||('HTTP '+res.status));e2.status=res.status;e2.code=d&&d.code;throw e2;
+  try{
+    for(var a=0;a<maxAttempts;a++){
+      try{
+        if(authEpoch!==afAuthSessionEpoch())throw afSessionChangedError();
+        var res=await pubFetch(path,{method:'POST',headers:headers,body:JSON.stringify(body)},ms||60000);
+        var t=await res.text();var d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+        if(authEpoch!==afAuthSessionEpoch())throw afSessionChangedError();
+        if(!res.ok){
+          var permanent=typeof FrameFlowGenRuntime!=='undefined'&&FrameFlowGenRuntime.isPermanentError(res.status,d&&d.code);
+          if(idem&&(res.status===502||res.status===503||res.status===504||res.status===429)&&!permanent&&a<maxAttempts-1){ await afSleep(afBackoff(a)); continue; }
+          var e2=new Error((d&&d.error)||('HTTP '+res.status));e2.status=res.status;e2.code=d&&d.code;e2.data=d;throw e2;
+        }
+        return d;
+      }catch(err){
+        if(err&&err.code==='SESSION_CHANGED')throw err;
+        // status yo'q = tarmoq/timeout throw → idempotent bo'lsa qayta uramiz; HTTP xato (status bor) re-throw.
+        if(idem&&(typeof err.status==='undefined')&&a<maxAttempts-1){ lastErr=err; await afSleep(afBackoff(a)); continue; }
+        throw err;
       }
-      return d;
-    }catch(err){
-      // status yo'q = tarmoq/timeout throw → idempotent bo'lsa qayta uramiz; HTTP xato (status bor) re-throw.
-      if(idem&&(typeof err.status==='undefined')&&a<maxAttempts-1){ lastErr=err; await afSleep(afBackoff(a)); continue; }
-      throw err;
     }
+    throw lastErr||new Error('Request failed');
+  }finally{
+    if(endCreditMutation)endCreditMutation();
   }
-  throw lastErr||new Error('Request failed');
 }
 /** /api/studio POST multipart/file — auth bilan. */
 async function studioPostForm(path,form,ms){
+  var authEpoch=afAuthSessionEpoch();
   return new Promise(function(resolve,reject){
     try{
       var xhr=new XMLHttpRequest();
@@ -4581,6 +4695,7 @@ async function studioPostForm(path,form,ms){
       xhr.timeout=ms||120000;
       xhr.onreadystatechange=function(){
         if(xhr.readyState!==4)return;
+        if(authEpoch!==afAuthSessionEpoch()){reject(afSessionChangedError());return;}
         var txt=xhr.responseText||''; var d={}; try{ d=txt?JSON.parse(txt):{}; }catch(e){ d={}; }
         if(xhr.status>=200&&xhr.status<300){ resolve(d); return; }
         var err=new Error((d&&d.error)||('HTTP '+xhr.status));
@@ -4588,11 +4703,13 @@ async function studioPostForm(path,form,ms){
         reject(err);
       };
       xhr.ontimeout=function(){
+        if(authEpoch!==afAuthSessionEpoch()){reject(afSessionChangedError());return;}
         var err=new Error('Server did not respond (upload timeout)');
         err.status=408;
         reject(err);
       };
       xhr.onerror=function(){
+        if(authEpoch!==afAuthSessionEpoch()){reject(afSessionChangedError());return;}
         var err=new Error('Upload error');
         err.status=xhr.status||0;
         reject(err);
@@ -4636,7 +4753,7 @@ window.afRunTopazOp = function(op, it, factor){
     });
   }).then(function(res){
     if(!res||!res.jobId) throw new Error('Job was not created');
-    if(res&&typeof res.creditsLeft==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(res.creditsLeft);
+    afApplyChargeCredits(res);
     var jobId=res.jobId, tries=0;
     (function poll(){
       studioGet('/api/studio/gen/'+encodeURIComponent(jobId)).then(function(st){
@@ -4654,15 +4771,19 @@ window.afRunTopazOp = function(op, it, factor){
 };
 /** /api/studio DELETE — auth bilan (gen natijani o'chirish). */
 async function studioDelete(path){
+  const authEpoch=afAuthSessionEpoch();
   const res=await pubFetch(path,{method:'DELETE',headers:pubAuthHeaders()},20000);
   const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+  if(authEpoch!==afAuthSessionEpoch())throw afSessionChangedError();
   if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
   return d;
 }
 /* P1: PATCH helper (sessiya/loyiha rename) — studioPost naqshida. */
 async function studioPatch(path,body){
+  const authEpoch=afAuthSessionEpoch();
   const res=await pubFetch(path,{method:'PATCH',headers:Object.assign({'Content-Type':'application/json'},pubAuthHeaders()),body:JSON.stringify(body||{})},20000);
   const t=await res.text();let d={};try{d=t?JSON.parse(t):{};}catch(e){d={};}
+  if(authEpoch!==afAuthSessionEpoch())throw afSessionChangedError();
   if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;e.code=d&&d.code;throw e;}
   return d;
 }
@@ -5700,12 +5821,18 @@ function friendlyError(e){
   const raw=(e&&e.message)||String(e||'');
   const code=(e&&e.code)||'', status=(e&&e.status)||0;
   if(code==='MODERATION_NOT_CONFIGURED')return 'AI generation is temporarily unavailable — safety verification needs administrator attention';
-  if(code==='AI_NOT_CONFIGURED')return 'AI generation is temporarily unavailable — contact an administrator';
+  if(code==='MODERATION_UNAVAILABLE')return 'AI safety verification did not respond — no credits were charged; try again shortly';
+  if(code==='AI_NOT_CONFIGURED'||code==='PROVIDER_NOT_CONFIGURED'||code==='PROVIDER_UNDECLARED')return 'AI generation is temporarily unavailable — contact an administrator';
+  if(code==='S3_NOT_CONFIGURED')return 'AI storage is temporarily unavailable — contact an administrator';
+  if(code==='GEN_KILL_SWITCH')return 'AI generation is temporarily paused — no credits were charged; try again later';
+  if(code==='SPEND_CEILING_REACHED')return 'The service-wide generation limit has been reached — no credits were charged; try again later';
+  if(code==='MODEL_DISABLED'||code==='MODEL_UNAVAILABLE')return 'This model is no longer available — refresh and choose another model';
+  if(code==='PRICE_CHANGED'||code==='BAD_QUOTE')return 'The model price or settings changed — refresh the quote and try again';
+  if(code==='TOO_MANY_ACTIVE_GENERATIONS')return 'Too many generations are already running — wait for one to finish';
   if(code==='INSUFFICIENT_CREDITS'||code==='AI_CREDITS_EXHAUSTED'||status===402||/kredit yetarli emas|insufficient credit/i.test(raw))
     return 'Not enough credits — ⚙ Settings › "Top up credits"';
   if(code==='AI_DAILY_CAP'||/kunlik.*(cap|chek|limit)|daily.*cap|cap.*(reached|tugadi)/i.test(raw))
     return 'Today’s limit reached — try again tomorrow';
-  if(code==='AI_NOT_CONFIGURED')return 'AI isn’t configured yet — contact an administrator';
   if(status===429||code==='RATE_LIMITED'||/too many requests|rate.?limit/i.test(raw))
     return 'Too many requests — wait a moment and try again';
   if(/\b429\b|RESOURCE_EXHAUSTED|quota (?:exceeded|exhausted)|DEADLINE_EXCEEDED|\bUNAVAILABLE\b/i.test(raw))
@@ -5842,6 +5969,10 @@ function closeAccountSheet(){
 
 function refreshAccountUi(){
   const logged=typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.isLoggedIn();
+  try{
+    if(typeof FrameFlowGenRuntime!=='undefined')FrameFlowGenRuntime.setAuthenticated(logged);
+    if(logged&&typeof afRefreshGenerationHealth==='function')afRefreshGenerationHealth(false);
+  }catch(e){}
   const u=typeof AssetFlowAccount!=='undefined'?AssetFlowAccount.getCachedUser():null;
   document.getElementById('accountLoginBlock').style.display=logged?'none':'block';
   document.getElementById('accountProfileBlock').style.display=logged?'block':'none';
@@ -6157,6 +6288,15 @@ async function accountLogin(){
   }
 }
 
+function accountForgotPassword(){
+  const url='https://getframeflow.app/reset-password.html';
+  let opened=false;
+  try{opened=!!(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.openExternal(url));}catch(e){opened=false;}
+  showToast(opened?'Password reset opened in your browser':'Couldn’t open password reset — visit getframeflow.app/reset-password',opened?'info':'error');
+  return opened;
+}
+window.accountForgotPassword=accountForgotPassword;
+
 /* Nusxa olish — CEP webview'da navigator.clipboard ba'zan yo'q, execCommand zaxira */
 // P7: CEP webview file://'dan yuklanadi — XAVFSIZ kontekst EMAS, shu sabab navigator.clipboard
 // ko'pincha yo'q/bloklangan. AVVAL sinxron execCommand('copy') (haqiqiy true/false qaytaradi va
@@ -6410,7 +6550,7 @@ async function startProCheckout(plan){
     showToast('Opening payment page…');
     const d=await studioPost('/api/billing/checkout',{plan});
     if(!d||!d.url) throw new Error('No checkout URL returned');
-    AssetFlowAccount.openExternal(d.url);
+    if(!AssetFlowAccount.openExternal(d.url))throw new Error('Could not open checkout in the browser');
     showToast('Complete payment in your browser, then click "Refresh"');
   }catch(e){
     console.error('startProCheckout',e);
@@ -6444,7 +6584,7 @@ async function startCreditTopup(credits){
     showToast('Opening payment page…');
     const d=await studioPost('/api/billing/checkout',{credits:Number(credits)||500});
     if(!d||!d.url) throw new Error('No checkout URL returned');
-    AssetFlowAccount.openExternal(d.url);
+    if(!AssetFlowAccount.openExternal(d.url))throw new Error('Could not open checkout in the browser');
     showToast('Complete payment in your browser, then click "Refresh"');
   }catch(e){
     console.error('startCreditTopup',e);

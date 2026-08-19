@@ -85,12 +85,30 @@ Studio manbasi faqat `packages/assetflow-studio/js/` va `styles/`da tahrirlanadi
 - Enhance referens butunligi buzilgan rewrite bekor qilinsa kredit qaytariladi; javob missing/
   extraneous/changed sababini va authoritative balansni qaytaradi.
 
+## 2026-08-20 cross-stack reliability hardening
+
+- Kredit/refund: pre-charge failure refund yaratmaydi; muvaffaqiyatsiz job faqat haqiqiy consume ledger
+  bo‘lsa refund qilinadi; top-updan sarflangan pullik kredit ham aynan o‘z bucketiga qaytadi.
+- Assist/generation: enhance va describe cross-instance idempotent; stale refund/late success poygasi,
+  zero-output success, kech kelgan asset va active session delete credit yo‘qotish holatlari yopildi.
+- Download/import: retry bir xil operation ID ishlatadi; quota, earning va analytics exactly-once;
+  storage/accounting tayyor bo‘lmasa bayt berilmaydi; tugagan import reservation qayta ishlatilmaydi.
+- Web/CEP/UXP: login almashganda eski account javobi, 401, kredit, tarix, katalog yoki job yangi
+  account holatini bosa olmaydi; model keshi tozalanib qayta yuklanadi.
+- Readiness/retry: barcha klientlar moderation va har bir image/video/voice/SFX rejimini rost ko‘rsatadi;
+  doimiy 503 qayta yuborilmaydi, vaqtinchalik outage esa chegaralangan qayta tekshiriladi.
+- Release UX: Premiere `.ccx` matni runtime release bilan moslandi; signed URL har download bosilganda
+  yangilanadi; `/plugin/version` cache qilinmaydi; Forgot password haqiqiy brauzer recoveryni ochadi.
+- Deploy gate: candidate trafik olishidan oldin auth, DB/storage, to‘rt rejim katalogi, signed quote,
+  real moderation va kredit o‘zgarmagan zero-spend canarydan o‘tishi shart; smoke token/sessionni tozalaydi.
+
 Migratsiyalar:
 
 - `20260817120000_audit_money_invariants`
 - `20260817123000_ingest_active_dedupe`
 - `20260817124000_generation_reservation`
 - `20260817125000_import_reservations`
+- `20260820120000_generation_refund_not_required`
 
 ## Xavfsizlik invariantlari
 
@@ -131,8 +149,8 @@ Audit regressiya skriptlari `apps/api/scripts/test-*.mjs`,
 
 Quyidagilar lokal kod bilan tasdiqlanmaydi va bajarilmaguncha **production/Marketplace ready emas**:
 
-1. Production secret/env: haqiqiy Turnstile site+secret, TOTP key, Vertex/dedicated moderation
-   readiness, Sentry, billing, provider va storage qiymatlarini boot validation’dan o‘tkazish.
+1. Production secret/env: haqiqiy Turnstile site+secret (joriy live runtime config’da o‘chiq), TOTP key,
+   Vertex/dedicated moderation, Sentry, billing, provider va storage qiymatlarini boot validation’dan o‘tkazish.
 2. Signed ZXP + notarized PKG + signed MSI; haqiqiy ZXPSignCmd/signtool/notary tekshiruvi.
 3. Clean macOS/Windows profilida install/update/uninstall va AE/Premiere restart/import smoke.
 4. Premiere CEP UI + hidden UXP companion uchun Adobe tasdiqlagan bitta orchestrated release kanali;
@@ -143,6 +161,8 @@ Quyidagilar lokal kod bilan tasdiqlanmaydi va bajarilmaguncha **production/Marke
 8. GitHub `main` branch protection/ruleset: required CI, review, direct-push/force-push taqiqi.
 9. Terms/privacy/refund/DMCA uchun yurist sign-off.
 10. Production katalog content ishi: PRO assortiment, preview completeness, taxonomy/format normalization.
+11. Customer pluginning joriy source versiyasini imzolangan `.ccx`/AE artefakt sifatida upload qilib
+    `PluginRelease`da publish qilish; oddiy web/API deploy o‘rnatilgan eski binarni yangilamaydi.
 
 ## Ataylab current scope’dan tashqarida
 

@@ -588,7 +588,7 @@ window.afStartTwofaSetup = async function(){
             <b style="color:var(--text)">2.</b> Save these <b>backup codes</b> — shown only ONCE. Each works one time if you lose the device:
           </div>
           <div class="adx-mono" id="twofaBackupList" style="font-size:12px;background:var(--f1);border:1px solid var(--hair2);border-radius:10px;padding:10px 12px;line-height:1.7;columns:2;margin-bottom:8px">${s.backupCodes.map(esc).join('<br>')}</div>
-          <button class="adx-btn2 sm" onclick="navigator.clipboard&&navigator.clipboard.writeText((window._AF_2FA_CODES||[]).join('\\n')).then(()=>toast('Copied','Backup codes copied to clipboard','success'))"><i class="ph ph-copy"></i>Copy codes</button>
+          <button class="adx-btn2 sm" onclick="afCopyTwofaCodes()"><i class="ph ph-copy"></i>Copy codes</button>
           <div style="font-size:12px;color:var(--muted);margin:12px 0 6px"><b style="color:var(--text)">3.</b> Enter the current 6-digit code to activate:</div>
           <div style="display:flex;gap:8px;align-items:center">
             <input class="adx-input mono" id="twofaEnableCode" placeholder="123456" maxlength="6" style="width:120px">
@@ -600,6 +600,29 @@ window.afStartTwofaSetup = async function(){
   }catch(e){
     toast('Error', e.message||'Setup failed', 'error');
     renderTwofaCard();
+  }
+};
+
+window.afCopyTwofaCodes = async function(){
+  const value = (window._AF_2FA_CODES||[]).join('\n');
+  if(!value){ toast('Copy failed','Backup codes are no longer available on this screen','warn'); return; }
+  try{
+    if(!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('Clipboard API unavailable');
+    await navigator.clipboard.writeText(value);
+    toast('Copied','Backup codes copied to clipboard','success');
+    return;
+  }catch(e){}
+  let ta = null;
+  try{
+    ta = document.createElement('textarea');
+    ta.value = value; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    if(!(document.execCommand && document.execCommand('copy')===true)) throw new Error('Copy rejected');
+    toast('Copied','Backup codes copied to clipboard','success');
+  }catch(e){
+    toast('Copy failed','Select the backup codes and copy them manually','danger');
+  }finally{
+    if(ta && ta.parentNode) ta.parentNode.removeChild(ta);
   }
 };
 
@@ -651,7 +674,7 @@ VIEWS.settings = function(){
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="adx-card" style="padding:18px 20px">
-          <div style="display:flex;align-items:center;margin-bottom:12px"><span class="adx-h16" style="font-size:14px">Categories</span><span style="flex:1"></span><button class="adx-btn2 sm" onclick="toast('Category','Adding categories coming in a future version','info')"><i class="ph ph-check"></i>Add</button></div>
+          <div style="display:flex;align-items:center;margin-bottom:12px"><span class="adx-h16" style="font-size:14px">Categories</span><span style="flex:1"></span><span style="font-size:10.5px;color:var(--muted2)" title="Categories are defined in the application source and cannot be edited here">Read-only</span></div>
           <!-- #91 — "x" ikonkasi hech narsa qilmasdi (soxta boshqaruv) → olib tashlandi. -->
           <div style="display:flex;flex-wrap:wrap;gap:7px">${cats.length?cats.map(c=>`<span class="adx-tag">${esc(c)}</span>`).join(''):'<span style="font-size:11px;color:var(--muted2)">No categories</span>'}</div>
         </div>

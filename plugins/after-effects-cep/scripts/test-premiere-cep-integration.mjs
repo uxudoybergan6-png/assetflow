@@ -232,7 +232,7 @@ try {
       },
       fetch: async (url, options) => {
         calls.push({ url, options });
-        return { ok: true, status: 200, text: async () => JSON.stringify({ user: { id: "u1" } }) };
+        return { ok: true, status: 200, text: async () => JSON.stringify({ user: { id: "u1" }, reservationId: "reservation-1" }) };
       },
       AbortController,
       FormData,
@@ -251,14 +251,28 @@ try {
     await account.recordDownload("tpl-download");
     await account.recordImport("tpl-import");
     await account.heartbeat({ deviceLabel: "QA" });
+    assert.equal(await account.reserveImport("tpl-reserve", "reserve-request-1"), "reservation-1");
     for (const call of calls) assert.equal(call.options.headers["X-FF-App"], "pr");
     const downloadCall = calls.find((call) => call.url.endsWith("/api/plugin/usage/download"));
     const importCall = calls.find((call) => call.url.endsWith("/api/plugin/usage/import"));
     const heartbeatCall = calls.find((call) => call.url.endsWith("/api/plugin/heartbeat"));
-    assert.ok(downloadCall && importCall && heartbeatCall, "usage and heartbeat calls must all be present");
+    const reserveCall = calls.find((call) => call.url.endsWith("/api/plugin/usage/import/reserve"));
+    assert.ok(downloadCall && importCall && heartbeatCall && reserveCall, "usage, reserve and heartbeat calls must all be present");
     assert.deepEqual(JSON.parse(downloadCall.options.body), { templateId: "tpl-download", app: "pr" });
     assert.deepEqual(JSON.parse(importCall.options.body), { templateId: "tpl-import", app: "pr" });
     assert.equal(JSON.parse(heartbeatCall.options.body).app, "pr");
+    assert.equal(reserveCall.options.headers["Idempotency-Key"], "reserve-request-1");
+    assert.deepEqual(JSON.parse(reserveCall.options.body), { templateId: "tpl-reserve", app: "pr", idempotencyKey: "reserve-request-1" });
+  });
+
+  await check("pack, MOGRT and import reservation retries preserve one logical request key", () => {
+    assert.match(catalogSrc, /downloadHeaders\(requestId\)/);
+    assert.match(catalogSrc, /downloadUrlToFileWithRetry[\s\S]{0,800}including Idempotency-Key/);
+    assert.match(catalogSrc, /downloadRequestId=\$\{encodeURIComponent\(requestId\)\}/);
+    assert.match(panelSrc, /packDownloadOpts\(pack,operationId\)/);
+    assert.match(panelSrc, /sceneDownloadOpts\(operationId\)/);
+    assert.match(panelSrc, /reserveImportForHost\(pack,operationId\)/);
+    assert.match(panelSrc, /AssetFlowAccount\.reserveImport\(pack\.serverTemplateId,requestKey\)/);
   });
 
   await check("updater, logs and local-store events are host-aware", () => {

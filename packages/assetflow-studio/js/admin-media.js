@@ -108,15 +108,17 @@ function smCopyUrl(url) {
   smCopyFallback(url, done);
 }
 function smCopyFallback(url, done) {
+  let ta = null;
   try {
-    const ta = document.createElement("textarea");
+    ta = document.createElement("textarea");
     ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
     document.body.appendChild(ta); ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
+    if (!(document.execCommand && document.execCommand("copy") === true)) throw new Error("Copy rejected");
     done();
   } catch (e) {
     toast("Copy failed", url, "warn");
+  } finally {
+    if (ta && ta.parentNode) ta.parentNode.removeChild(ta);
   }
 }
 

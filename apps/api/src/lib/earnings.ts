@@ -65,14 +65,14 @@ export async function grantContributorEarning(input: {
   templateId: string;
   contributorId: string;
   kind: "download" | "import";
-}): Promise<void> {
+}): Promise<boolean> {
   // Import earning bermaydi — faqat download.
-  if (input.kind !== "download") return;
+  if (input.kind !== "download") return true;
   // FAZA 4 (C): pool rejimida amount=0 MARKER qatori yoziladi — legitimlik
   // attributioni (Faza 2 gate'lari) BIR kod yo'lida qoladi; pool taqsimoti shu
   // markerlarni sanaydi. per_download rejimida — eski flat stavka (o'zgarmagan).
   const amountCents = payoutMode() === "pool" ? 0 : payoutPerDownloadCents();
-  if (!Number.isFinite(amountCents) || amountCents < 0) return; // hech qachon manfiy
+  if (!Number.isFinite(amountCents) || amountCents < 0) return true; // hech qachon manfiy
   try {
     // createMany + skipDuplicates → downloadEventId UNIQUE bo'yicha idempotent
     // (P2002 throw qilmaydi; bir hodisa = bir earning kafolati).
@@ -89,8 +89,10 @@ export async function grantContributorEarning(input: {
       ],
       skipDuplicates: true,
     });
+    return true;
   } catch (e) {
     console.error("grantContributorEarning", e);
+    return false;
   }
 }
 

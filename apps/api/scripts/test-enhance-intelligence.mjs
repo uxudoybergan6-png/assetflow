@@ -7,6 +7,7 @@ const vertex = fs.readFileSync("apps/api/src/lib/ai/vertex-enhance.ts", "utf8");
 const apiClient = fs.readFileSync("packages/assetflow-studio/platform/ff-api.js", "utf8");
 const web = fs.readFileSync("packages/assetflow-studio/platform/index.html", "utf8");
 const plugin = fs.readFileSync("plugins/after-effects-cep/AssetFlow_Plugin.html", "utf8");
+const pluginRuntime = fs.readFileSync("plugins/after-effects-cep/assetflow-gen-runtime.js", "utf8");
 const credits = fs.readFileSync("apps/api/src/lib/plugin-profile.ts", "utf8");
 
 assert.deepEqual(validateMentionIntegrity("Use @img1 and @video2", "Use @img1 and @video2 carefully"), { ok: true });
@@ -41,8 +42,8 @@ assert.ok(route.includes("imageRoles: p.data.image_roles"), "reference roles rea
 assert.ok(route.includes("attachedEnhanceMentionKeys"), "attached reference slots inform mention integrity");
 assert.ok(route.includes("validateMentionIntegrity(originalPrompt, trimmed, allowedMentionAdditions)"), "mention validation accepts only attached additions");
 assert.ok(route.includes("mentionMismatchKind"), "API explains why an Enhance rewrite was discarded");
-assert.ok(route.includes("creditsCharged: settled.mentionMismatch ? 0"), "discarded Enhance rewrites are not charged");
-assert.ok(route.includes("creditsRefunded: settled.mentionMismatch ? enhanceCost.cost : 0"), "discarded Enhance rewrites report the refund");
+assert.ok(route.includes("creditsCharged: Math.max(0, enhanceCost.cost - refundResult.applied)"), "discarded Enhance rewrites report only the actual net charge");
+assert.ok(route.includes("creditsRefunded: refundResult.applied"), "discarded Enhance rewrites report the ledger-confirmed refund");
 assert.ok(credits.includes("return after.aiCredits"), "refund returns the authoritative post-transaction balance");
 assert.ok(apiClient.includes("body.enhance_style = opts.style"), "web API client sends Enhance style");
 assert.ok(apiClient.includes("body.image_roles = opts.imageRoles"), "web API client sends image roles");
@@ -55,6 +56,6 @@ assert.ok(web.includes("enhanceNotEnough"), "web gates Enhance against its real 
 assert.ok(web.includes("the rewrite dropped an attached reference"), "web shows the exact missing-reference fallback");
 assert.ok(plugin.includes("enhanceMismatchMessage"), "plugin shares accurate Enhance fallback copy");
 assert.ok(apiClient.includes("isPermanentResponseCode"), "web does not retry permanent configuration failures");
-assert.ok(plugin.includes("d.code!=='MODERATION_NOT_CONFIGURED'"), "plugin does not retry a permanent moderation configuration failure");
+assert.ok(pluginRuntime.includes("MODERATION_NOT_CONFIGURED"), "plugin does not retry a permanent moderation configuration failure");
 
 console.log("Enhance intelligence checks passed.");

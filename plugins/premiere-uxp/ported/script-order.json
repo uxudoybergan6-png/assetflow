@@ -39,6 +39,7 @@
     "ported/ae-inline-02.js",
     "js/ae-shim/csinterface-shim.js",
     "ae-src/frameflow-create-workspace.js",
+    "ae-src/assetflow-gen-runtime.js",
     "ae-src/assetflow-env.js",
     "ae-src/assetflow-secret-store.js",
     "ae-src/assetflow-log.js",

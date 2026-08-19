@@ -1,13 +1,13 @@
-Session Report: 2026-08-20 — Studio Gen production outage
-- Root cause: production’da `MODERATION_API_KEY` yo‘q, blanket gate barcha AI rejimlarini 503 bilan bloklagan.
-- Mavjud Cloud Run Vertex ADC/Gemini text+image+video+audio safety fallbackiga ulandi.
-- Input kreditdan oldin, image/video/audio output foydalanuvchiga berilishidan oldin fail-closed tekshiriladi.
-- Health/model katalogi moderation va generation readinessni rost qaytaradi; nosoz holatda “Ready” yo‘q.
-- Web va AE/Premiere doimiy config 503’ini qayta-qayta yubormaydi, tushunarli xabar ko‘rsatadi.
-- Enhance rewrite referensni tushirsa/ixtiro qilsa/almashtirsa asl prompt qoladi va kredit qaytariladi.
-- AE manbasidan Premiere UXP porti qayta generatsiya qilindi; generator trailing-whitespace deterministik.
-- API build, moderation/reference/preflight/enhance testlari PASS.
-- CEP package/responsive/session va Premiere host/bridge/integration testlari PASS.
-- Commit `1298e1a` CI’dan o‘tdi; Cloud Run `assetflow-api-00178-xax` 100% trafikda, web build jonli.
-- Production canary PASS: moderation/generation ready, Vertex tekshiruvi ishladi, kredit/provider job sarflanmadi.
-- Lokal AE customer paneli `1298e1a` build bilan qayta o‘rnatildi; AE’ni to‘liq qayta ochish kutilmoqda.
+Session Report: 2026-08-20 — cross-stack reliability audit
+- API credit/refund/top-up, assist idempotency, late-result va active-session delete poygalari yopildi.
+- Download/import retry quota, earning, analytics va reservationni exactly-once saqlaydi.
+- Moderation/provider readiness barcha image/video/voice/SFX rejimlari uchun rost qaytariladi.
+- Web, AE va Premiere account-switch epoch eski token/401/kredit/history/job javoblarini rad etadi.
+- Doimiy config xatolari qayta yuborilmaydi; transient outage 3s/8s bounded retry oladi.
+- Signed plugin URL clickda yangilanadi; release copy `.ccx` kanaliga mos; forgot-password ishlaydi.
+- Cloud Run candidate gate auth, DB/storage, katalog, quote, real moderation va zero-credit canaryni tekshiradi.
+- Smoke yaratgan token/session har doim tozalanadi; kredit oldin/keyin tengligi assert qilinadi.
+- API build va 16 ta API target testi PASS; web/CEP/UXP parity va auth regressiyalari PASS.
+- Package, updater, installer, responsive, release-contract, public-copy va dependency testlari PASS.
+- `npm audit --omit=dev --omit=optional`: 0 vulnerability; `git diff --check`: clean.
+- Push/deploy kutilmoqda; live Turnstile site key va signed public plugin release tashqi gate’da.

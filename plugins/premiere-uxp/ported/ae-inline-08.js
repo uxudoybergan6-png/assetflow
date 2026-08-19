@@ -7,7 +7,7 @@
 
   // model + sozlama holati (videoSettings deskriptoridan yuklangach to'ldiriladi)
   // P8: pre-load defaultlar joriy default video modelga (Veo 3.1 Lite, id 3001) mos.
-  var vm={loaded:false,model:null,res:'720p',dur:'8',ar:'16:9',audio:false,bitrate:'standard',refKind:'frames',
+  var vm={loaded:false,catalogVersion:'',model:null,res:'720p',dur:'8',ar:'16:9',audio:false,bitrate:'standard',refKind:'frames',
     mediaRefs:{image:9,video:3,audio:3,total:12},
     mediaRefFormats:null,mediaRefMaxTotalBytes:null,videoInputCostMult:0,pricing:'per-second',flatCost:0,
     resOpts:['720p'],durOpts:['4','6','8'],bitOpts:['standard','high'],
@@ -87,7 +87,7 @@
     restoreRefs:function(rs){ mref=(rs&&rs.raw)?rs.raw.slice():[]; st.start=(rs&&rs.start)||null; st.end=(rs&&rs.end)||null; try{ renderMediaRefs(); renderFrameBoxes(); updRefMeta(); refreshVgBtn(); }catch(e){} }
   });
   function credits(){ try{ var u=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?AssetFlowAccount.getCachedUser():null; return (u&&typeof u.aiCredits==='number'&&isFinite(u.aiCredits))?u.aiCredits:null; }catch(e){ return null; } }
-  function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); if(typeof window.afSyncCredits==='function')window.afSyncCredits(v); }
+  function setCreditChip(v){ var cr=$('vgCredit'); if(cr)cr.innerHTML='<span class="cs">✦</span> '+((v!=null)?Number(v).toLocaleString('en-US'):'—'); }
   function durSec(){ var d=vm.dur; return (!d||d==='Auto'||d==='auto')?vm.autoSec:(parseInt(d)||vm.autoSec); }
   // SC_27: nisbat param aniqligi — UI chip 'Auto' (katta harf), backend enum esa 'auto' (gen-models aspects).
   function vgAspectParam(){ return /^auto$/i.test(String(vm.ar||''))?'auto':vm.ar; }
@@ -116,8 +116,7 @@
   //   kreditni hisobga oladi (P22.2). Money-zona: faqat ko'rsatish/darvoza — server atomik.
   function vgCreditGate(){
     var cr=credits(), need=cost();
-    var committed=(activeJobs||[]).reduce(function(a,j){ return a+(j.jcost||0); },0);
-    var avail=(cr!=null)?(cr-committed):null;
+    var avail=(typeof FrameFlowGenRuntime!=='undefined')?FrameFlowGenRuntime.availableCredits(cr,activeJobs):((cr!=null)?(cr-(activeJobs||[]).reduce(function(a,j){return a+(!j.submitted&&(j.jcost||0));},0)):null);
     var low=(avail!=null)&&(need>avail);
     window.afLowCred('vg',low,window.afLowCredNeed(need,avail)); // D7: umumiy banner helper
     var chip=$('vgCredit'); if(chip)chip.classList.toggle('low',low);
@@ -493,19 +492,19 @@
     if(vm.refKind==='media-refs'){
       // R2V: referens IXTIYORIY → prompt majburiy (≥2 belgi); referens yuklanayotgan bo'lsa bloklanadi
       var refLoading=mref.some(function(r){return r.loading;});
-      ok=vm.loaded&&pr.length>=2&&!refLoading&&activeJobs.length<MAX_VG_JOBS&&!low;
+      ok=afCanGenerate('video')&&vm.loaded&&pr.length>=2&&!refLoading&&activeJobs.length<MAX_VG_JOBS&&!low;
       if(!pr.length)setVgWarn('Prompt is required — describe what the video should do.');
       else if(refLoading)setVgWarn('Reference is uploading — please wait.');
       else setVgWarn('');
     } else if(vm.refKind==='none'){
-      ok=vm.loaded&&pr.length>=2&&activeJobs.length<MAX_VG_JOBS&&!low;
+      ok=afCanGenerate('video')&&vm.loaded&&pr.length>=2&&activeJobs.length<MAX_VG_JOBS&&!low;
       if(!pr.length)setVgWarn('Prompt is required — describe what the video should do.');
       else setVgWarn('');
     } else {
       // frames: image-to-video (Seedance) → boshlang'ich kadr MAJBURIY; matndan-video (Veo/Omni) → IXTIYORIY.
       var hasStart=!!(st.start&&st.start.url&&!st.start.loading);
       var frameLoading=!!(st.start&&st.start.loading)||!!(st.end&&st.end.loading);
-      ok=vm.loaded&&pr.length>=2&&!frameLoading&&(!vm.startRequired||hasStart)&&activeJobs.length<MAX_VG_JOBS&&!low;
+      ok=afCanGenerate('video')&&vm.loaded&&pr.length>=2&&!frameLoading&&(!vm.startRequired||hasStart)&&activeJobs.length<MAX_VG_JOBS&&!low;
       if(vm.startRequired&&!hasStart)setVgWarn("Start frame is required — add it with +.");
       else if(!pr.length)setVgWarn('Prompt is required — describe what the video should do.');
       else if(frameLoading)setVgWarn('Frame is uploading — please wait.');
@@ -712,14 +711,16 @@
   function ensureVgMeta(){
     if(vm.loaded)return Promise.resolve(vm);
     if(vm._pending)return vm._pending;
-    vm._pending=studioGet('/api/studio/gen/models?mode=video').then(function(r){
+    vm._pending=Promise.all([studioGet('/api/studio/gen/models?mode=video'),afRefreshGenerationHealth(false)]).then(function(rs){
+      var r=rs[0];
       // SC_19 (TASK 3): eski "PROBLEM 3" client-side whitelist OLIB TASHLANDI — plagin
       // endi web bilan AYNAN bir xil yoqilgan to'plamni ko'rsatadi (media-refs/R2V ham;
       // pane model-aware: vgCapsFor/mref mashinasi ularni qo'llaydi). Yagona chetlash —
       // video-upscale (SC_17'da funksiya o'chirilgan; server ham disabled qaytaradi).
-      var fal=((r&&r.models)||[]).filter(function(x){ return x&&x.mode==='video'&&x.feature!=='video-upscale'; });
-      if(!fal.length)throw new Error('No video model found');
-      vm.models=fal; vm.loaded=true;
+      vm.catalogVersion=String((r&&r.catalogVersion)||'');
+      var fal=afApplyGenCatalog('video',r).filter(function(x){ return x.feature!=='video-upscale'; });
+      if(!fal.length)throw new Error(afGenUnavailableReason('video')||'No video model found');
+      vm.models=fal; vm.loaded=true; vm._pending=null;
       try{ console.log('[vg] video modellar:', fal.map(function(x){return x.id+':'+x.label+'('+x.refKind+')';}).join(', ')); }catch(_){}
       // P8: katalog isDefault hurmat qilinadi (image tool bilan bir xil); bo'lmasa birinchi model.
       applyModelSettings(fal.filter(function(x){return x.isDefault;})[0]||fal[0]);
@@ -743,7 +744,8 @@
     return ensureVgMeta().then(function(){
       var selected=Promise.resolve(true);
       if(draft.modelId!=null)selected=window.axVGSelectModel(draft.modelId);
-      return selected.then(function(){
+      return selected.then(function(ok){
+        if(draft.modelId!=null&&!ok)throw new Error('The selected video model is no longer available');
         var p=draft.params||{};
         if(p.aspectRatio!=null&&vm.arOpts.indexOf(p.aspectRatio)>=0)vm.ar=p.aspectRatio;
         if(p.resolution!=null&&vm.resOpts.indexOf(p.resolution)>=0)vm.res=p.resolution;
@@ -1661,8 +1663,8 @@
       audio_urls:audRefs,
       idempotencyKey:afUuid() // P17 — cold-start qayta urinish bitta consume
     }).then(function(r){
-      if(r&&r.mentionMismatch){ if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast(enhanceMismatchMessage(r),'info'); }
-      else if(r&&r.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(r.prompt):r.prompt; if(r.creditsLeft!=null)setCreditChip(r.creditsLeft); toast('Prompt enhanced ✨'+(nref?(' · saw '+nref+' reference'+(nref>1?'s':'')):'')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
+      if(r&&r.mentionMismatch){ afSettleCredits(r); toast(enhanceMismatchMessage(r),'info'); }
+      else if(r&&r.prompt){ ta.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(r.prompt):r.prompt; afApplyChargeCredits(r); toast('Prompt enhanced ✨'+(nref?(' · saw '+nref+' reference'+(nref>1?'s':'')):'')+(r&&r.creditsCharged?(' · ✦'+r.creditsCharged):''),'success'); }
       else toast('Could not enhance','warning');
     }).catch(function(e){ toast((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance error','error');
     }).then(function(){ if(enh)enh.style.opacity=''; },function(){ if(enh)enh.style.opacity=''; });
@@ -1692,7 +1694,7 @@
     j.cancelled=true; removeVgJob(j);
     if(!j.submitted||!j.jobId){ toast('Canceled — no credits charged','info'); return; }
     studioPost('/api/studio/gen/'+j.jobId+'/cancel',{}).then(function(r){
-      if(r&&typeof r.creditsLeft==='number')setCreditChip(r.creditsLeft); else setCreditChip(credits());
+      afSettleCredits(r);
       toast('Cancelled'+(r&&r.refunded?(' — ✦'+r.refunded+' refunded'):' — no credits charged'),'success');
     }).catch(function(err){
       if(err&&err.code==='GENERATION_DISPATCHED')toast('Already started at the provider — stopped waiting; it will appear in History','warning');
@@ -1744,7 +1746,7 @@
           // P30 (29c) — status=done LEKIN natija yo'q = provayder kontent rad etdi (success-shaklda).
           // "Done! charged" ✓ EMAS: kredit qaytariladi; halol xato + boshqa-model taklifi.
           if(!a0.url){
-            removeVgJob(j,'failed','Failed · credits refunded'); setCreditChip(credits());
+            removeVgJob(j,'failed','Failed · credits refunded'); afSettleCredits(gn);
             if(!handleGenRejection(gn, function(id){ var m=(vm.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof switchVgModel==='function')switchVgModel(m); }))
               toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No video was returned — your credits were refunded','error');
             return;
@@ -1769,7 +1771,7 @@
           if(window.axSPInvalidate)window.axSPInvalidate(); // SC_29: picker sanoqlari yangilansin
         },200);
       } else if(s==='failed'){
-        removeVgJob(j,'failed','Failed · credits refunded'); setCreditChip(credits());
+        removeVgJob(j,'failed','Failed · credits refunded'); afSettleCredits(gn);
         // P30 §3+§4 — kontent rad etilishi: halol xato + ✦N qaytarildi + boshqa-model taklifi.
         if(!handleGenRejection(gn, function(id){ var m=(vm.models||[]).filter(function(x){return x.id===id;})[0]; if(m&&typeof switchVgModel==='function')switchVgModel(m); }))
           toast((gn&&gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):((gn&&gn.error)||'Video failed — credits refunded'),'error');
@@ -2071,6 +2073,7 @@
 
   // ── gen tugmasi ──
   function genVgClick(){
+    if(!afCanGenerate('video')){ toast(afGenUnavailableReason('video'),'error'); afRefreshGenerationHealth(true); refreshVgBtn(); return; }
     if(activeJobs.length>=MAX_VG_JOBS){ toast('Max '+MAX_VG_JOBS+' active video gens — wait for one to finish','info'); return; }
     var prompt=vgPromptValue();
     var params;
@@ -2116,7 +2119,7 @@
     // audio:false modellar (Veo Lite/Fast) va qulflangan modellar (Omni) uchun server default'i ustun.
     if(vm.audioSupported&&!vm.audioLocked)params.audio=!!vm.audio;
     if(vm.model&&vm.model.videoSettings&&vm.model.videoSettings.bitrate)params.bitrateMode=vm.bitrate;
-    var c=credits(); if(c!=null&&c<cost()){ toast('Not enough credits — ⚙ Settings › "Top up credits"','error'); return; }
+    if(vgCreditGate()){ toast('Not enough credits — ⚙ Settings › "Top up credits"','error'); return; }
     var j={seq:++jobSeq,jobId:null,prompt:prompt,jcost:cost(),cancelled:false,submitted:false,pollTimer:null,progTimer:null,t0:Date.now(),sourceDurationSec:durSec(),sourceResolution:vm.res,modelLabel:(vm.model&&vm.model.label)||'Video model',
            params:params,modelId:(vm.model&&vm.model.id)||null}; // Qayta gen: yangi kartada ham params/model bo'lsin
     activeJobs.push(j);
@@ -2150,10 +2153,10 @@
       return studioPost('/api/studio/gen',{sessionId:sid,mode:'video',modelId:vm.model.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},300000);
     }).then(function(res){
       if(j.cancelled)throw new Error('CANCELLED');
-      if(res&&typeof res.creditsLeft==='number')setCreditChip(res.creditsLeft);
       if(!res||!res.jobId)throw new Error('Job was not created');
       if(_vgb)_vgb.classList.remove('busy');
       j.jobId=res.jobId; j.submitted=true;
+      afApplyChargeCredits(res);
       syncVgSessionJob(j,'active');
       // #31 (PX1): panel yopilsa ham job diskda qoladi → keyingi ochilishда tiklanadi
       if(window.afJobStore)window.afJobStore.add('vidgen',{jobId:j.jobId,prompt:j.prompt,cat:'video',cost:j.jcost,sid:j.sid,modelId:j.modelId,params:j.params});
@@ -2219,6 +2222,15 @@
     return {vis:vis+pend,aud:vgRcState.audCount||0};
   };
   window.axVGRefresh=function(){ var saved=window.afActiveSessionStore&&window.afActiveSessionStore.get('vidgen');if(!vm.sessionId&&saved){vm.sessionId=saved.id;window.__axwsSess=window.__axwsSess||{};window.__axwsSess.vidgen=saved;} setCreditChip(credits()); if(!vm.loaded)ensureVgMeta().catch(function(){}); loadVgRecent(); restoreVgJobs(); }; // SC_29: view ochilganda sessiya feed'i ham yuklanadi (+#31 faol joblar tiklanadi)
+  if(typeof FrameFlowGenRuntime!=='undefined')FrameFlowGenRuntime.subscribe(function(snapshot){
+    var modeState=snapshot&&snapshot.modes&&snapshot.modes.video;
+    if(snapshot&&!snapshot.authenticated){vm.loaded=false;vm._pending=null;vm.models=[];vm.model=null;}
+    else if(modeState&&!modeState.known&&vm.loaded){vm.loaded=false;vm._pending=null;}
+    var version=modeState&&modeState.catalogVersion;
+    if(vm.loaded&&version&&version!==vm.catalogVersion){vm.loaded=false;vm._pending=null;}
+    if(afGenLoggedIn()&&!vm.loaded)ensureVgMeta().then(refreshVgBtn).catch(function(){refreshVgBtn();});
+    else refreshVgBtn();
+  });
 
   ensureVgMeta().catch(function(){});
   renderFrameBoxes(); refreshVgBtn();
@@ -2233,34 +2245,45 @@
   if(!$('v-audgen'))return;
   var IS_CEP=(typeof window.__adobe_cep__!=='undefined');
   function toast(m,k){ if(typeof showToast==='function')showToast(m,k); }
-  var ag={mode:'voice',models:{voice:null,sfx:null},catalogs:{voice:[],sfx:[]},loaded:false,_pending:null,voice:'',dur:null,sessions:{},recent:[],recentLoaded:false,pollTimers:{},visCount:0}; // SC_29: visCount — sessiyadagi visual elementlar (Visuals tab sanog'i)
+  var ag={mode:'voice',models:{voice:null,sfx:null},catalogs:{voice:[],sfx:[]},catalogVersions:{voice:'',sfx:''},loaded:false,_pending:null,voice:'',dur:null,sessions:{},recent:[],recentLoaded:false,pollTimers:{},visCount:0}; // SC_29: visCount — sessiyadagi visual elementlar (Visuals tab sanog'i)
 
   function ensureAgMeta(){
     if(ag.loaded)return Promise.resolve(ag);
     if(ag._pending)return ag._pending;
     ag._pending=Promise.all([
       studioGet('/api/studio/gen/models?mode=voice'),
-      studioGet('/api/studio/gen/models?mode=sfx')
+      studioGet('/api/studio/gen/models?mode=sfx'),
+      afRefreshGenerationHealth(false)
     ]).then(function(rs){
-      var vs=(rs[0]&&rs[0].models)||[], ss=(rs[1]&&rs[1].models)||[];
+      ag.catalogVersions.voice=String((rs[0]&&rs[0].catalogVersion)||'');
+      ag.catalogVersions.sfx=String((rs[1]&&rs[1].catalogVersion)||'');
+      var vs=afApplyGenCatalog('voice',rs[0]), ss=afApplyGenCatalog('sfx',rs[1]);
       ag.catalogs.voice=vs;
       ag.catalogs.sfx=ss;
       ag.models.voice=vs.filter(function(x){return x.isDefault;})[0]||vs[0]||null;
       ag.models.sfx=ss.filter(function(x){return x.isDefault;})[0]||ss[0]||null;
-      if(!ag.models.voice&&!ag.models.sfx)throw new Error('No audio model found');
+      if(!ag.models.voice&&!ag.models.sfx)throw new Error(afGenUnavailableReason(ag.mode)||'No audio model found');
       var vm0=ag.models.voice;
       if(vm0&&Array.isArray(vm0.voices)&&vm0.voices.length)ag.voice=vm0.voices[0].id;
       var sm0=ag.models.sfx;
       if(sm0&&Array.isArray(sm0.durations)&&sm0.durations.length)ag.dur=sm0.durations[0];
-      ag.loaded=true; applyAg(); return ag;
+      ag.loaded=true; ag._pending=null; applyAg(); return ag;
     }).catch(function(err){
       ag._pending=null; var g=$('agGen'); if(g)g.disabled=true;
       toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Failed to load audio models','error'); throw err;
     });
     return ag._pending;
   }
+  if(typeof FrameFlowGenRuntime!=='undefined')FrameFlowGenRuntime.subscribe(function(snapshot){
+    var modes=snapshot&&snapshot.modes||{},voiceVersion=modes.voice&&modes.voice.catalogVersion,sfxVersion=modes.sfx&&modes.sfx.catalogVersion;
+    if(snapshot&&!snapshot.authenticated){ag.loaded=false;ag._pending=null;ag.catalogs.voice=[];ag.catalogs.sfx=[];ag.models.voice=null;ag.models.sfx=null;}
+    else if(ag.loaded&&((modes.voice&&!modes.voice.known)||(modes.sfx&&!modes.sfx.known))){ag.loaded=false;ag._pending=null;}
+    if(ag.loaded&&((voiceVersion&&voiceVersion!==ag.catalogVersions.voice)||(sfxVersion&&sfxVersion!==ag.catalogVersions.sfx))){ag.loaded=false;ag._pending=null;}
+    if(afGenLoggedIn()&&!ag.loaded)ensureAgMeta().then(refreshAgBtn).catch(function(){refreshAgBtn();});
+    else refreshAgBtn();
+  });
   // Kredit chip sinxroni — /credits'dan yangi qiymat olib umumiy afSyncCredits'ga beradi.
-  function agSyncCredits(){ try{ studioGet('/api/studio/credits').then(function(d){ if(d&&typeof d.aiCredits==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(d.aiCredits); }).catch(function(){}); }catch(e){} }
+  function agSyncCredits(){ try{ if(typeof window.afRefreshCredits==='function')window.afRefreshCredits({force:true}).catch(function(){}); }catch(e){} }
   function curAgModel(){ return ag.mode==='voice'?ag.models.voice:ag.models.sfx; }
   function agCost(){ var m=curAgModel(); return m?(m.cost||0):0; }
   // SC_27 (web paritet): kredit yetmasa Generate O'CHADI (bosishdan oldin) — image/video gate naqshi
@@ -2348,7 +2371,8 @@
   function refreshAgBtn(){
     var b=$('agGen'); if(!b)return;
     var ta=$('agPrompt');
-    b.disabled=!(ag.loaded&&curAgModel()&&ta&&ta.value.trim().length>=2&&!agCreditGate()); // SC_27: kredit gate
+    var m=curAgModel(),tooLong=!!(ag.mode==='voice'&&m&&m.maxChars>0&&ta&&ta.value.length>m.maxChars);
+    b.disabled=!(afCanGenerate(ag.mode)&&ag.loaded&&m&&ta&&ta.value.trim().length>=2&&!tooLong&&!agCreditGate()); // SC_27: kredit+readiness gate
   }
   var _ta=$('agPrompt'); if(_ta)_ta.addEventListener('input',function(){ refreshAgBtn(); var m=curAgModel(); var vCap=(ag.mode==='voice'&&m&&typeof m.maxChars==='number'&&m.maxChars>0)?m.maxChars:0; updateAgCharCount(vCap); });
   // SC_47: voice picker qidiruvi — ro'yxatni jonli filtrlaydi
@@ -2363,10 +2387,13 @@
     if(!b){ toast('Write the text first','warning'); return; }
     _agEnhancing=true; _aen.classList.add('busy');
     studioPost('/api/studio/gen/prompt/enhance',{prompt:b,mode:ag.mode,format:'text',idempotencyKey:afUuid()}).then(function(e){
-      if(e&&e.prompt){
+      if(e&&e.mentionMismatch){
+        afSettleCredits(e);
+        toast(enhanceMismatchMessage(e),'info');
+      } else if(e&&e.prompt){
         if(t)t.value=(typeof afCleanEnhancedPrompt==='function')?afCleanEnhancedPrompt(e.prompt):String(e.prompt).trim();
         refreshAgBtn();
-        if(typeof e.creditsLeft==='number'&&typeof window.afSyncCredits==='function')window.afSyncCredits(e.creditsLeft);
+        afApplyChargeCredits(e);
         toast('Prompt enhanced ✨'+(e&&e.creditsCharged?(' · ✦'+e.creditsCharged):''),'success');
       } else toast('Could not enhance','error');
     }).catch(function(err){ toast((typeof friendlyError==='function'?friendlyError(err):(err&&err.message))||'Enhance error','error'); }).then(function(){ _agEnhancing=false; _aen.classList.remove('busy'); });
@@ -2412,7 +2439,7 @@
       onCancel:function(){
         studioPost('/api/studio/gen/'+jobId+'/cancel',{}).then(function(r){
           delete ag.pollTimers[jobId];if(window.afJobStore)window.afJobStore.remove(jobId);
-          syncAgSessionJob(jobId,prompt,ctx,'cancelled');setAgBusy(false);agSyncCredits();
+          syncAgSessionJob(jobId,prompt,ctx,'cancelled');setAgBusy(false);afSettleCredits(r);
           toast('Cancelled'+(r&&r.refunded?(' — ✦'+r.refunded+' refunded'):''),'success');
         }).catch(function(e){toast(e&&e.code==='GENERATION_DISPATCHED'?'Already processing at the provider':'Could not cancel this generation','warning');});
       }});
@@ -2429,7 +2456,7 @@
           if(window.afJobStore)window.afJobStore.remove(jobId);
           var au0=((gn.assets||[])[0]||{});
           // P30 (29c) — done LEKIN natija yo'q = provayder rad etdi (success-shaklda). Halol ishlaymiz.
-          if(!au0.url){ syncAgSessionJob(jobId,prompt,ctx,'failed','Failed · credits refunded',100); if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No audio was returned — your credits were refunded','error'); agSyncCredits(); return; }
+          if(!au0.url){ syncAgSessionJob(jobId,prompt,ctx,'failed','Failed · credits refunded',100); if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):'No audio was returned — your credits were refunded','error'); afSettleCredits(gn); return; }
           // SC_29: sessiya almashgan bo'lsa natija strip JORIY sessiyaga aralashmaydi (toast baribir keladi)
           var sameSess=!ctx.sid||agSessIds().indexOf(ctx.sid)>=0;
           if(sameSess){ renderAgResult(gn.assets,prompt); loadAgRecent(true); }
@@ -2439,14 +2466,16 @@
           else toast('Audio ready','success');
           if(window.axSPInvalidate)window.axSPInvalidate(); // SC_29: picker sanoqlari yangilansin
         }
-        else if(gn.status==='failed'){ delete ag.pollTimers[jobId]; if(window.afJobStore)window.afJobStore.remove(jobId); setAgBusy(false); syncAgSessionJob(jobId,prompt,ctx,'failed','Failed · credits refunded',100); if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):(gn.error||'Audio failed — credits refunded'),'error'); agSyncCredits(); }
+        else if(gn.status==='failed'){ delete ag.pollTimers[jobId]; if(window.afJobStore)window.afJobStore.remove(jobId); setAgBusy(false); syncAgSessionJob(jobId,prompt,ctx,'failed','Failed · credits refunded',100); if(!handleGenRejection(gn,null)) toast((gn.error&&typeof friendlyError==='function')?friendlyError({message:gn.error}):(gn.error||'Audio failed — credits refunded'),'error'); afSettleCredits(gn); }
         else pollAg(jobId,prompt,ctx,tries+1);
       }).catch(function(){ pollAg(jobId,prompt,ctx,tries+1); });
     },2000);
   }
-  function setAgBusy(b){ var g=$('agGen'); if(g){ g.classList.toggle('busy',b); g.disabled=b?true:!(($('agPrompt')||{}).value||'').trim(); } }
+  function setAgBusy(b){ var g=$('agGen'); if(g)g.classList.toggle('busy',b); if(b&&g)g.disabled=true; else refreshAgBtn(); }
   var _gen=$('agGen'); if(_gen)_gen.addEventListener('click',function(){
+    if(!afCanGenerate(ag.mode)){ toast(afGenUnavailableReason(ag.mode),'error'); afRefreshGenerationHealth(true); refreshAgBtn(); return; }
     var m=curAgModel(); if(!m){ toast('Model not loaded yet','warning'); return; }
+    if(agCreditGate()){ toast('Not enough credits — ⚙ Settings › "Top up credits"','error'); return; }
     var ta=$('agPrompt'); var prompt=(ta&&ta.value||'').trim();
     if(prompt.length<2){ toast('Write the text first','warning'); return; }
     // BATCH4 #4 — Chirp cap: kredit yechilmasdan oldin server 400 beradi; bu yerda aniq UX toast
@@ -2462,7 +2491,7 @@
       return studioPost('/api/studio/gen',{sessionId:sid,mode:mode,modelId:m.id,prompt:prompt,params:params,price:quote.price,costQuoteSignature:quote.signature,idempotencyKey:afUuid()},60000)
         .then(function(r){ return {r:r,sid:sid}; }); // SC_29: sid poll ctx'ga uzatiladi
     }).then(function(o){
-      agSyncCredits();
+      if(afApplyChargeCredits(o.r)==null)agSyncCredits();
       if(window.afJobStore&&o.r&&o.r.jobId)window.afJobStore.add('audgen',{jobId:o.r.jobId,prompt:prompt,cat:mode==='sfx'?'sfx':'audio',cost:agCost(),sid:o.sid,modelId:m.id,params:params,mode:mode});
       syncAgSessionJob(o.r&&o.r.jobId,prompt,{sid:o.sid,mode:mode},'active','',8);
       pollAg(o.r.jobId,prompt,{sid:o.sid,mode:mode},0);
@@ -3046,7 +3075,6 @@
   window.axSPRefresh=function(view){
     if(view==='sessions')loadSessions(true);
     if(view==='projects')loadProjects(true);
-    try{ if(typeof window.afSyncCredits==='function')window.afSyncCredits(); }catch(e){}
     var c1=$('spCredS'),c2=$('spCredP');
     var v=(typeof AssetFlowAccount!=='undefined'&&AssetFlowAccount.getCachedUser)?(AssetFlowAccount.getCachedUser()||{}).aiCredits:null;
     var t='<span class="cs">✦</span> '+((typeof v==='number')?Number(v).toLocaleString('en-US'):'—');
@@ -3656,9 +3684,10 @@ window.AF_PLUGIN_VERSION="0.1.6"; // CSXS/manifest.xml ExtensionBundleVersion bi
     var sb=$('ffCreateSettings');if(sb){sb.textContent=settingsSummary(s);sb.title=settingsSummary(s);}
     var cost=$('ffCreateCost');if(cost)cost.textContent=s.quote.status==='ready'?'✦'+s.quote.price:(s.quote.status==='loading'?'…':'✦—');
     var add=$('ffCreateAdd');if(add)add.hidden=(s.mode==='voice'||s.mode==='sfx');
-    var balance=creditBalance(),low=s.quote.status==='ready'&&balance!=null&&s.quote.price>balance;
-    var gen=$('ffCreateGenerate');if(gen)gen.disabled=!s.validation.ok||s.submitting||low;
-    if(modelLoadError)status(modelLoadError,'err');
+    var balance=creditBalance(),low=s.quote.status==='ready'&&balance!=null&&s.quote.price>balance,ready=afCanGenerate(s.mode);
+    var gen=$('ffCreateGenerate');if(gen)gen.disabled=!ready||!s.validation.ok||s.submitting||low;
+    if(!ready)status(afGenUnavailableReason(s.mode),'err');
+    else if(modelLoadError)status(modelLoadError,'err');
     else if(s.submitting)status('Starting one generation…','ok');
     else if(low)status('Not enough credits for this run · open the credit balance to top up.','err');
     else if(s.quote.status==='failed')status('Could not get a secure quote. Check your connection and try again.','err');
@@ -3669,7 +3698,7 @@ window.AF_PLUGIN_VERSION="0.1.6"; // CSXS/manifest.xml ExtensionBundleVersion bi
   function scheduleQuote(){
     clearTimeout(quoteTimer);
     var s=current();
-    if(!s.model){render();return;}
+    if(!s.model||!afCanGenerate(s.mode)){render();return;}
     quoteTimer=setTimeout(function(){
       ctl.requestQuote(function(q){return studioPost('/api/studio/gen/cost-quote',{modelId:q.modelId,mode:q.mode,params:q.params,idempotencyKey:afUuid()});})
         .then(render).catch(function(){render();});
@@ -3677,16 +3706,17 @@ window.AF_PLUGIN_VERSION="0.1.6"; // CSXS/manifest.xml ExtensionBundleVersion bi
     },180);
     render();
   }
-  function loadModels(){
+  function loadModels(force){
     if(modelLoadPromise)return modelLoadPromise;
     status('Loading the live model catalog…');
-    modelLoadPromise=Promise.all(['image','video','voice','sfx'].map(function(mode){
+    if(force)allModels=[];
+    modelLoadPromise=afRefreshGenerationHealth(!!force).then(function(){return Promise.all(['image','video','voice','sfx'].map(function(mode){
       return studioGet('/api/studio/gen/models?mode='+encodeURIComponent(mode)).then(function(r){
-        var rows=((r&&r.models)||[]).filter(function(m){return m&&m.id!=null&&m.disabled!==true;});
+        var rows=afApplyGenCatalog(mode,r);
         ctl.setModels(mode,rows);rows.forEach(function(m){if(!allModels.some(function(x){return String(x.id)===String(m.id)&&x.mode===mode;}))allModels.push(m);});
-        return {mode:mode,ok:true};
+        return {mode:mode,ok:rows.length>0,error:rows.length?null:new Error(afGenUnavailableReason(mode))};
       }).catch(function(e){return {mode:mode,ok:false,error:e};});
-    })).then(function(results){var usable=!!current().model;if(usable){modelLoadError='';scheduleQuote();}else{var bad=results.filter(function(x){return !x.ok;})[0];modelLoadError=((bad&&typeof friendlyError==='function')?friendlyError(bad.error):'No enabled models are available')+' — use Refresh to try again.';}render();return results;});
+    }));}).then(function(results){var usable=!!current().model;if(usable&&afCanGenerate(current().mode)){modelLoadError='';scheduleQuote();}else{var bad=results.filter(function(x){return x.mode===current().mode&&!x.ok;})[0]||results.filter(function(x){return !x.ok;})[0];modelLoadError=(bad&&bad.error&&typeof friendlyError==='function'?friendlyError(bad.error):afGenUnavailableReason(current().mode)||'No enabled models are available')+' — use Refresh to try again.';}render();return results;});
     modelLoadPromise.then(function(){modelLoadPromise=null;},function(){modelLoadPromise=null;});
     return modelLoadPromise;
   }
@@ -3718,7 +3748,7 @@ window.AF_PLUGIN_VERSION="0.1.6"; // CSXS/manifest.xml ExtensionBundleVersion bi
     var defs=window.FrameFlowCreateWorkspace.modelDefaults(m);var sum=[];Object.keys(defs).forEach(function(k){if(defs[k]!=null)sum.push(k+': '+defs[k]);});if(sum.length)bits.push(sum.join(' · '));if(typeof m.cost==='number')bits.push('From ✦'+m.cost);return bits;
   }
   function chooseModel(m){
-    ctl.selectModel(m.id);var s=current();
+    if(!ctl.selectModel(m.id)){status('This model is no longer available — refresh the catalog.','err');return;}var s=current();
     var fn=s.mode==='image'?window.axIGSelectModel:s.mode==='video'?window.axVGSelectModel:null;
     if(fn)try{fn(m.id).catch(function(){});}catch(e){}
     scheduleQuote();render();
@@ -3765,13 +3795,13 @@ window.AF_PLUGIN_VERSION="0.1.6"; // CSXS/manifest.xml ExtensionBundleVersion bi
     }).catch(function(e){window.__ffUnifiedSignedQuote=null;throw e;});
   }
   function generate(){
-    var s=current(),balance=creditBalance();if(s.quote.status==='ready'&&balance!=null&&s.quote.price>balance){status('Not enough credits for this run.','err');return;}if(!s.validation.ok){status(reasonCopy[s.validation.reason]||'Check the composer.','err');if(s.validation.reason==='quote_expired'||s.validation.reason==='quote_required')scheduleQuote();return;}
+    var s=current(),balance=creditBalance();if(!afCanGenerate(s.mode)){status(afGenUnavailableReason(s.mode),'err');afRefreshGenerationHealth(true);return;}if(s.quote.status==='ready'&&balance!=null&&s.quote.price>balance){status('Not enough credits for this run.','err');return;}if(!s.validation.ok){status(reasonCopy[s.validation.reason]||'Check the composer.','err');if(s.validation.reason==='quote_expired'||s.validation.reason==='quote_required')scheduleQuote();return;}
     ctl.submit(applyDraft).then(function(){status('Generation started in its session.','ok');render();}).catch(function(e){status((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Generation could not start.','err');render();});render();
   }
   function enhance(){
     var s=current(),prompt=s.prompt.trim();if(!prompt){status('Write a prompt first.','err');return;}
     var b=$('ffCreateEnhance');if(b)b.disabled=true;status('Enhancing the prompt…');
-    studioPost('/api/studio/gen/prompt/enhance',{prompt:prompt,mode:s.mode,format:'text',idempotencyKey:afUuid()}).then(function(r){if(r&&r.mentionMismatch){if(typeof r.creditsLeft==='number'&&window.afSyncCredits)window.afSyncCredits(r.creditsLeft);render();status(enhanceMismatchMessage(r),'err');}else if(r&&r.prompt){ctl.setPrompt(typeof afCleanEnhancedPrompt==='function'?afCleanEnhancedPrompt(r.prompt):String(r.prompt).trim());if(typeof r.creditsLeft==='number'&&window.afSyncCredits)window.afSyncCredits(r.creditsLeft);render();status('Prompt enhanced'+(r.creditsCharged?' · ✦'+r.creditsCharged:''),'ok');}else throw new Error('No enhanced prompt was returned');}).catch(function(e){status((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance failed.','err');}).then(function(){if(b)b.disabled=false;});
+    studioPost('/api/studio/gen/prompt/enhance',{prompt:prompt,mode:s.mode,format:'text',idempotencyKey:afUuid()}).then(function(r){if(r&&r.mentionMismatch){afSettleCredits(r);render();status(enhanceMismatchMessage(r),'err');}else if(r&&r.prompt){ctl.setPrompt(typeof afCleanEnhancedPrompt==='function'?afCleanEnhancedPrompt(r.prompt):String(r.prompt).trim());afApplyChargeCredits(r);render();status('Prompt enhanced'+(r.creditsCharged?' · ✦'+r.creditsCharged:''),'ok');}else throw new Error('No enhanced prompt was returned');}).catch(function(e){status((typeof friendlyError==='function'?friendlyError(e):(e&&e.message))||'Enhance failed.','err');}).then(function(){if(b)b.disabled=false;});
   }
   function delegateReference(source){
     var s=current();if(s.mode==='voice'||s.mode==='sfx'){status('Audio models do not accept visual references.','err');return;}
@@ -3786,7 +3816,7 @@ window.AF_PLUGIN_VERSION="0.1.6"; // CSXS/manifest.xml ExtensionBundleVersion bi
     var card=modalShell('Activity',$('ffActivityBtn')),list=document.createElement('div');list.className='ff-activity-list';card.appendChild(list);var active=activityCount();
     function row(item,statusText){
       var el=document.createElement('div');el.className='ff-activity-item';var txt=document.createElement('span'),title=document.createElement('b'),sub=document.createElement('small');title.textContent=item.prompt||item.title||'Generation';sub.textContent=statusText;txt.appendChild(title);txt.appendChild(sub);el.appendChild(txt);
-      if(item.jobId){var cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',function(){cancel.disabled=true;studioPost('/api/studio/gen/'+encodeURIComponent(item.jobId)+'/cancel',{}).then(function(r){if(window.afJobStore)window.afJobStore.remove(item.jobId);if(r&&typeof r.creditsLeft==='number'&&window.afSyncCredits)window.afSyncCredits(r.creditsLeft);el.remove();activityCount();}).catch(function(e){cancel.disabled=false;sub.textContent=(e&&e.code==='GENERATION_DISPATCHED')?'Already processing at the provider · open the session to follow it':'Could not cancel · try again';});});el.appendChild(cancel);}
+      if(item.jobId){var cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',function(){cancel.disabled=true;studioPost('/api/studio/gen/'+encodeURIComponent(item.jobId)+'/cancel',{}).then(function(r){if(window.afJobStore)window.afJobStore.remove(item.jobId);afSettleCredits(r);el.remove();activityCount();}).catch(function(e){cancel.disabled=false;sub.textContent=(e&&e.code==='GENERATION_DISPATCHED')?'Already processing at the provider · open the session to follow it':'Could not cancel · try again';});});el.appendChild(cancel);}
       if(item.canRetry){var retry=document.createElement('button');retry.type='button';retry.textContent='Retry';retry.addEventListener('click',function(){closeModal();openDraft({mode:item.mode,prompt:item.prompt||'',modelId:item.modelId});});el.appendChild(retry);}
       if(item.sid){var open=document.createElement('button');open.type='button';open.textContent='Open session';open.addEventListener('click',function(){closeModal();openCreateSession({id:item.sid,mode:item.mode||'image'});});el.appendChild(open);}
       list.appendChild(el);
@@ -3842,6 +3872,15 @@ window.AF_PLUGIN_VERSION="0.1.6"; // CSXS/manifest.xml ExtensionBundleVersion bi
   window.afCreateWorkspace={controller:ctl,openModels:openModels,openActivity:openActivity,refreshModels:loadModels,mountForView:mountForView,openDraft:openDraft,openSession:openExistingSession};
   window.afOpenCreateDraft=openDraft;
   window.afOpenCreateSession=openCreateSession;
+  if(typeof FrameFlowGenRuntime!=='undefined')FrameFlowGenRuntime.subscribe(function(snapshot){
+    if(snapshot&&!snapshot.authenticated){
+      ['image','video','voice','sfx'].forEach(function(mode){ctl.setModels(mode,[]);});
+      allModels=[];modelLoadError='';window.__ffUnifiedSignedQuote=null;render();return;
+    }
+    var s=current();render();
+    if(afGenLoggedIn()&&(!s.model||modelLoadError))loadModels(true);
+    else if(afCanGenerate(s.mode)&&s.model&&(s.quote.status==='idle'||s.quote.status==='failed'))scheduleQuote();
+  });
   loadModels();render();activityCount();
 })();
 

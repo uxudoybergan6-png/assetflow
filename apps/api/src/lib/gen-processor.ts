@@ -89,12 +89,14 @@ import { omniGenerateVideo } from "./ai/vertex-omni.js";
 import { vertexImage, vertexImageEdit, vertexImageUpscale } from "./ai/vertex-image.js";
 import { googleTtsSynthesize } from "./ai/google-tts.js";
 import { refundAiCredits, releaseGenerationSlot } from "./plugin-profile.js";
+import { reconcileStaleAssistOperations } from "./assist-idempotency.js";
 import { fetchSafe } from "./fetch-safe.js";
 import { moderateGenerationContent, moderateOutputsEnabled } from "./moderation.js";
 import { writeAuditLog } from "./audit-log.js";
 import { classifyGenRejection } from "./gen-rejection.js";
 import { noteBlockedAttempt } from "./spend-guard.js";
 import { captureException } from "./sentry.js";
+import { noteProviderFailure, noteProviderSuccess } from "./gen-provider-availability.js";
 
 // GenAsset.type — Artlist uslubidagi raqamli tur kodlari (ichki konventsiya).
 const ASSET_TYPE = { image: 130, audio: 120, video: 140 } as const;
@@ -1463,6 +1465,10 @@ export async function processGeneration(genId: string): Promise<void> {
 
   const fail = async (reason: string) => {
     const safeReason = normalizeGenerationError(reason).slice(0, 480);
+    // Env kaliti mavjud bo'lsa ham provider aniq auth/config xatosi qaytarsa model
+    // katalogi shu instansda qisqa muddatga unavailable bo'ladi. Kontent/rate-limit/
+    // storage xatolari circuit ochmaydi (klassifikator fail-closed).
+    noteProviderFailure(getModelById(gen.modelId)?.provider, reason);
     // ATOMIK: faqat hali queued/running bo'lsa failed qil + refund. Agar reconcileStuckGenerations
     // (yoki boshqa yo'l) jobni ALLAQACHON terminal qilган bo'lsa → updateMany count=0 → IKKINCHI marta
     // refund QILMAYMIZ. reconcile naqshi (double-refund race fix — audit 2026-06-26).
@@ -1893,8 +1899,14 @@ export async function processGeneration(genId: string): Promise<void> {
       return void (await fail(`Unsupported type: ${model.feature}`));
     }
 
+    // Provider "success" desa-yu hech qanday GenAsset yozilmagan bo'lsa pullik bo'sh
+    // `done` holatiga o'tmaymiz. Bu invariant moderation env'iga bog'liq emas.
+    const outputCount = await prisma.genAsset.count({ where: { generationId: genId } });
+    if (outputCount <= 0) throw new Error("GENERATION_NO_OUTPUT: provider returned no persisted media");
+
     // Chiqish moderatsiyasi (env-gated) — done'dan OLDIN. Og'ir kategoriya → throw → catch → fail+refund.
     await moderateGeneratedOutput({ id: genId, userId: gen.userId, mode: gen.mode, modelId: gen.modelId });
+    noteProviderSuccess(model.provider);
 
     // ATOMIK: faqat hali running bo'lsa done qil. Agar reconcile (10 daq) jobni failed+refund qilған
     // bo'lsa → count=0 → failed→done QILMAYMIZ (refund saqlanadi; assetlar history'да ko'rinmaydi —
@@ -1902,7 +1914,19 @@ export async function processGeneration(genId: string): Promise<void> {
     const doneUpd = await prisma.generation.updateMany({ where: { id: genId, status: "running" }, data: { status: "done" } });
     // M6 (#40) — terminal holat → slot bo'shatiladi. count===0 bo'lsa jobni boshqa yo'l
     // (reconcile) allaqachon terminal qilган va slotni O'SHA bo'shatgan → qayta bo'shatmaymiz.
-    if (doneUpd.count > 0) await releaseGenerationSlot(gen.userId);
+    if (doneUpd.count > 0) {
+      await releaseGenerationSlot(gen.userId);
+    } else {
+      // Reconcile/force-settle provider natijasi persist bo'lishi bilan poygada yutgan:
+      // status allaqachon failed+refund. Endi kech kelgan DB asset va storage obyektini
+      // qoldirsak GET /gen/:id failed job ichida bepul natija ko'rinishi va quota leak bo'ladi.
+      await prisma.genAsset.deleteMany({ where: { generationId: genId } });
+      await deleteGenObjectsByPrefix(gen.userId, genId).catch((e) =>
+        console.warn(`[studio-gen] terminal race cleanup xato (${genId}):`, e instanceof Error ? e.message : e)
+      );
+      await clearProviderJob(genId);
+      return;
+    }
 
     // Storage retention (Bosqich 4 #4) — yangi asset joylashgach kvotadan oshsa, eng
     // eski o'z assetlarni o'chirib joy bo'shatadi (best-effort; genni buzmaydi).
@@ -2107,7 +2131,14 @@ async function reconcileStaleReservations(userId?: string): Promise<number> {
       where: { generationId: g.id, reason: "consume", delta: { lt: 0 } },
       select: { id: true },
     });
-    if (consumed) await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+    if (consumed) {
+      await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+    } else {
+      await prisma.generation.updateMany({
+        where: { id: g.id, status: "failed", refunded: false },
+        data: { refundStatus: "not_required", refundApplied: 0 },
+      });
+    }
     settled++;
   }
   return settled;
@@ -2151,26 +2182,64 @@ export async function reconcileAllStuckGenerations(): Promise<number> {
     if (outcome === "refunded") refunded++;
   }
   if (refunded > 0) console.log(`[studio-gen] P1 reconcile: ${refunded} qotган gen fail+refund qilindi`);
-  return refunded + reservations;
+  // Refund transactioni vaqtinchalik DB xatosida yiqilsa job allaqachon `failed`
+  // bo'ladi va stuck query'ga qaytib kirmaydi. Startupni kutmasdan har passda
+  // ledger-backed failed refundlarni qayta qo'llaymiz.
+  const repairedFailures = await backfillUnrefundedFailures();
+  // Enhance/describe process provider chaqiruvi o'rtasida o'lsa, durable assist claim
+  // PENDING qoladi. Shu umumiy money reconciler uni ham bounded vaqtda refund qiladi.
+  const repairedAssists = await reconcileStaleAssistOperations();
+  return refunded + reservations + repairedFailures + repairedAssists;
 }
 
 /**
- * P1 backfill (bir martalik, startup'da): ALLAQACHON failed bo'lган lekin refund QILINMAGAN
+ * P1 backfill (startup + har global reconcile passida): ALLAQACHON failed bo'lган lekin refund QILINMAGAN
  * (refunded=false, cost>0) genlar — eski edge/timeout tufayli kredit qaytmaган bo'lsa — idempotent
  * refund qilinadi. `refundAiCredits`ning atomik `refunded=false→true` claim'i double-refund'ni
  * to'sadi (admin/ cost<=0 → o'zi no-op). Yo'qolган kreditlarni affected userlarga qaytaradi.
  */
 export async function backfillUnrefundedFailures(): Promise<number> {
   const failed = await prisma.generation.findMany({
-    where: { status: "failed", refunded: false, cost: { gt: 0 } },
+    where: {
+      status: "failed",
+      refunded: false,
+      cost: { gt: 0 },
+      OR: [{ refundStatus: null }, { refundStatus: "pending" }],
+    },
     select: { id: true, userId: true, cost: true },
     take: 1000,
   });
+  if (!failed.length) return 0;
+  const consumed = await prisma.creditLedger.findMany({
+    where: {
+      generationId: { in: failed.map((g) => g.id) },
+      reason: "consume",
+      delta: { lt: 0 },
+    },
+    select: { generationId: true },
+    distinct: ["generationId"],
+  });
+  const chargedIds = new Set(
+    consumed.map((row) => row.generationId).filter((id): id is string => typeof id === "string")
+  );
+  let refunded = 0;
+  let notRequired = 0;
   for (const g of failed) {
-    await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+    if (chargedIds.has(g.id)) {
+      await refundAiCredits(g.userId, g.cost, { generationId: g.id });
+      refunded++;
+      continue;
+    }
+    const marked = await prisma.generation.updateMany({
+      where: { id: g.id, status: "failed", refunded: false },
+      data: { refundStatus: "not_required", refundApplied: 0 },
+    });
+    notRequired += marked.count;
   }
-  if (failed.length) console.log(`[studio-gen] P1 backfill: ${failed.length} refund-siz failed gen ko'rib chiqildi (idempotent refund)`);
-  return failed.length;
+  console.log(
+    `[studio-gen] refund reconciliation: ${refunded} ledger-backed refund, ${notRequired} charge qilinmagan failure`
+  );
+  return refunded;
 }
 
 /**

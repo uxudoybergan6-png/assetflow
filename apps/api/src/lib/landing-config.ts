@@ -446,11 +446,11 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
   },
   pluginPromo: {
     eyebrow: "03 — PLUGIN",
-    title: "The FrameFlow plugin — right inside After Effects",
-    desc: "Catalog, import and AI Studio — in the panel. Works with your platform account and credits.",
-    ctaLabel: "Download the plugin (.zxp)",
-    chips: ["After Effects 2022+", "In-panel catalog", "AI Studio"],
-    winTitle: "FrameFlow · After Effects",
+    title: "FrameFlow — inside Premiere Pro and After Effects",
+    desc: "Catalog, timeline import and AI Studio — in the Adobe panel with your FrameFlow account and credits.",
+    ctaLabel: "Download for Premiere Pro (.ccx)",
+    chips: ["Premiere Pro 25.6+", "After Effects", "AI Studio"],
+    winTitle: "FrameFlow · Premiere Pro",
     winSearch: "Search the catalog…",
     winImport: "Import to project",
   },
@@ -467,7 +467,7 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
       { q: "How does FrameFlow work?", a: "Pick a template in your browser or create content in AI Studio, then download it directly or continue in the After Effects plugin." },
       { q: "What are credits and how are they spent?", a: "Credits are used for AI generations. Each image, video, or voice generation spends a set amount of credits. Downloading templates does not require credits." },
       { q: "What's included in the Free plan?", a: "50 monthly credits, the full template library at any resolution, core AI tools, and 15 downloads per month. Pro raises your monthly credits and gives unlimited downloads." },
-      { q: "How do I install the plugin?", a: "Download the .zxp file from the Plugin page, install it with the installer, and connect it to your account on the platform. Ready in minutes." },
+      { q: "How do I install the plugin?", a: "Download the published installer from the Plugin page. Premiere Pro uses the .ccx package through Adobe Creative Cloud; platform-specific After Effects installers appear only when a signed release is available." },
       { q: "Can I cancel my subscription anytime?", a: "Yes, you can cancel your subscription anytime. Access remains until the end of the current billing period." },
     ],
   },
@@ -575,18 +575,18 @@ export const DEFAULT_LANDING_CONFIG: LandingConfigData = {
     },
   ],
   pluginPage: {
-    badge: "After Effects 2022+",
-    title: "Install the FrameFlow plugin in one click",
-    sub: "Catalog, import and AI Studio — right inside After Effects. With your account and credits.",
-    ctaLabel: "Download the plugin (.zxp)",
-    versionNote: "Compatible ZXP installer · requires After Effects 2022 (22.0) or newer",
+    badge: "Premiere Pro 25.6+",
+    title: "FrameFlow for Premiere Pro and After Effects",
+    sub: "Catalog, timeline import and AI Studio — right inside Adobe Premiere Pro. The After Effects build appears when a signed release is published.",
+    ctaLabel: "Premiere Pro (.ccx)",
+    versionNote: "Creative Cloud installer · requires Premiere Pro 25.6 or newer",
     guarantee: "Refund eligibility is explained in the Refund Policy",
     steps: [
-      { t: "Download the .zxp file", d: "Get the latest version from the platform in one click." },
-      { t: "Install with a compatible ZXP installer", d: "Install quickly with any compatible ZXP installer." },
+      { t: "Download the .ccx file", d: "Get the signed Premiere Pro release for your platform." },
+      { t: "Open it with Creative Cloud", d: "Adobe Creative Cloud installs the plugin into Premiere Pro." },
       { t: "Connect your account", d: "Enter your platform key — templates and credits are ready." },
     ],
-    winTitle: "FrameFlow · After Effects",
+    winTitle: "FrameFlow · Premiere Pro",
     winSearch: "Search templates",
     mockName: "Football Championship",
     mockImport: "Import",
@@ -973,9 +973,34 @@ export type LandingConfigPatch = z.infer<typeof landingConfigSchema>;
 /** Chuqur merge: saqlangan qisman blob defaultlar ustiga yoziladi.
  *  Ob'ekt-massivlar (cards/stats/steps/faq…) element-darajada merge — uzunlik defaultdagidek;
  *  satr-massivlar (feats/links/chips/prompts) butunicha almashadi (bo'lsa). */
-function mergeConfig(stored: unknown): LandingConfigData {
+export function mergeConfig(stored: unknown): LandingConfigData {
   const d = DEFAULT_LANDING_CONFIG;
   const s = (stored && typeof stored === "object" ? stored : {}) as Record<string, any>;
+  const isLegacyInstallerCopy = (value: unknown): boolean => {
+    try {
+      return /\.zxp\b|zxp installer|after effects 2022/i.test(JSON.stringify(value ?? {}));
+    } catch {
+      return false;
+    }
+  };
+  // Release mexanikasi CMS marketing matnidan ustun. Eski DB blobidagi `.zxp`/AE 2022
+  // copy yangi Premiere `.ccx` defaultlarini qayta bosmasin; faqat releasega bog'liq
+  // bo'lmagan maydonlar (guarantee/mock matni) saqlanadi.
+  const pluginPageOver = isLegacyInstallerCopy(s.pluginPage)
+    ? {
+        guarantee: s.pluginPage?.guarantee,
+        winSearch: s.pluginPage?.winSearch,
+        mockName: s.pluginPage?.mockName,
+        mockImport: s.pluginPage?.mockImport,
+      }
+    : s.pluginPage;
+  const pluginPromoOver = isLegacyInstallerCopy(s.pluginPromo)
+    ? {
+        eyebrow: s.pluginPromo?.eyebrow,
+        winSearch: s.pluginPromo?.winSearch,
+        winImport: s.pluginPromo?.winImport,
+      }
+    : s.pluginPromo;
   const obj = <T extends Record<string, any>>(base: T, over: any): T =>
     over && typeof over === "object" ? { ...base, ...Object.fromEntries(Object.entries(over).filter(([k, v]) => k in base && v != null)) } : { ...base };
   // Fixed-length ob'ekt-massiv: default elementlari ustiga index bo'yicha merge
@@ -1071,9 +1096,9 @@ function mergeConfig(stored: unknown): LandingConfigData {
           winSearch: d.pluginPromo.winSearch,
           winImport: d.pluginPromo.winImport,
         },
-        s.pluginPromo
+        pluginPromoOver
       ),
-      chips: strArr(d.pluginPromo.chips, s.pluginPromo?.chips),
+      chips: strArr(d.pluginPromo.chips, pluginPromoOver?.chips),
     },
     pricingTeaser: obj(d.pricingTeaser, s.pricingTeaser),
     faqSection: {
@@ -1154,9 +1179,9 @@ function mergeConfig(stored: unknown): LandingConfigData {
           winTitle: d.pluginPage.winTitle, winSearch: d.pluginPage.winSearch,
           mockName: d.pluginPage.mockName, mockImport: d.pluginPage.mockImport,
         },
-        s.pluginPage
+        pluginPageOver
       ),
-      steps: objArr(d.pluginPage.steps, s.pluginPage?.steps),
+      steps: objArr(d.pluginPage.steps, pluginPageOver?.steps),
     },
     uiStyles: normalizeUiStyles(s.uiStyles),
     notices: normalizeNotices(s.notices),

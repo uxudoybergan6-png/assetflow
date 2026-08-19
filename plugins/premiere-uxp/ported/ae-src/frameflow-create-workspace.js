@@ -130,8 +130,22 @@
           var selected = state.models[mode].filter(function (m) { return m.isDefault; })[0] || state.models[mode][0] || null;
           state.modelId = selected ? selected.id : null;
           state.settings = selected ? modelDefaults(selected) : {};
-          invalidateQuote();
+        } else {
+          // The same numeric ID can change price, enabled capabilities or
+          // output options after an admin catalog update. Keep only settings
+          // still accepted by the new descriptor; the old signed quote must
+          // never leave the refreshed catalog looking "Ready".
+          var current = currentModel();
+          var defaults = modelDefaults(current);
+          Object.keys(state.settings).forEach(function (key) {
+            var opts = settingOptions(current, key);
+            if (opts.length && opts.some(function (v) { return String(v) === String(state.settings[key]); })) defaults[key] = state.settings[key];
+          });
+          state.settings = defaults;
         }
+        // Every authoritative catalog refresh invalidates the client quote.
+        // The server quote is cheap and is the only correct readiness proof.
+        invalidateQuote();
       }
       return true;
     }

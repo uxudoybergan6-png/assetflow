@@ -27,9 +27,25 @@ window.ASSETFLOW_ENV = (function () {
   }
 
   function sanitizeApi(url) {
-    if (!url || typeof url !== "string") return url;
-    const clean = url.replace(/\/$/, "");
-    return STALE_APIS.includes(clean) ? (isLocalDev() ? LOCAL_API : PROD_API) : url;
+    if (!url || typeof url !== "string") return isLocalDev() ? LOCAL_API : PROD_API;
+    const clean = url.trim().replace(/\/+$/, "");
+    if (!clean) return isLocalDev() ? LOCAL_API : PROD_API;
+    if (STALE_APIS.includes(clean)) return isLocalDev() ? LOCAL_API : PROD_API;
+    try {
+      const parsed = new URL(clean);
+      const isLoopback = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+      // Customer CEP/UXP panels run from file/plugin origins. A loopback value
+      // left by development therefore points at a service that does not exist
+      // on the subscriber's machine and makes login/catalog/AI all look dead.
+      if (isLoopback) return isLocalDev() ? LOCAL_API : PROD_API;
+      if (parsed.protocol !== "https:") return isLocalDev() ? LOCAL_API : PROD_API;
+      // The customer plugin has one canonical production API. Unknown or old
+      // hosts are not allowed to persist forever in prefs after a migration.
+      if (parsed.hostname !== "api.getframeflow.app") return PROD_API;
+      return PROD_API;
+    } catch (_) {
+      return isLocalDev() ? LOCAL_API : PROD_API;
+    }
   }
 
   return {

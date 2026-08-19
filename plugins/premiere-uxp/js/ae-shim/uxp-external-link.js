@@ -27,7 +27,15 @@
     if (d.ok) return;
 
     var hint = document.getElementById("accGoogleHint");
-    if (!hint || hint.style.display === "none") return;
+    if (!hint || hint.style.display === "none") {
+      // Checkout, billing, admin and password-reset actions also use the same
+      // async UXP permission prompt. If the user blocks it, do not leave the
+      // earlier optimistic "Opening…" toast as the final truth.
+      if (typeof window.showToast === "function") {
+        window.showToast("Couldn’t open the browser — allow external links or try again", "error");
+      }
+      return;
+    }
 
     // Karta ikki ko'rinishda keladi (AE `accountLoginWithGoogle`): "opened" da
     // birinchi <span> — status matni; "couldn't open" da allaqachon to'g'ri.

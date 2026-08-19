@@ -473,6 +473,9 @@ function parseTake(raw: unknown): number {
 const INSTALLER_URL_TTL_SEC = 3600;
 
 pluginRouter.get("/version", async (req: Request, res: Response) => {
+  // Javob ichida 1 soatlik signed installer URL bo'lishi mumkin. Browser/CDN eski
+  // imzoni saqlab, keyingi clickda muddati o'tgan havolani qaytarmasin.
+  res.set("Cache-Control", "private, no-store");
   const current = typeof req.query.current === "string" ? req.query.current : "";
   const { platform } = resolveInstallerPlatform(req.query.platform, req.headers["user-agent"]);
   // Host kanali: `?app=pr` — Premiere UXP paneli. Param yo'q/noma'lum bo'lsa `ae`
@@ -780,6 +783,34 @@ pluginRouter.get("/assets/:templateId/scene/:key", async (req: Request, res: Res
 
 /** Pack/MOGRT yuklab olishdan oldin: published + Free/Pro limit gate.
     Admin nashr etilmagan packni ham (review uchun) yuklay oladi va limitsiz. */
+function requestIdempotencyKey(
+  req: Request,
+  fallbackFields: string[]
+): { key: string | null; error?: "INVALID" | "CONFLICT" } {
+  const values: string[] = [];
+  const header = req.get("Idempotency-Key");
+  if (header) values.push(header);
+  const query = req.query as Record<string, unknown>;
+  const body = (req.body || {}) as Record<string, unknown>;
+  for (const field of fallbackFields) {
+    if (typeof query[field] === "string") values.push(String(query[field]));
+    if (typeof body[field] === "string") values.push(String(body[field]));
+  }
+  const normalized = values.map((value) => value.trim()).filter(Boolean);
+  if (!normalized.length) return { key: null };
+  if (normalized.some((value) => value.length < 8 || value.length > 128)) return { key: null, error: "INVALID" };
+  if (new Set(normalized).size > 1) return { key: null, error: "CONFLICT" };
+  return { key: normalized[0] };
+}
+
+function downloadClaimSourceKey(userId: string, requestKey: string): string {
+  const digest = crypto.createHash("sha256").update(`${userId}:${requestKey}`).digest("hex");
+  // Oylik kvota: oldingi oy claim'i yangi oyda bepul replay bo'lmasin. 15 daqiqalik
+  // retry oynasi consumeDownload ichida alohida tekshiriladi.
+  const month = new Date().toISOString().slice(0, 7);
+  return `download:${month}:${digest}`;
+}
+
 async function guardDownloadable(
   req: Request,
   res: Response,
@@ -789,8 +820,9 @@ async function guardDownloadable(
    * yo'q bo'lsa 404 qaytadi va Free foydalanuvchining oylik yuklab olishidan
    * biri bekorga yonmaydi (klient retry bilan 2× yonardi).
    */
-  assetExists?: () => Promise<boolean>
-): Promise<boolean> {
+  assetExists?: () => Promise<boolean>,
+  requestKey?: string | null
+): Promise<false | { idempotentReplay: boolean }> {
   if (!/^[a-z0-9]+$/i.test(templateId)) {
     res.status(400).json({ error: "Invalid template ID" });
     return false;
@@ -818,7 +850,7 @@ async function guardDownloadable(
     });
     return false;
   }
-  if (req.user?.role === "ADMIN") return true;
+  if (req.user?.role === "ADMIN") return { idempotentReplay: false };
   const tpl = await prisma.contributorTemplate.findUnique({
     where: { id: templateId },
     select: { reviewStatus: true, published: true, isPro: true },
@@ -847,13 +879,20 @@ async function guardDownloadable(
   }
   // (#44) Kvotani yoqishdan OLDIN fayl bor-yo'qligini tekshiramiz — yo'q asset
   // uchun 404 qaytadi, hisoblagich TEGILMAYDI. Tekshiruvning o'zi yiqilsa
-  // (tarmoq/S3 xatosi) yuklab olishni bloklamaymiz — pastdagi serve 404 beradi.
+  // (tarmoq/S3 xatosi) fail-closed 503: aks holda pastdagi serve yiqilsa ham Free
+  // foydalanuvchining birinchi kvotasi bekorga yonardi.
   if (assetExists) {
-    let exists = true;
+    let exists: boolean;
     try {
       exists = await assetExists();
     } catch (e) {
       console.error("[download] asset existence check failed", templateId, e);
+      res.status(503).json({
+        error: "Download storage is temporarily unavailable — please try again",
+        code: "STORAGE_UNAVAILABLE",
+        retryable: true,
+      });
+      return false;
     }
     if (!exists) {
       res.status(404).json({ error: "File not found" });
@@ -863,27 +902,51 @@ async function guardDownloadable(
   // Limitni baytlarni berishdan OLDIN ATOMIK majburlaymiz: consumeDownload
   // hisoblagichni shu yerda oshiradi, shu sabab klient ixtiyoriy
   // /usage/download call'ni tashlab ketsa ham limit chetlab o'tilmaydi.
-  const gate = await consumeDownload(req.user!.userId);
+  const gate = await consumeDownload(req.user!.userId, requestKey
+    ? { sourceKey: downloadClaimSourceKey(req.user!.userId, requestKey), assetKey: templateId }
+    : { assetKey: templateId });
   if (!gate.ok) {
-    res.status(403).json({ error: gate.error, code: gate.code });
+    res.status(gate.code.startsWith("IDEMPOTENCY_") ? 409 : 403).json({
+      error: gate.error,
+      code: gate.code,
+      retryable: false,
+    });
     return false;
   }
-  return true;
+  return { idempotentReplay: gate.idempotentReplay === true };
 }
 
 /** M2: tanlangan sahnaning yakka .mogrt fayli — butun ZIP'siz yuklab olish */
 pluginRouter.get("/assets/:templateId/mogrt/:slug", downloadLimiter, requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
   const slug = sceneKey(String(req.params.slug));
+  const idem = requestIdempotencyKey(req, ["downloadRequestId"]);
+  if (idem.error) {
+    res.status(idem.error === "CONFLICT" ? 409 : 400).json({
+      error: idem.error === "CONFLICT" ? "Conflicting idempotency keys" : "Invalid idempotency key",
+      code: idem.error === "CONFLICT" ? "IDEMPOTENCY_CONFLICT" : "INVALID_IDEMPOTENCY_KEY",
+      retryable: false,
+    });
+    return;
+  }
   // (#44) kvota yonishidan oldin fayl bor-yo'qligi tekshiriladi.
   const mogrtExists = async () =>
     isS3Configured()
       ? await s3ObjectExists(`templates/${templateId}/mogrt/${slug}.mogrt`)
       : Boolean(findMogrtFile(templateId, slug));
-  if (!(await guardDownloadable(req, res, templateId, mogrtExists))) return;
+  const downloadGate = await guardDownloadable(req, res, templateId, mogrtExists, idem.key);
+  if (!downloadGate) return;
   // Bosqich 4 #1: yakka MOGRT ham yuklab olish hodisasi (#14: await — Cloud Run javobdan keyin CPU'ni throttle qiladi).
   // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
-  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
+  const downloadEvent = await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
+  if (!downloadEvent) {
+    res.status(503).json({
+      error: "Download accounting is temporarily unavailable — please try again",
+      code: "DOWNLOAD_EVENT_UNAVAILABLE",
+      retryable: true,
+    });
+    return;
+  }
 
   if (isS3Configured()) {
     const s3Key = `templates/${templateId}/mogrt/${slug}.mogrt`;
@@ -913,15 +976,33 @@ pluginRouter.get("/assets/:templateId/mogrt/:slug", downloadLimiter, requireAuth
     route'dan OLDIN ro'yxatdan o'tadi, shu sabab "pack" shu yerga tushadi). */
 pluginRouter.get("/assets/:templateId/pack", downloadLimiter, requireAuth, async (req: Request, res: Response) => {
   const templateId = String(req.params.templateId);
+  const idem = requestIdempotencyKey(req, ["downloadRequestId"]);
+  if (idem.error) {
+    res.status(idem.error === "CONFLICT" ? 409 : 400).json({
+      error: idem.error === "CONFLICT" ? "Conflicting idempotency keys" : "Invalid idempotency key",
+      code: idem.error === "CONFLICT" ? "IDEMPOTENCY_CONFLICT" : "INVALID_IDEMPOTENCY_KEY",
+      retryable: false,
+    });
+    return;
+  }
   // (#44) pack REAL mavjudmi — kvota yoqilishidan oldin (S3 kaliti yoki lokal fayl).
   const packExists = async () =>
     isS3Configured()
       ? Boolean(await resolveAssetKeyCached(templateId, "pack"))
       : Boolean(findAssetPath(templateId, "pack"));
-  if (!(await guardDownloadable(req, res, templateId, packExists))) return;
+  const downloadGate = await guardDownloadable(req, res, templateId, packExists, idem.key);
+  if (!downloadGate) return;
   // Bosqich 4 #1: REAL yuklab olish hodisasi (#14: await — fire-and-forget Cloud Run'da yo'qoladi).
   // (M7) ADMIN consumeDownload'ni chetlab o'tadi → earning YOZILMAYDI.
-  await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
+  const downloadEvent = await recordTemplateDownloadEvent({ templateId, userId: req.user!.userId, kind: "download", source: "plugin", earn: req.user!.role !== "ADMIN", audit: downloadAuditFromReq(req), app: hostAppFromReq(req) });
+  if (!downloadEvent) {
+    res.status(503).json({
+      error: "Download accounting is temporarily unavailable — please try again",
+      code: "DOWNLOAD_EVENT_UNAVAILABLE",
+      retryable: true,
+    });
+    return;
+  }
   await serveTemplateAsset(req, res, templateId, "pack");
 });
 
@@ -1633,15 +1714,33 @@ pluginRouter.post("/usage/import", usageLimiter, requireAuth, async (req: Reques
   res.json({ user: serializePluginUser(profile) });
 });
 
-const importReservationSchema = z.object({ templateId: z.string().optional() });
+const importReservationSchema = z.object({
+  templateId: z.string().optional(),
+  idempotencyKey: z.string().trim().min(8).max(128).optional(),
+});
 const importFinishSchema = z.object({ reservationId: z.string().min(8) });
 
 pluginRouter.post("/usage/import/reserve", usageLimiter, requireAuth, async (req, res) => {
   const parsed = importReservationSchema.safeParse(req.body);
   if (!parsed.success) return void res.status(400).json({ error: "Invalid request" });
-  const result = await reserveImport(req.user!.userId, parsed.data.templateId);
-  if (!result.ok) return void res.status(result.code === "LIMIT_REACHED" ? 403 : 403).json({ error: result.error, code: result.code });
-  res.json({ reservationId: result.reservationId, expiresAt: result.expiresAt });
+  const idem = requestIdempotencyKey(req, ["idempotencyKey"]);
+  if (idem.error) {
+    return void res.status(idem.error === "CONFLICT" ? 409 : 400).json({
+      error: idem.error === "CONFLICT" ? "Conflicting idempotency keys" : "Invalid idempotency key",
+      code: idem.error === "CONFLICT" ? "IDEMPOTENCY_CONFLICT" : "INVALID_IDEMPOTENCY_KEY",
+      retryable: false,
+    });
+  }
+  const result = await reserveImport(req.user!.userId, parsed.data.templateId, { requestKey: idem.key || undefined });
+  if (!result.ok) {
+    const status = result.code === "LIMIT_REACHED" ? 403 : result.code === "ACCOUNT_INACTIVE" ? 403 : 409;
+    return void res.status(status).json({ error: result.error, code: result.code, retryable: false });
+  }
+  res.json({
+    reservationId: result.reservationId,
+    expiresAt: result.expiresAt,
+    idempotentReplay: result.idempotentReplay,
+  });
 });
 
 pluginRouter.post("/usage/import/commit", usageLimiter, requireAuth, async (req, res) => {

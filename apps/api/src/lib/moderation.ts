@@ -99,6 +99,81 @@ const CLEAN: ModerationResult = {
   reason: null,
 };
 
+export type SafetyVerificationReadiness = {
+  configured: boolean;
+  ready: boolean;
+  checkedAt: string | null;
+  reason: string | null;
+};
+
+type SafetyReadinessCache = SafetyVerificationReadiness & { at: number };
+let safetyReadinessCache: SafetyReadinessCache | null = null;
+let safetyReadinessInFlight: Promise<SafetyVerificationReadiness> | null = null;
+const SAFETY_READY_TTL_MS = Math.max(
+  30_000,
+  Number(process.env.MODERATION_HEALTH_TTL_MS) || 5 * 60_000
+);
+const SAFETY_DOWN_TTL_MS = Math.max(
+  5_000,
+  Number(process.env.MODERATION_HEALTH_FAILURE_TTL_MS) || 30_000
+);
+
+function rememberSafetyReadiness(ok: boolean, reason: string | null): void {
+  const now = Date.now();
+  safetyReadinessCache = {
+    configured: isSafetyVerificationConfigured(),
+    ready: ok,
+    checkedAt: new Date(now).toISOString(),
+    reason: ok ? null : reason || "Safety verification request failed",
+    at: now,
+  };
+}
+
+/**
+ * Secret borligini emas, haqiqiy moderation chaqiruvi ishlashini tekshiradi.
+ * `/gen/health` va model katalogi shu keshlangan probe'ni ishlatadi; bir vaqtda
+ * kelgan so'rovlar bitta provider chaqiruvini bo'lishadi.
+ */
+export async function safetyVerificationReadiness(
+  force = false
+): Promise<SafetyVerificationReadiness> {
+  if (!isSafetyVerificationConfigured()) {
+    return {
+      configured: false,
+      ready: false,
+      checkedAt: null,
+      reason: "Safety verification provider is not configured",
+    };
+  }
+  const now = Date.now();
+  if (!force && safetyReadinessCache) {
+    const ttl = safetyReadinessCache.ready ? SAFETY_READY_TTL_MS : SAFETY_DOWN_TTL_MS;
+    if (now - safetyReadinessCache.at < ttl) {
+      const { at: _at, ...cached } = safetyReadinessCache;
+      return cached;
+    }
+  }
+  safetyReadinessInFlight ??= (async () => {
+    try {
+      const result = await moderateGenerationContent({
+        text: "FrameFlow service readiness check: a neutral geometric landscape.",
+      });
+      const ready = result.ok && !result.blocked;
+      rememberSafetyReadiness(ready, result.reason);
+    } catch (error) {
+      rememberSafetyReadiness(
+        false,
+        error instanceof Error ? error.message : "Safety verification probe failed"
+      );
+    }
+    const { at: _at, ...checked } = safetyReadinessCache!;
+    return checked;
+  })().finally(() => {
+    safetyReadinessInFlight = null;
+  });
+  return safetyReadinessInFlight;
+}
+
 export function isModerationConfigured(): boolean {
   return !!process.env.MODERATION_API_KEY?.trim();
 }
@@ -266,12 +341,13 @@ export async function moderateGenerationContent(opts: {
     });
     // Haqiqiy verdict final. Faqat provider/unverified xatosida Vertex fallbackga o'tamiz.
     if (dedicated.ok || (dedicated.blocked && !dedicated.categories.some((c) => c.startsWith("unverified-")))) {
+      rememberSafetyReadiness(dedicated.ok, dedicated.reason);
       return dedicated;
     }
   }
 
   const vertex = await vertexModerateContent({ text: opts.text, media });
-  return {
+  const result: ModerationResult = {
     ok: vertex.ok,
     configured: isSafetyVerificationConfigured(),
     flagged: vertex.blocked && vertex.ok,
@@ -280,6 +356,8 @@ export async function moderateGenerationContent(opts: {
     categories: vertex.categories,
     reason: vertex.reason,
   };
+  rememberSafetyReadiness(result.ok, result.reason);
+  return result;
 }
 
 /** Prodda rasm inputi ML bilan tekshirilmaganida qaytariladigan fail-closed natija. */

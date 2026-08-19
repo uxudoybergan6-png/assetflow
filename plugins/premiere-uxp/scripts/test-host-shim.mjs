@@ -208,7 +208,7 @@ assert.match(portedSessions, /uxpView\.style\.setProperty\('animation','none'\)/
 assert.match(portedCore, /_uxpWorkspacePrepared/);
 assert.match(portedCore, /_uxpComposerTarget=\(id==='imggen'\|\|id==='vidgen'\|\|id==='audgen'\)/);
 assert.match(portedCore, /_cv\.style\.removeProperty\(_p\)/);
-assert.match(portedNetwork, /d\.code!=='MODERATION_NOT_CONFIGURED'/);
+assert.match(portedNetwork, /FrameFlowGenRuntime\.isPermanentError\(res\.status,d&&d\.code\)/);
 assert.match(portedNetwork, /function enhanceMismatchMessage\(r\)/);
 assert.match(portedCreate, /FrameFlowCreateWorkspace/);
 assert.match(portedVnext, /FrameFlowVNext/);

@@ -2,7 +2,7 @@
 // Launch Task B — public sahifalar (landing/pricing/plugin) uchun STATIK regressiya tekshiruvi.
 // Haqiqiy manba fayllarni o'qiydi (nusxa/kopiya emas) va:
 //   1) qo'llab-quvvatlanmaydigan miqdoriy/ijtimoiy da'volarni ("10,000+ shablon", "millionlab
-//      foydalanuvchi", soxta reyting, Premiere/DaVinci qo'llab-quvvatlash, 5-o'rinli jamoa,
+//      foydalanuvchi", soxta reyting, tasdiqlanmagan DaVinci qo'llab-quvvatlash, 5-o'rinli jamoa,
 //      brand kit, shaxsiy account manager) qidiradi;
 //   2) fabrikatsiya qilingan mijoz ismlarini (avvalgi testimonial'lar) qidiradi;
 //   3) media yuklanish/xato fallback'i delegatsiya orqali ulanganini tasdiqlaydi (capture-fazadagi
@@ -62,13 +62,10 @@ const PROHIBITED_PATTERNS = [
   ["Shaxsiy account manager da'vosi", /Dedicated account manager/],
 ];
 
-// platform/index.html'da haqiqiy ko'p-ilova katalog teglash funksiyasi (FAZA 5, apps.ts) bor —
-// real shablonlar Premiere/DaVinci uchun ham teglanishi mumkin (appOptions/appFull/metaPills,
-// faqat dRaw.a real ma'lumotidan). Bu OG'ZAKI PLAGIN VA'DASI emas, shuning uchun bare "Premiere
-// Pro"/"DaVinci Resolve" tekshiruvi faqat marketing manba (landing-config.ts) uchun qo'llanadi —
-// u yerda bunday matn faqat marketing nusxasi bo'lishi mumkin, haqiqiy katalog metama'lumoti emas.
+// Premiere Pro endi haqiqiy, release-kontrakt bilan tekshiriladigan `.ccx` mahsulotidir
+// (`test-plugin-release-contract.mjs`). DaVinci esa hanuz katalog metama'lumoti xolos;
+// landing marketingida uni qo'llab-quvvatlash va'dasi sifatida yozish mumkin emas.
 const MARKETING_ONLY_PATTERNS = [
-  ["Premiere Pro qo'llab-quvvatlash da'vosi", /Premiere Pro/],
   ["DaVinci Resolve qo'llab-quvvatlash da'vosi", /DaVinci Resolve/],
 ];
 

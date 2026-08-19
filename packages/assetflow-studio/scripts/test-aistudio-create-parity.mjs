@@ -56,7 +56,8 @@ assert.ok(/button data-tool=\"\{\{ t.key \}\}\" onclick=\"\{\{ onPickTool \}\}\"
 assert.ok(/const genStatusCls = 'ff-create-status'/.test(src), "web status class derivation exists");
 assert.ok(!/genStatusText\s*=\s*genGateMsg/.test(src), "dedicated gate message is not duplicated in the status row");
 assert.ok(/if \(!axIsUpscaleTool && !axPromptReady\) genStatusText = 'Write a prompt to begin';/.test(src), "empty prompt cannot claim the composer is ready");
-assert.ok(/else if \(axPromptReady && !genGateOn && model/.test(src), "Ready status requires a valid prompt");
+assert.ok(/else if \(axPromptReady && !genGateOn && \(axIsUpscaleTool \? isUpscaleQuoteReady : isQuoteReady\)\) genStatusText = 'Ready';/.test(src), "Ready status requires a valid prompt and a usable quote");
+assert.ok(/else if \(!model\) genStatusText = 'No ' \+ tool\.short \+ ' model is currently available';/.test(src), "Ready status requires a current-mode model");
 assert.ok(/genAriaDisabled: genBlocked \? 'true' : 'false'/.test(src), "Generate aria-disabled follows the runtime generation gate");
 
 assert.ok(/ffa-pop ff-create-refmenu/.test(src), "reference popup has FINAL-CREATE marker");
