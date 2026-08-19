@@ -7,7 +7,9 @@ Session Report: 2026-08-20 — cross-stack reliability audit
 - Signed plugin URL clickda yangilanadi; release copy `.ccx` kanaliga mos; forgot-password ishlaydi.
 - Cloud Run candidate gate auth, DB/storage, katalog, quote, real moderation va zero-credit canaryni tekshiradi.
 - Smoke yaratgan token/session har doim tozalanadi; kredit oldin/keyin tengligi assert qilinadi.
-- API build va 16 ta API target testi PASS; web/CEP/UXP parity va auth regressiyalari PASS.
-- Package, updater, installer, responsive, release-contract, public-copy va dependency testlari PASS.
-- `npm audit --omit=dev --omit=optional`: 0 vulnerability; `git diff --check`: clean.
-- Push/deploy kutilmoqda; live Turnstile site key va signed public plugin release tashqi gate’da.
+- API/web/CEP/UXP, package/installer/release/public-copy testlari PASS; npm audit 0 vulnerability.
+- Commit `2897d7e`; GitHub CI `32311004734` Linux va haqiqiy Windows MSI joblari PASS.
+- Migratsiya qo‘llandi; Cloud Run `assetflow-api-00182-los`, deploy `32311107795`, 100% trafik.
+- Candidate: 4 rejim, 16 model, real moderation 958ms, generation=0 va credit delta=0.
+- Web yangi epoch/download kodi jonli; lokal AE `2897d7e` va Premiere UXP v0.1.6 o‘rnatildi.
+- Live Turnstile site key va signed public v0.1.6 publish tashqi gate’da qoladi.

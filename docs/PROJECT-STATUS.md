@@ -6,8 +6,8 @@
 > `REJA-*`, `STUDIO-GEN-*`, mockup va archive fayllari bajarilgan holat deb talqin qilinmaydi.
 
 **Yangilangan:** 2026-08-20
-**Holat:** audit hardening va AI safety outage remediation joriy kodda; Cloud Run rollout GitHub
-Actions health gate orqali, Marketplace signed release esa tashqi gate’da.
+**Holat:** audit hardening `2897d7e` bilan Cloud Run `assetflow-api-00182-los`ga chiqarilgan;
+Marketplace signed release va haqiqiy Turnstile konfiguratsiyasi tashqi gate’da.
 
 ## Joriy arxitektura
 
@@ -101,6 +101,8 @@ Studio manbasi faqat `packages/assetflow-studio/js/` va `styles/`da tahrirlanadi
   yangilanadi; `/plugin/version` cache qilinmaydi; Forgot password haqiqiy brauzer recoveryni ochadi.
 - Deploy gate: candidate trafik olishidan oldin auth, DB/storage, to‘rt rejim katalogi, signed quote,
   real moderation va kredit o‘zgarmagan zero-spend canarydan o‘tishi shart; smoke token/sessionni tozalaydi.
+- Rollout: `2897d7e` CI Linux/Windows’dan o‘tdi; migratsiya productionga qo‘llandi; candidate canarydan
+  o‘tib Cloud Run `assetflow-api-00182-los` 100% trafikka chiqarildi va web build jonli tasdiqlandi.
 
 Migratsiyalar:
 
